@@ -1,0 +1,7 @@
+# Directories
+bin
+cmake-build-debug
+.idea
+
+# Auxiliary files
+Makefile
