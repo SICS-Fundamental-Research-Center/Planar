@@ -1,6 +1,7 @@
 # Directories
 bin
 cmake-build-debug
+cmake-build-release
 .idea
 
 # Auxiliary files
