@@ -36,7 +36,7 @@ class OwnedBuffer : public Buffer {
     delete p_;
   }
 
-  Buffer GetReference(size_t offset, size s);
+  Buffer GetReference(size_t offset, size_t s);
 };
 
 } // namespace sics::graph::core::data_structures
