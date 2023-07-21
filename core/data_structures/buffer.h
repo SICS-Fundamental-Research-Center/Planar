@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_BUFFER_H
-#define GRAPH_SYSTEMS_BUFFER_H
+#ifndef CORE_DATA_STRUCTURES_BUFFER_H_
+#define CORE_DATA_STRUCTURES_BUFFER_H_
 
 #include <cstdint>
 #include <cstddef>
@@ -10,7 +10,7 @@ namespace sics::graph::core::data_structures {
 
 class Buffer {
  public:
-  Buffer(uint8_t* p,  size_t s) : p_(p), s_(s) {}
+  explicit Buffer(uint8_t* p,  size_t s) : p_(p), s_(s) {}
   virtual ~Buffer() = default;
 
   uint8_t* Get(size_t offset = 0) {
@@ -29,7 +29,7 @@ class Buffer {
 
 class OwnedBuffer : public Buffer {
  public:
-  OwnedBuffer(size_t s) : Buffer((uint8_t*) malloc(s), s) {}
+  explicit OwnedBuffer(size_t s) : Buffer(reinterpret_cast<uint8_t*>(malloc(s)), s) {}
   OwnedBuffer(const OwnedBuffer& r) = delete;
   OwnedBuffer(OwnedBuffer&& r) = default;
   ~OwnedBuffer() override {
@@ -39,6 +39,7 @@ class OwnedBuffer : public Buffer {
   Buffer GetReference(size_t offset, size_t s);
 };
 
-} // namespace sics::graph::core::data_structures
+}  // namespace sics::graph::core::data_structures
 
-#endif  // GRAPH_SYSTEMS_BUFFER_H
+#endif  // CORE_DATA_STRUCTURES_BUFFER_H_
+
