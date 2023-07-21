@@ -34,7 +34,6 @@ class Serialized {
 };
 
 
-template <typename SType>
 class Serializable {
  public:
   struct Metadata {};
@@ -43,10 +42,10 @@ class Serializable {
   // Static assert here.
 
  public:
-  virtual SType Serialize(common::TaskRunner& runner) = 0;
+  virtual Serialized Serialize(common::TaskRunner& runner) = 0;
   virtual void Deserialize(common::TaskRunner& runner,
                            const Metadata& metadata,
-                           SType&& serialized) = 0;
+                           Serialized&& serialized) = 0;
 };
 
 
