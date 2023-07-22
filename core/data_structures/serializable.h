@@ -27,7 +27,7 @@ class Serialized {
   virtual std::list<Buffer> PopNextImpl() = 0;
 
  protected:
-  bool is_complete_;
+  bool is_complete_ = false;
 };
 
 class Serializable {
