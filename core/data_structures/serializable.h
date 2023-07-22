@@ -4,6 +4,7 @@
 #include "common/multithreading/task_runner.h"
 #include "data_structures/buffer.h"
 #include <list>
+#include <memory>
 
 namespace sics::graph::core::data_structures {
 
@@ -37,7 +38,7 @@ class Serializable {
   // Static assert here.
 
  public:
-  virtual Serialized Serialize(common::TaskRunner& runner) = 0;
+  virtual std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) = 0;
   virtual void Deserialize(common::TaskRunner& runner, const Metadata& metadata,
                            Serialized&& serialized) = 0;
 };
