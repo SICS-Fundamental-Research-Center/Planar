@@ -39,7 +39,7 @@ class Serializable {
 
  public:
   virtual std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) = 0;
-  virtual void Deserialize(common::TaskRunner& runner, const Metadata& metadata,
+  virtual void Deserialize(common::TaskRunner& runner,
                            Serialized&& serialized) = 0;
 };
 
