@@ -48,6 +48,7 @@ endif ()
 
 # gflags
 find_package(gflags CONFIG REQUIRED)
+include_directories(${FOLLY_INCLUDE_DIR})
 
 # yaml
 add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp")
