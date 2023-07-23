@@ -8,7 +8,7 @@
 namespace sics::graph::core::data_structures {
 
 class Serializable {
- public:
+ protected:
   struct Metadata {};
 
  public:
