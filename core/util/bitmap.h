@@ -12,7 +12,7 @@ namespace sics::graph::core::util {
 
 // @DESCRIPTION
 //
-// Bitmap is a mapping from one integer~(index) to bits. If the unit is
+// Bitmap is a mapping from integers~(indexes) to bits. If the unit is
 // occupied, the bit is 1 and if it is empty, the bit is zero.
 class Bitmap {
  public:
