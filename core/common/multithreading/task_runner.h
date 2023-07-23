@@ -17,14 +17,14 @@ class TaskRunner {
   // are completed.
   virtual void SubmitAsync(Task&& task) = 0;
   virtual void SubmitAsync(Task&& task, std::function<void ()> callback) = 0;
-  virtual void SubmitAsync(TaskPackage&& task) = 0;
-  virtual void SubmitAsync(TaskPackage&& task,
+  virtual void SubmitAsync(const TaskPackage& tasks) = 0;
+  virtual void SubmitAsync(const TaskPackage& tasks,
                            std::function<void ()> callback) = 0;
 
   // Submit a single task (resp. a package of tasks) for execution.
   // The call will block until all submitted tasks are completed.
   virtual void SubmitSync(Task&& task) = 0;
-  virtual void SubmitSync(TaskPackage&& task) = 0;
+  virtual void SubmitSync(const TaskPackage& tasks) = 0;
 
   // Get the current parallelism for running tasks.
   //
