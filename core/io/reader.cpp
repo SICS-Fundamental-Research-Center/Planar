@@ -22,7 +22,7 @@ Reader::Reader(std::string path_edgelist_global_yaml) : path_edgelist_global_yam
 
 // judge whether to use io_adapter or not
 // return true if need to adapt
-bool Reader::judge_adapt() {
+bool Reader::JudgeAdapt() {
     std::string file_path = work_dir_ + "/" + CSR_GLOBLE_FILE_NAME;
     if (std::filesystem::exists(file_path)) {
         return false;
@@ -34,7 +34,7 @@ bool Reader::judge_adapt() {
 
 // read subgraph from ssd
 // if enforce_adapt is true, use io_adapter to adapt edgelist to csr
-void Reader::read_subgraph(size_t subgraph_id, bool enforce_adapt) {
+void Reader::ReadSubgraph(size_t subgraph_id, bool enforce_adapt) {
     if (enforce_adapt || judge_adapt()) {
         // TODO(zhj): use io_adapter to adapt edgelist to csr
     }
@@ -54,7 +54,7 @@ void Reader::read_subgraph(size_t subgraph_id, bool enforce_adapt) {
 //      - file:1_data.bin
 //      - file:1_attr.bin
 //    - file:csr_global.yaml
-void Reader::read_csr(size_t subgraph_id) {
+void Reader::ReadCsr(size_t subgraph_id) {
   std::string global_file_path = work_dir_ + "/" + CSR_GLOBLE_FILE_NAME;
 
   // Initialize io_uring
@@ -67,7 +67,7 @@ void Reader::read_csr(size_t subgraph_id) {
   std::string attr_file_path = dir_path + "/" + std::to_string(dir_num) + "_attr.bin";
 
   // create temp storing buffer list
-  std::list<std::list<Buffer>> buffer_list;
+  std::list<std::list<OwnedBuffer>> buffer_list;
 
   // read yaml file yaml_file_path
   read_yaml(yaml_file_path, &buffer_list);
@@ -84,7 +84,7 @@ void Reader::read_csr(size_t subgraph_id) {
 }
 
 // read yaml file
-bool Reader::read_yaml(std::string yaml_file_path, std::list<list<Buffer>>* buffer_list) {
+bool Reader::ReadYaml(std::string yaml_file_path, std::list<list<OwnedBuffer>>* buffer_list) {
   // read yaml file yaml_file_path
   YAML::Node yaml_file = YAML::LoadFile(yaml_file_path);
 
@@ -95,7 +95,7 @@ bool Reader::read_yaml(std::string yaml_file_path, std::list<list<Buffer>>* buff
 }
 
 // read data file
-void Reader::read_bin_file(std::string data_file_path, struct io_uring ring, std::list<list<Buffer>>* buffer_list) {
+void Reader::ReadBinFile(std::string data_file_path, struct io_uring ring, std::list<list<OwnedBuffer>>* buffer_list) {
   // TODO(zhj): recheck this code and answer the question "is io_uring actually speeding up the whole io?"
   FILE* file = fopen(data_file_path.c_str(), "rb");
   if (!file) {
@@ -118,10 +118,11 @@ void Reader::read_bin_file(std::string data_file_path, struct io_uring ring, std
   // Wait for the async IO request to complete.
   io_uring_wait_cqe(&ring, &cqe);
 
-  // Move the data to a Buffer object.
-  Buffer buffer(data, fileSize);
+  // Move the data to a OwnedBuffer object.
+  Buffer OwnedBuffer(fileSize);
+  OwnedBuffer.SetPointer(data);
 
-  std::list<Buffer> file_buffers;
+  std::list<OwnedBuffer> file_buffers;
   file_buffers.push_back(std::move(buffer));
 
   // Add the Buffer list to the list
@@ -135,7 +136,7 @@ void Reader::read_bin_file(std::string data_file_path, struct io_uring ring, std
 // read edgelist global yaml file
 // return true if success
 // return false if failed or no work_dir_ in yaml file
-bool Reader::read_edgelist_global_yaml() {
+bool Reader::ReadEdgelistGlobalYaml() {
   try {
       std::ifstream fin(path_edgelist_global_yaml_);
       if (!fin.is_open()) {
