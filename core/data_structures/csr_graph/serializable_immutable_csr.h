@@ -3,12 +3,13 @@
 
 #include "data_structures/csr_graph/serialized_immutable_csr.h"
 #include "data_structures/serializable.h"
-#include "data_structures/serializable_graph.h"
+#include "data_structures/serialized.h"
+#include <memory>
 
 namespace sics::graph::core::data_structures::csr_graph {
 
 template <typename GID_T, typename VID_T>
-class SerializableImmutableCSR : public SerializableGraph<GID_T, VID_T> {
+class SerializableImmutableCSR : public Serializable {
  public:
   SerializableImmutableCSR(const GID_T gid, const VID_T max_vid)
       : SerializableGraph<GID_T, VID_T>(gid), max_vid_(max_vid) {}
@@ -38,12 +39,19 @@ class SerializableImmutableCSR : public SerializableGraph<GID_T, VID_T> {
     // Parse subgraph_csr from buffer.
   }
 
+  inline GID_T get_gid() const { return gid_; }
+  inline void set_gid(GID_T gid) { gid_ = gid; }
+
  protected:
   struct Metadata {
     size_t num_vertice_ = 0;
     size_t num_in_edges_ = 0;
     size_t num_out_edges_ = 0;
   };
+
+  GID_T gid_ = -1;
+  VID_T* buf_graph_ = nullptr;
+
   VID_T max_vid_ = 0;
   VID_T aligned_max_vid_ = 0;
   SerializedImmutableCSR serialized_immutable_csr_;
