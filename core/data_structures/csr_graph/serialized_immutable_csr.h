@@ -1,7 +1,7 @@
 #ifndef GRAPH_SYSTEMS_SERIALIZED_IMMUTABLE_CSR_H
 #define GRAPH_SYSTEMS_SERIALIZED_IMMUTABLE_CSR_H
 
-#include "data_structures/serializable.h"
+#include "data_structures/serialized.h"
 
 namespace sics::graph::core::data_structures::csr_graph {
 
@@ -9,7 +9,7 @@ class SerializedImmutableCSR : public Serialized {
  protected:
   // The first item of csr_buffer_: buffer list of meta data;
   // The second item of csr_buffer_: buffer list of subgraph_csr data.
-  std::list<std::list<Buffer>> csr_buffer_;
+  std::list<std::list<OwnedBuffer>> csr_buffer_;
 
   // Reader call this function to push buffers into csr_buffer_.
   void ReceiveBuffers(std::list<Buffer>&& buffers) override {
@@ -17,7 +17,7 @@ class SerializedImmutableCSR : public Serialized {
   };
 
   // Writer call this function to pop buffers from csr_buffer_ to Disk.
-  std::list<Buffer> PopNextImpl() override {
+  std::list<OwnedBuffer> PopNextImpl() override {
     std::list<Buffer> result = std::move(this->csr_buffer_.front());
     this->csr_buffer_.pop_front();
     return result;

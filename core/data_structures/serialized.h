@@ -12,7 +12,7 @@ class Serialized {
 
   virtual void ReceiveBuffers(std::list<OwnedBuffer>&& buffers) = 0;
 
-  std::list<Buffer> PopNext() {
+  std::list<OwnedBuffer> PopNext() {
     is_complete_ = false;
     return PopNextImpl();
   }
@@ -22,7 +22,7 @@ class Serialized {
   void SetComplete() { is_complete_ = true; }
 
  protected:
-  virtual std::list<Buffer> PopNextImpl() = 0;
+  virtual std::list<OwnedBuffer> PopNextImpl() = 0;
 
  protected:
   bool is_complete_ = false;
