@@ -4,7 +4,7 @@ cmake-build-debug
 cmake-build-release
 .idea
 .vscode
-workspace
+input
 
 # Auxiliary files
 Makefile
