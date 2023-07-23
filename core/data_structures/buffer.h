@@ -21,6 +21,10 @@ class Buffer {
     return s_;
   }
 
+  void SetPointer(uint8_t* p) {
+    p_ = p;
+  }
+
  protected:
   uint8_t* p_;
   size_t  s_;

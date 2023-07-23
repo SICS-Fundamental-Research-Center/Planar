@@ -67,7 +67,7 @@ void Reader::read_csr(size_t subgraph_id) {
   std::string attr_file_path = dir_path + "/" + std::to_string(dir_num) + "_attr.bin";
 
   // create temp storing buffer list
-  std::list<std::list<Buffer>> buffer_list;
+  std::list<std::list<OwnedBuffer>> buffer_list;
 
   // read yaml file yaml_file_path
   read_yaml(yaml_file_path, &buffer_list);
@@ -84,7 +84,7 @@ void Reader::read_csr(size_t subgraph_id) {
 }
 
 // read yaml file
-bool Reader::read_yaml(std::string yaml_file_path, std::list<list<Buffer>>* buffer_list) {
+bool Reader::read_yaml(std::string yaml_file_path, std::list<list<OwnedBuffer>>* buffer_list) {
   // read yaml file yaml_file_path
   YAML::Node yaml_file = YAML::LoadFile(yaml_file_path);
 
@@ -95,7 +95,7 @@ bool Reader::read_yaml(std::string yaml_file_path, std::list<list<Buffer>>* buff
 }
 
 // read data file
-void Reader::read_bin_file(std::string data_file_path, struct io_uring ring, std::list<list<Buffer>>* buffer_list) {
+void Reader::read_bin_file(std::string data_file_path, struct io_uring ring, std::list<list<OwnedBuffer>>* buffer_list) {
   // TODO(zhj): recheck this code and answer the question "is io_uring actually speeding up the whole io?"
   FILE* file = fopen(data_file_path.c_str(), "rb");
   if (!file) {
@@ -119,9 +119,10 @@ void Reader::read_bin_file(std::string data_file_path, struct io_uring ring, std
   io_uring_wait_cqe(&ring, &cqe);
 
   // Move the data to a Buffer object.
-  Buffer buffer(data, fileSize);
+  Buffer OwnedBuffer(fileSize);
+  OwnedBuffer.SetPointer(data);
 
-  std::list<Buffer> file_buffers;
+  std::list<OwnedBuffer> file_buffers;
   file_buffers.push_back(std::move(buffer));
 
   // Add the Buffer list to the list

@@ -15,7 +15,7 @@
 #define CSR_GLOBLE_FILE_NAME "csr_global.yaml"
 
 // TODO(zhj): maybe need to be deleted
-using sics::graph::core::data_structures::Buffer Buffer;
+using sics::graph::core::data_structures::OwnedBuffer OwnedBuffer;
 using sics::graph::core::data_structures::Serialized Serialized;
 
 namespace sics::graph::core::io {
@@ -31,9 +31,9 @@ class Reader {
   void read_csr(size_t subgraph_id);
 
  private:
-  bool read_yaml(std::string yaml_file_path, std::list<list<Buffer>>* buffer_list);
+  bool read_yaml(std::string yaml_file_path, std::list<list<OwnedBuffer>>* buffer_list);
 
-  void read_bin_file(std::string data_file_path, struct io_uring ring, std::list<list<Buffer>>* buffer_list);
+  void read_bin_file(std::string data_file_path, struct io_uring ring, std::list<list<OwnedBuffer>>* buffer_list);
 
   bool read_edgelist_global_yaml();
 
