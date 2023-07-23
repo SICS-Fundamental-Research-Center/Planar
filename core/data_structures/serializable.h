@@ -12,7 +12,7 @@ class Serialized {
  public:
   virtual bool HasNext() const = 0;
 
-  virtual void ReceiveBuffers(std::list<Buffer>&& buffers) = 0;
+  virtual void ReceiveBuffers(std::list<OwnedBuffer>&& buffers) = 0;
 
   std::list<Buffer> PopNext() {
     is_complete_ = false;
