@@ -3,7 +3,7 @@ project(graph_systems)
 
 ###### Cmake options ######
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -Wall")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
@@ -38,13 +38,19 @@ endif ()
 find_package(FOLLY REQUIRED)
 
 ###### Add third party to the project, if necessary ######
-if (test)
+if (TEST)
     enable_testing()
     message(STATUS "Enabling GoogleTest...")
     set(BUILD_GMOCK ON CACHE BOOL "Option: build gmock and gtest -- ON" FORCE)
     set(INSTALL_GTEST OFF CACHE BOOL "Option: install gtest -- OFF" FORCE)
     add_subdirectory("${THIRD_PARTY_ROOT}/googletest")
 endif ()
+
+# gflags
+find_package(gflags CONFIG REQUIRED)
+
+# yaml
+add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp")
 
 #######################
 # Artifacts
@@ -53,4 +59,13 @@ add_subdirectory(core)
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/core
 )
+
+file(GLOB appfiles "${CMAKE_CURRENT_SOURCE_DIR}/examples/*.cpp")
+foreach (appfile ${appfiles})
+    message(STATUS "Found apps: ${appfile}")
+    get_filename_component(app ${appfile} NAME_WE)
+    add_executable("${app}_exec" ${appfile})
+    target_link_libraries("${app}_exec" graph_systems_core)
+endforeach ()
+
 
