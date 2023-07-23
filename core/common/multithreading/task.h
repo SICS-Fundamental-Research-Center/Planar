@@ -1,15 +1,17 @@
-//
-// Created by Shuhao Liu on 2023-07-18.
-//
-
 #ifndef GRAPH_SYSTEMS_TASK_H
 #define GRAPH_SYSTEMS_TASK_H
 
+#include <functional>
+#include <vector>
+
+
 namespace sics::graph::core::common {
 
-class Task;
+// Alias type name for an executable function.
+typedef std::function<void()> Task;
 
-class TaskPackage;
+// Alias type name for an array of executable functions.
+typedef std::vector<Task> TaskPackage;
 
 
 } // namespace sics::graph::core::common

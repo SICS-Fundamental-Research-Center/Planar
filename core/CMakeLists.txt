@@ -34,15 +34,15 @@ file(GLOB GRAPH_CORE_HEADERS
 #######################
 # Tests
 #######################
-if (test)
-    add_subdirectory("tests")
+if (TEST)
+    add_subdirectory(tests)
 endif ()
 
 #######################
 # Generate libgraph_core
 #######################
-add_library(graph_core ${GRAPH_CORE_SOURCES} ${GRAPH_CORE_HEADERS})
+add_library(graph_systems_core ${GRAPH_CORE_SOURCES} ${GRAPH_CORE_HEADERS})
 
-target_link_libraries(graph_core
+target_link_libraries(graph_systems_core
         ${FOLLY_LIBRARIES}
         )
