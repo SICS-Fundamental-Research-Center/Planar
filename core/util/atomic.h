@@ -15,7 +15,7 @@ namespace atomic {
 //  value and, only if they are the same, modifies the contents of that memory
 //  location to a new given value.
 template <class ET>
-inline bool CAS(ET* ptr, ET oldv, ET newv) {
+inline bool CAS(ET* ptr, ET oldv, ET newv) const {
   if (sizeof(ET) == 8) {
     return __sync_bool_compare_and_swap((long*)ptr, *((long*)&oldv),
                                         *((long*)&newv));
@@ -32,7 +32,7 @@ inline bool CAS(ET* ptr, ET oldv, ET newv) {
 }
 
 template <class ET>
-inline bool WriteMin(ET* a, ET b) {
+inline bool WriteMin(ET* a, ET b) const {
   ET c;
   bool r = 0;
   do c = *a;
@@ -41,7 +41,7 @@ inline bool WriteMin(ET* a, ET b) {
 }
 
 template <class ET>
-inline bool WriteMax(ET* a, ET b) {
+inline bool WriteMax(ET* a, ET b) const {
   ET c;
   bool r = 0;
   do c = *a;
