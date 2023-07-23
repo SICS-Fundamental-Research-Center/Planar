@@ -12,11 +12,12 @@ namespace sics::graph::core::util {
 
 // @DESCRIPTION
 //
-// Bitmap is a mapping from one integers~(indexes) to bits. If the unit is
-// occupied, the bit is 1 and if it is empty, the bit is zero.
+// Bitmap is a mapping from integers~(indexes) to bits. If the unit is
+// occupied, the bit is a nonzero integer constant and if it is empty, the bit
+// is zero.
 class Bitmap {
  public:
-  Bitmap(const size_t size) {
+  Bitmap(size_t size) {
     Init(size);
     return;
   }
@@ -66,7 +67,7 @@ class Bitmap {
     return;
   }
 
-  uint64_t GetBit(size_t i) const {
+  bool GetBit(size_t i) const {
     if (i > size_) return 0;
     return data_[WORD_OFFSET(i)] & (1ul << BIT_OFFSET(i));
   }
@@ -77,16 +78,24 @@ class Bitmap {
     return;
   }
 
-  void RMBit(const size_t i) {
+  void ClearBit(const size_t i) {
     if (i > size_) return;
     __sync_fetch_and_and(data_ + WORD_OFFSET(i), ~(1ul << BIT_OFFSET(i)));
     return;
   }
 
-  size_t GetNumBit() const {
-    size_t count = 0;
-    for (size_t i = 0; i < size_; i++)
-      if (GetBit(i)) count++;
+  size_t Count() const {
+    auto count  = 0;
+    for (size_t i = 0; i <= WORD_OFFSET(i); i++) {
+      auto x = data_[i];
+      x = (x & (0x5555555555555555)) + ((x >> 1) & (0x5555555555555555));
+      x = (x & (0x3333333333333333)) + ((x >> 2) & (0x3333333333333333));
+      x = (x & (0x0f0f0f0f0f0f0f0f)) + ((x >> 4) & (0x0f0f0f0f0f0f0f0f));
+      x = (x & (0x00ff00ff00ff00ff)) + ((x >> 8) & (0x00ff00ff00ff00ff));
+      x = (x & (0x0000ffff0000ffff)) + ((x >> 16) & (0x0000ffff0000ffff));
+      x = (x & (0x00000000ffffffff)) + ((x >> 32) & (0x00000000ffffffff));
+      count +=x;
+    }
     return count;
   }
 
