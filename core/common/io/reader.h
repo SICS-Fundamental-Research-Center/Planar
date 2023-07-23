@@ -14,6 +14,10 @@
 
 #define CSR_GLOBLE_FILE_NAME "csr_global.yaml"
 
+// TODO(zhj): maybe need to be deleted
+#typedef sics::graph::core::data_structures::Buffer Buffer;
+#typedef sics::graph::core::data_structures::Serialized Serialized;
+
 namespace sics::graph::core::common::io {
 
 // Class to read data from ssd to memory.
@@ -39,83 +43,72 @@ class Reader {
     return true;
   }
 
-  // read from ssd
+  // read subgraph from ssd
   // if enforce_adapt is true, use io_adapter to adapt edgelist to csr
-  void read(bool enforce_adapt = false) {
+  void read_subgraph(size_t subgraph_id, bool enforce_adapt = false) {
     // TODO(zhj): read yaml file path_config_ and get workdir
 
     if (enforce_adapt || judge_adapt()) {
       // TODO(zhj): use io_adapter to adapt edgelist to csr
     }
 
-    read_csr();
+    read_csr(subgraph_id);
   }
 
-  // read csr from ssd
+  // read csr of a certain subgraph from ssd
   // workdir structure:
   //  - dir:{work_dir_}
+  //    - dir:0
+  //      - file:0.yaml
+  //      - file:0_data.bin
+  //      - file:0_attr.bin
   //    - dir:1
   //      - file:1.yaml
   //      - file:1_data.bin
   //      - file:1_attr.bin
-  //    - dir:2
-  //      - file:1.yaml
-  //      - file:2_data.bin
-  //      - file:2_attr.bin
   //    - file:csr_global.yaml
-  void read_csr() {
+  void read_csr(size_t subgraph_id) {
     std::string global_file_path = work_dir_ + "/" + CSR_GLOBLE_FILE_NAME;
-
-    // TODO(zhj): read yaml file global_file_path and get dir num
-    int num_dir = 2;  // temp set 2
 
     // Initialize io_uring
     struct io_uring ring;
     io_uring_queue_init(/*...*/);  // TODO(zhj): add params
 
-    // Read all dir and files
-    for (int dir_num = 1; dir_num <= num_dir; ++dir_num) {
-      read_dir(dir_num, ring);
-    }
-
-    // Clean up io_uring
-    io_uring_queue_exit(/*...*/);  // TODO(zhj): add params
-  }
-
-  // read the bin and yaml files in dir
-  void read_dir(int dir_num, struct io_uring ring) {
     std::string dir_path = work_dir_ + "/" + std::to_string(dir_num);
     std::string yaml_file_path = dir_path + "/" + std::to_string(dir_num) + ".yaml";
     std::string data_file_path = dir_path + "/" + std::to_string(dir_num) + "_data.bin";
     std::string attr_file_path = dir_path + "/" + std::to_string(dir_num) + "_attr.bin";
 
     // create temp storing buffer list
-    std::list<Buffer> buffer_list;
+    std::list<std::list<Buffer>> buffer_list;
 
     // read yaml file yaml_file_path
-    read_yaml(yaml_file_path, buffer_list);
+    read_yaml(yaml_file_path, &buffer_list);
     // read data file
-    read_bin_file(data_file_path, ring, buffer_list);
+    read_bin_file(data_file_path, ring, &buffer_list);
     // read attr file
-    read_bin_file(attr_file_path, ring, buffer_list);
+    read_bin_file(attr_file_path, ring, &buffer_list);
 
-    // add buffer_list into bufferQueue
-    bufferQueue.push(std::move(buffer_list));
+    // Clean up io_uring
+    io_uring_queue_exit(/*...*/);  // TODO(zhj): add params
+
+    // Add buffer_list to serialized_
+    serialized_.ReceiveBuffers(std::move(buffer_list));
   }
 
   // read yaml file
-  void read_yaml(std::string yaml_file_path, std::list<Buffer>* buffer_list) {
+  void read_yaml(std::string yaml_file_path, std::list<list<Buffer>>* buffer_list) {
     // read yaml file yaml_file_path
     YAML::Node yaml_file = YAML::LoadFile(yaml_file_path);
 
     // TODO(zhj): read yaml into buffer
 
-    // Add the Buffer object to list
-    buffer_list->push(std::move(buffer));
+    // Add the Buffer list to list
+    buffer_list->push(std::move(file_buffers));
   }
 
   // read data file
-  void read_bin_file(std::string data_file_path, struct io_uring ring, std::list<Buffer>* buffer_list) {
+  void read_bin_file(std::string data_file_path, struct io_uring ring, std::list<list<Buffer>>* buffer_list) {
     // TODO(zhj): recheck this code and answer the question "is io_uring actually speeding up the whole io?"
     FILE* file = fopen(data_file_path.c_str(), "rb");
     if (!file) {
@@ -141,8 +134,11 @@ class Reader {
     // Move the data to a Buffer object.
     Buffer buffer(data, fileSize);
 
-    // Add the Buffer object to the list
-    buffer_list->push(std::move(buffer));
+    std::list<Buffer> file_buffers;
+    file_buffers.push_back(std::move(buffer));
+
+    // Add the Buffer list to the list
+    buffer_list->push(std::move(file_buffers));
 
     // Clean up
     fclose(file);
@@ -152,8 +148,7 @@ class Reader {
  protected:
   std::string path_edgelist_global_yaml_;
   std::string work_dir_;
-  // The queue for holding lists of Buffer objects
-  folly::ConcurrentQueue<Buffer> bufferQueue;
+  Serialized serialized_;
 };
 
 }  // namespace sics::graph::core::common::io
