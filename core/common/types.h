@@ -9,9 +9,9 @@
 
 namespace sics::graph::core::common {
 
-typedef uint32_t GraphIDType;
+typedef uint32_t GraphID;  // uint32_t: 0 ~ 4,294,967,295
+typedef uint32_t VertexID;
 
-} // namespace sics::graph::core::common
-
+}  // namespace sics::graph::core::common
 
 #endif  // GRAPH_SYSTEMS_TYPES_H

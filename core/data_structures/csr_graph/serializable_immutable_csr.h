@@ -1,6 +1,7 @@
 #ifndef GRAPH_SYSTEMS_SERIALIZABLE_IMMUTABLE_CSR_H
 #define GRAPH_SYSTEMS_SERIALIZABLE_IMMUTABLE_CSR_H
 
+#include "common/types.h"
 #include "data_structures/csr_graph/serialized_immutable_csr.h"
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
@@ -8,11 +9,10 @@
 
 namespace sics::graph::core::data_structures::csr_graph {
 
-template <typename GID_T, typename VID_T>
 class SerializableImmutableCSR : public Serializable {
  public:
-  SerializableImmutableCSR(const GID_T gid, const VID_T max_vid)
-      : SerializableGraph<GID_T, VID_T>(gid), max_vid_(max_vid) {}
+  SerializableImmutableCSR(const GraphID gid, const VertexID max_vid)
+      : gid_(gid), max_vid_(max_vid) {}
 
   std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) override {
     // TODO: Implement this.
@@ -39,8 +39,8 @@ class SerializableImmutableCSR : public Serializable {
     // Parse subgraph_csr from buffer.
   }
 
-  inline GID_T get_gid() const { return gid_; }
-  inline void set_gid(GID_T gid) { gid_ = gid; }
+  inline GraphID get_gid() const { return gid_; }
+  inline void set_gid(GraphID gid) { gid_ = gid; }
 
  protected:
   struct Metadata {
@@ -57,10 +57,10 @@ class SerializableImmutableCSR : public Serializable {
   SerializedImmutableCSR serialized_immutable_csr_;
 
   // serialized data in CSR format.
-  VID_T* localid_by_globalid_ = nullptr;
-  VID_T* globalid_by_index_ = nullptr;
-  VID_T* in_edges_ = nullptr;
-  VID_T* out_edges_ = nullptr;
+  VertexID* localid_by_globalid_ = nullptr;
+  VertexID* globalid_by_index_ = nullptr;
+  VertexID* in_edges_ = nullptr;
+  VertexID* out_edges_ = nullptr;
   size_t* indegree_ = nullptr;
   size_t* outdegree_ = nullptr;
   size_t* in_offset_ = nullptr;
