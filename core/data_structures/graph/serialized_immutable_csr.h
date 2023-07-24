@@ -13,21 +13,21 @@ class SerializedImmutableCSR : public Serialized {
 
   // Reader call this function to push buffers into csr_buffer_.
   void ReceiveBuffers(std::list<OwnedBuffer>&& buffers) override {
-    this->csr_buffer_.push_back(buffers);
+    csr_buffer_.emplace_back(std::move(buffers));
   };
 
   // Writer call this function to pop buffers from csr_buffer_ to Disk.
   std::list<OwnedBuffer> PopNextImpl() override {
     // TODO: implement this function.
-    return std::list<OwnedBuffer>();
-  };
+    // return std::list<OwnedBuffer>();
+  }
 
  public:
-  SerializedImmutableCSR(){};
-  bool HasNext() const override { return this->csr_buffer_.size() > 0; };
+  SerializedImmutableCSR() {}
+  bool HasNext() const override { return this->csr_buffer_.size() > 0; }
 
-  std::list<std::list<OwnedBuffer>>& get_csr_buffer() {
-    return this->csr_buffer_;
+  std::list<std::list<OwnedBuffer>>& get_csr_buffer(){
+      // return this->csr_buffer_;
   };
 };
 
