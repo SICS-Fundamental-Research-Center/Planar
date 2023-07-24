@@ -7,7 +7,7 @@
 #include "data_structures/serialized.h"
 #include <memory>
 
-namespace sics::graph::core::data_structures::csr_graph {
+namespace sics::graph::core::data_structures::graph {
 
 using GraphID = sics::graph::core::common::GraphID;
 using VertexID = sics::graph::core::common::VertexID;
@@ -17,32 +17,14 @@ class SerializableImmutableCSR : public Serializable {
   SerializableImmutableCSR(const GraphID gid, const VertexID max_vid)
       : gid_(gid), max_vid_(max_vid) {}
 
-  std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) override {
-    // TODO: Implement this.
-    return std::make_unique<SerializedImmutableCSR>();
-  }
+  std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) override;
 
   void Deserialize(common::TaskRunner& runner,
-                   Serialized&& serialized) override {
-    serialized_immutable_csr_ =
-        static_cast<SerializedImmutableCSR&&>(serialized);
-    auto csr_buffer = serialized_immutable_csr_.get_csr_buffer();
-    auto iter = csr_buffer.begin();
-    if (iter != csr_buffer.end()) {
-      ParseMetadata(*iter++);
-    }
-    if (iter != csr_buffer.end()) {
-      ParseSubgraphCSR(*iter++);
-    }
-  }
+                   Serialized&& serialized) override;
 
-  void ParseMetadata(std::list<OwnedBuffer>) {
-    // Parse metadata from buffer.
-  }
+  void ParseMetadata(std::list<OwnedBuffer>);
 
-  void ParseSubgraphCSR(std::list<OwnedBuffer>) {
-    // Parse subgraph_csr from buffer.
-  }
+  void ParseSubgraphCSR(std::list<OwnedBuffer>);
 
   inline GraphID get_gid() const { return gid_; }
   inline void set_gid(GraphID gid) { gid_ = gid; }
@@ -72,6 +54,6 @@ class SerializableImmutableCSR : public Serializable {
   size_t* out_offset_ = nullptr;
 };
 
-}  // namespace sics::graph::core::data_structures::csr_graph
+}  // namespace sics::graph::core::data_structures::graph
 
 #endif  // GRAPH_SYSTEMS_SERIALIZABLE_IMMUTABLE_CSR_H
