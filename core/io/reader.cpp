@@ -146,6 +146,8 @@ bool Reader::ReadEdgelistGlobalYaml() {
   try {
     std::ifstream fin(path_edgelist_global_yaml_);
     if (!fin.is_open()) {
+      std::cerr << "Error opening edgelist global YAML file: "
+                << path_edgelist_global_yaml_ << std::endl;
       return false;
     }
     YAML::Node yaml_node = YAML::Load(fin);
