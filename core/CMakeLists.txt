@@ -22,6 +22,8 @@ file(GLOB GRAPH_CORE_SOURCES
         "data_structures/*.cpp"
         "util/*.cpp"
         )
+list(FILTER GRAPH_CORE_SOURCES EXCLUDE REGEX ".*_test\\.cpp$")
+message(STATUS "CORE source files: ${GRAPH_CORE_SOURCES}")
 
 file(GLOB GRAPH_CORE_HEADERS
         "*.h"
