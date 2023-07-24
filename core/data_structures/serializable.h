@@ -12,9 +12,6 @@ class Serializable {
   struct Metadata {};
 
  public:
-  // Static assert here.
-
- public:
   virtual std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) = 0;
   virtual void Deserialize(common::TaskRunner& runner,
                            Serialized&& serialized) = 0;
