@@ -27,16 +27,16 @@ Reader::Reader(std::string path_edgelist_global_yaml) : path_edgelist_global_yam
 // return true if need to adapt
 bool Reader::JudgeAdapt() {
   std::string file_path = work_dir_ + "/" + CSR_GLOBLE_FILE_NAME;
-  return std::filesystem::exists(file_path);
+  return std::experimental::filesystem::exists(file_path);
 }
 
 // read subgraph from ssd
 // if enforce_adapt is true, use io_adapter to adapt edgelist to csr
 void Reader::ReadSubgraph(size_t subgraph_id, bool enforce_adapt) {
-  if (enforce_adapt || judge_adapt()) {
+  if (enforce_adapt || JudgeAdapt()) {
       // TODO(zhj): use io_adapter to adapt edgelist to csr
   }
-  read_csr(subgraph_id);
+  ReadCsr(subgraph_id);
 }
 
 // read csr of a certain subgraph from ssd
@@ -54,36 +54,23 @@ void Reader::ReadSubgraph(size_t subgraph_id, bool enforce_adapt) {
 void Reader::ReadCsr(size_t subgraph_id) {
   std::string global_file_path = work_dir_ + "/" + CSR_GLOBLE_FILE_NAME;
 
-  // Initialize io_uring
-  struct io_uring ring;
-  io_uring_queue_init(&ring);
-
-  std::string dir_path = work_dir_ + "/" + std::to_string(dir_num);
-  std::string yaml_file_path = dir_path + "/" + std::to_string(dir_num) + ".yaml";
-  std::string data_file_path = dir_path + "/" + std::to_string(dir_num) + "_data.bin";
-  std::string attr_file_path = dir_path + "/" + std::to_string(dir_num) + "_attr.bin";
-
-  // create temp storing buffer list
-  std::list<std::list<OwnedBuffer>> buffer_list;
+  std::string dir_path = work_dir_ + "/" + std::to_string(subgraph_id);
+  std::string yaml_file_path = dir_path + "/" + std::to_string(subgraph_id) + ".yaml";
+  std::string data_file_path = dir_path + "/" + std::to_string(subgraph_id) + "_data.bin";
+  std::string attr_file_path = dir_path + "/" + std::to_string(subgraph_id) + "_attr.bin";
 
   // read files
   try {
-    read_yaml(yaml_file_path, &buffer_list);
-    read_bin_file(data_file_path, ring, &buffer_list);
-    read_bin_file(attr_file_path, ring, &buffer_list);
+    ReadYaml(yaml_file_path);
+    ReadBinFile(data_file_path);
+    ReadBinFile(attr_file_path);
   } catch(const std::exception& e) {
     std::cerr << e.what() << std::endl;
   }
-
-  // Clean up io_uring
-  io_uring_queue_exit(&ring);
-
-  // Add buffer_list to serialized_
-  serialized_.ReceiveBuffers(std::move(buffer_list));
 }
 
 // read yaml file
-void Reader::ReadYaml(std::string yaml_file_path, std::list<list<OwnedBuffer>>* buffer_list) {
+void Reader::ReadYaml(std::string yaml_file_path) {
   // read yaml file yaml_file_path
   YAML::Node yaml_file = YAML::LoadFile(yaml_file_path);
 
@@ -104,12 +91,12 @@ void Reader::ReadYaml(std::string yaml_file_path, std::list<list<OwnedBuffer>>* 
   owned_buffer.SetPointer(yaml_file.as<std::string>().c_str());
 
   // Add the Buffer list to list
-  file_buffers.push_back(std::move(buffer));
-  buffer_list->push_back(std::move(file_buffers));
+  file_buffers.push_back(std::move(owned_buffer));
+  serialized_->ReceiveBuffers(std::move(file_buffers));
 }
 
 // read data file
-void Reader::ReadBinFile(std::string data_file_path, struct io_uring ring, std::list<list<OwnedBuffer>>* buffer_list) {
+void Reader::ReadBinFile(std::string data_file_path) {
   FILE* file = fopen(data_file_path.c_str(), "rb");
   if (!file) {
     throw std::runtime_error("Error opening bin file: " + data_file_path);
@@ -120,35 +107,27 @@ void Reader::ReadBinFile(std::string data_file_path, struct io_uring ring, std::
   size_t fileSize = ftell(file);
   fseek(file, 0, SEEK_SET);
 
-  // Create an async IO request to read the file.
+  // Allocate memory to store file data.
   uint8_t* data = new uint8_t[fileSize];
-  io_uring_sqe* sqe = io_uring_get_sqe(&ring);
-  io_uring_prep_read(sqe, fileno(file), data, fileSize, 0);
-  io_uring_submit(&ring);
 
-  // Wait for the async IO request to complete.
-  io_uring_cqe* cqe;
-  io_uring_wait_cqe(&ring, &cqe);
-
-  // Check if the async read was successful
-  if (cqe->res < 0) {
+  // Read the file data.
+  size_t bytesRead = fread(data, 1, fileSize, file);
+  if (bytesRead != fileSize) {
     fclose(file);
     delete[] data;
-    io_uring_cqe_seen(&ring, cqe);
-    throw std::runtime_error("Error in async I/O read");
+    throw std::runtime_error("Error reading file: " + data_file_path);
   }
 
   // Move the data to a OwnedBuffer object.
-  Buffer OwnedBuffer(fileSize);
+  OwnedBuffer owned_buffer(fileSize);
   OwnedBuffer.SetPointer(data);
 
   std::list<OwnedBuffer> file_buffers;
-  file_buffers.push_back(std::move(buffer));
-  buffer_list->push_back(std::move(file_buffers));
+  file_buffers.push_back(std::move(owned_buffer));
+  serialized_->ReceiveBuffers(std::move(file_buffers));
 
   // Clean up
   fclose(file);
-  io_uring_cqe_seen(&ring, cqe);
 }
 
 // read edgelist global yaml file

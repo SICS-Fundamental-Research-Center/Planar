@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+using sics::graph::core::io::Reader;
 
 namespace sics::graph::core::test {
 

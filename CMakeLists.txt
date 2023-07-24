@@ -37,9 +37,6 @@ endif ()
 # folly
 find_package(FOLLY REQUIRED)
 
-# liburing
-find_package(liburing REQUIRED)
-
 ###### Add third party to the project, if necessary ######
 if (TEST)
     enable_testing()
@@ -53,8 +50,11 @@ endif ()
 find_package(gflags CONFIG REQUIRED)
 include_directories(${FOLLY_INCLUDE_DIR})
 
-# yaml
-add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp")
+# # yaml
+# add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp")
+
+# yaml-cpp
+include_directories(${THIRD_PARTY_ROOT}/yaml-cpp/include/)
 
 #######################
 # Artifacts
