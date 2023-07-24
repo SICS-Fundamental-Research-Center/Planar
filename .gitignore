@@ -1,8 +1,9 @@
 # Directories
 bin
+build
 cmake-build-debug
 cmake-build-release
 .idea
 
 # Auxiliary files
-Makefile
+./Makefile
