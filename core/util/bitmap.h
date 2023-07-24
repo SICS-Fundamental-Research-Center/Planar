@@ -1,6 +1,7 @@
 #ifndef GRAPH_SYSTEMS_BITMAP_H
 #define GRAPH_SYSTEMS_BITMAP_H
 
+#include "logging.h"
 #include <cassert>
 #include <cstring>
 #include <stdint.h>
@@ -86,7 +87,7 @@ class Bitmap {
 
   size_t Count() const {
     auto count  = 0;
-    for (size_t i = 0; i <= WORD_OFFSET(i); i++) {
+    for (size_t i = 0; i <= WORD_OFFSET(size_); i++) {
       auto x = data_[i];
       x = (x & (0x5555555555555555)) + ((x >> 1) & (0x5555555555555555));
       x = (x & (0x3333333333333333)) + ((x >> 2) & (0x3333333333333333));
@@ -96,6 +97,7 @@ class Bitmap {
       x = (x & (0x00000000ffffffff)) + ((x >> 32) & (0x00000000ffffffff));
       count +=x;
     }
+    LOG_INFO(count);
     return count;
   }
 
