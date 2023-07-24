@@ -14,6 +14,7 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif ()
 message(STATUS "[Graph Systems] will build in type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Using compiler: ${CMAKE_CXX_COMPILER} ${CMAKE_CXX_COMPILER_VERSION}")
 
 ###### Directories shortcuts ######
 set(PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -55,6 +56,10 @@ endif ()
 find_package(gflags CONFIG REQUIRED)
 
 # yaml
+set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
+set(YAML_CPP_INSTALL OFF)
+set(YAML_CPP_BUILD_TESTS OFF)
+set(YAML_CPP_BUILD_TOOLS OFF)
 include_directories(SYSTEM ${THIRD_PARTY_ROOT}/yaml-cpp/include/)
 add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp" EXCLUDE_FROM_ALL)
 
