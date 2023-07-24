@@ -55,6 +55,10 @@ endif ()
 find_package(gflags CONFIG REQUIRED)
 
 # yaml
+set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
+set(YAML_CPP_INSTALL OFF)
+set(YAML_CPP_BUILD_TESTS OFF)
+set(YAML_CPP_BUILD_TOOLS OFF)
 include_directories(SYSTEM ${THIRD_PARTY_ROOT}/yaml-cpp/include/)
 add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp" EXCLUDE_FROM_ALL)
 
