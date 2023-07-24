@@ -25,10 +25,12 @@ foreach (testfile ${testfiles})
     string(TOUPPER ${testname} TESTNAME)
     add_executable(${filename} "${testfile}")
     target_link_libraries(${filename}
+            graph_systems_core
             gtest
             gtest_main
             ${FOLLY_LIBRARIES}
             ${LIBFMT_LIBRARY}
+            yaml-cpp::yaml-cpp
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
 endforeach ()
