@@ -36,6 +36,8 @@ endif ()
 
 # folly
 find_package(FOLLY REQUIRED)
+find_package(fmt REQUIRED)
+include_directories(SYSTEM ${FOLLY_INCLUDE_DIR})
 
 ###### Add third party to the project, if necessary ######
 if (TEST)
@@ -43,15 +45,18 @@ if (TEST)
     message(STATUS "Enabling GoogleTest...")
     set(BUILD_GMOCK ON CACHE BOOL "Option: build gmock and gtest -- ON" FORCE)
     set(INSTALL_GTEST OFF CACHE BOOL "Option: install gtest -- OFF" FORCE)
-    add_subdirectory("${THIRD_PARTY_ROOT}/googletest")
+
+    include_directories(SYSTEM ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+    include_directories(SYSTEM ${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
+    add_subdirectory("${THIRD_PARTY_ROOT}/googletest" EXCLUDE_FROM_ALL)
 endif ()
 
 # gflags
 find_package(gflags CONFIG REQUIRED)
-include_directories(${FOLLY_INCLUDE_DIR})
 
 # yaml
-add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp")
+include_directories(SYSTEM ${THIRD_PARTY_ROOT}/yaml-cpp/include/)
+add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp" EXCLUDE_FROM_ALL)
 
 #######################
 # Artifacts

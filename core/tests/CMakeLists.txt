@@ -26,6 +26,7 @@ foreach (testfile ${testfiles})
             gtest
             gtest_main
             ${FOLLY_LIBRARIES}
+            ${LIBFMT_LIBRARY}
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
 endforeach ()
