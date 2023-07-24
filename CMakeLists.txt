@@ -37,6 +37,9 @@ endif ()
 # folly
 find_package(FOLLY REQUIRED)
 
+# liburing
+find_package(liburing REQUIRED)
+
 ###### Add third party to the project, if necessary ######
 if (TEST)
     enable_testing()
