@@ -1,11 +1,12 @@
 #include "serializable_immutable_csr.h"
+#include "util/logging.h"
 
 namespace sics::graph::core::data_structures::graph {
 
 std::unique_ptr<Serialized> SerializableImmutableCSR::Serialize(
     common::TaskRunner& runner) {
   // TODO: Implement this.
-  return std::make_unique<SerializedImmutableCSR>();
+  // return std::make_unique<SerializedImmutableCSR>();
 }
 
 void SerializableImmutableCSR::Deserialize(common::TaskRunner& runner,
@@ -17,14 +18,12 @@ void SerializableImmutableCSR::Deserialize(common::TaskRunner& runner,
     ParseMetadata(*iter++);
   }
   if (iter != csr_buffer.end()) {
-    ParseSubgraphCSR(*iter++);
+    ParseMetadata(*iter++);
   }
 }
 
-void SerializableImmutableCSR::ParseMetadata(std::list<OwnedBuffer> buffers) {
-    
-}
+void SerializableImmutableCSR::ParseMetadata(std::list<OwnedBuffer>) {}
 
-void SerializableImmutableCSR::ParseSubgraphCSR(
-    std::list<OwnedBuffer> buffers) {}
+void SerializableImmutableCSR::ParseSubgraphCSR(std::list<OwnedBuffer>) {}
+
 }  // namespace sics::graph::core::data_structures::graph
