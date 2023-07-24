@@ -82,26 +82,24 @@ void Reader::ReadYaml(std::string yaml_file_path) {
   // read yaml file yaml_file_path
   YAML::Node yaml_file = YAML::LoadFile(yaml_file_path);
 
-  // Open the YAML file for reading
-  std::ifstream yaml_file_stream(yaml_file_path);
-  if (!yaml_file_stream) {
-    throw std::runtime_error("Error opening yaml file: " + yaml_file_path);
-  }
+  // Convert the YAML data to a binary representation (assuming you want to
+  // serialize it)
+  std::stringstream serialized_yaml;
+  serialized_yaml << yaml_file;
 
-  // Get the size of the YAML data
-  size_t yaml_size = yaml_file.size();
+  // Get the size of the serialized YAML data
+  size_t yaml_size = serialized_yaml.str().size();
+  uint8_t* data = new uint8_t[yaml_size];
 
   // Create an OwnedBuffer and list OwnedBuffer
-  OwnedBuffer owned_buffer(yaml_size);
+  // OwnedBuffer owned_buffer(yaml_size);
   std::list<OwnedBuffer> file_buffers;
+  file_buffers.emplace_back(yaml_size);
+  file_buffers.back().SetPointer(static_cast<uint8_t*>(
+      static_cast<void*>(const_cast<char*>(serialized_yaml.str().c_str()))));
 
-  // Copy the YAML data into the OwnedBuffer's internal buffer
-  owned_buffer.SetPointer(static_cast<uint8_t*>(static_cast<void*>(
-      const_cast<char*>(yaml_file.as<std::string>().c_str()))));
-
-  // Add the Buffer list to list
-  file_buffers.push_back(std::move(owned_buffer));
   serialized_->ReceiveBuffers(std::move(file_buffers));
+  // LOG_INFO("in function ReadYaml");
 }
 
 // read data file
