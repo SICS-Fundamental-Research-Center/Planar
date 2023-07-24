@@ -14,15 +14,18 @@ class ReaderTest : public ::testing::Test {
 TEST_F(ReaderTest, JudgeAdaptTest) {
   // Test the JudgeAdapt function of the Reader class
   // Instantiate a Reader object and call the JudgeAdapt function
+
+  // EXPECT_STRNE("hello", "world");
+
   sics::graph::core::io::Reader reader(
       "/home/baiwc/workspace/graph-systems/input/minigraph_si/0.yaml");
   bool result = reader.JudgeAdapt();
   ASSERT_TRUE(result);
 }
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
+// int main(int argc, char** argv) {
+//   ::testing::InitGoogleTest(&argc, argv);
+//   return RUN_ALL_TESTS();
+// }
 
 }  // namespace sics::graph::core::test
