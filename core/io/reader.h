@@ -10,7 +10,7 @@
 #include <yaml-cpp/yaml.h>  // TODO(zhj): add yaml-cpp
 
 #include "data_structures/buffer.h"
-#include "data_structures/serializable.h"
+#include "data_structures/serialized.h"
 
 #define CSR_GLOBLE_FILE_NAME "csr_global.yaml"
 
@@ -28,10 +28,10 @@ class Reader {
 
   void ReadSubgraph(size_t subgraph_id, bool enforce_adapt = false);
 
+ private:
   void ReadCsr(size_t subgraph_id);
 
- private:
-  bool ReadYaml(std::string yaml_file_path, std::list<list<OwnedBuffer>>* buffer_list);
+  void ReadYaml(std::string yaml_file_path, std::list<list<OwnedBuffer>>* buffer_list);
 
   void ReadBinFile(std::string data_file_path, struct io_uring ring, std::list<list<OwnedBuffer>>* buffer_list);
 
