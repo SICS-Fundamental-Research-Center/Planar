@@ -3,7 +3,7 @@
 
 #include "data_structures/serialized.h"
 
-namespace sics::graph::core::data_structures::csr_graph {
+namespace sics::graph::core::data_structures::graph {
 
 class SerializedImmutableCSR : public Serialized {
  protected:
@@ -31,6 +31,6 @@ class SerializedImmutableCSR : public Serialized {
   };
 };
 
-}  // namespace sics::graph::core::data_structures::csr_graph
+}  // namespace sics::graph::core::data_structures::graph
 
 #endif  // GRAPH_SYSTEMS_SERIALIZED_IMMUTABLE_CSR_H
