@@ -29,7 +29,7 @@ foreach (testfile ${testfiles})
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
 endforeach ()
-=========
+
 file (GLOB testfiles
         "${CMAKE_CURRENT_SOURCE_DIR}/*_test.cpp"
     )
@@ -47,4 +47,3 @@ foreach (testfile ${testfiles})
         )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
 endforeach()
->>>>>>>>> Temporary merge branch 2
