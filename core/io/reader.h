@@ -1,15 +1,13 @@
 #ifndef CORE_IO_READER_H_
 #define CORE_IO_READER_H_
 
-#include <string>
-#include <list>
-#include <utility>
-#include <memory>
-
-#include "yaml-cpp/yaml.h"  // TODO(zhj): add yaml-cpp
-
 #include "data_structures/buffer.h"
 #include "data_structures/serialized.h"
+#include "yaml-cpp/yaml.h"  // TODO(zhj): add yaml-cpp
+#include <list>
+#include <memory>
+#include <string>
+#include <utility>
 
 #define CSR_GLOBLE_FILE_NAME "csr_global.yaml"
 
@@ -26,15 +24,13 @@ class Reader {
 
   void ReadSubgraph(size_t subgraph_id, bool enforce_adapt = false);
 
-  Serialized* GetSerialized() {
-    return serialized_.get();
-  }
+  Serialized* GetSerialized() { return serialized_.get(); }
 
   void SetPointer(Serialized* p) {
     serialized_ = std::unique_ptr<Serialized>(p);
   }
 
- private:
+ public:
   void ReadCsr(size_t subgraph_id);
 
   void ReadYaml(std::string yaml_file_path);
