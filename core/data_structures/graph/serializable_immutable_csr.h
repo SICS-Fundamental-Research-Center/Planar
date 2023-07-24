@@ -15,16 +15,16 @@ using VertexID = sics::graph::core::common::VertexID;
 class SerializableImmutableCSR : public Serializable {
  public:
   SerializableImmutableCSR(const GraphID gid, const VertexID max_vid)
-      : gid_(gid), max_vid_(max_vid) {}
+      : Serializable(), gid_(gid), max_vid_(max_vid) {}
 
-  std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) override;
+  std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) override {}
 
   void Deserialize(common::TaskRunner& runner,
-                   Serialized&& serialized) override;
+                   Serialized&& serialized) override {}
 
-  void ParseMetadata(std::list<OwnedBuffer>);
+  void ParseMetadata(std::list<OwnedBuffer>& buffer_list);
 
-  void ParseSubgraphCSR(std::list<OwnedBuffer>);
+  void ParseSubgraphCSR(std::list<OwnedBuffer>& buffer_list);
 
   inline GraphID get_gid() const { return gid_; }
   inline void set_gid(GraphID gid) { gid_ = gid; }

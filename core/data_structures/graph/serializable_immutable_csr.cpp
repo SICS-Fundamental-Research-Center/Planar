@@ -22,8 +22,12 @@ void SerializableImmutableCSR::Deserialize(common::TaskRunner& runner,
   }
 }
 
-void SerializableImmutableCSR::ParseMetadata(std::list<OwnedBuffer>) {}
+void SerializableImmutableCSR::ParseMetadata(
+    std::list<OwnedBuffer>& buffer_list) {}
 
-void SerializableImmutableCSR::ParseSubgraphCSR(std::list<OwnedBuffer>) {}
+void SerializableImmutableCSR::ParseSubgraphCSR(
+    std::list<OwnedBuffer>& buffer_list) {
+  OwnedBuffer& buffer = buffer_list.front();
+}
 
 }  // namespace sics::graph::core::data_structures::graph
