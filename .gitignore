@@ -5,6 +5,8 @@ cmake-build-release
 .idea
 .vscode
 input
+third_party
+build
 
 # Auxiliary files
 Makefile

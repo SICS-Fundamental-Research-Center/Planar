@@ -1,20 +1,19 @@
 #ifndef CORE_IO_READER_H_
 #define CORE_IO_READER_H_
 
+#include <liburing.h>  // TODO(zhj): add io_uring
+#include <yaml-cpp/yaml.h>  // TODO(zhj): add yaml-cpp
+#include <folly/concurrency/ConcurrentQueue.h>  // TODO(zhj): add folly
+
 #include <string>
 #include <list>
 #include <utility>
-
-#include <liburing.h>  // TODO(zhj): add io_uring
-#include <folly/concurrency/ConcurrentQueue.h>  // TODO(zhj): add folly
-#include <yaml-cpp/yaml.h>  // TODO(zhj): add yaml-cpp
 
 #include "data_structures/buffer.h"
 #include "data_structures/serialized.h"
 
 #define CSR_GLOBLE_FILE_NAME "csr_global.yaml"
 
-// TODO(zhj): maybe need to be deleted
 using sics::graph::core::data_structures::OwnedBuffer OwnedBuffer;
 using sics::graph::core::data_structures::Serialized Serialized;
 
@@ -27,6 +26,10 @@ class Reader {
   bool JudgeAdapt();
 
   void ReadSubgraph(size_t subgraph_id, bool enforce_adapt = false);
+
+  Serialized* GetSerialized() {
+    return &serialized_;
+  }
 
  private:
   void ReadCsr(size_t subgraph_id);

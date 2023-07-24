@@ -1,7 +1,6 @@
-#include "reader.h"
+#include "io/reader.h"
 
 namespace sics::graph::core::io {
-
 // Class to read data from ssd to memory.
 // First read config file of edgelist and judge
 // whether it needs to be adapted into csr with io_adapter.
@@ -150,6 +149,7 @@ void Reader::ReadBinFile(std::string data_file_path, struct io_uring ring, std::
   // Clean up
   fclose(file);
   io_uring_cqe_seen(&ring, cqe);
+}
 
 // read edgelist global yaml file
 // return true if success
@@ -175,6 +175,5 @@ bool Reader::ReadEdgelistGlobalYaml() {
     return false;
   }
 }
-
 }  // namespace sics::graph::core::io
 
