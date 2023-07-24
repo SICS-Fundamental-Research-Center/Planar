@@ -55,7 +55,10 @@ endif ()
 find_package(gflags CONFIG REQUIRED)
 
 # yaml
-add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp")
+# add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp")
+
+# yaml-cpp
+include_directories(${THIRD_PARTY_ROOT}/yaml-cpp/include/)
 
 #######################
 # Artifacts
