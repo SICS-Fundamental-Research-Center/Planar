@@ -9,11 +9,10 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/tests/)
 # Build Unit Tests #
 ####################
 file(GLOB testfiles
-        "${PROJECT_ROOT_DIR}/core/util/*_test.cpp"
-        "${PROJECT_ROOT_DIR}/core/data_structures/*_test.cpp"
         "${PROJECT_ROOT_DIR}/core/common/*_test.cpp"
         "${PROJECT_ROOT_DIR}/core/common/multithreading/*_test.cpp"
-        "${PROJECT_ROOT_DIR}/tests/*_test.cpp"
+        "${PROJECT_ROOT_DIR}/core/data_structures/*_test.cpp"
+        "${PROJECT_ROOT_DIR}/core/util/*_test.cpp"
         )
 
 foreach (testfile ${testfiles})
