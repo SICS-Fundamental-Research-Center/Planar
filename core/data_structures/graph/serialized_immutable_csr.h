@@ -12,20 +12,23 @@ class SerializedImmutableCSR : public Serialized {
   std::list<std::list<OwnedBuffer>> csr_buffer_;
 
   // Reader call this function to push buffers into csr_buffer_.
-  void ReceiveBuffers(std::list<Buffer>&& buffers) override {
-    this->csr_buffer_.push_back(std::move(buffers));
+  void ReceiveBuffers(std::list<OwnedBuffer>&& buffers) override {
+    this->csr_buffer_.push_back(buffers);
   };
 
   // Writer call this function to pop buffers from csr_buffer_ to Disk.
   std::list<OwnedBuffer> PopNextImpl() override {
-    std::list<Buffer> result = std::move(this->csr_buffer_.front());
-    this->csr_buffer_.pop_front();
-    return result;
+    // TODO: implement this function.
+    return std::list<OwnedBuffer>();
   };
 
  public:
   SerializedImmutableCSR(){};
   bool HasNext() const override { return this->csr_buffer_.size() > 0; };
+
+  std::list<std::list<OwnedBuffer>>& get_csr_buffer() {
+    return this->csr_buffer_;
+  };
 };
 
 }  // namespace sics::graph::core::data_structures::csr_graph
