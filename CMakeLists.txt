@@ -14,6 +14,7 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif ()
 message(STATUS "[Graph Systems] will build in type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Using compiler: ${CMAKE_CXX_COMPILER} ${CMAKE_CXX_COMPILER_VERSION}")
 
 ###### Directories shortcuts ######
 set(PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
