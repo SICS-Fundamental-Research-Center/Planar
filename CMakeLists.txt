@@ -76,7 +76,12 @@ foreach (appfile ${appfiles})
     message(STATUS "Found apps: ${appfile}")
     get_filename_component(app ${appfile} NAME_WE)
     add_executable("${app}_exec" ${appfile})
-    target_link_libraries("${app}_exec" graph_systems_core)
+    target_link_libraries("${app}_exec"
+            graph_systems_core
+            ${FOLLY_LIBRARIES}
+            ${LIBFMT_LIBRARY}
+            yaml-cpp::yaml-cpp
+            )
 endforeach ()
 
 
