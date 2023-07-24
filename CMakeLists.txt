@@ -55,7 +55,8 @@ endif ()
 find_package(gflags CONFIG REQUIRED)
 
 # yaml
-add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp")
+include_directories(SYSTEM ${THIRD_PARTY_ROOT}/yaml-cpp/include/)
+add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp" EXCLUDE_FROM_ALL)
 
 #######################
 # Artifacts
@@ -72,5 +73,3 @@ foreach (appfile ${appfiles})
     add_executable("${app}_exec" ${appfile})
     target_link_libraries("${app}_exec" graph_systems_core)
 endforeach ()
-
-
