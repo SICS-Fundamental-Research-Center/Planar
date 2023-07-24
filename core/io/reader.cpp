@@ -1,4 +1,7 @@
 #include "io/reader.h"
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 
 namespace sics::graph::core::io {
 // Class to read data from ssd to memory.
@@ -13,10 +16,12 @@ namespace sics::graph::core::io {
 // TODO(zhj): don't know format details yet
 // Example:
 //  Reader reader("path.yaml");
-Reader::Reader(std::string path_edgelist_global_yaml) : path_edgelist_global_yaml_(path_edgelist_global_yaml) {
+Reader::Reader(std::string path_edgelist_global_yaml)
+    : path_edgelist_global_yaml_(path_edgelist_global_yaml) {
   try {
-    if (!read_edgelist_global_yaml()) {
-        throw std::runtime_error("Error reading edgelist global YAML file: " + path_edgelist_global_yaml_);
+    if (!ReadEdgelistGlobalYaml()) {
+      throw std::runtime_error("Error reading edgelist global YAML file: " +
+                               path_edgelist_global_yaml_);
     }
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
@@ -27,14 +32,14 @@ Reader::Reader(std::string path_edgelist_global_yaml) : path_edgelist_global_yam
 // return true if need to adapt
 bool Reader::JudgeAdapt() {
   std::string file_path = work_dir_ + "/" + CSR_GLOBLE_FILE_NAME;
-  return std::experimental::filesystem::exists(file_path);
+  return std::filesystem::exists(file_path);
 }
 
 // read subgraph from ssd
 // if enforce_adapt is true, use io_adapter to adapt edgelist to csr
 void Reader::ReadSubgraph(size_t subgraph_id, bool enforce_adapt) {
   if (enforce_adapt || JudgeAdapt()) {
-      // TODO(zhj): use io_adapter to adapt edgelist to csr
+    // TODO(zhj): use io_adapter to adapt edgelist to csr
   }
   ReadCsr(subgraph_id);
 }
@@ -55,16 +60,19 @@ void Reader::ReadCsr(size_t subgraph_id) {
   std::string global_file_path = work_dir_ + "/" + CSR_GLOBLE_FILE_NAME;
 
   std::string dir_path = work_dir_ + "/" + std::to_string(subgraph_id);
-  std::string yaml_file_path = dir_path + "/" + std::to_string(subgraph_id) + ".yaml";
-  std::string data_file_path = dir_path + "/" + std::to_string(subgraph_id) + "_data.bin";
-  std::string attr_file_path = dir_path + "/" + std::to_string(subgraph_id) + "_attr.bin";
+  std::string yaml_file_path =
+      dir_path + "/" + std::to_string(subgraph_id) + ".yaml";
+  std::string data_file_path =
+      dir_path + "/" + std::to_string(subgraph_id) + "_data.bin";
+  std::string attr_file_path =
+      dir_path + "/" + std::to_string(subgraph_id) + "_attr.bin";
 
   // read files
   try {
     ReadYaml(yaml_file_path);
     ReadBinFile(data_file_path);
     ReadBinFile(attr_file_path);
-  } catch(const std::exception& e) {
+  } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
   }
 }
@@ -77,7 +85,7 @@ void Reader::ReadYaml(std::string yaml_file_path) {
   // Open the YAML file for reading
   std::ifstream yaml_file_stream(yaml_file_path);
   if (!yaml_file_stream) {
-      throw std::runtime_error("Error opening yaml file: " + yaml_file_stream);
+    throw std::runtime_error("Error opening yaml file: " + yaml_file_path);
   }
 
   // Get the size of the YAML data
@@ -88,7 +96,8 @@ void Reader::ReadYaml(std::string yaml_file_path) {
   std::list<OwnedBuffer> file_buffers;
 
   // Copy the YAML data into the OwnedBuffer's internal buffer
-  owned_buffer.SetPointer(yaml_file.as<std::string>().c_str());
+  owned_buffer.SetPointer(static_cast<uint8_t*>(static_cast<void*>(
+      const_cast<char*>(yaml_file.as<std::string>().c_str()))));
 
   // Add the Buffer list to list
   file_buffers.push_back(std::move(owned_buffer));
@@ -120,7 +129,7 @@ void Reader::ReadBinFile(std::string data_file_path) {
 
   // Move the data to a OwnedBuffer object.
   OwnedBuffer owned_buffer(fileSize);
-  OwnedBuffer.SetPointer(data);
+  owned_buffer.SetPointer(data);
 
   std::list<OwnedBuffer> file_buffers;
   file_buffers.push_back(std::move(owned_buffer));
@@ -137,16 +146,16 @@ bool Reader::ReadEdgelistGlobalYaml() {
   try {
     std::ifstream fin(path_edgelist_global_yaml_);
     if (!fin.is_open()) {
-        return false;
+      return false;
     }
     YAML::Node yaml_node = YAML::Load(fin);
 
     // get work_dir
     if (yaml_node["work_dir"]) {
-        work_dir_ = yaml_node["work_dir"].as<std::string>();
-        return true;
+      work_dir_ = yaml_node["work_dir"].as<std::string>();
+      return true;
     } else {
-        return false;
+      return false;
     }
   } catch (const YAML::Exception& e) {
     // deal with yaml error
@@ -155,4 +164,3 @@ bool Reader::ReadEdgelistGlobalYaml() {
   }
 }
 }  // namespace sics::graph::core::io
-

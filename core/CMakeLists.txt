@@ -21,6 +21,7 @@ file(GLOB GRAPH_CORE_SOURCES
         "common/multithreading/*.cpp"
         "data_structures/*.cpp"
         "util/*.cpp"
+        "io/*.cpp"
         )
 
 file(GLOB GRAPH_CORE_HEADERS
@@ -29,6 +30,7 @@ file(GLOB GRAPH_CORE_HEADERS
         "common/multithreading/*.h"
         "data_structures/*.h"
         "util/*.h"
+        "io/*.h"
         )
 
 #######################
