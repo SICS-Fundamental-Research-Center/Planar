@@ -1,8 +1,5 @@
 #include "io/reader.h"
-
 #include <gtest/gtest.h>
-
-using sics::graph::core::io::Reader;
 
 namespace sics::graph::core::test {
 
@@ -17,14 +14,15 @@ class ReaderTest : public ::testing::Test {
 TEST_F(ReaderTest, JudgeAdaptTest) {
   // Test the JudgeAdapt function of the Reader class
   // Instantiate a Reader object and call the JudgeAdapt function
-  Reader reader("/Users/zhj/Projects/graph-systems/input/test_dir/config.yaml");
+  sics::graph::core::io::Reader reader(
+      "/home/baiwc/workspace/graph-systems/input/minigraph_si/0.yaml");
   bool result = reader.JudgeAdapt();
   ASSERT_TRUE(result);
 }
 
 int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
 
 }  // namespace sics::graph::core::test
