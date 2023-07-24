@@ -7,7 +7,6 @@ using SerializedImmutableCSR =
     sics::graph::core::data_structures::graph::SerializedImmutableCSR;
 
 namespace sics::graph::core::io {
-namespace sics::graph::core::io {
 
 // The fixture for testing class LogTest
 class ReaderTest : public ::testing::Test {
