@@ -1,14 +1,14 @@
 #include "io/reader.h"
+#include "data_structures/graph/serializable_immutable_csr.h"
 #include "util/logging.h"
 #include <gtest/gtest.h>
 #include <iostream>
-#include "data_structures/graph/serializable_immutable_csr.h"
 
 using SerializedImmutableCSR =
     sics::graph::core::data_structures::graph::SerializedImmutableCSR;
 
 #define SUBGRAPH_PATH \
-  "/Users/zhj/Projects/graph-systems/input/test_dir/0"
+  "/home/baiwc/workspace/graph-systems/input/test/0/0_data.bin"
 
 namespace sics::graph::core::io {
 
@@ -32,11 +32,12 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
   reader.ReadSubgraph(SUBGRAPH_PATH, serialized_immutable_csr);
 
   LOG_INFO("end reading");
-  uint8_t* a = serialized_immutable_csr->get_csr_buffer().front().front().Get((4846609-5)*4);
+  uint8_t* a = serialized_immutable_csr->get_csr_buffer().front().front().Get(
+      (4846609 - 5) * 4);
   uint32_t* a_uint32 = reinterpret_cast<uint32_t*>(a);
-    for (std::size_t i = 0; i < 10; i++) {
-        std::cout << "Element " << i << ": " << a_uint32[i] << std::endl;
-    }
+  for (std::size_t i = 0; i < 10; i++) {
+    std::cout << "Element " << i << ": " << a_uint32[i] << std::endl;
+  }
 }
 
 // Test the ReadSubgraph function of the Reader class
