@@ -18,7 +18,6 @@ class ReaderTest : public ::testing::Test {
 };
 
 // Test the JudgeAdapt function of the Reader class
-// Instantiate a Reader object and call the JudgeAdapt function
 TEST_F(ReaderTest, JudgeAdaptTest) {
   // Test with an existing config file
   Reader reader(CONFIG_PATH);
@@ -26,6 +25,14 @@ TEST_F(ReaderTest, JudgeAdaptTest) {
   ASSERT_TRUE(result);
 }
 
+// Test the init function of the Reader class
+TEST_F(ReaderTest, ReaderConstructionTest) {
+  // Test with an non existing config file
+  ASSERT_EXIT(Reader reader("non_existing_config.yaml"),
+              ::testing::ExitedWithCode(EXIT_FAILURE), ".*");
+}
+
+// Test the ReadSubgraph function of the Reader class
 TEST_F(ReaderTest, ReadSubgraphTest) {
   // Create a Reader object and set the work_dir_ to a known directory
   Reader reader(CONFIG_PATH);
@@ -39,6 +46,7 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
   reader.ReadSubgraph(0, false);
 }
 
+// Test the ReadSubgraph function of the Reader class
 TEST_F(ReaderTest, ReadSubgraphTest1) {
   // Create a Reader object and set the work_dir_ to a known directory
   Reader reader(CONFIG_PATH);

@@ -70,7 +70,7 @@ void Reader::ReadCsr(size_t subgraph_id) {
 
   // read files
   try {
-    ReadYaml(yaml_file_path);
+    // ReadYaml(yaml_file_path);
     ReadBinFile(data_file_path);
     // ReadBinFile(attr_file_path);
   } catch (const std::exception& e) {
@@ -80,6 +80,7 @@ void Reader::ReadCsr(size_t subgraph_id) {
 }
 
 // read yaml file
+// not used
 void Reader::ReadYaml(std::string yaml_file_path) {
   // read yaml file yaml_file_path
   YAML::Node yaml_file = YAML::LoadFile(yaml_file_path);
