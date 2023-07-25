@@ -14,6 +14,8 @@ using VertexID = sics::graph::core::common::VertexID;
 
 #define ALIGNMENT_FACTOR (double)64.0
 
+#define CONFIG_PATH "../../../input/test_dir/config.yaml"
+
 namespace sics::graph::core::test {
 class SerializableImmutableCSRTest : public ::testing::Test {
  protected:
@@ -22,6 +24,7 @@ class SerializableImmutableCSRTest : public ::testing::Test {
 };
 
 TEST_F(SerializableImmutableCSRTest, TestParseCSR) {
+  Reader reader;
   Reader reader("/home/baiwc/workspace/graph-systems/input/test/config.yaml");
 
   SerializedImmutableCSR* serialized_immutable_csr =

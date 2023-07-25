@@ -1,10 +1,14 @@
 #include "io/reader.h"
-#include "data_structures/graph/serializable_immutable_csr.h"
+#include "util/logging.h"
 #include <gtest/gtest.h>
 #include <iostream>
+#include "data_structures/graph/serializable_immutable_csr.h"
 
 using SerializedImmutableCSR =
     sics::graph::core::data_structures::graph::SerializedImmutableCSR;
+
+#define SUBGRAPH_PATH \
+  "/Users/zhj/Projects/graph-systems/input/test_dir/0"
 
 namespace sics::graph::core::io {
 
@@ -15,40 +19,52 @@ class ReaderTest : public ::testing::Test {
   ~ReaderTest() override = default;
 };
 
-// Test the JudgeAdapt function of the Reader class
-// Instantiate a Reader object and call the JudgeAdapt function
-TEST_F(ReaderTest, JudgeAdaptTest) {
-  // Test with an existing config file
-  Reader reader("/home/baiwc/workspace/graph-systems/input/test/config.yaml");
-  bool result = reader.JudgeAdapt();
-  ASSERT_TRUE(result);
-
-  // Test with a non-existing config file
-  Reader reader_non_exist("non_exist_config.yaml");
-  bool result_non_exist = reader_non_exist.JudgeAdapt();
-  ASSERT_FALSE(result_non_exist);
-}
-
+// Test the ReadSubgraph function of the Reader class
 TEST_F(ReaderTest, ReadSubgraphTest) {
-  // Create a Reader object and set the work_dir_ to a known directory
-  Reader reader("/home/baiwc/workspace/graph-systems/input/test/config.yaml");
+  // Create a Reader object
+  Reader reader;
 
   // initialize a Serialized object
   SerializedImmutableCSR* serialized_immutable_csr =
       new SerializedImmutableCSR();
-  reader.SetPointer(serialized_immutable_csr);
 
-  // Read a subgraph with enforce_adapt set to false
-  reader.ReadSubgraph(0, false);
+  // Read a subgraph
+  reader.ReadSubgraph(SUBGRAPH_PATH, serialized_immutable_csr);
+
+  LOG_INFO("end reading");
+  uint8_t* a = serialized_immutable_csr->get_csr_buffer().front().front().Get((4846609-5)*4);
+  uint32_t* a_uint32 = reinterpret_cast<uint32_t*>(a);
+    for (std::size_t i = 0; i < 10; i++) {
+        std::cout << "Element " << i << ": " << a_uint32[i] << std::endl;
+    }
 }
 
-// TEST_F(ReaderTest, ReadSubgraphTest1) {
+// Test the ReadSubgraph function of the Reader class
+TEST_F(ReaderTest, ReadSubgraphTest1) {
+  // Create a Reader object
+  Reader reader;
+
+  // initialize a Serialized object
+  SerializedImmutableCSR* serialized_immutable_csr =
+      new SerializedImmutableCSR();
+
+  // Read a subgraph
+  ASSERT_EXIT(reader.ReadSubgraph("non_exist_file", serialized_immutable_csr),
+              ::testing::ExitedWithCode(EXIT_FAILURE), ".*");
+}
+
+// // Test the ReadBinFile function of the Reader class
+// TEST_F(ReaderTest, ReadBinFileTest) {
 //   // Create a Reader object and set the work_dir_ to a known directory
-//   Reader
-//   reader("/Users/zhj/Projects/graph-systems/input/test_dir/config.yaml");
+//   Reader reader();
+
+//   // initialize a Serialized object
+//   SerializedImmutableCSR* serialized_immutable_csr =
+//       new SerializedImmutableCSR();
+//   reader.SetPointer(serialized_immutable_csr);
 
 //   // Read a subgraph with enforce_adapt set to false
-//   ASSERT_EXIT(reader.ReadSubgraph(1, false),
-//   ::testing::ExitedWithCode(EXIT_FAILURE), ".*");
+//   reader.ReadBinFile(
+//       "/Users/zhj/Projects/graph-systems/input/test_dir/0/0_data.bin");
 // }
 }  // namespace sics::graph::core::io
