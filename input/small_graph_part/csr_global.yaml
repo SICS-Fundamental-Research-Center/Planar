@@ -1,0 +1,16 @@
+global:
+  num_vertices: 56
+  num_edges: 100
+  max_vid: 55
+subgraph:
+  gid: 0
+  num_vertices: 28
+  sum_in_degree: 61
+  sum_out_degree: 68
+  max_vid: 27
+subgraph:
+  gid: 1
+  num_vertices: 28
+  sum_in_degree: 39
+  sum_out_degree: 32
+  max_vid: 55

@@ -1,14 +1,15 @@
-#include "io/reader.h"
-#include "util/logging.h"
 #include <gtest/gtest.h>
 #include <iostream>
+#include <filesystem>
+#include "io/reader.h"
 #include "data_structures/graph/serializable_immutable_csr.h"
+#include "util/logging.h"
 
 using SerializedImmutableCSR =
     sics::graph::core::data_structures::graph::SerializedImmutableCSR;
 
-#define SUBGRAPH_PATH \
-  "/Users/zhj/Projects/graph-systems/input/test_dir/0"
+#define SUBGRAPH_1_PATH \
+  "../../../input/small_graph_part/0"
 
 namespace sics::graph::core::io {
 
@@ -29,12 +30,13 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
       new SerializedImmutableCSR();
 
   // Read a subgraph
-  reader.ReadSubgraph(SUBGRAPH_PATH, serialized_immutable_csr);
+  reader.ReadSubgraph(SUBGRAPH_1_PATH, serialized_immutable_csr);
 
   LOG_INFO("end reading");
-  uint8_t* a = serialized_immutable_csr->get_csr_buffer().front().front().Get((4846609-5)*4);
-  uint32_t* a_uint32 = reinterpret_cast<uint32_t*>(a);
-    for (std::size_t i = 0; i < 10; i++) {
+  uint8_t* data = serialized_immutable_csr->get_csr_buffer().front().front().Get();
+  size_t size = serialized_immutable_csr->get_csr_buffer().front().front().GetSize();
+  uint32_t* a_uint32 = reinterpret_cast<uint32_t*>(data);
+    for (std::size_t i = 0; i < size/4; i++) {
         std::cout << "Element " << i << ": " << a_uint32[i] << std::endl;
     }
 }

@@ -5,7 +5,7 @@ cmake-build-debug
 cmake-build-release
 .idea
 .vscode
-input
+data
 build
 .DS_Store
 
