@@ -1,7 +1,12 @@
 #ifndef GRAPH_SYSTEMS_SERIALIZED_IMMUTABLE_CSR_H
 #define GRAPH_SYSTEMS_SERIALIZED_IMMUTABLE_CSR_H
 
+#include "common/types.h"
 #include "data_structures/serialized.h"
+#include "util/logging.h"
+#include <iostream>
+
+#define ALIGNMENT_FACTOR (double)64.0
 
 namespace sics::graph::core::data_structures::graph {
 
@@ -26,8 +31,8 @@ class SerializedImmutableCSR : public Serialized {
   SerializedImmutableCSR() {}
   bool HasNext() const override { return this->csr_buffer_.size() > 0; }
 
-  std::list<std::list<OwnedBuffer>>& get_csr_buffer(){
-      // return this->csr_buffer_;
+  std::list<std::list<OwnedBuffer>>& get_csr_buffer() {
+    return this->csr_buffer_;
   };
 };
 
