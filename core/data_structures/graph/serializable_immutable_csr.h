@@ -5,24 +5,24 @@
 #include "data_structures/graph/serialized_immutable_csr.h"
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
+// #include "util/logging.h"
 #include <memory>
 
 namespace sics::graph::core::data_structures::graph {
 
-using GraphID = sics::graph::core::common::GraphID;
-using VertexID = sics::graph::core::common::VertexID;
-
 class SerializableImmutableCSR : public Serializable {
+ protected:
+  using GraphID = sics::graph::core::common::GraphID;
+  using VertexID = sics::graph::core::common::VertexID;
+
  public:
   SerializableImmutableCSR(const GraphID gid, const VertexID max_vid)
       : Serializable(), gid_(gid), max_vid_(max_vid) {}
 
-  std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) override {}
+  std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) override;
 
   void Deserialize(common::TaskRunner& runner,
-                   Serialized&& serialized) override {}
-
-  void ParseMetadata(std::list<OwnedBuffer>& buffer_list);
+                   Serialized&& serialized) override;
 
   void ParseSubgraphCSR(std::list<OwnedBuffer>& buffer_list);
 
@@ -45,6 +45,7 @@ class SerializableImmutableCSR : public Serializable {
 
   // serialized data in CSR format.
   VertexID* localid_by_globalid_ = nullptr;
+  VertexID* localid_by_index_ = nullptr;
   VertexID* globalid_by_index_ = nullptr;
   VertexID* in_edges_ = nullptr;
   VertexID* out_edges_ = nullptr;
