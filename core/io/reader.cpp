@@ -1,7 +1,4 @@
 #include "io/reader.h"
-#include <filesystem>
-#include <fstream>
-#include <iostream>
 
 namespace sics::graph::core::io {
 // Class to read data from ssd to memory.
