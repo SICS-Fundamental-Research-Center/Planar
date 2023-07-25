@@ -6,8 +6,8 @@ cmake-build-release
 .idea
 .vscode
 input
-third_party
 build
+.DS_Store
 
 # Auxiliary files
 ./Makefile

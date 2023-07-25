@@ -45,6 +45,8 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
 
   // Read a subgraph with enforce_adapt set to false
   reader.ReadSubgraph(0, false);
+
+  serialized_immutable_csr->get_csr_buffer().front()->Print();
 }
 
 // Test the ReadSubgraph function of the Reader class

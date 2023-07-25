@@ -27,7 +27,7 @@ class SerializedImmutableCSR : public Serialized {
   bool HasNext() const override { return this->csr_buffer_.size() > 0; }
 
   std::list<std::list<OwnedBuffer>>& get_csr_buffer(){
-      // return this->csr_buffer_;
+      return this->csr_buffer_;
   };
 };
 
