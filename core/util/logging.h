@@ -37,7 +37,7 @@ inline std::string DefaultConfigWithLogFile(const std::string& filepath) {
 //
 // If no configuration string is provided, the logging system is initialized
 // with default config string: `kDefaultLogConfigStdout`.
-void InitOrDie(const std::string& config_str = kDefaultConfigStderr) {
+inline void InitOrDie(const std::string& config_str = kDefaultConfigStderr) {
   folly::LoggerDB::get().registerHandlerFactory(
       std::make_unique<folly::FileHandlerFactory>(), true);
   folly::initLoggingOrDie(config_str);
@@ -45,13 +45,13 @@ void InitOrDie(const std::string& config_str = kDefaultConfigStderr) {
 
 // Update the initialized logging system, with the provided configurations
 // in `config_str`.
-void UpdateConfig(const std::string& config_str) {
+inline void UpdateConfig(const std::string& config_str) {
   folly::LoggerDB::get().updateConfig(folly::parseLogConfig(config_str));
   folly::LoggerDB::get().flushAllHandlers();
 };
 // Completely override the logging system. Using the provided configurations
 // in `config_str` instead.
-void OverrideConfig(const std::string& config_str) {
+inline void OverrideConfig(const std::string& config_str) {
   folly::LoggerDB::get().resetConfig(folly::parseLogConfig(config_str));
   folly::LoggerDB::get().flushAllHandlers();
 };
@@ -87,4 +87,5 @@ void OverrideConfig(const std::string& config_str) {
 #define LOGF_DEBUG(...) XLOGF(DBG, ##__VA_ARGS__)
 
 }  // namespace sics::graph::core::util
+
 #endif  // MINIGRAPH_UTILITY_LOGGING_H_
