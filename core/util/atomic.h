@@ -1,11 +1,10 @@
 #ifndef GRAPH_SYSTEMS_ATOMIC_H
 #define GRAPH_SYSTEMS_ATOMIC_H
 
-#include <assert.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdlib>
 
 namespace sics::graph::core::util {
-
 namespace atomic {
 
 // @DESCRIPTION
