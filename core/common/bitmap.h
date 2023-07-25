@@ -1,10 +1,9 @@
 #ifndef GRAPH_SYSTEMS_BITMAP_H
 #define GRAPH_SYSTEMS_BITMAP_H
 
-#include "logging.h"
 #include <cassert>
+#include <cstdint>
 #include <cstring>
-#include <stdint.h>
 
 namespace sics::graph::core::util {
 
@@ -86,7 +85,7 @@ class Bitmap {
   }
 
   size_t Count() const {
-    auto count  = 0;
+    auto count = 0;
     for (size_t i = 0; i <= WORD_OFFSET(size_); i++) {
       auto x = data_[i];
       x = (x & (0x5555555555555555)) + ((x >> 1) & (0x5555555555555555));
@@ -95,9 +94,8 @@ class Bitmap {
       x = (x & (0x00ff00ff00ff00ff)) + ((x >> 8) & (0x00ff00ff00ff00ff));
       x = (x & (0x0000ffff0000ffff)) + ((x >> 16) & (0x0000ffff0000ffff));
       x = (x & (0x00000000ffffffff)) + ((x >> 32) & (0x00000000ffffffff));
-      count +=x;
+      count += x;
     }
-    LOG_INFO(count);
     return count;
   }
 
