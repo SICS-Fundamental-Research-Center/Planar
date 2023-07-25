@@ -33,7 +33,9 @@ class OwnedBuffer : public Buffer {
   OwnedBuffer& operator=(OwnedBuffer&& r) = default;
   ~OwnedBuffer() override { delete p_; }
 
-  Buffer GetReference(size_t offset, size_t s);
+  Buffer GetReference(size_t offset, size_t s) {
+    return Buffer(p_ + offset, s);
+  };
 };
 
 }  // namespace sics::graph::core::data_structures
