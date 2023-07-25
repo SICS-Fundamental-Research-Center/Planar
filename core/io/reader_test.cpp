@@ -1,12 +1,13 @@
 #include "io/reader.h"
+#include "data_structures/graph/serializable_immutable_csr.h"
 #include <gtest/gtest.h>
 #include <iostream>
-#include "data_structures/graph/serializable_immutable_csr.h"
 
 using SerializedImmutableCSR =
     sics::graph::core::data_structures::graph::SerializedImmutableCSR;
 
-#define CONFIG_PATH "/Users/zhj/Projects/graph-systems/input/test_dir/config.yaml"
+#define CONFIG_PATH \
+  "/Users/zhj/Projects/graph-systems/input/test_dir/config.yaml"
 
 namespace sics::graph::core::io {
 
@@ -54,5 +55,20 @@ TEST_F(ReaderTest, ReadSubgraphTest1) {
   // Read a subgraph with enforce_adapt set to false
   ASSERT_EXIT(reader.ReadSubgraph(1, false),
               ::testing::ExitedWithCode(EXIT_FAILURE), ".*");
+}
+
+// Test the ReadBinFile function of the Reader class
+TEST_F(ReaderTest, ReadBinFileTest) {
+  // Create a Reader object and set the work_dir_ to a known directory
+  Reader reader(CONFIG_PATH);
+
+  // initialize a Serialized object
+  SerializedImmutableCSR* serialized_immutable_csr =
+      new SerializedImmutableCSR();
+  reader.SetPointer(serialized_immutable_csr);
+
+  // Read a subgraph with enforce_adapt set to false
+  reader.ReadBinFile(
+      "/Users/zhj/Projects/graph-systems/input/test_dir/0/0_data.bin");
 }
 }  // namespace sics::graph::core::io
