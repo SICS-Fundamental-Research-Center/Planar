@@ -1,7 +1,7 @@
+#include "bitmap.h"
+
 #include <list>
 #include <random>
-
-#include "bitmap.h"
 
 #include <folly/FileUtil.h>
 #include <folly/Format.h>
@@ -11,7 +11,7 @@
 
 namespace sics::graph::core::util {
 
-// The fixture for testing class LogTest.
+// The fixture for testing class BitmapTest.
 class BitmapTest : public ::testing::Test {
  protected:
   BitmapTest() {
