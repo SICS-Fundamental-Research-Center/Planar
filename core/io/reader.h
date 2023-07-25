@@ -23,6 +23,8 @@ namespace sics::graph::core::io {
 // Class to read data from ssd to memory
 class Reader {
  public:
+  Reader() {}
+
   // read subgraph from ssd to Serialized object
   // path: path to the subgraph dictionary
   // dst_object: where to move ownedbuffers
