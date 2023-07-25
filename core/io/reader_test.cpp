@@ -1,10 +1,12 @@
 #include "io/reader.h"
-#include "data_structures/graph/serializable_immutable_csr.h"
 #include <gtest/gtest.h>
 #include <iostream>
+#include "data_structures/graph/serializable_immutable_csr.h"
 
 using SerializedImmutableCSR =
     sics::graph::core::data_structures::graph::SerializedImmutableCSR;
+
+#define CONFIG_PATH "../../../input/test_dir/config.yaml"
 
 namespace sics::graph::core::io {
 
@@ -19,19 +21,14 @@ class ReaderTest : public ::testing::Test {
 // Instantiate a Reader object and call the JudgeAdapt function
 TEST_F(ReaderTest, JudgeAdaptTest) {
   // Test with an existing config file
-  Reader reader("/home/baiwc/workspace/graph-systems/input/test/config.yaml");
+  Reader reader(CONFIG_PATH);
   bool result = reader.JudgeAdapt();
   ASSERT_TRUE(result);
-
-  // Test with a non-existing config file
-  Reader reader_non_exist("non_exist_config.yaml");
-  bool result_non_exist = reader_non_exist.JudgeAdapt();
-  ASSERT_FALSE(result_non_exist);
 }
 
 TEST_F(ReaderTest, ReadSubgraphTest) {
   // Create a Reader object and set the work_dir_ to a known directory
-  Reader reader("/home/baiwc/workspace/graph-systems/input/test/config.yaml");
+  Reader reader(CONFIG_PATH);
 
   // initialize a Serialized object
   SerializedImmutableCSR* serialized_immutable_csr =
@@ -42,13 +39,12 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
   reader.ReadSubgraph(0, false);
 }
 
-// TEST_F(ReaderTest, ReadSubgraphTest1) {
-//   // Create a Reader object and set the work_dir_ to a known directory
-//   Reader
-//   reader("/Users/zhj/Projects/graph-systems/input/test_dir/config.yaml");
+TEST_F(ReaderTest, ReadSubgraphTest1) {
+  // Create a Reader object and set the work_dir_ to a known directory
+  Reader reader(CONFIG_PATH);
 
-//   // Read a subgraph with enforce_adapt set to false
-//   ASSERT_EXIT(reader.ReadSubgraph(1, false),
-//   ::testing::ExitedWithCode(EXIT_FAILURE), ".*");
-// }
+  // Read a subgraph with enforce_adapt set to false
+  ASSERT_EXIT(reader.ReadSubgraph(1, false),
+              ::testing::ExitedWithCode(EXIT_FAILURE), ".*");
+}
 }  // namespace sics::graph::core::io

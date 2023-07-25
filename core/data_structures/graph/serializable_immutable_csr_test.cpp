@@ -10,6 +10,8 @@ using SerializedImmutableCSR =
     sics::graph::core::data_structures::graph::SerializedImmutableCSR;
 using Reader = sics::graph::core::io::Reader;
 
+#define CONFIG_PATH "../../../input/test_dir/config.yaml"
+
 namespace sics::graph::core::test {
 class SerializableImmutableCSRTest : public ::testing::Test {
  protected:
@@ -18,7 +20,7 @@ class SerializableImmutableCSRTest : public ::testing::Test {
 };
 
 TEST_F(SerializableImmutableCSRTest, TestParseCSR) {
-  Reader reader("/home/baiwc/workspace/graph-systems/input/test/config.yaml");
+  Reader reader(CONFIG_PATH);
   SerializedImmutableCSR* serialized_immutable_csr =
       new SerializedImmutableCSR();
   SerializableImmutableCSR serializable_immutable_csr(0, 100);
@@ -29,7 +31,7 @@ TEST_F(SerializableImmutableCSRTest, TestParseCSR) {
   // reader.ReadBinFile(
   //     "/home/baiwc/workspace/graph-systems/input/test/0/0_data.bin");
 
-  reader.ReadYaml("/home/baiwc/workspace/graph-systems/input/test/0/0.yaml");
+  reader.ReadYaml("/Users/zhj/Projects/graph-systems/input/test_dir/0/0.yaml");
 
   //   serializable_immutable_csr.ParseSubgraphCSR(
   //       serialized_immutable_csr.get_csr_buffer().front());

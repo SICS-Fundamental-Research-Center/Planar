@@ -3,7 +3,7 @@
 
 #include "data_structures/buffer.h"
 #include "data_structures/serialized.h"
-#include "yaml-cpp/yaml.h"  // TODO(zhj): add yaml-cpp
+#include "yaml-cpp/yaml.h"
 #include <list>
 #include <memory>
 #include <string>

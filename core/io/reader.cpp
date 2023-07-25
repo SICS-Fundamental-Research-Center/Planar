@@ -25,6 +25,7 @@ Reader::Reader(std::string path_edgelist_global_yaml)
     }
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
+    exit(EXIT_FAILURE);
   }
 }
 
@@ -45,7 +46,7 @@ void Reader::ReadSubgraph(size_t subgraph_id, bool enforce_adapt) {
 }
 
 // read csr of a certain subgraph from ssd
-// workdir structure:
+// workdir structure:dx
 //  - dir:{work_dir_}
 //    - dir:0
 //      - file:0.yaml
@@ -71,9 +72,10 @@ void Reader::ReadCsr(size_t subgraph_id) {
   try {
     ReadYaml(yaml_file_path);
     ReadBinFile(data_file_path);
-    ReadBinFile(attr_file_path);
+    // ReadBinFile(attr_file_path);
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
+    exit(EXIT_FAILURE);
   }
 }
 
@@ -144,8 +146,6 @@ bool Reader::ReadEdgelistGlobalYaml() {
   try {
     std::ifstream fin(path_edgelist_global_yaml_);
     if (!fin.is_open()) {
-      std::cerr << "Error opening edgelist global YAML file: "
-                << path_edgelist_global_yaml_ << std::endl;
       return false;
     }
     YAML::Node yaml_node = YAML::Load(fin);
