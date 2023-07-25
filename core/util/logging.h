@@ -1,5 +1,6 @@
 #ifndef GRAPH_SYSTEMS_LOGGING_H
 #define GRAPH_SYSTEMS_LOGGING_H
+//#pragma once
 
 #include <folly/logging/FileHandlerFactory.h>
 #include <folly/logging/Init.h>
@@ -37,7 +38,7 @@ inline std::string DefaultConfigWithLogFile(const std::string& filepath) {
 //
 // If no configuration string is provided, the logging system is initialized
 // with default config string: `kDefaultLogConfigStdout`.
-void InitOrDie(const std::string& config_str = kDefaultConfigStderr) {
+static void InitOrDie(const std::string& config_str = kDefaultConfigStderr) {
   folly::LoggerDB::get().registerHandlerFactory(
       std::make_unique<folly::FileHandlerFactory>(), true);
   folly::initLoggingOrDie(config_str);
@@ -45,13 +46,13 @@ void InitOrDie(const std::string& config_str = kDefaultConfigStderr) {
 
 // Update the initialized logging system, with the provided configurations
 // in `config_str`.
-void UpdateConfig(const std::string& config_str) {
+static void UpdateConfig(const std::string& config_str) {
   folly::LoggerDB::get().updateConfig(folly::parseLogConfig(config_str));
   folly::LoggerDB::get().flushAllHandlers();
 };
 // Completely override the logging system. Using the provided configurations
 // in `config_str` instead.
-void OverrideConfig(const std::string& config_str) {
+static void OverrideConfig(const std::string& config_str) {
   folly::LoggerDB::get().resetConfig(folly::parseLogConfig(config_str));
   folly::LoggerDB::get().flushAllHandlers();
 };
