@@ -107,37 +107,30 @@ void Reader::ReadYaml(std::string yaml_file_path) {
 
 // read data file
 void Reader::ReadBinFile(std::string data_file_path) {
-  FILE* file = fopen(data_file_path.c_str(), "rb");
+  std::ifstream file(data_file_path, std::ios::binary);
   if (!file) {
     throw std::runtime_error("Error opening bin file: " + data_file_path);
   }
 
   // Get the file size.
-  fseek(file, 0, SEEK_END);
-  size_t fileSize = ftell(file);
-  fseek(file, 0, SEEK_SET);
+  file.seekg(0, std::ios::end);
+  size_t fileSize = file.tellg();
+  file.seekg(0, std::ios::beg);
 
-  // Allocate memory to store file data.
-  uint8_t* data = new uint8_t[fileSize];
+  // Allocate memory to store file data using smart pointers (unique_ptr).
+  std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(fileSize);
 
   // Read the file data.
-  size_t bytesRead = fread(data, 1, fileSize, file);
-  if (bytesRead != fileSize) {
-    fclose(file);
-    delete[] data;
+  file.read(reinterpret_cast<char*>(data.get()), fileSize);
+  if (!file) {
     throw std::runtime_error("Error reading file: " + data_file_path);
   }
 
-  // Move the data to a OwnedBuffer object.
-  OwnedBuffer owned_buffer(fileSize);
-  owned_buffer.SetPointer(data);
-
+  // Move the data to an OwnedBuffer object.
   std::list<OwnedBuffer> file_buffers;
-  file_buffers.push_back(std::move(owned_buffer));
+  file_buffers.emplace_back(fileSize);
+  file_buffers.back().SetPointer(data.release());
   serialized_->ReceiveBuffers(std::move(file_buffers));
-
-  // Clean up
-  fclose(file);
 }
 
 // read edgelist global yaml file

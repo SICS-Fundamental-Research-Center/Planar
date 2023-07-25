@@ -6,7 +6,7 @@
 using SerializedImmutableCSR =
     sics::graph::core::data_structures::graph::SerializedImmutableCSR;
 
-#define CONFIG_PATH "../../../input/test_dir/config.yaml"
+#define CONFIG_PATH "/Users/zhj/Projects/graph-systems/input/test_dir/config.yaml"
 
 namespace sics::graph::core::io {
 
