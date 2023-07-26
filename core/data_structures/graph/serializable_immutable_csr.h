@@ -30,12 +30,6 @@ class SerializableImmutableCSR : public Serializable {
   inline void set_gid(GraphID gid) { gid_ = gid; }
 
  protected:
-  struct Metadata {
-    size_t num_vertice_ = 0;
-    size_t num_in_edges_ = 0;
-    size_t num_out_edges_ = 0;
-  };
-
   GraphID gid_ = -1;
   VertexID* buf_graph_ = nullptr;
 
