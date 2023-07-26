@@ -16,7 +16,7 @@ class Buffer {
 
   size_t GetSize() const { return s_; }
 
- protected:
+ private:
   uint8_t* p_;
   size_t s_;
 };
