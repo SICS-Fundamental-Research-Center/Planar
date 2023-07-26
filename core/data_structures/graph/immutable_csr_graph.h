@@ -26,6 +26,8 @@ class ImmutableCSRGraph : public Serializable {
   GraphID get_gid() const { return gid_; }
   void set_gid(GraphID gid) { gid_ = gid; }
 
+  void printSubgraph();
+
  private:
   void ParseSubgraphCSR(std::list<OwnedBuffer>& buffer_list);
 
@@ -34,6 +36,7 @@ class ImmutableCSRGraph : public Serializable {
 
   // serialized data in CSR format.
   VertexID* localid_by_globalid_ = nullptr;
+  VertexID* valid_localid_by_globalid_ = nullptr;
   VertexID* localid_by_index_ = nullptr;
   VertexID* globalid_by_index_ = nullptr;
   VertexID* in_edges_ = nullptr;

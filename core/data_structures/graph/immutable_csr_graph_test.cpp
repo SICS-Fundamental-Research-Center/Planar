@@ -15,6 +15,7 @@ using Reader = sics::graph::core::io::Reader;
 using VertexID = sics::graph::core::common::VertexID;
 
 #define SUBGRAPH_1_PATH "../../../input/small_graph_part/1"
+#define SUBGRAPH_0_PATH "../../../input/small_graph_part/0"
 
 namespace sics::graph::core::test {
 class SerializableImmutableCSRTest : public ::testing::Test {
@@ -32,7 +33,7 @@ TEST_F(SerializableImmutableCSRTest, TestParseCSR) {
       new SerializedImmutableCSR();
 
   // initialize a Serializable object
-  SerializableImmutableCSR serializable_immutable_csr(0);
+  SerializableImmutableCSR serializable_immutable_csr(1);
 
   // Read a subgraph
   reader.ReadSubgraph(SUBGRAPH_1_PATH, serialized_immutable_csr);
