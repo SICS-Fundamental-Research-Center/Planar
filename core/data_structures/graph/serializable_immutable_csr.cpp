@@ -9,7 +9,7 @@ namespace sics::graph::core::data_structures::graph {
 std::unique_ptr<Serialized> SerializableImmutableCSR::Serialize(
     common::TaskRunner& runner) {
   // TODO: Implement this.
-  // return std::make_unique<SerializedImmutableCSR>();
+  return std::make_unique<SerializedImmutableCSR>();
 }
 
 void SerializableImmutableCSR::Deserialize(common::TaskRunner& runner,
