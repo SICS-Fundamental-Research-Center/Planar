@@ -29,7 +29,7 @@ class SerializableImmutableCSR : public Serializable {
   inline GraphID get_gid() const { return gid_; }
   inline void set_gid(GraphID gid) { gid_ = gid; }
 
- protected:
+ private:
   GraphID gid_ = -1;
   VertexID* buf_graph_ = nullptr;
 
