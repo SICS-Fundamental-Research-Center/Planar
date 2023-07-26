@@ -3,7 +3,6 @@
 #include <gtest/gtest.h>
 
 #include "common/multithreading/mock_task_runner.h"
-#include "common/types.h"
 #include "io/reader.h"
 #include "serialized_immutable_csr_graph.h"
 #include "util/logging.h"
@@ -14,8 +13,6 @@ using SerializedImmutableCSR =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using Reader = sics::graph::core::io::Reader;
 using VertexID = sics::graph::core::common::VertexID;
-
-#define ALIGNMENT_FACTOR (double)64.0
 
 #define SUBGRAPH_1_PATH "../../../input/small_graph_part/1"
 
