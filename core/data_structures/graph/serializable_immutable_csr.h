@@ -16,8 +16,7 @@ class SerializableImmutableCSR : public Serializable {
   using VertexID = sics::graph::core::common::VertexID;
 
  public:
-  SerializableImmutableCSR(const GraphID gid, const VertexID max_vid)
-      : Serializable(), gid_(gid), max_vid_(max_vid) {}
+  SerializableImmutableCSR(const GraphID gid) : Serializable(), gid_(gid) {}
 
   std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) override;
 
@@ -31,11 +30,7 @@ class SerializableImmutableCSR : public Serializable {
   void ParseSubgraphCSR(std::list<OwnedBuffer>& buffer_list);
 
   GraphID gid_ = -1;
-  VertexID* buf_graph_ = nullptr;
-
-  VertexID max_vid_ = 0;
-  VertexID aligned_max_vid_ = 0;
-  SerializedImmutableCSR serialized_immutable_csr_;
+  uint8_t* buf_graph_ = nullptr;
 
   // serialized data in CSR format.
   VertexID* localid_by_globalid_ = nullptr;
