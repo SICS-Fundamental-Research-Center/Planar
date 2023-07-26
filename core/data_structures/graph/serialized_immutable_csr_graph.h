@@ -2,6 +2,7 @@
 #define CORE_DATA_STRUCTURES_GRAPH_SERIALIZED_IMMUTABLE_CSR_GRAPH_H_
 
 #include <iostream>
+#include <utility>
 
 #include "data_structures/serialized.h"
 #include "util/logging.h"
@@ -22,8 +23,10 @@ class SerializedImmutableCSRGraph : public Serialized {
 
   // Writer call this function to pop buffers from csr_buffer_ to Disk.
   std::list<OwnedBuffer> PopNextImpl() override {
-    // TODO: implement this function.
-    return std::list<OwnedBuffer>();
+    // move the first buffer to the return list
+    std::list<OwnedBuffer> buffers = std::move(csr_buffer_.front());
+    csr_buffer_.pop_front();
+    return buffers;
   }
 
  public:

@@ -3,12 +3,6 @@
 #include <filesystem>
 
 #include "io/reader.h"
-
-#include <gtest/gtest.h>
-
-#include <filesystem>
-#include <iostream>
-
 #include "data_structures/graph/immutable_csr_graph.h"
 #include "util/logging.h"
 
@@ -17,11 +11,8 @@
 #define SUBGRAPH_1_PATH \
   "../../../input/small_graph_part/1"
 
-namespace sics::graph::core::io {
-using SerializedImmutableCSR =
-    sics::graph::core::data_structures::graph::SerializedImmutableCSR;
-
-#define SUBGRAPH_1_PATH "../../../input/small_graph_part/0"
+using SerializedImmutableCSRGraph =
+    sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 
 namespace sics::graph::core::io {
 
@@ -38,8 +29,8 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
   Reader reader;
 
   // initialize a Serialized object
-  SerializedImmutableCSR* serialized_immutable_csr =
-      new SerializedImmutableCSR();
+  SerializedImmutableCSRGraph* serialized_immutable_csr =
+      new SerializedImmutableCSRGraph();
 
   // Read a subgraph
   reader.ReadSubgraph(SUBGRAPH_1_PATH, serialized_immutable_csr);
@@ -69,8 +60,8 @@ TEST_F(ReaderTest, ReadSubgraphTest1) {
   Reader reader;
 
   // initialize a Serialized object
-  SerializedImmutableCSR* serialized_immutable_csr =
-      new SerializedImmutableCSR();
+  SerializedImmutableCSRGraph* serialized_immutable_csr =
+      new SerializedImmutableCSRGraph();
 
   // Read a subgraph
   ASSERT_EXIT(reader.ReadSubgraph("non_exist_file", serialized_immutable_csr),

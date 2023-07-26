@@ -10,7 +10,7 @@ void Reader::ReadSubgraph(const std::string& path, Serialized* dst_object,
 }
 
 
-void Reader::ReadCsr(const std::string& path, Serialized* dst_object) {
+void Reader::ReadCSR(const std::string& path, Serialized* dst_object) {
   std::filesystem::path dir(path);
   std::string subgraph_id_str = dir.filename().string();
   std::string data_file_path = path + "/" + subgraph_id_str + "_data.bin";
