@@ -10,8 +10,8 @@ namespace sics::graph::core::data_structures {
 
 class Serializable {
  public:
-  virtual std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) = 0;
-  virtual void Deserialize(common::TaskRunner& runner,
+  virtual std::unique_ptr<Serialized> Serialize(const common::TaskRunner& runner) = 0;
+  virtual void Deserialize(const common::TaskRunner& runner,
                            Serialized&& serialized) = 0;
 };
 

@@ -2,7 +2,11 @@
 #define CORE_DATA_STRUCTURES_GRAPH_IMMUTABLE_CSR_GRAPH_H_
 
 #include <memory>
+#include <cmath>
+#include <list>
+#include <utility>
 
+#include "util/logging.h"
 #include "common/types.h"
 #include "data_structures/graph/serialized_immutable_csr_graph.h"
 #include "data_structures/serializable.h"
@@ -16,11 +20,11 @@ class ImmutableCSRGraph : public Serializable {
   using VertexID = sics::graph::core::common::VertexID;
 
  public:
-  ImmutableCSRGraph(const GraphID gid) : Serializable(), gid_(gid) {}
+  explicit ImmutableCSRGraph(const GraphID gid) : Serializable(), gid_(gid) {}
 
-  std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) override;
+  std::unique_ptr<Serialized> Serialize(const common::TaskRunner& runner) override;
 
-  void Deserialize(common::TaskRunner& runner,
+  void Deserialize(const common::TaskRunner& runner,
                    Serialized&& serialized) override;
 
   GraphID get_gid() const { return gid_; }
@@ -29,7 +33,7 @@ class ImmutableCSRGraph : public Serializable {
   void printSubgraph();
 
  private:
-  void ParseSubgraphCSR(std::list<OwnedBuffer>& buffer_list);
+  void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
 
   GraphID gid_ = -1;
   uint8_t* buf_graph_ = nullptr;

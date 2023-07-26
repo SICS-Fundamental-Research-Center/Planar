@@ -32,9 +32,9 @@ class OwnedBuffer {
 
   Buffer GetReference(size_t offset, size_t s) {
     return Buffer(p_ + offset, s);
-  };
+  }
 
-  uint8_t* Get(size_t offset = 0) { return p_ + offset; }
+  uint8_t* Get(size_t offset = 0) const { return p_ + offset; }
 
   size_t GetSize() const { return s_; }
 

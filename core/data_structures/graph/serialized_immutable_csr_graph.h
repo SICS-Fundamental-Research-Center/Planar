@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <utility>
+#include <list>
 
 #include "data_structures/serialized.h"
 #include "util/logging.h"
@@ -11,7 +12,7 @@ namespace sics::graph::core::data_structures::graph {
 
 class SerializedImmutableCSRGraph : public Serialized {
  protected:
-  // TODO: Should we adopt list of list?
+  // TODO(bwc): Should we adopt list of list?
   // `csr_buffer` stores the serialized data in CSR format. Each `csr_buffer` corresponds to a subgraph.
   // Each item of `csr_buffer` is a list of buffers that correspond to a subgraph file.
   std::list<std::list<OwnedBuffer>> csr_buffer_;
@@ -35,7 +36,7 @@ class SerializedImmutableCSRGraph : public Serialized {
 
   std::list<std::list<OwnedBuffer>>& get_csr_buffer() {
     return this->csr_buffer_;
-  };
+  }
 };
 
 }  // namespace sics::graph::core::data_structures::graph
