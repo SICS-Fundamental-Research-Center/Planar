@@ -35,7 +35,7 @@ TEST_F(SerializableImmutableCSRTest, TestParseCSR) {
       new SerializedImmutableCSR();
 
   // initialize a Serializable object
-  SerializableImmutableCSR serializable_immutable_csr(0, 4847570);
+  SerializableImmutableCSR serializable_immutable_csr(0);
 
   // Read a subgraph
   reader.ReadSubgraph(SUBGRAPH_1_PATH, serialized_immutable_csr);
