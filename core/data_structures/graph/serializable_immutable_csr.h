@@ -24,8 +24,8 @@ class SerializableImmutableCSR : public Serializable {
   void Deserialize(common::TaskRunner& runner,
                    Serialized&& serialized) override;
 
-  inline GraphID get_gid() const { return gid_; }
-  inline void set_gid(GraphID gid) { gid_ = gid; }
+  GraphID get_gid() const { return gid_; }
+  void set_gid(GraphID gid) { gid_ = gid; }
 
  private:
   void ParseSubgraphCSR(std::list<OwnedBuffer>& buffer_list);
