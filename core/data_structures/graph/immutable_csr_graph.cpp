@@ -1,4 +1,4 @@
-#include "serializable_immutable_csr.h"
+#include "immutable_csr_graph.h"
 
 #include <cmath>
 
@@ -14,8 +14,8 @@ std::unique_ptr<Serialized> SerializableImmutableCSR::Serialize(
 
 void SerializableImmutableCSR::Deserialize(common::TaskRunner& runner,
                                            Serialized&& serialized) {
-  SerializedImmutableCSR serialized_immutable_csr_ =
-      std::move(static_cast<SerializedImmutableCSR&&>(serialized));
+  SerializedImmutableCSRGraph serialized_immutable_csr_ =
+      std::move(static_cast<SerializedImmutableCSRGraph&&>(serialized));
   auto& csr_buffer = serialized_immutable_csr_.get_csr_buffer();
   auto iter = csr_buffer.begin();
   if (iter != csr_buffer.end()) {

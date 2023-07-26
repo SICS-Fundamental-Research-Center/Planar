@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "common/types.h"
-#include "data_structures/graph/serialized_immutable_csr.h"
+#include "data_structures/graph/serialized_immutable_csr_graph.h"
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
 

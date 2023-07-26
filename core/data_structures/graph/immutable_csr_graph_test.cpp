@@ -1,17 +1,17 @@
-#include "serializable_immutable_csr.h"
+#include "immutable_csr_graph.h"
 
 #include <gtest/gtest.h>
 
 #include "common/multithreading/mock_task_runner.h"
 #include "common/types.h"
 #include "io/reader.h"
-#include "serialized_immutable_csr.h"
+#include "serialized_immutable_csr_graph.h"
 #include "util/logging.h"
 
 using SerializableImmutableCSR =
     sics::graph::core::data_structures::graph::SerializableImmutableCSR;
 using SerializedImmutableCSR =
-    sics::graph::core::data_structures::graph::SerializedImmutableCSR;
+    sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using Reader = sics::graph::core::io::Reader;
 using VertexID = sics::graph::core::common::VertexID;
 

@@ -9,7 +9,7 @@
 
 namespace sics::graph::core::data_structures::graph {
 
-class SerializedImmutableCSR : public Serialized {
+class SerializedImmutableCSRGraph : public Serialized {
  protected:
   // TODO: Should we adopt list of list?
   // `csr_buffer` stores the serialized data in CSR format. Each `csr_buffer` corresponds to a subgraph.
@@ -28,7 +28,7 @@ class SerializedImmutableCSR : public Serialized {
   }
 
  public:
-  SerializedImmutableCSR() {}
+  SerializedImmutableCSRGraph() {}
   bool HasNext() const override { return this->csr_buffer_.size() > 0; }
 
   std::list<std::list<OwnedBuffer>>& get_csr_buffer() {
