@@ -1,6 +1,8 @@
 #ifndef GRAPH_SYSTEMS_SERIALIZED_IMMUTABLE_CSR_H
 #define GRAPH_SYSTEMS_SERIALIZED_IMMUTABLE_CSR_H
 
+#include <utility>
+
 #include "data_structures/serialized.h"
 
 namespace sics::graph::core::data_structures::graph {
@@ -18,8 +20,10 @@ class SerializedImmutableCSR : public Serialized {
 
   // Writer call this function to pop buffers from csr_buffer_ to Disk.
   std::list<OwnedBuffer> PopNextImpl() override {
-    // TODO: implement this function.
-    // return std::list<OwnedBuffer>();
+    // remove the first item of csr_buffer_ and return it
+    std::list<OwnedBuffer> buffers = std::move(csr_buffer_.front());
+    csr_buffer_.pop_front();
+    return buffers;
   }
 
  public:

@@ -4,12 +4,11 @@ namespace sics::graph::core::io {
 
 void Reader::ReadSubgraph(const std::string& path, Serialized* dst_object, int read_type) {
   if (read_type == 0) {
-    ReadCsr(path, dst_object);
+    ReadCSR(path, dst_object);
   }
 }
 
-
-void Reader::ReadCsr(const std::string& path, Serialized* dst_object) {
+void Reader::ReadCSR(const std::string& path, Serialized* dst_object) {
   std::filesystem::path dir(path);
   std::string subgraph_id_str = dir.filename().string();
   std::string data_file_path =
@@ -25,10 +24,10 @@ void Reader::ReadCsr(const std::string& path, Serialized* dst_object) {
   }
 }
 
-void Reader::ReadBinFile(std::string data_file_path, Serialized* dst_object) {
-  std::ifstream file(data_file_path, std::ios::binary);
+void Reader::ReadBinFile(const std::string& path, Serialized* dst_object) {
+  std::ifstream file(path, std::ios::binary);
   if (!file) {
-    throw std::runtime_error("Error opening bin file: " + data_file_path);
+    throw std::runtime_error("Error opening bin file: " + path);
   }
 
   // Get the file size.
@@ -46,7 +45,7 @@ void Reader::ReadBinFile(std::string data_file_path, Serialized* dst_object) {
   // Read the file data.
   file.read(reinterpret_cast<char*>(file_buffers.back().Get()), fileSize);
   if (!file) {
-    throw std::runtime_error("Error reading file: " + data_file_path);
+    throw std::runtime_error("Error reading file: " + path);
   }
 
   // give it to serialized object

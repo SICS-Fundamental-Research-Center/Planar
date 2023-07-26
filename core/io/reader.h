@@ -15,14 +15,19 @@
 
 #define CSR_GLOBLE_FILE_NAME "csr_global.yaml"
 
-using sics::graph::core::data_structures::OwnedBuffer;
-using sics::graph::core::data_structures::Serialized;
-
 namespace sics::graph::core::io {
 
 // Class to read data from ssd to memory
+// Example:
+//  Reader reader;
+//  SerializedImmutableCSR* serialized_immutable_csr =
+//      new SerializedImmutableCSR();
+//  reader.ReadSubgraph(PATH, serialized_immutable_csr);
 class Reader {
  public:
+  using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
+  using Serialized = sics::graph::core::data_structures::Serialized;
+
   Reader() {}
 
   // read subgraph from ssd to Serialized object
@@ -31,23 +36,21 @@ class Reader {
   // read type: 0: csr, other: other type in future version
   void ReadSubgraph(const std::string& path, Serialized* dst_object, int read_type = 0);
 
- public:
+ private:
   // read csr of a certain subgraph from ssd
   // workdir structure:
   //  - dir:{work_dir_}
   //    - dir:0
-  //      - file:0.yaml
   //      - file:0_data.bin
   //      - file:0_attr.bin
   //    - dir:1
-  //      - file:1.yaml
   //      - file:1_data.bin
   //      - file:1_attr.bin
   //    - file:csr_global.yaml
-  void ReadCsr(const std::string& path, Serialized* dst_object);
+  void ReadCSR(const std::string& path, Serialized* dst_object);
 
   // read data file
-  void ReadBinFile(std::string data_file_path, Serialized* dst_object);
+  void ReadBinFile(const std::string& path, Serialized* dst_object);
 
  protected:
   std::string path_edgelist_global_yaml_;

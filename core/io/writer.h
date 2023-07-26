@@ -17,19 +17,23 @@ namespace sics::graph::core::io {
 
 class Writer {
  public:
+  using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
+  using Serialized = sics::graph::core::data_structures::Serialized;
+
   Writer() {}
 
-  void WriteSubgraph(size_t subgraph_id);
+  // Write the subgraph to disk
+  // path: path to the subgraph dictionary
+  // src_object: where to get ownedbuffers
+  // read type: 0: csr, other: other type in future version
+  void WriteSubgraph(const std::string& path, Serialized* src_object, int write_type = 0);
 
-  void WriteCsr(size_t subgraph_id);
+ private:
+  // write csr of a certain subgraph to ssd
+  void WriteCSR(const std::string& path, Serialized* src_object);
 
-  void WriteYaml(std::string yaml_file_path);
-
-  void WriteBinFile(std::string data_file_path);
-
- protected:
-  std::string path_edgelist_global_yaml_;
-  std::string work_dir_;
+  // write data file
+  void WriteBinFile(const std::string& path, Serialized* src_object);
 };
 }  // namespace sics::graph::core::io
 

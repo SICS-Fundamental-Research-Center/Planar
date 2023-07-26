@@ -2,6 +2,7 @@
 #include <iostream>
 #include <filesystem>
 
+#include "io/writer.h"
 #include "io/reader.h"
 #include "data_structures/graph/serializable_immutable_csr.h"
 #include "util/logging.h"
@@ -10,22 +11,28 @@
   "../../../input/small_graph_part/0"
 #define SUBGRAPH_1_PATH \
   "../../../input/small_graph_part/1"
+#define WRITE_0_PATH \
+  "../../../output/writer_test/0"
+#define WRITE_1_PATH \
+  "../../../output/writer_test/1"
 
 namespace sics::graph::core::io {
 using SerializedImmutableCSR =
     sics::graph::core::data_structures::graph::SerializedImmutableCSR;
 
 // The fixture for testing class LogTest
-class ReaderTest : public ::testing::Test {
+class WriterTest : public ::testing::Test {
  protected:
-  ReaderTest() = default;
-  ~ReaderTest() override = default;
+  WriterTest() = default;
+  ~WriterTest() override = default;
 };
 
-// Test the ReadSubgraph function of the Reader class
-TEST_F(ReaderTest, ReadSubgraphTest) {
+// Test the WriteSubgraph function of the Writer class
+TEST_F(WriterTest, WriteSubgraph) {
   // Create a Reader object
   Reader reader;
+  // Create a Writer object
+  Writer writer;
 
   // initialize a Serialized object
   SerializedImmutableCSR* serialized_immutable_csr =
@@ -34,8 +41,21 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
   // Read a subgraph
   reader.ReadSubgraph(SUBGRAPH_1_PATH, serialized_immutable_csr);
 
+  // Read a subgraph
+  writer.WriteSubgraph(WRITE_1_PATH, serialized_immutable_csr);
+
+  // Create another Reader object
+  Reader rereader;
+
+  // initialize a Serialized object
+  SerializedImmutableCSR* serialized_immutable_csr_1 =
+      new SerializedImmutableCSR();
+
+  // Read a subgraph
+  reader.ReadSubgraph(WRITE_1_PATH, serialized_immutable_csr_1);
+
   LOG_INFO("end reading");
-  uint8_t* data = serialized_immutable_csr->get_csr_buffer().front().front().Get();
+  uint8_t* data = serialized_immutable_csr_1->get_csr_buffer().front().front().Get();
   // size_t size = serialized_immutable_csr->get_csr_buffer().front().front().GetSize();
   uint32_t* a_uint32 = reinterpret_cast<uint32_t*>(data);
   size_t* a_size_t = reinterpret_cast<size_t*>(data);
@@ -53,17 +73,35 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
   std::cout << "##########" << std::endl;
 }
 
-// Test the ReadSubgraph function of the Reader class
-TEST_F(ReaderTest, ReadSubgraphTest1) {
+// Test the WriteSubgraph function of the Writer class
+TEST_F(WriterTest, WriteSubgraph1) {
   // Create a Reader object
   Reader reader;
+  // Create a Writer object
+  Writer writer;
 
   // initialize a Serialized object
   SerializedImmutableCSR* serialized_immutable_csr =
       new SerializedImmutableCSR();
 
   // Read a subgraph
-  ASSERT_EXIT(reader.ReadSubgraph("non_exist_file", serialized_immutable_csr),
-              ::testing::ExitedWithCode(EXIT_FAILURE), ".*");
+  reader.ReadSubgraph(SUBGRAPH_1_PATH, serialized_immutable_csr);
+
+  // Read a subgraph
+  writer.WriteSubgraph(WRITE_0_PATH, serialized_immutable_csr);
 }
+
+// // Test the ReadSubgraph function of the Reader class
+// TEST_F(WriterTest, ReadSubgraphTest1) {
+//   // Create a Reader object
+//   Reader reader;
+
+//   // initialize a Serialized object
+//   SerializedImmutableCSR* serialized_immutable_csr =
+//       new SerializedImmutableCSR();
+
+//   // Read a subgraph
+//   ASSERT_EXIT(reader.ReadSubgraph("non_exist_file", serialized_immutable_csr),
+//               ::testing::ExitedWithCode(EXIT_FAILURE), ".*");
+// }
 }  // namespace sics::graph::core::io
