@@ -9,12 +9,12 @@ namespace sics::graph::core::data_structures::graph {
 std::unique_ptr<Serialized> SerializableImmutableCSR::Serialize(
     common::TaskRunner& runner) {
   // TODO: Implement this.
-  return std::make_unique<SerializedImmutableCSR>();
+  return nullptr;
 }
 
 void SerializableImmutableCSR::Deserialize(common::TaskRunner& runner,
                                            Serialized&& serialized) {
-  serialized_immutable_csr_ =
+  SerializedImmutableCSR serialized_immutable_csr_ =
       std::move(static_cast<SerializedImmutableCSR&&>(serialized));
   auto& csr_buffer = serialized_immutable_csr_.get_csr_buffer();
   auto iter = csr_buffer.begin();
@@ -29,7 +29,7 @@ void SerializableImmutableCSR::Deserialize(common::TaskRunner& runner,
 void SerializableImmutableCSR::ParseSubgraphCSR(
     std::list<OwnedBuffer>& buffer_list) {
   // Fetch the OwnedBuffer object.
-  uint8_t* buf_graph = buffer_list.front().Get();
+  buf_graph_ = buffer_list.front().Get();
   LOG_INFO("[in cpp] loaded size:", buffer_list.front().GetSize());
 
   VertexID num_vertex = 28;
@@ -67,15 +67,15 @@ void SerializableImmutableCSR::ParseSubgraphCSR(
 
   LOG_INFO("[in cpp] total_size:", total_size);
 
-  localid_by_globalid_ = (VertexID*)(buf_graph + start_localid_by_globalid);
-  localid_by_index_ = (VertexID*)(buf_graph + start_localid);
-  globalid_by_index_ = (VertexID*)(buf_graph + start_globalid);
-  in_edges_ = (VertexID*)(buf_graph + start_in_edges);
-  out_edges_ = (VertexID*)(buf_graph + start_out_edges);
-  indegree_ = (size_t*)(buf_graph + start_indegree);
-  outdegree_ = (size_t*)(buf_graph + start_outdegree);
-  in_offset_ = (size_t*)(buf_graph + start_in_offset);
-  out_offset_ = (size_t*)(buf_graph + start_out_offset);
+  localid_by_globalid_ = (VertexID*)(buf_graph_ + start_localid_by_globalid);
+  localid_by_index_ = (VertexID*)(buf_graph_ + start_localid);
+  globalid_by_index_ = (VertexID*)(buf_graph_ + start_globalid);
+  in_edges_ = (VertexID*)(buf_graph_ + start_in_edges);
+  out_edges_ = (VertexID*)(buf_graph_ + start_out_edges);
+  indegree_ = (size_t*)(buf_graph_ + start_indegree);
+  outdegree_ = (size_t*)(buf_graph_ + start_outdegree);
+  in_offset_ = (size_t*)(buf_graph_ + start_in_offset);
+  out_offset_ = (size_t*)(buf_graph_ + start_out_offset);
 
   for (VertexID i = 0; i < 28; ++i) {
     LOG_INFO("[in cpp] check vertex: ", i);
