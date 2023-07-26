@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "common/types.h"
+#include "data_structures/graph/immutable_csr_graph_config.h"
 #include "data_structures/graph/serialized_immutable_csr_graph.h"
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
@@ -17,6 +18,8 @@ class ImmutableCSRGraph : public Serializable {
 
  public:
   ImmutableCSRGraph(const GraphID gid) : Serializable(), gid_(gid) {}
+  ImmutableCSRGraph(const GraphID gid, ImmutableCSRGraphConfig&& csr_config)
+      : Serializable(), gid_(gid), csr_config_(std::move(csr_config)) {}
 
   std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) override;
 
@@ -29,8 +32,11 @@ class ImmutableCSRGraph : public Serializable {
  private:
   void ParseSubgraphCSR(std::list<OwnedBuffer>& buffer_list);
 
-  GraphID gid_ = -1;
+  GraphID gid_ = 0;
   uint8_t* buf_graph_ = nullptr;
+
+  // config. attributes to build the CSR.
+  ImmutableCSRGraphConfig csr_config_;
 
   // serialized data in CSR format.
   VertexID* localid_by_globalid_ = nullptr;

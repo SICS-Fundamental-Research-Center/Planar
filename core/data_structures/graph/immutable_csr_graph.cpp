@@ -14,6 +14,7 @@ std::unique_ptr<Serialized> ImmutableCSRGraph::Serialize(
 
 void ImmutableCSRGraph::Deserialize(common::TaskRunner& runner,
                                            Serialized&& serialized) {
+  // TODO: Submit to the task runner.
   SerializedImmutableCSRGraph serialized_immutable_csr_ =
       std::move(static_cast<SerializedImmutableCSRGraph&&>(serialized));
   auto& csr_buffer = serialized_immutable_csr_.get_csr_buffer();
@@ -32,22 +33,17 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
   buf_graph_ = buffer_list.front().Get();
   LOG_INFO("[in cpp] loaded size:", buffer_list.front().GetSize());
 
-  VertexID num_vertex = 28;
-  size_t sum_in_edges = 61;
-  size_t sum_out_edges = 68;
-
-  VertexID max_vertex = 27;
   VertexID aligned_max_vertex =
-      std::ceil(max_vertex / ALIGNMENT_FACTOR) * ALIGNMENT_FACTOR;
+      std::ceil(csr_config_.max_vertex / ALIGNMENT_FACTOR) * ALIGNMENT_FACTOR;
 
-  size_t size_localid = sizeof(VertexID) * num_vertex;
-  size_t size_globalid = sizeof(VertexID) * num_vertex;
-  size_t size_indegree = sizeof(size_t) * num_vertex;
-  size_t size_outdegree = sizeof(size_t) * num_vertex;
-  size_t size_in_offset = sizeof(size_t) * num_vertex;
-  size_t size_out_offset = sizeof(size_t) * num_vertex;
-  size_t size_in_edges = sizeof(VertexID) * sum_in_edges;
-  size_t size_out_edges = sizeof(VertexID) * sum_out_edges;
+  size_t size_localid = sizeof(VertexID) * csr_config_.num_vertex;
+  size_t size_globalid = sizeof(VertexID) * csr_config_.num_vertex;
+  size_t size_indegree = sizeof(size_t) * csr_config_.num_vertex;
+  size_t size_outdegree = sizeof(size_t) * csr_config_.num_vertex;
+  size_t size_in_offset = sizeof(size_t) * csr_config_.num_vertex;
+  size_t size_out_offset = sizeof(size_t) * csr_config_.num_vertex;
+  size_t size_in_edges = sizeof(VertexID) * csr_config_.sum_in_edges;
+  size_t size_out_edges = sizeof(VertexID) * csr_config_.sum_out_edges;
   size_t size_localid_by_globalid = sizeof(VertexID) * aligned_max_vertex;
 
   size_t total_size = size_localid + size_globalid + size_indegree +
@@ -80,8 +76,8 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
   for (VertexID i = 0; i < 28; ++i) {
     LOG_INFO("[in cpp] check vertex: ", i);
     LOG_INFO("l_id: ", localid_by_index_[i], "; g_id: ", globalid_by_index_[i],
-             "; local_by_global: ", localid_by_globalid_[i],
-             "; indegree: ", indegree_[i], "; outdegree: ", outdegree_[i]);
+             "; local_by_global: ", localid_by_globalid_[globalid_by_index_[i]],
+             "; outdegree: ", outdegree_[i], "; indegree: ", indegree_[i]);
     for (int j = 0; j < indegree_[i]; ++j) {
       LOG_INFO("in_edge: ", in_edges_[in_offset_[i] + j]);
     }
