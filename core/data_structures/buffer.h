@@ -34,6 +34,8 @@ class OwnedBuffer {
     return Buffer(p_ + offset, s);
   };
 
+  uint8_t* Get(size_t offset = 0) { return p_ + offset; }
+
   size_t GetSize() const { return s_; }
 
  private:
