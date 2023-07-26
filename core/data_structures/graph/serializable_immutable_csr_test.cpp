@@ -1,10 +1,12 @@
 #include "serializable_immutable_csr.h"
+
+#include <gtest/gtest.h>
+
 #include "common/multithreading/mock_task_runner.h"
 #include "common/types.h"
 #include "io/reader.h"
 #include "serialized_immutable_csr.h"
 #include "util/logging.h"
-#include <gtest/gtest.h>
 
 using SerializableImmutableCSR =
     sics::graph::core::data_structures::graph::SerializableImmutableCSR;
