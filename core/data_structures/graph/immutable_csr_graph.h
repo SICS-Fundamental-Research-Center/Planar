@@ -10,13 +10,13 @@
 
 namespace sics::graph::core::data_structures::graph {
 
-class SerializableImmutableCSR : public Serializable {
+class ImmutableCSRGraph : public Serializable {
  private:
   using GraphID = sics::graph::core::common::GraphID;
   using VertexID = sics::graph::core::common::VertexID;
 
  public:
-  SerializableImmutableCSR(const GraphID gid) : Serializable(), gid_(gid) {}
+  ImmutableCSRGraph(const GraphID gid) : Serializable(), gid_(gid) {}
 
   std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) override;
 

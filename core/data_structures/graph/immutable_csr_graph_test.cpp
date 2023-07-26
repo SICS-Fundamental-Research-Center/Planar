@@ -9,7 +9,7 @@
 #include "util/logging.h"
 
 using SerializableImmutableCSR =
-    sics::graph::core::data_structures::graph::SerializableImmutableCSR;
+    sics::graph::core::data_structures::graph::ImmutableCSRGraph;
 using SerializedImmutableCSR =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using Reader = sics::graph::core::io::Reader;

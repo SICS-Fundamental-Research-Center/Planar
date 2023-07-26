@@ -6,13 +6,13 @@
 
 namespace sics::graph::core::data_structures::graph {
 
-std::unique_ptr<Serialized> SerializableImmutableCSR::Serialize(
+std::unique_ptr<Serialized> ImmutableCSRGraph::Serialize(
     common::TaskRunner& runner) {
   // TODO: Implement this.
   return nullptr;
 }
 
-void SerializableImmutableCSR::Deserialize(common::TaskRunner& runner,
+void ImmutableCSRGraph::Deserialize(common::TaskRunner& runner,
                                            Serialized&& serialized) {
   SerializedImmutableCSRGraph serialized_immutable_csr_ =
       std::move(static_cast<SerializedImmutableCSRGraph&&>(serialized));
@@ -26,7 +26,7 @@ void SerializableImmutableCSR::Deserialize(common::TaskRunner& runner,
   }
 }
 
-void SerializableImmutableCSR::ParseSubgraphCSR(
+void ImmutableCSRGraph::ParseSubgraphCSR(
     std::list<OwnedBuffer>& buffer_list) {
   // Fetch the OwnedBuffer object.
   buf_graph_ = buffer_list.front().Get();
