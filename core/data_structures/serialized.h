@@ -2,6 +2,7 @@
 #define GRAPH_SYSTEMS_SERIALIZED_H
 
 #include "data_structures/buffer.h"
+
 #include <list>
 
 namespace sics::graph::core::data_structures {
