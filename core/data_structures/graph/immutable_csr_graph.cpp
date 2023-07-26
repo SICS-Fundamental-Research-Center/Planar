@@ -1,18 +1,14 @@
 #include "immutable_csr_graph.h"
 
-#include <cmath>
-
-#include "util/logging.h"
-
 namespace sics::graph::core::data_structures::graph {
 
 std::unique_ptr<Serialized> ImmutableCSRGraph::Serialize(
-    common::TaskRunner& runner) {
+    const common::TaskRunner& runner) {
   // TODO: Implement this.
   return nullptr;
 }
 
-void ImmutableCSRGraph::Deserialize(common::TaskRunner& runner,
+void ImmutableCSRGraph::Deserialize(const common::TaskRunner& runner,
                                            Serialized&& serialized) {
   // TODO: Submit to the task runner.
   SerializedImmutableCSRGraph serialized_immutable_csr_ =
@@ -28,7 +24,7 @@ void ImmutableCSRGraph::Deserialize(common::TaskRunner& runner,
 }
 
 void ImmutableCSRGraph::ParseSubgraphCSR(
-    std::list<OwnedBuffer>& buffer_list) {
+    const std::list<OwnedBuffer>& buffer_list) {
   // Fetch the OwnedBuffer object.
   buf_graph_ = buffer_list.front().Get();
   LOG_INFO("[in cpp] loaded size:", buffer_list.front().GetSize());

@@ -5,7 +5,7 @@
 #include "common/multithreading/mock_task_runner.h"
 #include "data_structures/graph/immutable_csr_graph_config.h"
 #include "io/reader.h"
-#include "serialized_immutable_csr_graph.h"
+#include "data_structures/graph/serialized_immutable_csr_graph.h"
 #include "util/logging.h"
 
 using ImmutableCSRGraph =

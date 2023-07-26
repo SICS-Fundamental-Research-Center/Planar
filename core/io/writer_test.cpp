@@ -91,18 +91,4 @@ TEST_F(WriterTest, WriteSubgraph1) {
   // Read a subgraph
   writer.WriteSubgraph(WRITE_1_PATH, serialized_immutable_csr);
 }
-
-// // Test the ReadSubgraph function of the Reader class
-// TEST_F(WriterTest, ReadSubgraphTest1) {
-//   // Create a Reader object
-//   Reader reader;
-
-//   // initialize a Serialized object
-//   SerializedImmutableCSRGraph* serialized_immutable_csr =
-//       new SerializedImmutableCSRGraph();
-
-//   // Read a subgraph
-//   ASSERT_EXIT(reader.ReadSubgraph("non_exist_file", serialized_immutable_csr),
-//               ::testing::ExitedWithCode(EXIT_FAILURE), ".*");
-// }
 }  // namespace sics::graph::core::io

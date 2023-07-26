@@ -16,11 +16,11 @@ class Serializable {
  public:
   // Serialize the `Serializable` object to a `Serialized` object.
   // This function will submit the serialization task to the given TaskRunner
-  virtual std::unique_ptr<Serialized> Serialize(common::TaskRunner& runner) = 0;
+  virtual std::unique_ptr<Serialized> Serialize(const common::TaskRunner& runner) = 0;
 
   // Deserialize the `Serializable` object from a `Serialized` object.
   // This function will submit the deserialization task to the given TaskRunner
-  virtual void Deserialize(common::TaskRunner& runner,
+  virtual void Deserialize(const common::TaskRunner& runner,
                            Serialized&& serialized) = 0;
 };
 
