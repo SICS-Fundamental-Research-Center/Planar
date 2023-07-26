@@ -16,24 +16,31 @@ class Buffer {
 
   size_t GetSize() const { return s_; }
 
-  void SetPointer(uint8_t* p) { p_ = p; }
-
- protected:
+ private:
   uint8_t* p_;
   size_t s_;
 };
 
-class OwnedBuffer : public Buffer {
+class OwnedBuffer {
  public:
-  explicit OwnedBuffer(size_t s)
-      : Buffer(static_cast<uint8_t*>(malloc(s)), s) {}
+  explicit OwnedBuffer(size_t s) : p_((uint8_t*)(malloc(s))), s_(s) {}
+  ~OwnedBuffer() { delete p_; }
   OwnedBuffer(const OwnedBuffer& r) = delete;
-  OwnedBuffer& operator=(const OwnedBuffer& r) = delete;
   OwnedBuffer(OwnedBuffer&& r) = default;
+  OwnedBuffer& operator=(const OwnedBuffer& r) = delete;
   OwnedBuffer& operator=(OwnedBuffer&& r) = default;
-  ~OwnedBuffer() override { delete p_; }
 
-  Buffer GetReference(size_t offset, size_t s);
+  Buffer GetReference(size_t offset, size_t s) {
+    return Buffer(p_ + offset, s);
+  };
+
+  uint8_t* Get(size_t offset = 0) { return p_ + offset; }
+
+  size_t GetSize() const { return s_; }
+
+ private:
+  uint8_t* p_;
+  size_t s_;
 };
 
 }  // namespace sics::graph::core::data_structures

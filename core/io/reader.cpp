@@ -2,17 +2,18 @@
 
 namespace sics::graph::core::io {
 
-void Reader::ReadSubgraph(const std::string& path, Serialized* dst_object, int read_type) {
+void Reader::ReadSubgraph(const std::string& path, Serialized* dst_object,
+                          int read_type) {
   if (read_type == 0) {
     ReadCSR(path, dst_object);
   }
 }
 
-void Reader::ReadCSR(const std::string& path, Serialized* dst_object) {
+
+void Reader::ReadCsr(const std::string& path, Serialized* dst_object) {
   std::filesystem::path dir(path);
   std::string subgraph_id_str = dir.filename().string();
-  std::string data_file_path =
-      path + "/" + subgraph_id_str + "_data.bin";
+  std::string data_file_path = path + "/" + subgraph_id_str + "_data.bin";
   // leave for reading other files like attribute
 
   // read files

@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_ATOMIC_H
-#define GRAPH_SYSTEMS_ATOMIC_H
+#ifndef CORE_UTIL_ATOMIC_H_
+#define CORE_UTIL_ATOMIC_H_
 
 #include <assert.h>
 #include <stdlib.h>
@@ -61,4 +61,4 @@ inline void WriteAdd(ET* a, ET b) {
 }  // namespace atomic
 }  // namespace sics::graph::core::util
 
-#endif  // GRAPH_SYSTEMS_ATOMIC_H
+#endif  // CORE_UTIL_ATOMIC_H_

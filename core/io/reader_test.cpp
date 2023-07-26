@@ -3,7 +3,13 @@
 #include <filesystem>
 
 #include "io/reader.h"
-#include "data_structures/graph/serializable_immutable_csr.h"
+
+#include <gtest/gtest.h>
+
+#include <filesystem>
+#include <iostream>
+
+#include "data_structures/graph/immutable_csr_graph.h"
 #include "util/logging.h"
 
 #define SUBGRAPH_0_PATH \
@@ -14,6 +20,10 @@
 namespace sics::graph::core::io {
 using SerializedImmutableCSR =
     sics::graph::core::data_structures::graph::SerializedImmutableCSR;
+
+#define SUBGRAPH_1_PATH "../../../input/small_graph_part/0"
+
+namespace sics::graph::core::io {
 
 // The fixture for testing class LogTest
 class ReaderTest : public ::testing::Test {
