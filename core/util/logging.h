@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_LOGGING_H
-#define GRAPH_SYSTEMS_LOGGING_H
+#ifndef CORE_UTIL_LOGGING_H_
+#define CORE_UTIL_LOGGING_H_
 //#pragma once
 
 #include <folly/logging/FileHandlerFactory.h>
@@ -88,4 +88,4 @@ static void OverrideConfig(const std::string& config_str) {
 #define LOGF_DEBUG(...) XLOGF(DBG, ##__VA_ARGS__)
 
 }  // namespace sics::graph::core::util
-#endif  // MINIGRAPH_UTILITY_LOGGING_H_
+#endif  // CORE_UTIL_LOGGING_H_

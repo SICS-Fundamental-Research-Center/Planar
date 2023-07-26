@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_SERIALIZED_IMMUTABLE_CSR_H
-#define GRAPH_SYSTEMS_SERIALIZED_IMMUTABLE_CSR_H
+#ifndef CORE_DATA_STRUCTURES_GRAPH_SERIALIZED_IMMUTABLE_CSR_GRAPH_H_
+#define CORE_DATA_STRUCTURES_GRAPH_SERIALIZED_IMMUTABLE_CSR_GRAPH_H_
 
 #include "data_structures/serialized.h"
 
@@ -38,4 +38,4 @@ class SerializedImmutableCSRGraph : public Serialized {
 
 }  // namespace sics::graph::core::data_structures::graph
 
-#endif  // GRAPH_SYSTEMS_SERIALIZED_IMMUTABLE_CSR_H
+#endif  // CORE_DATA_STRUCTURES_GRAPH_SERIALIZED_IMMUTABLE_CSR_GRAPH_H_

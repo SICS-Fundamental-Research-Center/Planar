@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_SERIALIZED_H
-#define GRAPH_SYSTEMS_SERIALIZED_H
+#ifndef CORE_DATA_STRUCTURES_SERIALIZED_H_
+#define CORE_DATA_STRUCTURES_SERIALIZED_H_
 
 #include "data_structures/buffer.h"
 
@@ -31,4 +31,4 @@ class Serialized {
 
 }  // namespace sics::graph::core::data_structures
 
-#endif  // GRAPH_SYSTEMS_SERIALIZED_H
+#endif  // CORE_DATA_STRUCTURES_SERIALIZED_H_

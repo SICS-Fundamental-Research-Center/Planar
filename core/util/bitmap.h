@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_BITMAP_H
-#define GRAPH_SYSTEMS_BITMAP_H
+#ifndef CORE_UTIL_BITMAP_H_
+#define CORE_UTIL_BITMAP_H_
 
 #include <cassert>
 #include <cstring>
@@ -108,4 +108,4 @@ class Bitmap {
 
 }  // namespace sics::graph::core::util
 
-#endif  // GRAPH_SYSTEMS_BITMAP_H
+#endif  // CORE_UTIL_BITMAP_H_

@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_MOCK_TASKRUNNER_H
-#define GRAPH_SYSTEMS_MOCK_TASKRUNNER_H
+#ifndef CORE_COMMON_MULTITHREADING_MOCK_TASKRUNNER_H_
+#define CORE_COMMON_MULTITHREADING_MOCK_TASKRUNNER_H_
 
 #include "task_runner.h"
 
@@ -19,4 +19,4 @@ class MockTaskRunner : public TaskRunner {
 
 }  // namespace sics::graph::core::common
 
-#endif  // GRAPH_SYSTEMS_MOCK_TASKRUNNER_H
+#endif  // CORE_COMMON_MULTITHREADING_MOCK_TASKRUNNER_H_

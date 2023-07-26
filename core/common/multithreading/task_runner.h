@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_TASKRUNNER_H
-#define GRAPH_SYSTEMS_TASKRUNNER_H
+#ifndef CORE_COMMON_MULTITHREADING_TASKRUNNER_H_
+#define CORE_COMMON_MULTITHREADING_TASKRUNNER_H_
 
 #include "task.h"
 
@@ -37,4 +37,4 @@ class TaskRunner {
 
 }  // namespace sics::graph::core::common
 
-#endif  // GRAPH_SYSTEMS_TASKRUNNER_H
+#endif  // CORE_COMMON_MULTITHREADING_TASKRUNNER_H_

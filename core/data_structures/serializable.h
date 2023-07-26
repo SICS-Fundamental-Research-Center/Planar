@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_SERIALIZABLE_H
-#define GRAPH_SYSTEMS_SERIALIZABLE_H
+#ifndef CORE_DATA_STRUCTURES_SERIALIZABLE_H_
+#define CORE_DATA_STRUCTURES_SERIALIZABLE_H_
 
 #include <memory>
 
@@ -17,4 +17,4 @@ class Serializable {
 
 }  // namespace sics::graph::core::data_structures
 
-#endif  // GRAPH_SYSTEMS_SERIALIZABLE_H
+#endif  // CORE_DATA_STRUCTURES_SERIALIZABLE_H_
