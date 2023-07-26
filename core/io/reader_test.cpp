@@ -1,9 +1,12 @@
 #include "io/reader.h"
-#include "data_structures/graph/immutable_csr_graph.h"
-#include "util/logging.h"
+
 #include <gtest/gtest.h>
+
 #include <filesystem>
 #include <iostream>
+
+#include "data_structures/graph/immutable_csr_graph.h"
+#include "util/logging.h"
 
 using SerializedImmutableCSR =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;

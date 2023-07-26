@@ -1,10 +1,9 @@
 #ifndef CORE_DATA_STRUCTURES_GRAPH_SERIALIZED_IMMUTABLE_CSR_GRAPH_H_
 #define CORE_DATA_STRUCTURES_GRAPH_SERIALIZED_IMMUTABLE_CSR_GRAPH_H_
 
-#include "data_structures/serialized.h"
-
 #include <iostream>
 
+#include "data_structures/serialized.h"
 #include "util/logging.h"
 
 namespace sics::graph::core::data_structures::graph {

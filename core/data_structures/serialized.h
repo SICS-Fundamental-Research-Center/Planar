@@ -1,9 +1,9 @@
 #ifndef CORE_DATA_STRUCTURES_SERIALIZED_H_
 #define CORE_DATA_STRUCTURES_SERIALIZED_H_
 
-#include "data_structures/buffer.h"
-
 #include <list>
+
+#include "data_structures/buffer.h"
 
 namespace sics::graph::core::data_structures {
 
