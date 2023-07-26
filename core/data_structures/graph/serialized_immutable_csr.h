@@ -5,11 +5,7 @@
 
 #include <iostream>
 
-#include "common/types.h"
 #include "util/logging.h"
-
-
-#define ALIGNMENT_FACTOR (double)64.0
 
 namespace sics::graph::core::data_structures::graph {
 
