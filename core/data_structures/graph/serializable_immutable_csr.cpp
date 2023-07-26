@@ -1,11 +1,8 @@
 #include "serializable_immutable_csr.h"
-#include "common/types.h"
-#include "util/logging.h"
+
 #include <cmath>
 
-using VertexID = sics::graph::core::common::VertexID;
-
-#define ALIGNMENT_FACTOR (double)64.0
+#include "util/logging.h"
 
 namespace sics::graph::core::data_structures::graph {
 
