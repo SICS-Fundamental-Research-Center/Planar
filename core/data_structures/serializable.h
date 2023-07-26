@@ -1,9 +1,10 @@
 #ifndef GRAPH_SYSTEMS_SERIALIZABLE_H
 #define GRAPH_SYSTEMS_SERIALIZABLE_H
 
+#include <memory>
+
 #include "common/multithreading/task_runner.h"
 #include "data_structures/serialized.h"
-#include <memory>
 
 namespace sics::graph::core::data_structures {
 
