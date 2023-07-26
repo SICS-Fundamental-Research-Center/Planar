@@ -1,10 +1,13 @@
 #ifndef GRAPH_SYSTEMS_SERIALIZED_IMMUTABLE_CSR_H
 #define GRAPH_SYSTEMS_SERIALIZED_IMMUTABLE_CSR_H
 
-#include "common/types.h"
 #include "data_structures/serialized.h"
-#include "util/logging.h"
+
 #include <iostream>
+
+#include "common/types.h"
+#include "util/logging.h"
+
 
 #define ALIGNMENT_FACTOR (double)64.0
 
@@ -12,8 +15,9 @@ namespace sics::graph::core::data_structures::graph {
 
 class SerializedImmutableCSR : public Serialized {
  protected:
-  // The first item of csr_buffer_: buffer list of meta data;
-  // The second item of csr_buffer_: buffer list of subgraph_csr data.
+  // TODO: Should we adopt list of list?
+  // `csr_buffer` stores the serialized data in CSR format. Each `csr_buffer` corresponds to a subgraph.
+  // Each item of `csr_buffer` is a list of buffers that correspond to a subgraph file.
   std::list<std::list<OwnedBuffer>> csr_buffer_;
 
   // Reader call this function to push buffers into csr_buffer_.
@@ -24,7 +28,7 @@ class SerializedImmutableCSR : public Serialized {
   // Writer call this function to pop buffers from csr_buffer_ to Disk.
   std::list<OwnedBuffer> PopNextImpl() override {
     // TODO: implement this function.
-    // return std::list<OwnedBuffer>();
+    return std::list<OwnedBuffer>();
   }
 
  public:
