@@ -1,17 +1,17 @@
 #ifndef GRAPH_SYSTEMS_SERIALIZABLE_IMMUTABLE_CSR_H
 #define GRAPH_SYSTEMS_SERIALIZABLE_IMMUTABLE_CSR_H
 
+#include <memory>
+
 #include "common/types.h"
 #include "data_structures/graph/serialized_immutable_csr.h"
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
-// #include "util/logging.h"
-#include <memory>
 
 namespace sics::graph::core::data_structures::graph {
 
 class SerializableImmutableCSR : public Serializable {
- protected:
+ private:
   using GraphID = sics::graph::core::common::GraphID;
   using VertexID = sics::graph::core::common::VertexID;
 
