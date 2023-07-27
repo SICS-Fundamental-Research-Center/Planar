@@ -8,6 +8,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/tools)
 #######################
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${PROJECT_ROOT_DIR}/core
 )
 
 # find gflag
@@ -16,15 +17,15 @@ find_package(gflags REQUIRED)
 #######################
 # Artifacts
 #######################
-file(GLOB GRAPH_CORE_SOURCES
+file(GLOB TOOLS_SOURCES
         "*.cpp"
         "graph_convert/*.cpp"
         )
 
-list(FILTER GRAPH_CORE_SOURCES EXCLUDE REGEX ".*_test\\.cpp$")
-message(STATUS "CORE source files: ${GRAPH_CORE_SOURCES}")
+list(FILTER TOOLS_SOURCES EXCLUDE REGEX ".*_test\\.cpp$")
+message(STATUS "tools source files: ${TOOLS_SOURCES}")
 
-file(GLOB GRAPH_CORE_HEADERS
+file(GLOB TOOLS_HEADERS
         "*.h"
         "graph_convert/*.h"
         )

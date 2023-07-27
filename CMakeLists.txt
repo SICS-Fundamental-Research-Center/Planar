@@ -14,6 +14,7 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif ()
 message(STATUS "[Graph Systems] will build in type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Using compiler: ${CMAKE_CXX_COMPILER} ${CMAKE_CXX_COMPILER_VERSION}")
 
 ###### Directories shortcuts ######
 set(PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -36,6 +37,8 @@ endif ()
 
 # folly
 find_package(FOLLY REQUIRED)
+find_package(fmt REQUIRED)
+include_directories(SYSTEM ${FOLLY_INCLUDE_DIR})
 
 ###### Add third party to the project, if necessary ######
 if (TEST)
@@ -43,20 +46,28 @@ if (TEST)
     message(STATUS "Enabling GoogleTest...")
     set(BUILD_GMOCK ON CACHE BOOL "Option: build gmock and gtest -- ON" FORCE)
     set(INSTALL_GTEST OFF CACHE BOOL "Option: install gtest -- OFF" FORCE)
-    add_subdirectory("${THIRD_PARTY_ROOT}/googletest")
+
+    include_directories(SYSTEM ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+    include_directories(SYSTEM ${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
+    add_subdirectory("${THIRD_PARTY_ROOT}/googletest" EXCLUDE_FROM_ALL)
 endif ()
 
 # gflags
 find_package(gflags CONFIG REQUIRED)
-include_directories(${FOLLY_INCLUDE_DIR})
 
 # yaml
-add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp")
+set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
+set(YAML_CPP_INSTALL OFF)
+set(YAML_CPP_BUILD_TESTS OFF)
+set(YAML_CPP_BUILD_TOOLS OFF)
+include_directories(SYSTEM ${THIRD_PARTY_ROOT}/yaml-cpp/include/)
+add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp" EXCLUDE_FROM_ALL)
 
 #######################
 # Artifacts
 #######################
 add_subdirectory(core)
+add_subdirectory(tools)
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/core
 )
@@ -66,7 +77,12 @@ foreach (appfile ${appfiles})
     message(STATUS "Found apps: ${appfile}")
     get_filename_component(app ${appfile} NAME_WE)
     add_executable("${app}_exec" ${appfile})
-    target_link_libraries("${app}_exec" graph_systems_core)
+    target_link_libraries("${app}_exec"
+            graph_systems_core
+            ${FOLLY_LIBRARIES}
+            ${LIBFMT_LIBRARY}
+            yaml-cpp::yaml-cpp
+            )
 endforeach ()
 
-add_subdirectory(tools)
+
