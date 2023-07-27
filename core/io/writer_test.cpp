@@ -56,7 +56,7 @@ TEST_F(WriterTest, WriteSubgraph) {
   // Read a subgraph
   rereader.ReadSubgraph(WRITE_1_PATH, serialized_immutable_csr_1);
 
-  uint8_t* data = serialized_immutable_csr_1->get_csr_buffer().front().front().Get();
+  uint8_t* data = serialized_immutable_csr_1->GetCSRBuffer().front().front().Get();
   // size_t size = serialized_immutable_csr->get_csr_buffer().front().front().GetSize();
   uint32_t* a_uint32 = reinterpret_cast<uint32_t*>(data);
   size_t* a_size_t = reinterpret_cast<size_t*>(data);

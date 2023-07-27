@@ -34,7 +34,7 @@ class SerializedImmutableCSRGraph : public Serialized {
   SerializedImmutableCSRGraph() {}
   bool HasNext() const override { return this->csr_buffer_.size() > 0; }
 
-  std::list<std::list<OwnedBuffer>>& get_csr_buffer() {
+  std::list<std::list<OwnedBuffer>>& GetCSRBuffer() {
     return this->csr_buffer_;
   }
 };

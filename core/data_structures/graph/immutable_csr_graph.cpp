@@ -16,7 +16,7 @@ void ImmutableCSRGraph::Deserialize(const common::TaskRunner& runner,
   //       If not, may be we should use unique_ptr to re-write `SerializedImmutableCSR`.
   serialized_immutable_csr_ = std::move(static_cast<SerializedImmutableCSRGraph&&>(serialized));
 
-  auto& csr_buffer = serialized_immutable_csr_.get_csr_buffer();
+  auto& csr_buffer = serialized_immutable_csr_.GetCSRBuffer();
   ParseSubgraphCSR(std::move(csr_buffer.front()));
   int a = 0;
   // auto iter = csr_buffer.begin();

@@ -88,7 +88,7 @@ TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_0) {
 
   /* Test: whether loaded */
   size_t loaded_size =
-      serialized_immutable_csr_0_->get_csr_buffer().front().front().GetSize();
+      serialized_immutable_csr_0_->GetCSRBuffer().front().front().GetSize();
   size_t expected_size = compute_total_size(config_0_);
   EXPECT_EQ(expected_size, loaded_size);
 
@@ -201,7 +201,7 @@ TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_1) {
 
   /* Test: whether loaded */
   size_t loaded_size =
-      serialized_immutable_csr_1_->get_csr_buffer().front().front().GetSize();
+      serialized_immutable_csr_1_->GetCSRBuffer().front().front().GetSize();
   size_t expected_size = compute_total_size(config_1_);
   EXPECT_EQ(expected_size, loaded_size);
 
