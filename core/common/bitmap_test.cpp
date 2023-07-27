@@ -9,7 +9,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-namespace sics::graph::core::util {
+namespace sics::graph::core::common {
 
 // The fixture for testing class BitmapTest.
 class BitmapTest : public ::testing::Test {
