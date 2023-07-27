@@ -41,6 +41,7 @@ find_package(fmt REQUIRED)
 include_directories(SYSTEM ${FOLLY_INCLUDE_DIR})
 
 ###### Add third party to the project, if necessary ######
+# googleTest
 if (TEST)
     enable_testing()
     message(STATUS "Enabling GoogleTest...")

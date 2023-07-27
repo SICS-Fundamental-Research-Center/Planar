@@ -11,7 +11,6 @@ namespace sics::graph::core::common {
 
 typedef uint32_t GraphIDType;
 
-} // namespace sics::graph::core::common
-
+}  // namespace sics::graph::core::common
 
 #endif  // GRAPH_SYSTEMS_TYPES_H
