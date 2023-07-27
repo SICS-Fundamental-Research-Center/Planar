@@ -2,7 +2,7 @@
 #define CORE_DATA_STRUCTURES_GRAPH_IMMUTABLE_CSR_GRAPH_CONFIG_H_
 
 #include <cstddef>
-#include "common/types.h";
+#include "common/types.h"
 
 namespace sics::graph::core::data_structures::graph {
     struct ImmutableCSRGraphConfig {

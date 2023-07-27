@@ -6,8 +6,8 @@
 #include <list>
 #include <utility>
 
-#include "util/logging.h"
 #include "common/types.h"
+#include "util/logging.h"
 #include "data_structures/graph/immutable_csr_graph_config.h"
 #include "data_structures/graph/serialized_immutable_csr_graph.h"
 #include "data_structures/serializable.h"
@@ -30,7 +30,7 @@ class ImmutableCSRGraph : public Serializable {
   void Deserialize(const common::TaskRunner& runner,
                    Serialized&& serialized) override;
 
-  // TODO: Function name format
+  // TODO(bwc): Function name format
   GraphID get_gid() const { return gid_; }
   void set_gid(GraphID gid) { gid_ = gid; }
 
@@ -46,7 +46,7 @@ class ImmutableCSRGraph : public Serializable {
   size_t* GetOutOffset() const { return out_offset_; }
 
  private:
-  void ParseSubgraphCSR(const std::list<OwnedBuffer>&& buffer_list);
+  void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
   SerializedImmutableCSRGraph serialized_immutable_csr_;
 
   GraphID gid_ = 0;
@@ -66,7 +66,6 @@ class ImmutableCSRGraph : public Serializable {
   size_t* in_offset_ = nullptr;
   size_t* out_offset_ = nullptr;
 };
-
 }  // namespace sics::graph::core::data_structures::graph
 
 #endif  // CORE_DATA_STRUCTURES_GRAPH_IMMUTABLE_CSR_GRAPH_H_

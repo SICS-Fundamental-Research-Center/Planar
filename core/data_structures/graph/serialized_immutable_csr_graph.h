@@ -6,7 +6,6 @@
 #include <list>
 
 #include "data_structures/serialized.h"
-#include "util/logging.h"
 
 namespace sics::graph::core::data_structures::graph {
 

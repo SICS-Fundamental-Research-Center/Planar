@@ -1,4 +1,4 @@
-#include "immutable_csr_graph.h"
+#include "data_structures/graph/immutable_csr_graph.h"
 
 #include <gtest/gtest.h>
 
@@ -7,7 +7,6 @@
 #include "data_structures/graph/immutable_csr_graph_config.h"
 #include "io/reader.h"
 #include "data_structures/graph/serialized_immutable_csr_graph.h"
-#include "util/logging.h"
 
 using ImmutableCSRGraph =
     sics::graph::core::data_structures::graph::ImmutableCSRGraph;
@@ -24,8 +23,7 @@ using ImmutableCSRGraphConfig =
 namespace sics::graph::core::test {
 class SerializableImmutableCSRTest : public ::testing::Test {
  protected:
-  // SerializableImmutableCSRTest() = default;
-  // ~SerializableImmutableCSRTest() override = default;
+  ~SerializableImmutableCSRTest() override = default;
   SerializableImmutableCSRTest() {
     // Initialize Serialized objects.
     serialized_immutable_csr_0_ = new SerializedImmutableCSR();
@@ -44,11 +42,6 @@ class SerializableImmutableCSRTest : public ::testing::Test {
         32,  // sum_out_degree
     };
   }
-
-  ~SerializableImmutableCSRTest() override {
-    delete serialized_immutable_csr_0_;
-    delete serialized_immutable_csr_1_;
-  };
 
   size_t compute_total_size(ImmutableCSRGraphConfig config) {
     VertexID aligned_max_vertex =
