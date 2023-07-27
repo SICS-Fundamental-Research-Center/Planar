@@ -30,8 +30,20 @@ class ImmutableCSRGraph : public Serializable {
   void Deserialize(const common::TaskRunner& runner,
                    Serialized&& serialized) override;
 
+  // TODO: Function name format
   GraphID get_gid() const { return gid_; }
   void set_gid(GraphID gid) { gid_ = gid; }
+
+  uint8_t* GetGraphBuffer() const { return buf_graph_; }
+  VertexID* GetGlobalIDByIndex() const { return globalid_by_index_; }
+  VertexID* GetLocalIDByIndex() const { return localid_by_index_; }
+  VertexID* GetLocalIDByGlobalID() const { return localid_by_globalid_; }
+  VertexID* GetInEdges() const { return in_edges_; }
+  VertexID* GetOutEdges() const { return out_edges_; }
+  size_t* GetInDegree() const { return indegree_; }
+  size_t* GetOutDegree() const { return outdegree_; }
+  size_t* GetInOffset() const { return in_offset_; }
+  size_t* GetOutOffset() const { return out_offset_; }
 
  private:
   void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
