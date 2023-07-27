@@ -46,7 +46,8 @@ class ImmutableCSRGraph : public Serializable {
   size_t* GetOutOffset() const { return out_offset_; }
 
  private:
-  void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
+  void ParseSubgraphCSR(const std::list<OwnedBuffer>&& buffer_list);
+  SerializedImmutableCSRGraph serialized_immutable_csr_;
 
   GraphID gid_ = 0;
   uint8_t* buf_graph_ = nullptr;

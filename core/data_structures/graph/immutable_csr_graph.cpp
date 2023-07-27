@@ -1,4 +1,5 @@
 #include "immutable_csr_graph.h"
+#include "utility"
 
 namespace sics::graph::core::data_structures::graph {
 
@@ -11,10 +12,12 @@ std::unique_ptr<Serialized> ImmutableCSRGraph::Serialize(
 void ImmutableCSRGraph::Deserialize(const common::TaskRunner& runner,
                                            Serialized&& serialized) {
   // TODO: Submit to the task runner.
-  SerializedImmutableCSRGraph serialized_immutable_csr_ =
-      std::move(static_cast<SerializedImmutableCSRGraph&&>(serialized));
+  // TODO: Should we keep serialized_immutable_csr_ as a member variable?
+  //       If not, may be we should use unique_ptr to re-write `SerializedImmutableCSR`.
+  serialized_immutable_csr_ = std::move(static_cast<SerializedImmutableCSRGraph&&>(serialized));
+
   auto& csr_buffer = serialized_immutable_csr_.get_csr_buffer();
-  ParseSubgraphCSR(csr_buffer.front());
+  ParseSubgraphCSR(std::move(csr_buffer.front()));
   int a = 0;
   // auto iter = csr_buffer.begin();
   // ParseSubgraphCSR(*iter);
@@ -27,7 +30,7 @@ void ImmutableCSRGraph::Deserialize(const common::TaskRunner& runner,
 }
 
 void ImmutableCSRGraph::ParseSubgraphCSR(
-    const std::list<OwnedBuffer>& buffer_list) {
+    const std::list<OwnedBuffer>&& buffer_list) {
   // Fetch the OwnedBuffer object.
   buf_graph_ = buffer_list.front().Get();
   // LOG_INFO("[in cpp] loaded size:", buffer_list.front().GetSize());
@@ -62,7 +65,7 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
 
   // LOG_INFO("[in cpp] total_size:", total_size);
 
-  localid_by_globalid_ = reinterpret_cast<VertexID*> (buf_graph_ + start_localid_by_globalid);
+  localid_by_globalid_ = reinterpret_cast<VertexID*>(buf_graph_ + start_localid_by_globalid);
   localid_by_index_ = reinterpret_cast<VertexID*>(buf_graph_ + start_localid);
   globalid_by_index_ = reinterpret_cast<VertexID*>(buf_graph_ + start_globalid);
   in_edges_ = reinterpret_cast<VertexID*>(buf_graph_ + start_in_edges);
