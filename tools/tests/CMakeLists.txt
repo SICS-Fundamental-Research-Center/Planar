@@ -1,4 +1,5 @@
-project(tools_tests)
+cmake_minimum_required(VERSION 3.12)
+project(graph_systems_tools_tests)
 
 include_directories(SYSTEM ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 include_directories(SYSTEM ${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})

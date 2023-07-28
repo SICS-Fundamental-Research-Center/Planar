@@ -1,13 +1,18 @@
 // This file belongs to the SICS graph-systems project, a C++ library for
-// exploiting parallelism graph computing. It is response for preprocessing
-// graph, e.g. convert a graph from Edgelist to CSR.
+// exploiting parallelism graph computing.
+//
+// We store graphs in a binary format. Other formats such as edge-list can be
+// converted to our format with graph_convert tool. You can use graph_convert as
+// follows: e.g. convert a graph from Edgelist to CSR. graph-convert
+// --convert_mode=[options] -i <input file path> -o <output file path>
+// --sep=[separator]
 
 #include <fstream>
 #include <iostream>
 #include <type_traits>
 
-#include "yaml-cpp/yaml.h"
 #include "gflags/gflags.h"
+#include "yaml-cpp/yaml.h"
 
 #include "common/bitmap.h"
 #include "common/multithreading/thread_pool.h"
@@ -15,7 +20,7 @@
 #include "util/atomic.h"
 #include "util/logging.h"
 
-#define vid_t sics::graph::core::common::GraphIDType
+using sics::graph::core::common::GraphIDType;
 
 // Define convert mode.
 #define CONVERTMODE(F) \
@@ -42,24 +47,27 @@ DEFINE_string(sep, "", "seperator to splite csv file.");
 DEFINE_bool(read_head, false, "whether to read header of csv.");
 
 void ConvertEdgelist(const std::string& input_path,
-                     const std::string& output_path, const std::string& sep,
-                     const bool& read_head) {
-  // TODO(haisaoko):  auto thread_pool = sics::graph::core::common::ThreadPool(
+                     const std::string& output_path,
+                     const std::string& sep,
+                     bool read_head) {
+  // TODO(haisaoko): to add parallel. auto thread_pool =
+  // sics::graph::core::common::ThreadPool(
   //     std::thread::hardware_concurrency());
   std::ifstream in_file(input_path);
   std::ofstream out_data_file(output_path + "edgelist.bin");
   std::ofstream out_meta_file(output_path + "meta.yaml");
 
-  std::vector<vid_t> edges_vec;
+  std::vector<GraphIDType> edges_vec;
   edges_vec.reserve(65536);
 
-  vid_t max_vid = 0;
+  GraphIDType max_vid = 0;
   std::string line, vid_str;
   if (in_file) {
+    if (read_head) getline(in_file, line);
     while (getline(in_file, line)) {
       std::stringstream ss(line);
       while (getline(ss, vid_str, *sep.c_str())) {
-        vid_t vid = stoll(vid_str);
+        GraphIDType vid = stoll(vid_str);
         edges_vec.push_back(vid);
         sics::graph::core::util::atomic::WriteMax(&max_vid, vid);
       }
@@ -67,8 +75,9 @@ void ConvertEdgelist(const std::string& input_path,
   }
 
   auto bitmap = sics::graph::core::common::Bitmap(max_vid);
-  auto buffer_edges = (vid_t*)malloc(sizeof(vid_t) * edges_vec.size() * 2);
-  memset(buffer_edges, 0, sizeof(vid_t) * edges_vec.size() * 2);
+  auto buffer_edges =
+      (GraphIDType*)malloc(sizeof(GraphIDType) * edges_vec.size() * 2);
+  memset(buffer_edges, 0, sizeof(GraphIDType) * edges_vec.size() * 2);
 
   size_t i = 0;
   for (auto iter = edges_vec.begin(); iter != edges_vec.end(); iter++) {
@@ -77,8 +86,8 @@ void ConvertEdgelist(const std::string& input_path,
   }
 
   // Write binary edgelist
-  out_data_file.write((char*)buffer_edges,
-                      sizeof(vid_t) * 2 * edges_vec.size());
+  out_data_file.write((char*) buffer_edges,
+                      sizeof(GraphIDType) * 2 * edges_vec.size());
 
   // Write Meta date.
   YAML::Node node;
@@ -106,21 +115,24 @@ int main(int argc, char** argv) {
       "csr\n");
 
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-  if (FLAGS_i == "" || FLAGS_o == "")
+  if (FLAGS_i == "" || FLAGS_o == "") {
     LOG_ERROR("Input (output) path is empty.");
+    return -1;
+  }
 
   switch (String2Enmu(FLAGS_convert_mode)) {
     case edgelistcsv2edgelistbin:
-      assert(FLAGS_sep != "");
-      if (FLAGS_sep == "")
+      if (FLAGS_sep == "") {
         LOG_ERROR("CSV separator is not empty. Use -sep [e.g. \",\"].");
+        return -1;
+      }
       ConvertEdgelist(FLAGS_i, FLAGS_o, FLAGS_sep, FLAGS_read_head);
       break;
     case edgelistcsv2csrbin:
-      // TO ADD (hsiaoko)
+      // TO ADD (hsiaoko): to add edgelist csv 2 csr bin function.
       break;
     case edgelistbin2csrbin:
-      // TO ADD (hsiaoko)
+      // TO ADD (hsiaoko): to add edgelist bin 2 csr bin function.
       break;
     default:
       LOG_INFO("Error convert mode.");
