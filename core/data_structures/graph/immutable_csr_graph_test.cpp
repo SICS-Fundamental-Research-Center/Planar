@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "common/multithreading/mock_task_runner.h"
+#include "common/multithreading/thread_pool.h"
 #include "common/types.h"
 #include "data_structures/graph/immutable_csr_graph_config.h"
 #include "io/reader.h"
@@ -16,6 +16,7 @@ using Reader = sics::graph::core::io::Reader;
 using VertexID = sics::graph::core::common::VertexID;
 using ImmutableCSRGraphConfig =
     sics::graph::core::data_structures::graph::ImmutableCSRGraphConfig;
+using ThreadPool = sics::graph::core::common::ThreadPool;
 
 #define SUBGRAPH_0_PATH "../../../input/small_graph_part/0"
 #define SUBGRAPH_1_PATH "../../../input/small_graph_part/1"
@@ -89,9 +90,9 @@ TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_0) {
   EXPECT_EQ(expected_size, loaded_size);
 
   // Deserialize
-  common::MockTaskRunner runner;
+  ThreadPool thread_pool(1);
   serializable_immutable_csr.Deserialize(
-      runner, std::move(serialized_immutable_csr_0_));
+      thread_pool, std::move(serialized_immutable_csr_0_));
 
   /* Test: check global id value */
   VertexID* globalid_ptr =
@@ -202,9 +203,9 @@ TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_1) {
   EXPECT_EQ(expected_size, loaded_size);
 
   // Deserialize
-  common::MockTaskRunner runner;
+  ThreadPool thread_pool(1);
   serializable_immutable_csr.Deserialize(
-      runner, std::move(serialized_immutable_csr_1_));
+      thread_pool, std::move(serialized_immutable_csr_1_));
 
   /* Test: check global id value */
   VertexID* globalid_ptr =
