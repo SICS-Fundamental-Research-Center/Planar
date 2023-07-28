@@ -24,7 +24,6 @@ using ThreadPool = sics::graph::core::common::ThreadPool;
 namespace sics::graph::core::test {
 class SerializableImmutableCSRTest : public ::testing::Test {
  protected:
-  ~SerializableImmutableCSRTest() override = default;
   SerializableImmutableCSRTest() {
     // Initialize Serialized objects.
     serialized_immutable_csr_0_ = std::make_unique<SerializedImmutableCSR>();
@@ -45,9 +44,10 @@ class SerializableImmutableCSRTest : public ::testing::Test {
     };
   }
 
+  ~SerializableImmutableCSRTest() override = default;
+
   size_t compute_total_size(ImmutableCSRGraphConfig config) {
-    VertexID aligned_max_vertex =
-        std::ceil(config.max_vertex / ALIGNMENT_FACTOR) * ALIGNMENT_FACTOR;
+    VertexID aligned_max_vertex = (config.max_vertex + 63) / 64 * 64;
     size_t size_localid = sizeof(VertexID) * config.num_vertex;
     size_t size_globalid = sizeof(VertexID) * config.num_vertex;
     size_t size_indegree = sizeof(size_t) * config.num_vertex;

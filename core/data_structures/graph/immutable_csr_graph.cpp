@@ -53,8 +53,7 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
   // Fetch the OwnedBuffer object.
   buf_graph_ = buffer_list.front().Get();
 
-  VertexID aligned_max_vertex =
-      std::ceil(csr_config_.max_vertex / ALIGNMENT_FACTOR) * ALIGNMENT_FACTOR;
+  VertexID aligned_max_vertex = (csr_config_.max_vertex + 63) / 64 * 64;
 
   size_t size_globalid = sizeof(VertexID) * csr_config_.num_vertex;
   size_t size_indegree = sizeof(size_t) * csr_config_.num_vertex;
