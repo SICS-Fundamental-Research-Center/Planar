@@ -67,6 +67,7 @@ add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp" EXCLUDE_FROM_ALL)
 # Artifacts
 #######################
 add_subdirectory(core)
+add_subdirectory(tools)
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/core
 )
