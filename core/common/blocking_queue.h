@@ -30,7 +30,15 @@ class BlockingQueue {
     while (q_.empty()) {
       cv_.wait(lck);
     }
-    return q_.pop();
+    T t = q_.front();
+    q_.pop();
+    return t;
+  }
+
+  [[nodiscard]]
+  size_t Size() {
+    std::lock_guard<std::mutex> grd(mtx_);
+    return q_.size();
   }
 
  private:
