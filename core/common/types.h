@@ -2,16 +2,16 @@
 // Created by Shuhao Liu on 2023-07-18.
 //
 
-#ifndef GRAPH_SYSTEMS_TYPES_H
-#define GRAPH_SYSTEMS_TYPES_H
+#ifndef CORE_COMMON_TYPES_H_
+#define CORE_COMMON_TYPES_H_
 
 #include <cstdint>
 
 namespace sics::graph::core::common {
 
-typedef uint32_t GraphIDType;
+typedef uint32_t GraphID;  // uint32_t: 0 ~ 4,294,967,295
+typedef uint32_t VertexID;
 
-} // namespace sics::graph::core::common
+}  // namespace sics::graph::core::common
 
-
-#endif  // GRAPH_SYSTEMS_TYPES_H
+#endif  // CORE_COMMON_TYPES_H_

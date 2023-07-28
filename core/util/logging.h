@@ -1,5 +1,6 @@
-#ifndef GRAPH_SYSTEMS_LOGGING_H
-#define GRAPH_SYSTEMS_LOGGING_H
+#ifndef CORE_UTIL_LOGGING_H_
+#define CORE_UTIL_LOGGING_H_
+//#pragma once
 
 #include <folly/logging/FileHandlerFactory.h>
 #include <folly/logging/Init.h>

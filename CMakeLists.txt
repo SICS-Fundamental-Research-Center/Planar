@@ -83,5 +83,3 @@ foreach (appfile ${appfiles})
             yaml-cpp::yaml-cpp
             )
 endforeach ()
-
-
