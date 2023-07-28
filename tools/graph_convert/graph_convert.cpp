@@ -7,16 +7,18 @@
 // USAGE: graph-convert --convert_mode=[options] -i <input file path> -o <output
 // file path> --sep=[separator]
 
-#include "common/bitmap.h"
-#include "common/multithreading/thread_pool.h"
-#include "common/types.h"
-#include "gflags/gflags.h"
-#include "util/atomic.h"
-#include "util/logging.h"
-#include "yaml-cpp/yaml.h"
 #include <fstream>
 #include <iostream>
 #include <type_traits>
+
+#include <gflags/gflags.h>
+#include <yaml-cpp/yaml.h>
+
+#include "common/bitmap.h"
+#include "common/multithreading/thread_pool.h"
+#include "common/types.h"
+#include "util/atomic.h"
+#include "util/logging.h"
 
 using sics::graph::core::common::VertexID;
 
@@ -48,8 +50,7 @@ void ConvertEdgelist(const std::string& input_path,
                      const std::string& output_path,
                      const std::string& sep,
                      bool read_head) {
-  // TODO(haisaoko): to add parallel. auto thread_pool =
-  // sics::graph::core::common::ThreadPool(
+  // TO ADD(hsiaoko): auto thread_pool = sics::graph::core::common::ThreadPool(
   //     std::thread::hardware_concurrency());
   std::ifstream in_file(input_path);
   std::ofstream out_data_file(output_path + "edgelist.bin");
