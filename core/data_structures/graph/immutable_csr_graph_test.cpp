@@ -26,8 +26,9 @@ class SerializableImmutableCSRTest : public ::testing::Test {
   ~SerializableImmutableCSRTest() override = default;
   SerializableImmutableCSRTest() {
     // Initialize Serialized objects.
-    serialized_immutable_csr_0_ = new SerializedImmutableCSR();
-    serialized_immutable_csr_1_ = new SerializedImmutableCSR();
+    serialized_immutable_csr_0_ = std::make_unique<SerializedImmutableCSR>();
+    serialized_immutable_csr_1_ = std::make_unique<SerializedImmutableCSR>();
+
     // Initialize test configs.
     config_0_ = {
         28,  // num_vertex
@@ -64,8 +65,10 @@ class SerializableImmutableCSRTest : public ::testing::Test {
     return expected_size;
   }
 
-  SerializedImmutableCSR* serialized_immutable_csr_0_;
-  SerializedImmutableCSR* serialized_immutable_csr_1_;
+  // SerializedImmutableCSR* serialized_immutable_csr_0_;
+  // SerializedImmutableCSR* serialized_immutable_csr_1_;
+  std::unique_ptr<SerializedImmutableCSR> serialized_immutable_csr_0_;
+  std::unique_ptr<SerializedImmutableCSR> serialized_immutable_csr_1_;
   ImmutableCSRGraphConfig config_0_, config_1_;
 };
 
@@ -77,7 +80,7 @@ TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_0) {
   ImmutableCSRGraph serializable_immutable_csr(0, std::move(config_0_));
 
   // Read a subgraph
-  reader.ReadSubgraph(SUBGRAPH_0_PATH, serialized_immutable_csr_0_);
+  reader.ReadSubgraph(SUBGRAPH_0_PATH, serialized_immutable_csr_0_.get());
 
   /* Test: whether loaded */
   size_t loaded_size =
@@ -88,7 +91,7 @@ TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_0) {
   // Deserialize
   common::MockTaskRunner runner;
   serializable_immutable_csr.Deserialize(
-      runner, std::move(*serialized_immutable_csr_0_));
+      runner, std::move(serialized_immutable_csr_0_));
 
   /* Test: check global id value */
   VertexID* globalid_ptr =
@@ -190,7 +193,7 @@ TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_1) {
   ImmutableCSRGraph serializable_immutable_csr(1, std::move(config_1_));
 
   // Read a subgraph
-  reader.ReadSubgraph(SUBGRAPH_1_PATH, serialized_immutable_csr_1_);
+  reader.ReadSubgraph(SUBGRAPH_1_PATH, serialized_immutable_csr_1_.get());
 
   /* Test: whether loaded */
   size_t loaded_size =
@@ -201,7 +204,7 @@ TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_1) {
   // Deserialize
   common::MockTaskRunner runner;
   serializable_immutable_csr.Deserialize(
-      runner, std::move(*serialized_immutable_csr_1_));
+      runner, std::move(serialized_immutable_csr_1_));
 
   /* Test: check global id value */
   VertexID* globalid_ptr =

@@ -2,6 +2,17 @@
 
 namespace sics::graph::core::data_structures::graph {
 
+template <typename Derived, typename Base>
+std::unique_ptr<Derived> dynamic_ptr_cast(
+    std::unique_ptr<Base>&& base) noexcept {
+  if (auto derived = dynamic_cast<Derived*>(base.get())) {
+    base.release();
+    return std::unique_ptr<Derived>(derived);
+  }
+
+  return nullptr;
+}
+
 std::unique_ptr<Serialized> ImmutableCSRGraph::Serialize(
     const common::TaskRunner& runner) {
   // TODO(bwc): Implement this.
@@ -9,13 +20,23 @@ std::unique_ptr<Serialized> ImmutableCSRGraph::Serialize(
 }
 
 void ImmutableCSRGraph::Deserialize(const common::TaskRunner& runner,
-                                           Serialized&& serialized) {
+                                    std::unique_ptr<Serialized>&& serialized) {
   // TODO(bwc): Submit to the task runner.
   // TODO(bwc): Should we keep serialized_immutable_csr_ as a member variable?
   //       If not, may be we should use unique_ptr to re-write `SerializedImmutableCSR`.
-  serialized_immutable_csr_ = std::move(static_cast<SerializedImmutableCSRGraph&&>(serialized));
 
-  auto& csr_buffer = serialized_immutable_csr_.GetCSRBuffer();
+  // serialized_immutable_csr_ = std::move(static_cast<SerializedImmutableCSRGraph&&>(serialized));
+
+  auto serialized_immutable_csr_ptr =
+      dynamic_ptr_cast<SerializedImmutableCSRGraph, Serialized>(
+          std::move(serialized));
+  if (serialized_immutable_csr_ptr) {
+    serialized_immutable_csr_.swap(serialized_immutable_csr_ptr);
+  } else {
+    LOG_ERROR("Failed to cast Serialized to SerializedImmutableCSRGraph.");
+  }
+
+  auto& csr_buffer = serialized_immutable_csr_.get()->GetCSRBuffer();
   ParseSubgraphCSR(std::move(csr_buffer.front()));
   auto iter = csr_buffer.begin();
   if (iter != csr_buffer.end()) {
@@ -25,6 +46,7 @@ void ImmutableCSRGraph::Deserialize(const common::TaskRunner& runner,
     LOG_ERROR("More than one subgraph in a serialized immutable CSR graph.");
   }
 }
+
 
 void ImmutableCSRGraph::ParseSubgraphCSR(
     const std::list<OwnedBuffer>& buffer_list) {

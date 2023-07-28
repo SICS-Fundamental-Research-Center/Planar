@@ -21,7 +21,7 @@ class Serializable {
   // Deserialize the `Serializable` object from a `Serialized` object.
   // This function will submit the deserialization task to the given TaskRunner
   virtual void Deserialize(const common::TaskRunner& runner,
-                           Serialized&& serialized) = 0;
+                           std::unique_ptr<Serialized>&& serialized) = 0;
 };
 
 }  // namespace sics::graph::core::data_structures
