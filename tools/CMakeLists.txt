@@ -1,7 +1,6 @@
+cmake_minimum_required(VERSION 3.12)
 project(tools)
 
-# Directories
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/tools)
 
 #######################
 # Libraries
@@ -15,22 +14,6 @@ include_directories(
 find_package(gflags REQUIRED)
 
 #######################
-# Artifacts
-#######################
-file(GLOB TOOLS_SOURCES
-        "*.cpp"
-        "graph_convert/*.cpp"
-        )
-
-list(FILTER TOOLS_SOURCES EXCLUDE REGEX ".*_test\\.cpp$")
-message(STATUS "tools source files: ${TOOLS_SOURCES}")
-
-file(GLOB TOOLS_HEADERS
-        "*.h"
-        "graph_convert/*.h"
-        )
-
-#######################
 # Tests
 #######################
 if (TEST)
@@ -41,11 +24,3 @@ endif ()
 # Artifacts
 #######################
 add_subdirectory(graph_convert)
-
-file(GLOB appfiles "${CMAKE_CURRENT_SOURCE_DIR}/graph_convert/*.cpp")
-foreach (appfile ${appfiles})
-    message(STATUS "Found tool: ${appfile}")
-    get_filename_component(app ${appfile} NAME_WE)
-    add_executable("${app}_exec" ${appfile})
-    target_link_libraries("${app}_exec" graph_systems_core yaml-cpp)
-endforeach ()
