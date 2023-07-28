@@ -31,8 +31,8 @@ class ImmutableCSRGraph : public Serializable {
                    std::unique_ptr<Serialized>&& serialized) override;
 
   // TODO(bwc): Function name format
-  GraphID get_gid() const { return gid_; }
-  void set_gid(GraphID gid) { gid_ = gid; }
+  GraphID GetGID() const { return gid_; }
+  void SetGID(GraphID gid) { gid_ = gid; }
 
   uint8_t* GetGraphBuffer() const { return buf_graph_; }
   VertexID* GetGlobalIDByIndex() const { return globalid_by_index_; }
