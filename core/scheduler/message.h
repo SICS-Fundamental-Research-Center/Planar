@@ -19,6 +19,9 @@ struct ReadMessage {
 
   // Response fields.
   data_structures::Serialized* response_serialized;
+
+  // Termination flag.
+  bool terminated = false;
 };
 
 struct ExecuteMessage {
@@ -29,6 +32,9 @@ struct ExecuteMessage {
 
   // Response fields.
   data_structures::Serializable* response_serializable;
+
+  // Termination flag.
+  bool terminated = false;
 };
 
 struct WriteMessage {
@@ -39,6 +45,9 @@ struct WriteMessage {
 
   // Response fields.
   size_t bytes_written;
+
+  // Termination flag.
+  bool terminated = false;
 };
 
 

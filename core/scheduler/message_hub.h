@@ -35,6 +35,7 @@ class MessageHub {
   ReaderQueue* get_reader_queue() { return &reader_q_; }
   ExecutorQueue* get_executor_queue() { return &executor_q_; }
   WriterQueue* get_writer_queue() { return &writer_q_; }
+  ResponseQueue* get_response_queue() { return &response_q_; }
 
  private:
   ReaderQueue reader_q_;
