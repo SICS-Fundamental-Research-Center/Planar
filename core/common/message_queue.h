@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_MESSAGE_QUEUE_H
-#define GRAPH_SYSTEMS_MESSAGE_QUEUE_H
+#ifndef CORE_COMMON_MESSAGE_QUEUE_H_
+#define CORE_COMMON_MESSAGE_QUEUE_H_
 
 #include <queue>
 #include <mutex>
@@ -39,4 +39,4 @@ class MessageQueue {
 
 } // namespace sics::graph::core::common
 
-#endif  // GRAPH_SYSTEMS_MESSAGE_QUEUE_H
+#endif  // CORE_COMMON_MESSAGE_QUEUE_H_

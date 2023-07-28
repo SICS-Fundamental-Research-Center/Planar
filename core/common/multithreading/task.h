@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_TASK_H
-#define GRAPH_SYSTEMS_TASK_H
+#ifndef CORE_COMMON_MULTITHREADING_TASK_H_
+#define CORE_COMMON_MULTITHREADING_TASK_H_
 
 #include <functional>
 #include <vector>
@@ -16,4 +16,4 @@ typedef std::vector<Task> TaskPackage;
 
 } // namespace sics::graph::core::common
 
-#endif  // GRAPH_SYSTEMS_TASK_H
+#endif  // CORE_COMMON_MULTITHREADING_TASK_H_

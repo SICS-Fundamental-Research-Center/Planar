@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_THREADPOOL_H
-#define GRAPH_SYSTEMS_THREADPOOL_H
+#ifndef CORE_COMMON_MULTITHREADING_THREADPOOL_H_
+#define CORE_COMMON_MULTITHREADING_THREADPOOL_H_
 
 #include <folly/executors/CPUThreadPoolExecutor.h>
 
@@ -44,4 +44,4 @@ class ThreadPool final : public TaskRunner {
 
 }  // namespace sics::graph::core::common
 
-#endif  // GRAPH_SYSTEMS_THREADPOOL_H
+#endif  // CORE_COMMON_MULTITHREADING_THREADPOOL_H_
