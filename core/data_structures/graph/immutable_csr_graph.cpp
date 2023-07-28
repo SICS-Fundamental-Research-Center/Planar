@@ -22,11 +22,6 @@ std::unique_ptr<Serialized> ImmutableCSRGraph::Serialize(
 void ImmutableCSRGraph::Deserialize(const common::TaskRunner& runner,
                                     std::unique_ptr<Serialized>&& serialized) {
   // TODO(bwc): Submit to the task runner.
-  // TODO(bwc): Should we keep serialized_immutable_csr_ as a member variable?
-  //       If not, may be we should use unique_ptr to re-write `SerializedImmutableCSR`.
-
-  // serialized_immutable_csr_ = std::move(static_cast<SerializedImmutableCSRGraph&&>(serialized));
-
   auto serialized_immutable_csr_ptr =
       dynamic_ptr_cast<SerializedImmutableCSRGraph, Serialized>(
           std::move(serialized));
