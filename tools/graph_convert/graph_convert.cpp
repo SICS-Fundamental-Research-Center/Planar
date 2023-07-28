@@ -3,9 +3,9 @@
 //
 // We store graphs in a binary format. Other formats such as edge-list can be
 // converted to our format with graph_convert tool. You can use graph_convert as
-// follows: e.g. convert a graph from Edgelist to CSR. graph-convert
-// --convert_mode=[options] -i <input file path> -o <output file path>
-// --sep=[separator]
+// follows: e.g. convert a graph from edgelist CSV to edgelist bin file.
+// USAGE: graph-convert --convert_mode=[options] -i <input file path> -o <output
+// file path> --sep=[separator]
 
 #include <fstream>
 #include <iostream>
