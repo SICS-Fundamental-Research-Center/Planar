@@ -7,25 +7,15 @@
 
 #include "common/types.h"
 #include "util/logging.h"
-#include "yaml-cpp/yaml.h"
+
+#include <yaml-cpp/yaml.h>
 #include <cstdio>
 #include <string>
 #include <vector>
 
 namespace sics::graph::core::data_structures {
 
-class SubgraphMetadata {
- public:
-  common::GraphIDType GetGid() const { return gid_; }
-  void SetGid(common::GraphIDType gid) { gid_ = gid; }
-  size_t GetNumVertices() const { return num_vertices_; }
-  void SetNumVertices(size_t num_vertices) { num_vertices_ = num_vertices; }
-  size_t GetNumEdges() const { return num_edges_; }
-  void SetNumEdges(size_t num_edges) { num_edges_ = num_edges; }
-  size_t GetSize() const { return size_; }
-  void SetSize(size_t size) { size_ = size; }
-
- private:
+struct SubgraphMetadata {
   common::GraphIDType gid_;
   size_t num_vertices_;
   size_t num_edges_;
@@ -61,7 +51,13 @@ class GraphMetadata {
     return subgraph_metadata_.at(gid);
   }
 
-  int GetSubgraphRound(common::GraphIDType gid) const {}
+  bool IsSubgraphPendingCurrentRound(common::GraphIDType subgraph_gid) {
+    return current_round_pending_.at(subgraph_gid);
+  }
+
+  bool IsSubgraphPendingNextRound(common::GraphIDType subgraph_gid) {
+    return next_round_pending_.at(subgraph_gid);
+  }
 
  private:
   size_t num_vertices_;
@@ -84,10 +80,10 @@ struct convert<sics::graph::core::data_structures::SubgraphMetadata> {
   static Node encode(const sics::graph::core::data_structures::SubgraphMetadata&
                          subgraph_metadata) {
     Node node;
-    node["gid"] = subgraph_metadata.GetGid();
-    node["num_vertices"] = subgraph_metadata.GetNumVertices();
-    node["num_edges"] = subgraph_metadata.GetNumEdges();
-    node["size"] = subgraph_metadata.GetSize();
+    node["gid"] = subgraph_metadata.gid_;
+    node["num_vertices"] = subgraph_metadata.num_vertices_;
+    node["num_edges"] = subgraph_metadata.num_edges_;
+    node["size"] = subgraph_metadata.size_;
     return node;
   }
   static bool decode(
@@ -96,11 +92,11 @@ struct convert<sics::graph::core::data_structures::SubgraphMetadata> {
     if (node.size() != 4) {
       return false;
     }
-    subgraph_metadata.SetGid(
-        node["gid"].as<sics::graph::core::common::GraphIDType>());
-    subgraph_metadata.SetNumVertices(node["num_vertices"].as<size_t>());
-    subgraph_metadata.SetNumEdges(node["num_edges"].as<size_t>());
-    subgraph_metadata.SetSize(node["size"].as<size_t>());
+    subgraph_metadata.gid_ =
+        node["gid"].as<sics::graph::core::common::GraphIDType>();
+    subgraph_metadata.num_vertices_ = node["num_vertices"].as<size_t>();
+    subgraph_metadata.num_edges_ = node["num_edges"].as<size_t>();
+    subgraph_metadata.size_ = node["size"].as<size_t>();
     return true;
   }
 };
