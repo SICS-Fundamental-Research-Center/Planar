@@ -16,35 +16,26 @@ namespace sics::graph::core::data_structures {
 
 class SubgraphMetadata {
  public:
-  common::GraphIDType getGid() const { return gid; }
-  void setGid(common::GraphIDType gid) { SubgraphMetadata::gid = gid; }
-  size_t getNumVertices() const { return num_vertices; }
-  void setNumVertices(size_t numVertices) { num_vertices = numVertices; }
-  size_t getNumEdges() const { return num_edges; }
-  void setNumEdges(size_t numEdges) { num_edges = numEdges; }
-  size_t getSize() const { return size; }
-  void setSize(size_t size) { SubgraphMetadata::size = size; }
+  common::GraphIDType GetGid() const { return gid_; }
+  void SetGid(common::GraphIDType gid) { gid_ = gid; }
+  size_t GetNumVertices() const { return num_vertices_; }
+  void SetNumVertices(size_t num_vertices) { num_vertices_ = num_vertices; }
+  size_t GetNumEdges() const { return num_edges_; }
+  void SetNumEdges(size_t num_edges) { num_edges_ = num_edges; }
+  size_t GetSize() const { return size_; }
+  void SetSize(size_t size) { size_ = size; }
 
  private:
-  common::GraphIDType gid;
-  size_t num_vertices;
-  size_t num_edges;
-  size_t size;  // need this??
+  common::GraphIDType gid_;
+  size_t num_vertices_;
+  size_t num_edges_;
+  size_t size_;  // need this??
 };
 
 class GraphMetadata {
- private:
-  size_t num_vertices;
-  size_t num_edges;
-  size_t num_subgraphs;
-  std::vector<std::vector<int>> dependency_matrix;
-  std::string data_root_path;
-  std::vector<bool> current_round_pending;
-  std::vector<bool> next_round_pending;
-  std::vector<SubgraphMetadata> subgraph_metadata;
-
  public:
   GraphMetadata() {}
+  // maybe used later
   GraphMetadata(const std::string& root_path) {
     YAML::Node metadata;
     try {
@@ -52,26 +43,35 @@ class GraphMetadata {
     } catch (YAML::BadFile& e) {
       LOG_ERROR("meta.yaml file read failed! ", e.msg);
     }
-    //    this->num_vertices = metadata["global"].as < struct {
+    //    this->num_vertices_ = metadata["global"].as < struct {
   }
 
- public:
-  void setNumVertices(size_t numVertices) { num_vertices = numVertices; }
-  void setNumEdges(size_t numEdges) { num_edges = numEdges; }
-  void setNumSubgraphs(size_t numSubgraphs) { num_subgraphs = numSubgraphs; }
-  size_t getNumVertices() const { return num_vertices; }
-  size_t getNumEdges() const { return num_edges; }
-  size_t getNumSubgraphs() const { return num_subgraphs; }
+  void SetNumVertices(size_t num_vertices) { num_vertices_ = num_vertices; }
+  void SetNumEdges(size_t num_edges) { num_edges_ = num_edges; }
+  void SetNumSubgraphs(size_t num_subgraphs) { num_subgraphs_ = num_subgraphs; }
+  size_t GetNumVertices() const { return num_vertices_; }
+  size_t GetNumEdges() const { return num_edges_; }
+  size_t GetNumSubgraphs() const { return num_subgraphs_; }
 
   void AddSubgraphMetadata(SubgraphMetadata& subgraphMetadata) {
-    subgraph_metadata.emplace_back(subgraphMetadata);
+    subgraph_metadata_.emplace_back(subgraphMetadata);
   }
 
   SubgraphMetadata& GetSubgraphMetadata(common::GraphIDType gid) {
-    return subgraph_metadata.at(gid);
+    return subgraph_metadata_.at(gid);
   }
 
-  int GetSubgraphRound(common::GraphIDType gid);
+  int GetSubgraphRound(common::GraphIDType gid) const {}
+
+ private:
+  size_t num_vertices_;
+  size_t num_edges_;
+  size_t num_subgraphs_;
+  std::vector<std::vector<int>> dependency_matrix_;
+  std::string data_root_path_;
+  std::vector<bool> current_round_pending_;
+  std::vector<bool> next_round_pending_;
+  std::vector<SubgraphMetadata> subgraph_metadata_;
 };
 
 }  // namespace sics::graph::core::data_structures
@@ -84,6 +84,10 @@ struct convert<sics::graph::core::data_structures::SubgraphMetadata> {
   static Node encode(const sics::graph::core::data_structures::SubgraphMetadata&
                          subgraph_metadata) {
     Node node;
+    node["gid"] = subgraph_metadata.GetGid();
+    node["num_vertices"] = subgraph_metadata.GetNumVertices();
+    node["num_edges"] = subgraph_metadata.GetNumEdges();
+    node["size"] = subgraph_metadata.GetSize();
     return node;
   }
   static bool decode(
@@ -92,11 +96,11 @@ struct convert<sics::graph::core::data_structures::SubgraphMetadata> {
     if (node.size() != 4) {
       return false;
     }
-    subgraph_metadata.setGid(
+    subgraph_metadata.SetGid(
         node["gid"].as<sics::graph::core::common::GraphIDType>());
-    subgraph_metadata.setNumVertices(node["num_vertices"].as<size_t>());
-    subgraph_metadata.setNumEdges(node["num_edges"].as<size_t>());
-    subgraph_metadata.setSize(node["size"].as<size_t>());
+    subgraph_metadata.SetNumVertices(node["num_vertices"].as<size_t>());
+    subgraph_metadata.SetNumEdges(node["num_edges"].as<size_t>());
+    subgraph_metadata.SetSize(node["size"].as<size_t>());
     return true;
   }
 };
@@ -106,9 +110,13 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
   static Node encode(
       const sics::graph::core::data_structures::GraphMetadata& metadata) {
     Node node;
-    node.push_back(metadata.getNumVertices());
-    node.push_back(metadata.getNumEdges());
-    node.push_back((metadata.getNumSubgraphs()));
+    node["num_vertices"] = metadata.GetNumVertices();
+    node["num_edges"] = metadata.GetNumEdges();
+    node["num_subgraphs"] = metadata.GetNumSubgraphs();
+    node["subgraphs"] =
+        std::vector<sics::graph::core::data_structures::SubgraphMetadata>();
+    for (int i = 0; i < metadata.GetNumSubgraphs(); i++) {
+    }
     return node;
   }
 
@@ -118,14 +126,14 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
     if (node.size() != 4) {
       return false;
     }
-    metadata.setNumVertices(node["num_vertices"].as<size_t>());
-    metadata.setNumEdges(node["num_edges"].as<size_t>());
-    metadata.setNumSubgraphs(node["num_subgraphs"].as<size_t>());
+    metadata.SetNumVertices(node["num_vertices"].as<size_t>());
+    metadata.SetNumEdges(node["num_edges"].as<size_t>());
+    metadata.SetNumSubgraphs(node["num_subgraphs"].as<size_t>());
     auto subgraphMetadatas =
         node["subgraphs"]
             .as<std::vector<
                 sics::graph::core::data_structures::SubgraphMetadata>>();
-    for (int i = 0; i < metadata.getNumSubgraphs(); i++) {
+    for (int i = 0; i < metadata.GetNumSubgraphs(); i++) {
       metadata.AddSubgraphMetadata(subgraphMetadatas[i]);
     }
     return true;
