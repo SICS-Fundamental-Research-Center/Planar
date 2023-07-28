@@ -7,19 +7,24 @@
 
 namespace sics::graph::core::common {
 
+// A simple queue type that will block `pop()` operation until some element is
+// pushed into it.
 template<typename T>
-class MessageQueue {
+class BlockingQueue {
  public:
-  MessageQueue() = default;
+  BlockingQueue() = default;
 
-  void Push(T message) {
+  // Push() is a non-blocking operation.
+  void Push(T t) {
     {
       std::lock_guard<std::mutex> grd(mtx_);
-      q_.push(message);
+      q_.push(t);
     }
     cv_.notify_one();
   }
 
+  // PopOrWait() will return immediately if the queue is not empty; otherwise,
+  // it will block until some element is pushed into the queue.
   T PopOrWait() {
     std::unique_lock<std::mutex> lck(mtx_);
     while (q_.empty()) {
@@ -36,7 +41,6 @@ class MessageQueue {
   std::condition_variable cv_;
 };
 
-
-} // namespace sics::graph::core::common
+}  // namespace sics::graph::core::common
 
 #endif  // CORE_COMMON_MESSAGE_QUEUE_H_
