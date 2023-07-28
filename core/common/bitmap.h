@@ -2,10 +2,10 @@
 #define CORE_UTIL_BITMAP_H_
 
 #include <cassert>
+#include <cstdint>
 #include <cstring>
-#include <stdint.h>
 
-namespace sics::graph::core::util {
+namespace sics::graph::core::common {
 
 #define WORD_OFFSET(i) (i >> 6)
 #define BIT_OFFSET(i) (i & 0x3f)
@@ -85,8 +85,8 @@ class Bitmap {
   }
 
   size_t Count() const {
-    auto count  = 0;
-    for (size_t i = 0; i <= WORD_OFFSET(i); i++) {
+    size_t count = 0;
+    for (size_t i = 0; i <= WORD_OFFSET(size_); i++) {
       auto x = data_[i];
       x = (x & (0x5555555555555555)) + ((x >> 1) & (0x5555555555555555));
       x = (x & (0x3333333333333333)) + ((x >> 2) & (0x3333333333333333));
@@ -94,7 +94,7 @@ class Bitmap {
       x = (x & (0x00ff00ff00ff00ff)) + ((x >> 8) & (0x00ff00ff00ff00ff));
       x = (x & (0x0000ffff0000ffff)) + ((x >> 16) & (0x0000ffff0000ffff));
       x = (x & (0x00000000ffffffff)) + ((x >> 32) & (0x00000000ffffffff));
-      count +=x;
+      count += (size_t)x;
     }
     return count;
   }
