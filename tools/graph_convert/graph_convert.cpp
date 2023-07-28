@@ -7,20 +7,18 @@
 // USAGE: graph-convert --convert_mode=[options] -i <input file path> -o <output
 // file path> --sep=[separator]
 
+#include "common/bitmap.h"
+#include "common/multithreading/thread_pool.h"
+#include "common/types.h"
+#include "gflags/gflags.h"
+#include "util/atomic.h"
+#include "util/logging.h"
+#include "yaml-cpp/yaml.h"
 #include <fstream>
 #include <iostream>
 #include <type_traits>
 
-#include "gflags/gflags.h"
-#include "yaml-cpp/yaml.h"
-
-#include "common/bitmap.h"
-#include "common/multithreading/thread_pool.h"
-#include "common/types.h"
-#include "util/atomic.h"
-#include "util/logging.h"
-
-using sics::graph::core::common::GraphIDType;
+using sics::graph::core::common::VertexID;
 
 // Define convert mode.
 #define CONVERTMODE(F) \
@@ -57,17 +55,17 @@ void ConvertEdgelist(const std::string& input_path,
   std::ofstream out_data_file(output_path + "edgelist.bin");
   std::ofstream out_meta_file(output_path + "meta.yaml");
 
-  std::vector<GraphIDType> edges_vec;
+  std::vector<VertexID> edges_vec;
   edges_vec.reserve(65536);
 
-  GraphIDType max_vid = 0;
+  VertexID max_vid = 0;
   std::string line, vid_str;
   if (in_file) {
     if (read_head) getline(in_file, line);
     while (getline(in_file, line)) {
       std::stringstream ss(line);
       while (getline(ss, vid_str, *sep.c_str())) {
-        GraphIDType vid = stoll(vid_str);
+        VertexID vid = stoll(vid_str);
         edges_vec.push_back(vid);
         sics::graph::core::util::atomic::WriteMax(&max_vid, vid);
       }
@@ -76,8 +74,8 @@ void ConvertEdgelist(const std::string& input_path,
 
   auto bitmap = sics::graph::core::common::Bitmap(max_vid);
   auto buffer_edges =
-      (GraphIDType*)malloc(sizeof(GraphIDType) * edges_vec.size() * 2);
-  memset(buffer_edges, 0, sizeof(GraphIDType) * edges_vec.size() * 2);
+      (VertexID*)malloc(sizeof(VertexID) * edges_vec.size() * 2);
+  memset(buffer_edges, 0, sizeof(VertexID) * edges_vec.size() * 2);
 
   size_t i = 0;
   for (auto iter = edges_vec.begin(); iter != edges_vec.end(); iter++) {
@@ -87,7 +85,7 @@ void ConvertEdgelist(const std::string& input_path,
 
   // Write binary edgelist
   out_data_file.write((char*) buffer_edges,
-                      sizeof(GraphIDType) * 2 * edges_vec.size());
+                      sizeof(VertexID) * 2 * edges_vec.size());
 
   // Write Meta date.
   YAML::Node node;
