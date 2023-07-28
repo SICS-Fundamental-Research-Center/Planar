@@ -4,6 +4,10 @@ build
 cmake-build-debug
 cmake-build-release
 .idea
+.vscode
+data
+build
+.DS_Store
 
 # Auxiliary files
 ./Makefile

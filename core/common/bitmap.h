@@ -1,11 +1,11 @@
-#ifndef GRAPH_SYSTEMS_BITMAP_H
-#define GRAPH_SYSTEMS_BITMAP_H
+#ifndef CORE_UTIL_BITMAP_H_
+#define CORE_UTIL_BITMAP_H_
 
 #include <cassert>
 #include <cstdint>
 #include <cstring>
 
-namespace sics::graph::core::util {
+namespace sics::graph::core::common {
 
 #define WORD_OFFSET(i) (i >> 6)
 #define BIT_OFFSET(i) (i & 0x3f)
@@ -108,4 +108,4 @@ class Bitmap {
 
 }  // namespace sics::graph::core::util
 
-#endif  // GRAPH_SYSTEMS_BITMAP_H
+#endif  // CORE_UTIL_BITMAP_H_

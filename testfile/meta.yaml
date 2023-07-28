@@ -1,0 +1,14 @@
+GraphMetadata:
+  num_vertices: 56
+  num_edges: 100
+  num_subgraphs: 2
+  subgraphs:
+    - gid: 0
+      num_vertices: 28
+      num_edges: 61
+      size: 100
+    - gid: 1
+      num_vertices: 28
+      num_edges: 39
+      size: 101
+

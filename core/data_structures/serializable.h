@@ -1,55 +1,29 @@
-#ifndef GRAPH_SYSTEMS_SERIALIZABLE_H
-#define GRAPH_SYSTEMS_SERIALIZABLE_H
+#ifndef CORE_DATA_STRUCTURES_SERIALIZABLE_H_
+#define CORE_DATA_STRUCTURES_SERIALIZABLE_H_
 
-#include <list>
+#include <memory>
 
-#include "data_structures/buffer.h"
 #include "common/multithreading/task_runner.h"
-
+#include "data_structures/serialized.h"
 
 namespace sics::graph::core::data_structures {
 
-class Serialized {
- public:
-  virtual bool HasNext() const = 0;
-
-  bool IsComplete() const;
-
-  void ReceiveBuffers(std::list<Buffer>&& buffers) {
-    ReceiveBuffersImpl(std::move(buffers));
-    is_complete_ = true;
-  }
-
-  std::list<Buffer> PopNext() {
-    is_complete_ = false;
-    return PopNextImpl();
-  }
-
- protected:
-  virtual void ReceiveBuffersImpl(std::list<Buffer>&& buffers) = 0;
-  virtual std::list<Buffer> PopNextImpl() = 0;
-
- protected:
-  bool is_complete_;
-};
-
-
-template <typename SType>
+// This class defines the Serializable interface, which is used to serialize and
+// deserialize objects. The Serializable interface provides methods for
+// serializing an object to a Serialized object and deserializing an object from
+// a Serialized object.
 class Serializable {
  public:
-  struct Metadata {};
+  // Serialize the `Serializable` object to a `Serialized` object.
+  // This function will submit the serialization task to the given TaskRunner
+  virtual std::unique_ptr<Serialized> Serialize(const common::TaskRunner& runner) = 0;
 
- public:
-  // Static assert here.
-
- public:
-  virtual SType Serialize(common::TaskRunner& runner) = 0;
-  virtual void Deserialize(common::TaskRunner& runner,
-                           const Metadata& metadata,
-                           SType&& serialized) = 0;
+  // Deserialize the `Serializable` object from a `Serialized` object.
+  // This function will submit the deserialization task to the given TaskRunner
+  virtual void Deserialize(const common::TaskRunner& runner,
+                           std::unique_ptr<Serialized>&& serialized) = 0;
 };
 
+}  // namespace sics::graph::core::data_structures
 
-} // namespace sics::graph::core::data_structures
-
-#endif  // GRAPH_SYSTEMS_SERIALIZABLE_H
+#endif  // CORE_DATA_STRUCTURES_SERIALIZABLE_H_
