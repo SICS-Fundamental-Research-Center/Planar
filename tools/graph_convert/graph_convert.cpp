@@ -18,11 +18,14 @@
 #include "common/multithreading/thread_pool.h"
 #include "common/types.h"
 #include "util/atomic.h"
+#include "util/file.h"
 #include "util/logging.h"
 
+using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
+using sics::graph::core::util::file::Exist;
+using sics::graph::core::util::file::MakeDirectory;
 
-// Define convert mode.
 #define CONVERTMODE(F) \
   F(edgelistcsv2edgelistbin), F(edgelistcsv2csrbin), F(edgelistbin2csrbin)
 
@@ -46,20 +49,31 @@ DEFINE_string(o, "", "output path.");
 DEFINE_string(sep, "", "seperator to splite csv file.");
 DEFINE_bool(read_head, false, "whether to read header of csv.");
 
+// @DESCRIPTION: convert a edgelist graph from csv file to binery file. Here the
+// compression operations is default in ConvertEdgelist.
+// @PARAMETER: input_path and output_path indicates the input and output path
+// respectively, sep determines the separator for the csv file, read_head
+// indicates whether to read head.
 void ConvertEdgelist(const std::string& input_path,
                      const std::string& output_path,
                      const std::string& sep,
                      bool read_head) {
-  // TO ADD(hsiaoko): auto thread_pool = sics::graph::core::common::ThreadPool(
-  //     std::thread::hardware_concurrency());
+  auto parallelism = std::thread::hardware_concurrency();
+  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
+  std::mutex mtx;
+  std::condition_variable finish_cv;
+  std::unique_lock<std::mutex> lck(mtx);
+  std::atomic<size_t> pending_packages(parallelism);
+
+  if (!Exist(output_path)) MakeDirectory(output_path);
   std::ifstream in_file(input_path);
   std::ofstream out_data_file(output_path + "edgelist.bin");
   std::ofstream out_meta_file(output_path + "meta.yaml");
 
+  // Read edgelist graph.
   std::vector<VertexID> edges_vec;
-  edges_vec.reserve(65536);
-
-  VertexID max_vid = 0;
+  edges_vec.reserve(1048576);
+  VertexID max_vid = 0, compressed_vid = 0;
   std::string line, vid_str;
   if (in_file) {
     if (read_head) getline(in_file, line);
@@ -73,16 +87,45 @@ void ConvertEdgelist(const std::string& input_path,
     }
   }
 
-  auto bitmap = sics::graph::core::common::Bitmap(max_vid);
+  // Compute the mapping between origin vid to compressed vid.
+  auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
+  auto bitmap = sics::graph::core::common::Bitmap(aligned_max_vid);
+  bitmap.Clear();
   auto buffer_edges =
       (VertexID*)malloc(sizeof(VertexID) * edges_vec.size() * 2);
   memset(buffer_edges, 0, sizeof(VertexID) * edges_vec.size() * 2);
-
-  size_t i = 0;
-  for (auto iter = edges_vec.begin(); iter != edges_vec.end(); iter++) {
-    buffer_edges[i++] = *iter;
-    bitmap.SetBit(*iter);
+  auto vid_map = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  for (unsigned int i = 0; i < parallelism; i++) {
+    auto task = std::bind([i, parallelism, &bitmap, &edges_vec, &compressed_vid,
+                           &vid_map, &pending_packages, &finish_cv, &mtx]() {
+      for (size_t j = i; j < edges_vec.size(); j += parallelism) {
+        if (!bitmap.GetBit(edges_vec.at(j))) {
+          auto local_vid = __sync_fetch_and_add(&compressed_vid, 1);
+          bitmap.SetBit(edges_vec.at(j));
+          vid_map[edges_vec.at(j)] = local_vid;
+        }
+      }
+      if (pending_packages.fetch_sub(1) == 1) finish_cv.notify_all();
+      return;
+    });
+    thread_pool.SubmitAsync(task);
   }
+  finish_cv.wait(lck, [&] { return pending_packages.load() == 0; });
+
+  // Compress vid and buffer graph.
+  pending_packages.store(parallelism);
+  for (unsigned int i = 0; i < parallelism; i++) {
+    auto task = std::bind([i, parallelism, &buffer_edges, &edges_vec, &vid_map,
+                           &pending_packages, &finish_cv]() {
+      for (size_t j = i; j < edges_vec.size(); j += parallelism)
+        buffer_edges[j] = vid_map[edges_vec.at(j)];
+
+      if (pending_packages.fetch_sub(1) == 1) finish_cv.notify_all();
+      return;
+    });
+    thread_pool.SubmitAsync(task);
+  }
+  finish_cv.wait(lck, [&] { return pending_packages.load() == 0; });
 
   // Write binary edgelist
   out_data_file.write((char*) buffer_edges,
@@ -92,10 +135,11 @@ void ConvertEdgelist(const std::string& input_path,
   YAML::Node node;
   node["edgelist_bin"]["num_vertices"] = bitmap.Count();
   node["edgelist_bin"]["num_edges"] = edges_vec.size();
-  node["edgelist_bin"]["max_vid"] = max_vid;
+  node["edgelist_bin"]["max_vid"] = compressed_vid - 1;
   out_meta_file << node << std::endl;
 
   delete buffer_edges;
+  delete vid_map;
   in_file.close();
   out_data_file.close();
   out_meta_file.close();
@@ -128,10 +172,10 @@ int main(int argc, char** argv) {
       ConvertEdgelist(FLAGS_i, FLAGS_o, FLAGS_sep, FLAGS_read_head);
       break;
     case edgelistcsv2csrbin:
-      // TO ADD (hsiaoko): to add edgelist csv 2 csr bin function.
+      // TO DO (hsiaoko): to add edgelist csv 2 csr bin function.
       break;
     case edgelistbin2csrbin:
-      // TO ADD (hsiaoko): to add edgelist bin 2 csr bin function.
+      // TO DO (hsiaoko): to add edgelist bin 2 csr bin function.
       break;
     default:
       LOG_INFO("Error convert mode.");
