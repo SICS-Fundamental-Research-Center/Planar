@@ -21,6 +21,7 @@
 #include "util/file.h"
 #include "util/logging.h"
 
+using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::util::file::Exist;
@@ -89,7 +90,7 @@ void ConvertEdgelist(const std::string& input_path,
 
   // Compute the mapping between origin vid to compressed vid.
   auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
-  auto bitmap = sics::graph::core::common::Bitmap(aligned_max_vid);
+  auto bitmap = Bitmap(aligned_max_vid);
   bitmap.Clear();
   auto buffer_edges =
       (VertexID*)malloc(sizeof(VertexID) * edges_vec.size() * 2);
@@ -134,7 +135,7 @@ void ConvertEdgelist(const std::string& input_path,
   // Write Meta date.
   YAML::Node node;
   node["edgelist_bin"]["num_vertices"] = bitmap.Count();
-  node["edgelist_bin"]["num_edges"] = edges_vec.size();
+  node["edgelist_bin"]["num_edges"] = edges_vec.size() / 2;
   node["edgelist_bin"]["max_vid"] = compressed_vid - 1;
   out_meta_file << node << std::endl;
 
@@ -143,6 +144,14 @@ void ConvertEdgelist(const std::string& input_path,
   in_file.close();
   out_data_file.close();
   out_meta_file.close();
+}
+
+// @DESCRIPTION: convert a binary edgelist graph to binery CSR.
+// @PARAMETER: input_path and output_path indicates the input and output path
+// respectively.
+void ConvertEdgelistBin2CSRBin(const std::string& input_path,
+                               const std::string& output_path) {
+  // TODO(hsiaoko): not finished yet.
 }
 
 int main(int argc, char** argv) {
@@ -172,10 +181,10 @@ int main(int argc, char** argv) {
       ConvertEdgelist(FLAGS_i, FLAGS_o, FLAGS_sep, FLAGS_read_head);
       break;
     case edgelistcsv2csrbin:
-      // TO DO (hsiaoko): to add edgelist csv 2 csr bin function.
+      // TODO(hsiaoko): to add edgelist csv 2 csr bin function.
       break;
     case edgelistbin2csrbin:
-      // TO DO (hsiaoko): to add edgelist bin 2 csr bin function.
+      ConvertEdgelistBin2CSRBin(FLAGS_i, FLAGS_o);
       break;
     default:
       LOG_INFO("Error convert mode.");
