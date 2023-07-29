@@ -21,8 +21,9 @@ file(GLOB GRAPH_CORE_SOURCES
         "common/multithreading/*.cpp"
         "data_structures/*.cpp"
         "data_structures/graph/*.cpp"
-        "util/*.cpp"
         "io/*.cpp"
+        "scheduler/*.cpp"
+        "util/*.cpp"
         )
 list(FILTER GRAPH_CORE_SOURCES EXCLUDE REGEX ".*_test\\.cpp$")
 message(STATUS "CORE source files: ${GRAPH_CORE_SOURCES}")
@@ -33,8 +34,9 @@ file(GLOB GRAPH_CORE_HEADERS
         "common/multithreading/*.h"
         "data_structures/*.h"
         "data_structures/graph/*.h"
-        "util/*.h"
         "io/*.h"
+        "scheduler/*.h"
+        "util/*.h"
         )
 
 #######################

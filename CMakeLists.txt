@@ -54,6 +54,7 @@ endif ()
 
 # gflags
 find_package(gflags CONFIG REQUIRED)
+include_directories(SYSTEM ${GFLAGS_INCLUDE_DIR})
 
 # yaml
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
@@ -67,6 +68,7 @@ add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp" EXCLUDE_FROM_ALL)
 # Artifacts
 #######################
 add_subdirectory(core)
+add_subdirectory(tools)
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/core
 )
