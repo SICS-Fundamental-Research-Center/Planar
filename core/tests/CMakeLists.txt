@@ -14,6 +14,8 @@ file(GLOB testfiles
         "${PROJECT_ROOT_DIR}/core/data_structures/*_test.cpp"
         "${PROJECT_ROOT_DIR}/core/data_structures/graph/*_test.cpp"
         "${PROJECT_ROOT_DIR}/core/io/*_test.cpp"
+        "${PROJECT_ROOT_DIR}/core/scheduler/*_test.cpp"
+        "${PROJECT_ROOT_DIR}/core/tests/*_test.cpp"
         "${PROJECT_ROOT_DIR}/core/util/*_test.cpp"
         )
 
