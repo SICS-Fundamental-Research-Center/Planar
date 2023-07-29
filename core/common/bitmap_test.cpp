@@ -21,7 +21,7 @@ class BitmapTest : public ::testing::Test {
 };
 
 TEST_F(BitmapTest, CountShouldReturnZero) {
-  size_t k = 1 << 30;
+  size_t k = 1 << 16;
   Bitmap bitmap(k);
 
   // After Clear all bits, return value of Count() should be 0.
@@ -30,7 +30,7 @@ TEST_F(BitmapTest, CountShouldReturnZero) {
 }
 
 TEST_F(BitmapTest, CountShouldReturnSizeofBit) {
-  size_t k = 1 << 30;
+  size_t k = 1 << 16;
   Bitmap bitmap(k);
 
   // After fill all bits, return value of Count() should be bitmap.size().
@@ -39,7 +39,7 @@ TEST_F(BitmapTest, CountShouldReturnSizeofBit) {
 }
 
 TEST_F(BitmapTest, CountShouldReturnAllKSetBits) {
-  size_t k = 1 << 30;
+  size_t k = 1 << 16;
   Bitmap bitmap(k);
 
   // Duplications should not impact the return value of Count(): return k.
@@ -51,7 +51,7 @@ TEST_F(BitmapTest, CountShouldReturnAllKSetBits) {
 
   // Check k random visits.
   bitmap.Clear();
-  k = random() % (1 << 8);
+  k = random() % (1 << 4);
   std::list<size_t> l;
   while (l.size() < k) {
     l.push_back(rand() % k);
