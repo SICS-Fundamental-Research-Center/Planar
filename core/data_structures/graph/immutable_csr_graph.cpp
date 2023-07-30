@@ -15,8 +15,9 @@ std::unique_ptr<Derived> dynamic_ptr_cast(
 
 std::unique_ptr<Serialized> ImmutableCSRGraph::Serialize(
     const common::TaskRunner& runner) {
-  // TODO(bwc): Implement this.
-  return nullptr;
+  auto serialized_immutable_csr = std::unique_ptr<Serialized>(serialized_immutable_csr_.get());
+  serialized_immutable_csr_.release();
+  return serialized_immutable_csr;
 }
 
 void ImmutableCSRGraph::Deserialize(const common::TaskRunner& runner,
