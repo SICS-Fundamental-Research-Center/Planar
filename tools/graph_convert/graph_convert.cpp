@@ -19,7 +19,6 @@
 #include "common/multithreading/thread_pool.h"
 #include "common/types.h"
 #include "util/atomic.h"
-#include "util/file.h"
 #include "util/logging.h"
 
 using sics::graph::core::common::Bitmap;
@@ -155,8 +154,109 @@ void ConvertEdgelist(const std::string& input_path,
 // respectively.
 void ConvertEdgelistBin2CSRBin(const std::string& input_path,
                                const std::string& output_path) {
+  struct TMPCSRVertex {
+    size_t indegree = 0;
+    size_t outdegree = 0;
+    VertexID* in_edges = nullptr;
+    VertexID* out_edges = nullptr;
+  };
 
   // TODO(hsiaoko): not finished yet.
+  auto parallelism = std::thread::hardware_concurrency();
+  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
+  std::mutex mtx;
+  std::condition_variable finish_cv;
+  std::unique_lock<std::mutex> lck(mtx);
+  std::atomic<size_t> pending_packages(parallelism);
+
+  YAML::Node node = YAML::LoadFile(input_path + "meta.yaml");
+  auto num_vertices = node["edgelist_bin"]["num_vertices"].as<size_t>();
+  auto num_edges = node["edgelist_bin"]["num_edges"].as<size_t>();
+  auto max_vid = node["edgelist_bin"]["max_vid"].as<VertexID>();
+  auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
+
+  auto buffer_edges = (VertexID*)malloc(sizeof(VertexID) * num_edges * 2);
+  std::ifstream in_file(input_path + "edgelist.bin");
+  in_file.read((char*)buffer_edges, sizeof(VertexID) * 2 * num_edges);
+
+  auto num_inedges_by_vid = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
+  auto num_outedges_by_vid = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
+  memset(num_inedges_by_vid, 0, sizeof(size_t) * aligned_max_vid);
+  memset(num_outedges_by_vid, 0, sizeof(size_t) * aligned_max_vid);
+  auto visited = Bitmap(aligned_max_vid);
+  visited.Clear();
+
+  // Traversal edges to get the num_in_edges and num_out_edges respectively
+  for (unsigned int i = 0; i < parallelism; i++) {
+    auto task = std::bind([i, parallelism, &num_edges, &buffer_edges,
+                           &num_inedges_by_vid, &num_outedges_by_vid, &visited,
+                           &pending_packages, &finish_cv, &mtx]() {
+      for (size_t j = i; j < num_edges; j += parallelism) {
+        auto src = buffer_edges[j * 2];
+        auto dst = buffer_edges[j * 2 + 1];
+        visited.SetBit(src);
+        visited.SetBit(dst);
+        WriteAdd(num_inedges_by_vid + src, (size_t)1);
+        WriteAdd(num_outedges_by_vid + dst, (size_t)1);
+      }
+      if (pending_packages.fetch_sub(1) == 1) finish_cv.notify_all();
+      return;
+    });
+    thread_pool.SubmitAsync(task);
+  }
+  finish_cv.wait(lck, [&] { return pending_packages.load() == 0; });
+
+  TMPCSRVertex* buffer_csr_vertices =
+      (TMPCSRVertex*)malloc(sizeof(TMPCSRVertex) * aligned_max_vid);
+
+  size_t* offset_in_edges = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
+  size_t* offset_out_edges = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
+  memset(offset_in_edges, 0, sizeof(size_t) * aligned_max_vid);
+  memset(offset_out_edges, 0, sizeof(size_t) * aligned_max_vid);
+  pending_packages.store(parallelism);
+  for (unsigned int i = 0; i < parallelism; i++) {
+    auto task =
+        std::bind([i, parallelism, &num_edges, &buffer_edges, &offset_in_edges,
+                   &offset_out_edges, &buffer_csr_vertices, &pending_packages,
+                   &finish_cv, &mtx]() {
+          for (size_t j = i; j < num_edges; j += parallelism) {
+            auto src = buffer_edges[j * 2];
+            auto dst = buffer_edges[j * 2 + 1];
+            auto offset_out = __sync_fetch_and_add(offset_out_edges + src, 1);
+            auto offset_in = __sync_fetch_and_add(offset_in_edges + dst, 1);
+            buffer_csr_vertices[src].out_edges[offset_out] = dst;
+            buffer_csr_vertices[dst].in_edges[offset_in] = src;
+          }
+          if (pending_packages.fetch_sub(1) == 1) finish_cv.notify_all();
+          return;
+        });
+    thread_pool.SubmitAsync(task);
+  }
+  finish_cv.wait(lck, [&] { return pending_packages.load() == 0; });
+  delete num_inedges_by_vid;
+  delete num_outedges_by_vid;
+
+  pending_packages.store(parallelism);
+  for (unsigned int i = 0; i < parallelism; i++) {
+    auto task = std::bind([i, parallelism, &num_vertices, &buffer_edges,
+                           &num_inedges_by_vid, &num_outedges_by_vid,
+                           &buffer_csr_vertices, &pending_packages, &finish_cv,
+                           &mtx]() {
+      for (size_t j = i; j < num_vertices; j += parallelism) {
+        auto u = TMPCSRVertex();
+        u.indegree = num_inedges_by_vid[j];
+        u.outdegree = num_outedges_by_vid[j];
+        u.in_edges = (VertexID*)malloc(sizeof(VertexID) * u.indegree);
+        u.out_edges = (VertexID*)malloc(sizeof(VertexID) * u.outdegree);
+        buffer_csr_vertices[j] = u;
+      }
+      if (pending_packages.fetch_sub(1) == 1) finish_cv.notify_all();
+      return;
+    });
+    thread_pool.SubmitAsync(task);
+  }
+  finish_cv.wait(lck, [&] { return pending_packages.load() == 0; });
+
 }
 
 int main(int argc, char** argv) {
