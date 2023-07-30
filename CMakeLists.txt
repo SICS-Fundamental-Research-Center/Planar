@@ -54,6 +54,7 @@ endif ()
 
 # gflags
 find_package(gflags CONFIG REQUIRED)
+include_directories(SYSTEM ${GFLAGS_INCLUDE_DIR})
 
 # yaml
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
