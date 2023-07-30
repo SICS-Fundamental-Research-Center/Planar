@@ -7,6 +7,7 @@
 // USAGE: graph-convert --convert_mode=[options] -i <input file path> -o <output
 // file path> --sep=[separator]
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <type_traits>
@@ -24,8 +25,11 @@
 using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
+using sics::graph::core::util::atomic::WriteAdd;
 using sics::graph::core::util::file::Exist;
 using sics::graph::core::util::file::MakeDirectory;
+using std::filesystem::create_directory;
+using std::filesystem::exists;
 
 #define CONVERTMODE(F) \
   F(edgelistcsv2edgelistbin), F(edgelistcsv2csrbin), F(edgelistbin2csrbin)
@@ -66,7 +70,7 @@ void ConvertEdgelist(const std::string& input_path,
   std::unique_lock<std::mutex> lck(mtx);
   std::atomic<size_t> pending_packages(parallelism);
 
-  if (!Exist(output_path)) MakeDirectory(output_path);
+  if (!exists(output_path)) create_directory(output_path);
   std::ifstream in_file(input_path);
   std::ofstream out_data_file(output_path + "edgelist.bin");
   std::ofstream out_meta_file(output_path + "meta.yaml");
@@ -151,6 +155,7 @@ void ConvertEdgelist(const std::string& input_path,
 // respectively.
 void ConvertEdgelistBin2CSRBin(const std::string& input_path,
                                const std::string& output_path) {
+
   // TODO(hsiaoko): not finished yet.
 }
 
