@@ -9,7 +9,7 @@ void ThreadPool::SubmitAsync(Task&& task) {
   internal_pool_.add(std::move(task));
 }
 
-void ThreadPool::SubmitAsync(Task&& task, std::function<void()> callback) {
+void ThreadPool::SubmitAsync(Task&& task, std::function<void ()> callback) {
   internal_pool_.add(std::move(task));
   // TODO: Implement the call back behavior.
 }
@@ -21,7 +21,7 @@ void ThreadPool::SubmitAsync(const TaskPackage& tasks) {
 }
 
 void ThreadPool::SubmitAsync(const TaskPackage& tasks,
-                             std::function<void()> callback) {
+                             std::function<void ()> callback) {
   for (const auto& t : tasks) {
     internal_pool_.add(t);
   }
