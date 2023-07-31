@@ -1,11 +1,12 @@
 #include "thread_pool.h"
-#include "util/atomic.h"
+
+#include <random>
 
 #include <folly/experimental/TestUtil.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <random>
+#include "util/atomic.h"
 
 namespace sics::graph::core::common {
 

@@ -44,7 +44,6 @@ void ThreadPool::SubmitSync(const TaskPackage& tasks) {
     internal_pool_.add(
         [this, tid, &finish_cv, &pending_threads, &tasks, &parallelism]() {
           for (size_t i = tid; i < tasks.size(); i += parallelism) {
-            LOG_INFO(i, "/", tasks.size(), "/", parallelism);
             auto task = tasks.at(i);
             task();
           }
