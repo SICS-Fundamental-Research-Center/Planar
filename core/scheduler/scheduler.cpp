@@ -12,9 +12,13 @@ int scheduler::GetSubgraphRound(common::GraphID subgraph_gid) const {
 
 void scheduler::ReadGraphMetadata(const std::string& graph_metadata_path) {
   YAML::Node graph_metadata_node;
-  graph_metadata_node = YAML::LoadFile(graph_metadata_path);
-  graph_metadata_ =
-      graph_metadata_node["GraphMetadata"].as<data_structures::GraphMetadata>();
+  try {
+    graph_metadata_node = YAML::LoadFile(graph_metadata_path);
+    graph_metadata_ = graph_metadata_node["GraphMetadata"]
+                          .as<data_structures::GraphMetadata>();
+  } catch (YAML::BadFile& e) {
+    LOG_ERROR("meta.yaml file read failed! ", e.msg);
+  }
 }
 
 }  // namespace sics::graph::core::scheduler

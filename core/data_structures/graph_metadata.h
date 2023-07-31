@@ -21,7 +21,7 @@ struct SubgraphMetadata {
 
 class GraphMetadata {
  public:
-  GraphMetadata() {}
+  GraphMetadata() = default;
   // maybe used later
   GraphMetadata(const std::string& root_path);
 

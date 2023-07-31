@@ -2,14 +2,15 @@
 
 namespace sics::graph::core::data_structures {
 
-GraphMetadata::GraphMetadata(const std::string& root_path) {
-  YAML::Node metadata;
+// TODO: initialize GraphMetadata by item not copy construction
+GraphMetadata::GraphMetadata(const std::string& graph_metadata_path) {
+  YAML::Node metadata_node;
   try {
-    metadata = YAML::LoadFile(root_path + "/meta.yaml");
+    metadata_node = YAML::LoadFile(graph_metadata_path);
+
   } catch (YAML::BadFile& e) {
     LOG_ERROR("meta.yaml file read failed! ", e.msg);
   }
-  //    this->num_vertices_ = metadata["global"].as < struct {
 }
 
 }  // namespace sics::graph::core::data_structures
