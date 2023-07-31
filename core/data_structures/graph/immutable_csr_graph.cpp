@@ -2,38 +2,25 @@
 
 namespace sics::graph::core::data_structures::graph {
 
-template <typename Derived, typename Base>
-std::unique_ptr<Derived> dynamic_ptr_cast(
-    std::unique_ptr<Base>&& base) noexcept {
-  if (auto derived = dynamic_cast<Derived*>(base.get())) {
-    base.release();
-    return std::unique_ptr<Derived>(derived);
-  }
-
-  return nullptr;
-}
-
 std::unique_ptr<Serialized> ImmutableCSRGraph::Serialize(
     const common::TaskRunner& runner) {
-  auto serialized_immutable_csr = std::unique_ptr<Serialized>(serialized_immutable_csr_.get());
-  serialized_immutable_csr_.release();
-  return serialized_immutable_csr;
+  return std::unique_ptr<Serialized>(static_cast<Serialized*>(
+      serialized_.release()));
 }
 
 void ImmutableCSRGraph::Deserialize(const common::TaskRunner& runner,
                                     std::unique_ptr<Serialized>&& serialized) {
   // TODO(bwc): Submit to the task runner.
-  auto serialized_immutable_csr_ptr =
-      dynamic_ptr_cast<SerializedImmutableCSRGraph, Serialized>(
-          std::move(serialized));
-  if (serialized_immutable_csr_ptr) {
-    serialized_immutable_csr_.swap(serialized_immutable_csr_ptr);
+  auto new_serialized = std::unique_ptr<SerializedImmutableCSRGraph>
+      (static_cast<SerializedImmutableCSRGraph*>(serialized.release()));
+  if (new_serialized) {
+    serialized_.swap(new_serialized);
   } else {
     LOG_ERROR("Failed to cast Serialized to SerializedImmutableCSRGraph.");
   }
 
-  auto& csr_buffer = serialized_immutable_csr_.get()->GetCSRBuffer();
-  ParseSubgraphCSR(std::move(csr_buffer.front()));
+  auto& csr_buffer = serialized_->GetCSRBuffer();
+  ParseSubgraphCSR(csr_buffer.front());
   auto iter = csr_buffer.begin();
   if (iter != csr_buffer.end()) {
     ParseSubgraphCSR(*iter++);

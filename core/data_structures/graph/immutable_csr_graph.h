@@ -46,7 +46,9 @@ class ImmutableCSRGraph : public Serializable {
 
  private:
   void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
-  std::unique_ptr<SerializedImmutableCSRGraph> serialized_immutable_csr_ = nullptr;
+
+ private:
+  std::unique_ptr<SerializedImmutableCSRGraph> serialized_;
 
   GraphID gid_ = 0;
   uint8_t* buf_graph_ = nullptr;
