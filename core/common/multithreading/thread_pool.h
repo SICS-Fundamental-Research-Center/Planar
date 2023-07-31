@@ -5,7 +5,6 @@
 
 #include "task_runner.h"
 
-
 namespace sics::graph::core::common {
 
 // A wrapper of `folly::CPUThreadPoolExecutor` class, adapting it to the
