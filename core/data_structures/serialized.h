@@ -9,6 +9,8 @@ namespace sics::graph::core::data_structures {
 
 class Serialized {
  public:
+  virtual ~Serialized() = default;
+
   // `HasNext()` is called when `Writer` writes `Serialized` class back to disk.
   //
   // e.g. in `Writer::Write()`:
