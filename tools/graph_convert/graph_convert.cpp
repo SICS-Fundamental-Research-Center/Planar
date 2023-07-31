@@ -25,8 +25,6 @@ using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::util::atomic::WriteAdd;
-using sics::graph::core::util::file::Exist;
-using sics::graph::core::util::file::MakeDirectory;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
 
