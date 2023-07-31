@@ -2,6 +2,7 @@
 #define CORE_COMMON_MULTITHREADING_THREADPOOL_H_
 
 #include <folly/executors/CPUThreadPoolExecutor.h>
+#include <folly/synchronization/NativeSemaphore.h>
 
 #include "task_runner.h"
 

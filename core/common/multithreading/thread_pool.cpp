@@ -9,7 +9,7 @@ void ThreadPool::SubmitAsync(Task&& task) {
   internal_pool_.add(std::move(task));
 }
 
-void ThreadPool::SubmitAsync(Task&& task, std::function<void ()> callback) {
+void ThreadPool::SubmitAsync(Task&& task, std::function<void()> callback) {
   internal_pool_.add(std::move(task));
   // TODO: Implement the call back behavior.
 }
@@ -21,7 +21,7 @@ void ThreadPool::SubmitAsync(const TaskPackage& tasks) {
 }
 
 void ThreadPool::SubmitAsync(const TaskPackage& tasks,
-                             std::function<void ()> callback) {
+                             std::function<void()> callback) {
   for (const auto& t : tasks) {
     internal_pool_.add(t);
   }
@@ -39,18 +39,22 @@ void ThreadPool::SubmitSync(const TaskPackage& tasks) {
   std::condition_variable finish_cv;
   std::unique_lock<std::mutex> lck(mtx);
   std::atomic<size_t> pending_threads(parallelism);
+  folly::NativeSemaphore sem(parallelism);
 
   for (size_t tid = 0; tid < parallelism; tid++) {
+    sem.wait();
     internal_pool_.add(
-        [this, tid, &finish_cv, &pending_threads, &tasks, &parallelism]() {
+        [this, tid, &finish_cv, &pending_threads, &tasks, &parallelism, &sem]() {
           for (size_t i = tid; i < tasks.size(); i += parallelism) {
             auto task = tasks.at(i);
             task();
           }
+          sem.post();
           if (pending_threads.fetch_sub(1) == 1) finish_cv.notify_all();
         });
   }
-  finish_cv.wait(lck, [&] { return pending_threads.load() == 0; });
+  while (pending_threads.load() != 0)
+    finish_cv.wait(lck, [&] { return pending_threads.load() == 0; });
 }
 
 size_t ThreadPool::GetParallelism() const {
