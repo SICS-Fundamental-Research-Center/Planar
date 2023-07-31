@@ -16,7 +16,7 @@
 namespace sics::graph::core::data_structures {
 
 struct SubgraphMetadata {
-  common::GraphIDType gid_;
+  common::GraphID gid_;
   size_t num_vertices_;
   size_t num_edges_;
   size_t size_;  // need this??
@@ -47,15 +47,15 @@ class GraphMetadata {
     subgraph_metadata_.emplace_back(subgraphMetadata);
   }
 
-  SubgraphMetadata& GetSubgraphMetadata(common::GraphIDType gid) {
+  SubgraphMetadata& GetSubgraphMetadata(common::GraphID gid) {
     return subgraph_metadata_.at(gid);
   }
 
-  bool IsSubgraphPendingCurrentRound(common::GraphIDType subgraph_gid) {
+  bool IsSubgraphPendingCurrentRound(common::GraphID subgraph_gid) const {
     return current_round_pending_.at(subgraph_gid);
   }
 
-  bool IsSubgraphPendingNextRound(common::GraphIDType subgraph_gid) {
+  bool IsSubgraphPendingNextRound(common::GraphID subgraph_gid) {
     return next_round_pending_.at(subgraph_gid);
   }
 
@@ -93,7 +93,7 @@ struct convert<sics::graph::core::data_structures::SubgraphMetadata> {
       return false;
     }
     subgraph_metadata.gid_ =
-        node["gid"].as<sics::graph::core::common::GraphIDType>();
+        node["gid"].as<sics::graph::core::common::GraphID>();
     subgraph_metadata.num_vertices_ = node["num_vertices"].as<size_t>();
     subgraph_metadata.num_edges_ = node["num_edges"].as<size_t>();
     subgraph_metadata.size_ = node["size"].as<size_t>();
