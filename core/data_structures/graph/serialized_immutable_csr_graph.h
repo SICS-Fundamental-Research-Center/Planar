@@ -16,11 +16,6 @@ class SerializedImmutableCSRGraph : public Serialized {
   // Each item of `csr_buffer` is a list of buffers that correspond to a subgraph file.
   std::list<std::list<OwnedBuffer>> csr_buffer_;
 
-  // Reader call this function to push buffers into csr_buffer_.
-  void ReceiveBuffers(std::list<OwnedBuffer>&& buffers) override {
-    csr_buffer_.emplace_back(std::move(buffers));
-  };
-
   // Writer call this function to pop buffers from csr_buffer_ to Disk.
   std::list<OwnedBuffer> PopNextImpl() override {
     // move the first buffer to the return list
@@ -32,6 +27,11 @@ class SerializedImmutableCSRGraph : public Serialized {
  public:
   SerializedImmutableCSRGraph() {}
   bool HasNext() const override { return this->csr_buffer_.size() > 0; }
+
+  // Reader call this function to push buffers into csr_buffer_.
+  void ReceiveBuffers(std::list<OwnedBuffer>&& buffers) override {
+    csr_buffer_.emplace_back(std::move(buffers));
+  };
 
   std::list<std::list<OwnedBuffer>>& GetCSRBuffer() {
     return this->csr_buffer_;
