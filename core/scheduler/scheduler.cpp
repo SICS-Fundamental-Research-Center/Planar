@@ -10,7 +10,7 @@ int scheduler::GetSubgraphRound(common::GraphID subgraph_gid) const {
   }
 }
 
-void scheduler::ReadGraphMetadata(std::string graph_metadata_path) {
+void scheduler::ReadGraphMetadata(const std::string& graph_metadata_path) {
   YAML::Node graph_metadata_node;
   graph_metadata_node = YAML::LoadFile(graph_metadata_path);
   graph_metadata_ =

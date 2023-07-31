@@ -1,10 +1,7 @@
-//
-// Created by Yang Liu on 2023/7/27.
-//
 #include "data_structures/graph_metadata.h"
-#include "yaml-cpp/yaml.h"
-#include <gmock/gmock.h>
+
 #include <gtest/gtest.h>
+#include <yaml-cpp/yaml.h>
 
 namespace sics::graph::core::data_structures {
 
@@ -27,10 +24,9 @@ TEST_F(GraphMetadataTest, NodeStructure) {
                                                             {28, 39, 101}};
   for (int i = 0; i < graph_metadata.GetNumSubgraphs(); i++) {
     auto subgraph_metadata = graph_metadata.GetSubgraphMetadata(i);
-    EXPECT_EQ(subgraph_metadata.GetNumVertices(),
-              result_subgraph_metadata[i][0]);
-    EXPECT_EQ(subgraph_metadata.GetNumEdges(), result_subgraph_metadata[i][1]);
-    EXPECT_EQ(subgraph_metadata.GetSize(), result_subgraph_metadata[i][2]);
+    EXPECT_EQ(subgraph_metadata.num_vertices_, result_subgraph_metadata[i][0]);
+    EXPECT_EQ(subgraph_metadata.num_edges_, result_subgraph_metadata[i][1]);
+    EXPECT_EQ(subgraph_metadata.size_, result_subgraph_metadata[i][2]);
   }
 }
 

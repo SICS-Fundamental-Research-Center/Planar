@@ -1,16 +1,14 @@
-//
-// Created by Yang Liu on 2023/7/27.
-//
-
 #ifndef GRAPH_SYSTEMS_GRAPH_METADATA_H
 #define GRAPH_SYSTEMS_GRAPH_METADATA_H
 
 #include "common/types.h"
 #include "util/logging.h"
-#include <yaml-cpp/yaml.h>
+
 #include <cstdio>
 #include <string>
 #include <vector>
+
+#include <yaml-cpp/yaml.h>
 
 namespace sics::graph::core::data_structures {
 
@@ -62,70 +60,5 @@ class GraphMetadata {
 };
 
 }  // namespace sics::graph::core::data_structures
-
-// used for read meta.yaml when serialized(encode) and deserialize(decode)
-namespace YAML {
-
-template <>
-struct convert<sics::graph::core::data_structures::SubgraphMetadata> {
-  static Node encode(const sics::graph::core::data_structures::SubgraphMetadata&
-                         subgraph_metadata) {
-    Node node;
-    node["gid"] = subgraph_metadata.gid_;
-    node["num_vertices"] = subgraph_metadata.num_vertices_;
-    node["num_edges"] = subgraph_metadata.num_edges_;
-    node["size"] = subgraph_metadata.size_;
-    return node;
-  }
-  static bool decode(
-      const Node& node,
-      sics::graph::core::data_structures::SubgraphMetadata& subgraph_metadata) {
-    if (node.size() != 4) {
-      return false;
-    }
-    subgraph_metadata.gid_ =
-        node["gid"].as<sics::graph::core::common::GraphID>();
-    subgraph_metadata.num_vertices_ = node["num_vertices"].as<size_t>();
-    subgraph_metadata.num_edges_ = node["num_edges"].as<size_t>();
-    subgraph_metadata.size_ = node["size"].as<size_t>();
-    return true;
-  }
-};
-
-template <>
-struct convert<sics::graph::core::data_structures::GraphMetadata> {
-  static Node encode(
-      const sics::graph::core::data_structures::GraphMetadata& metadata) {
-    Node node;
-    node["num_vertices"] = metadata.GetNumVertices();
-    node["num_edges"] = metadata.GetNumEdges();
-    node["num_subgraphs"] = metadata.GetNumSubgraphs();
-    node["subgraphs"] =
-        std::vector<sics::graph::core::data_structures::SubgraphMetadata>();
-    for (int i = 0; i < metadata.GetNumSubgraphs(); i++) {
-    }
-    return node;
-  }
-
-  static bool decode(
-      const Node& node,
-      sics::graph::core::data_structures::GraphMetadata& metadata) {
-    if (node.size() != 4) {
-      return false;
-    }
-    metadata.SetNumVertices(node["num_vertices"].as<size_t>());
-    metadata.SetNumEdges(node["num_edges"].as<size_t>());
-    metadata.SetNumSubgraphs(node["num_subgraphs"].as<size_t>());
-    auto subgraphMetadatas =
-        node["subgraphs"]
-            .as<std::vector<
-                sics::graph::core::data_structures::SubgraphMetadata>>();
-    for (int i = 0; i < metadata.GetNumSubgraphs(); i++) {
-      metadata.AddSubgraphMetadata(subgraphMetadatas[i]);
-    }
-    return true;
-  }
-};
-}  // namespace YAML
 
 #endif  // GRAPH_SYSTEMS_GRAPH_METADATA_H

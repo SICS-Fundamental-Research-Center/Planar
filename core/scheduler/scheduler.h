@@ -12,7 +12,7 @@ class scheduler {
 
  public:
   scheduler() = default;
-  ~scheduler() = default;
+  virtual ~scheduler() = default;
 
   int GetCurrentRound() const { return current_round_; }
   void SetCurrentRound(int current_round) { current_round_ = current_round; }
@@ -21,7 +21,7 @@ class scheduler {
 
   // read graph metadata from meta.yaml file
   // meta file path should be passed by gflags
-  void ReadGraphMetadata(std::string graph_metadata_path);
+  void ReadGraphMetadata(const std::string& graph_metadata_path);
 };
 
 }  // namespace sics::graph::core::scheduler
