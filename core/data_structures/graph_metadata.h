@@ -7,7 +7,6 @@
 
 #include "common/types.h"
 #include "util/logging.h"
-
 #include <yaml-cpp/yaml.h>
 #include <cstdio>
 #include <string>
@@ -26,15 +25,7 @@ class GraphMetadata {
  public:
   GraphMetadata() {}
   // maybe used later
-  GraphMetadata(const std::string& root_path) {
-    YAML::Node metadata;
-    try {
-      metadata = YAML::LoadFile(root_path + "/meta.yaml");
-    } catch (YAML::BadFile& e) {
-      LOG_ERROR("meta.yaml file read failed! ", e.msg);
-    }
-    //    this->num_vertices_ = metadata["global"].as < struct {
-  }
+  GraphMetadata(const std::string& root_path);
 
   void SetNumVertices(size_t num_vertices) { num_vertices_ = num_vertices; }
   void SetNumEdges(size_t num_edges) { num_edges_ = num_edges; }
