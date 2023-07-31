@@ -6,13 +6,16 @@
 #include "common/types.h"
 #include "data_structures/graph/immutable_csr_graph_config.h"
 #include "io/reader.h"
+#include "io/writer.h"
 #include "data_structures/graph/serialized_immutable_csr_graph.h"
 
 using ImmutableCSRGraph =
     sics::graph::core::data_structures::graph::ImmutableCSRGraph;
-using SerializedImmutableCSR =
+using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+using Serialized = sics::graph::core::data_structures::Serialized;
 using Reader = sics::graph::core::io::Reader;
+using Writer = sics::graph::core::io::Writer;
 using VertexID = sics::graph::core::common::VertexID;
 using ImmutableCSRGraphConfig =
     sics::graph::core::data_structures::graph::ImmutableCSRGraphConfig;
@@ -20,14 +23,25 @@ using ThreadPool = sics::graph::core::common::ThreadPool;
 
 #define SUBGRAPH_0_PATH "../../../input/small_graph_part/0"
 #define SUBGRAPH_1_PATH "../../../input/small_graph_part/1"
+#define WRITE_0_PATH "../../../output/writer_test/0"
 
 namespace sics::graph::core::test {
+template <typename Derived, typename Base>
+std::unique_ptr<Derived> dynamic_ptr_cast(
+    std::unique_ptr<Base>&& base) noexcept {
+  if (auto derived = dynamic_cast<Derived*>(base.get())) {
+    base.release();
+    return std::unique_ptr<Derived>(derived);
+  }
+
+  return nullptr;
+}
 class SerializableImmutableCSRTest : public ::testing::Test {
  protected:
   SerializableImmutableCSRTest() {
     // Initialize Serialized objects.
-    serialized_immutable_csr_0_ = std::make_unique<SerializedImmutableCSR>();
-    serialized_immutable_csr_1_ = std::make_unique<SerializedImmutableCSR>();
+    serialized_immutable_csr_0_ = std::make_unique<SerializedImmutableCSRGraph>();
+    serialized_immutable_csr_1_ = std::make_unique<SerializedImmutableCSRGraph>();
 
     // Initialize test configs.
     config_0_ = {
@@ -68,8 +82,8 @@ class SerializableImmutableCSRTest : public ::testing::Test {
 
   // SerializedImmutableCSR* serialized_immutable_csr_0_;
   // SerializedImmutableCSR* serialized_immutable_csr_1_;
-  std::unique_ptr<SerializedImmutableCSR> serialized_immutable_csr_0_;
-  std::unique_ptr<SerializedImmutableCSR> serialized_immutable_csr_1_;
+  std::unique_ptr<SerializedImmutableCSRGraph> serialized_immutable_csr_0_;
+  std::unique_ptr<SerializedImmutableCSRGraph> serialized_immutable_csr_1_;
   ImmutableCSRGraphConfig config_0_, config_1_;
 };
 
@@ -275,6 +289,49 @@ TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_1) {
   size_t expect_in_edges_27[1] = {38};
   for (int i = 0; i < 1; ++i) {
     EXPECT_EQ(in_edge_ptr_27[in_offset_ptr_27[27] + i], expect_in_edges_27[i]);
+  }
+}
+
+TEST_F(SerializableImmutableCSRTest, TestSerialize4Subgraph0) {
+  // Initialize reader & writer.
+  Reader reader;
+  Writer writer;
+
+  // Initialize immutable csr.
+  ImmutableCSRGraph serializable_immutable_csr(0, std::move(config_0_));
+
+  // Read a subgraph
+  reader.ReadSubgraph(SUBGRAPH_0_PATH, serialized_immutable_csr_0_.get());
+
+  // Deserialize
+  ThreadPool thread_pool(1);
+  serializable_immutable_csr.Deserialize(
+      thread_pool, std::move(serialized_immutable_csr_0_));
+
+  // Modify the immutable csr.
+  // Modify in degree
+  size_t* indegree_ptr = (size_t*)(serializable_immutable_csr.GetInDegree());
+  indegree_ptr[0] = 100;
+  indegree_ptr[1] = 200;
+
+  // Serialize
+  auto serialized_immutable_csr_r = serializable_immutable_csr.Serialize(thread_pool);
+
+  // Write the subgraph
+  writer.WriteSubgraph(WRITE_0_PATH, serialized_immutable_csr_r.get());
+
+  // re-Read the subgraph
+  ImmutableCSRGraph serializable_immutable_csr_r(0, std::move(config_0_));
+  reader.ReadSubgraph(WRITE_0_PATH, serialized_immutable_csr_1_.get());
+  serializable_immutable_csr_r.Deserialize(
+      thread_pool, std::move(serialized_immutable_csr_1_));
+  
+  // Check the in degree
+  size_t* indegree_ptr_r = (size_t*)(serializable_immutable_csr_r.GetInDegree());
+  size_t expect_indegree[28] = {100, 200, 1, 2, 4, 4, 1, 2, 1, 1, 1, 2, 4, 4,
+                                3,   1,   1, 2, 2, 2, 2, 3, 3, 2, 1, 1, 1, 4};
+  for (int i = 0; i <3; ++i) {
+    EXPECT_EQ(indegree_ptr_r[i], expect_indegree[i]);
   }
 }
 

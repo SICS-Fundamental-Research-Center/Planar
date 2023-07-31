@@ -3,18 +3,15 @@
 namespace sics::graph::core::scheduler {
 
 Message::Message(const ReadMessage& message)
-    : type_(kRead), message_() {
-  message_.read_message = message;
+    : type_(kRead), message_({.read_message = message}) {
 }
 
 Message::Message(const ExecuteMessage& message)
-    : type_(kExecute), message_() {
-  message_.execute_message = message;
+    : type_(kExecute), message_({.execute_message = message}) {
 }
 
 Message::Message(const WriteMessage& message)
-    : type_(kWrite), message_() {
-  message_.write_message = message;
+    : type_(kWrite), message_({.write_message = message}) {
 }
 
 void Message::Set(const ReadMessage& message) {

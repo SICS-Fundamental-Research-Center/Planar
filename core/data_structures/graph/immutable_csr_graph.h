@@ -30,9 +30,8 @@ class ImmutableCSRGraph : public Serializable {
   void Deserialize(const common::TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override;
 
-  // TODO(bwc): Function name format
-  GraphID GetGID() const { return gid_; }
-  void SetGID(GraphID gid) { gid_ = gid; }
+  GraphID fet_gid() const { return gid_; }
+  void set_gid(GraphID gid) { gid_ = gid; }
 
   uint8_t* GetGraphBuffer() const { return buf_graph_; }
   VertexID* GetGlobalIDByIndex() const { return globalid_by_index_; }
@@ -47,7 +46,9 @@ class ImmutableCSRGraph : public Serializable {
 
  private:
   void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
-  std::unique_ptr<SerializedImmutableCSRGraph> serialized_immutable_csr_ = nullptr;
+
+ private:
+  std::unique_ptr<SerializedImmutableCSRGraph> serialized_;
 
   GraphID gid_ = 0;
   uint8_t* buf_graph_ = nullptr;

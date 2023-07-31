@@ -9,6 +9,8 @@ namespace sics::graph::core::data_structures {
 
 class Serialized {
  public:
+  virtual ~Serialized() = default;
+
   // `HasNext()` is called when `Writer` writes `Serialized` class back to disk.
   //
   // e.g. in `Writer::Write()`:
@@ -35,7 +37,7 @@ class Serialized {
   //    dst->ReceiveBuffers(std::move(file_buffers));
   //  }
   virtual void ReceiveBuffers(std::list<OwnedBuffer>&& buffers) = 0;
-  
+
   // `PopNext()` is called when `Writer` writes `Serialized` class back to disk.
   // It returns a list of `OwnedBuffer`s that are ready to be written to disk.
   std::list<OwnedBuffer> PopNext() {
