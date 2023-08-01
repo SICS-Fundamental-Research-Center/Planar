@@ -3,10 +3,12 @@
 
 #include "common/types.h"
 #include "util/logging.h"
-#include <yaml-cpp/yaml.h>
+
 #include <cstdio>
 #include <string>
 #include <vector>
+
+#include <yaml-cpp/yaml.h>
 
 namespace sics::graph::core::data_structures {
 
@@ -32,12 +34,13 @@ class GraphMetadata {
   size_t get_num_edges() const { return num_edges_; }
   size_t get_num_subgraphs() const { return num_subgraphs_; }
 
-  void AddSubgraphMetadata(SubgraphMetadata& subgraph_metadata) {
-    subgraph_metadata_.push_back(subgraph_metadata);
+  void set_subgraph_metadatas(
+      const std::vector<SubgraphMetadata>& subgraph_metadatas) {
+    this->subgraph_metadatas_ = subgraph_metadatas;
   }
 
   SubgraphMetadata GetSubgraphMetadata(common::GraphID gid) const {
-    return subgraph_metadata_.at(gid);
+    return subgraph_metadatas_.at(gid);
   }
 
   bool IsSubgraphPendingCurrentRound(common::GraphID subgraph_gid) const {
@@ -56,7 +59,7 @@ class GraphMetadata {
   std::string data_root_path_;
   std::vector<bool> current_round_pending_;
   std::vector<bool> next_round_pending_;
-  std::vector<SubgraphMetadata> subgraph_metadata_;
+  std::vector<SubgraphMetadata> subgraph_metadatas_;
 };
 
 }  // namespace sics::graph::core::data_structures
