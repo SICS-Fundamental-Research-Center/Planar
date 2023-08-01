@@ -2,8 +2,8 @@
 #include <iostream>
 #include <filesystem>
 
-#include "io/writer.h"
-#include "io/reader.h"
+#include "io/basic_writer.h"
+#include "io/basic_reader.h"
 #include "data_structures/graph/immutable_csr_graph.h"
 #include "util/logging.h"
 
@@ -30,9 +30,9 @@ class WriterTest : public ::testing::Test {
 // Test the WriteSubgraph function of the Writer class
 TEST_F(WriterTest, WriteSubgraph) {
   // Create a Reader object
-  Reader reader;
+  BasicReader reader;
   // Create a Writer object
-  Writer writer;
+  BasicWriter writer;
 
   // initialize a Serialized object
   SerializedImmutableCSRGraph* serialized_immutable_csr =
@@ -47,7 +47,7 @@ TEST_F(WriterTest, WriteSubgraph) {
   LOG_INFO("end writing");
 
   // Create another Reader object
-  Reader rereader;
+  BasicReader rereader;
 
   // initialize a Serialized object
   SerializedImmutableCSRGraph* serialized_immutable_csr_1 =
@@ -77,9 +77,9 @@ TEST_F(WriterTest, WriteSubgraph) {
 // Test the WriteSubgraph function of the Writer class
 TEST_F(WriterTest, WriteSubgraph1) {
   // Create a Reader object
-  Reader reader;
+  BasicReader reader;
   // Create a Writer object
-  Writer writer;
+  BasicWriter writer;
 
   // initialize a Serialized object
   SerializedImmutableCSRGraph* serialized_immutable_csr =

@@ -1,5 +1,5 @@
-#ifndef CORE_IO_READER_H_
-#define CORE_IO_READER_H_
+#ifndef CORE_IO_BASIC_READER_H_
+#define CORE_IO_BASIC_READER_H_
 
 #include <list>
 #include <memory>
@@ -23,12 +23,12 @@ namespace sics::graph::core::io {
 //  SerializedImmutableCSR* serialized_immutable_csr =
 //      new SerializedImmutableCSR();
 //  reader.ReadSubgraph(PATH, serialized_immutable_csr);
-class Reader {
+class BasicReader {
  public:
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
   using Serialized = sics::graph::core::data_structures::Serialized;
 
-  Reader() {}
+  BasicReader() {}
 
   // read subgraph from ssd to Serialized object
   // path: path to the subgraph dictionary
@@ -59,4 +59,4 @@ class Reader {
 
 }  // namespace sics::graph::core::io
 
-#endif  // CORE_IO_READER_H_
+#endif  // CORE_IO_BASIC_READER_H_
