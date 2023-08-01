@@ -7,17 +7,22 @@
 // USAGE: graph-convert --convert_mode=[options] -i <input file path> -o <output
 // file path> --sep=[separator]
 
-#include "common/bitmap.h"
-#include "common/multithreading/thread_pool.h"
-#include "common/types.h"
-#include "util/atomic.h"
-#include "util/logging.h"
-#include <gflags/gflags.h>
-#include <yaml-cpp/yaml.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <list>
 #include <type_traits>
+
+#include <gflags/gflags.h>
+#include <yaml-cpp/yaml.h>
+
+#include "common/bitmap.h"
+#include "common/multithreading/thread_pool.h"
+#include "common/tools_types.h"
+#include "common/types.h"
+#include "common/yaml_config.h"
+#include "util/atomic.h"
+#include "util/logging.h"
 
 using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::TaskPackage;
@@ -26,6 +31,7 @@ using sics::graph::core::common::VertexLabel;
 using sics::graph::core::util::atomic::WriteAdd;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
+// using tools::common::SubgraphMetaData;
 
 enum StoreStrategy {
   kUnconstrained,  // default
@@ -67,7 +73,7 @@ DEFINE_string(o, "", "output path.");
 DEFINE_string(sep, "", "seperator to splite csv file.");
 DEFINE_string(store_strategy, "kUnconstrained",
               "graph-systems adopted three strategies to store edges: "
-              "kUnconstrained, incomming, and outgoing.");
+              "kUnconstrained, incoming, and outgoing.");
 DEFINE_bool(read_head, false, "whether to read header of csv.");
 
 // @DESCRIPTION: convert a edgelist graph from csv file to binary file. Here the
@@ -76,7 +82,8 @@ DEFINE_bool(read_head, false, "whether to read header of csv.");
 // respectively, sep determines the separator for the csv file, read_head
 // indicates whether to read head.
 void ConvertEdgelist(const std::string& input_path,
-                     const std::string& output_path, const std::string& sep,
+                     const std::string& output_path,
+                     const std::string& sep,
                      bool read_head) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
@@ -196,7 +203,9 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
   in_file.read((char*)buffer_edges, sizeof(VertexID) * 2 * num_edges);
   if (!exists(output_path)) create_directory(output_path);
   if (!exists(output_path + "graphs")) create_directory(output_path + "graphs");
+  if (!exists(output_path + "label")) create_directory(output_path + "label");
   std::ofstream out_data_file(output_path + "graphs/0.bin");
+  std::ofstream out_label_file(output_path + "label/0.bin");
   std::ofstream out_meta_file(output_path + "meta.yaml");
 
   auto num_inedges_by_vid = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
@@ -309,7 +318,7 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
 
   auto buffer_vdata = (VertexLabel*)malloc(sizeof(VertexLabel) * num_vertices);
   memset(buffer_vdata, 0, sizeof(VertexLabel) * num_vertices);
-  out_data_file.write((char*)buffer_vdata, sizeof(VertexLabel) * num_vertices);
+  out_label_file.write((char*)buffer_vdata, sizeof(VertexLabel) * num_vertices);
   delete buffer_vdata;
 
   switch (store_strategy) {
@@ -416,54 +425,50 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
 
   // Write Meta date.
   YAML::Node out_node;
-  out_node["csr_bin"]["num_vertices"] = num_vertices;
+  out_node["GraphMetaData"]["num_vertices"] = num_vertices;
   switch (store_strategy) {
     case kOutgoingOnly:
-      out_node["csr_bin"]["num_incomming_edges"] = 0;
-      out_node["csr_bin"]["num_outgoing_edges"] = count_out_edges;
+      out_node["GraphMetaData"]["num_incoming_edges"] = 0;
+      out_node["GraphMetaData"]["num_outgoing_edges"] = count_out_edges;
       break;
     case kIncomingOnly:
-      out_node["csr_bin"]["num_outgoing_edges"] = 0;
-      out_node["csr_bin"]["num_incomming_edges"] = count_in_edges;
+      out_node["GraphMetaData"]["num_incoming_edges"] = count_in_edges;
+      out_node["GraphMetaData"]["num_outgoing_edges"] = 0;
       break;
     case kUnconstrained:
-      out_node["csr_bin"]["num_outgoing_edges"] = count_out_edges;
-      out_node["csr_bin"]["num_incomming_edges"] = count_in_edges;
+      out_node["GraphMetaData"]["num_incoming_edges"] = count_in_edges;
+      out_node["GraphMetaData"]["num_outgoing_edges"] = count_out_edges;
       break;
     default:
       LOG_ERROR("Undefined store strategy.");
       return -1;
   }
-  out_node["csr_bin"]["max_vid"] = max_vid;
-  out_node["csr_bin"]["num_subgraphs"] = 1;
-  out_meta_file << out_node << std::endl;
+  out_node["GraphMetaData"]["max_vid"] = max_vid;
+  out_node["GraphMetaData"]["num_subgraphs"] = 1;
 
-  YAML::Node subgraph_node;
-  subgraph_node["subgraph"]["gid"] = 0;
-  subgraph_node["subgraph"]["num_vertices"] = num_vertices;
+  std::list<SubgraphMetaData> subgraphs;
   switch (store_strategy) {
     case kOutgoingOnly:
-      subgraph_node["subgraph"]["num_incomming_edges"] = 0;
-      subgraph_node["subgraph"]["num_outgoing_edges"] = count_out_edges;
+      subgraphs.push_front({0, num_vertices, 0, count_out_edges, max_vid, 0});
       break;
     case kIncomingOnly:
-      subgraph_node["subgraph"]["num_outgoing_edges"] = 0;
-      subgraph_node["subgraph"]["num_incomming_edges"] = count_in_edges;
+      subgraphs.push_front({0, num_vertices, count_in_edges, 0, max_vid, 0});
       break;
     case kUnconstrained:
-      subgraph_node["subgraph"]["num_outgoing_edges"] = count_out_edges;
-      subgraph_node["subgraph"]["num_incomming_edges"] = count_in_edges;
+      subgraphs.push_front(
+          {0, num_vertices, count_in_edges, count_out_edges, max_vid, 0});
       break;
     default:
       LOG_ERROR("Undefined store strategy.");
       return -1;
   }
-  subgraph_node["subgraph"]["max_vid"] = max_vid;
-  out_meta_file << subgraph_node << std::endl;
+  out_node["GraphMetaData"]["subgraphs"] = subgraphs;
+  out_meta_file << out_node << std::endl;
 
   in_file.close();
   out_meta_file.close();
   out_data_file.close();
+  out_label_file.close();
   return 0;
 }
 
