@@ -31,7 +31,6 @@ using sics::graph::core::common::VertexLabel;
 using sics::graph::core::util::atomic::WriteAdd;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
-// using tools::common::SubgraphMetaData;
 
 enum StoreStrategy {
   kUnconstrained,  // default
