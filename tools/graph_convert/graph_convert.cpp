@@ -7,19 +7,17 @@
 // USAGE: graph-convert --convert_mode=[options] -i <input file path> -o <output
 // file path> --sep=[separator]
 
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <type_traits>
-
-#include <gflags/gflags.h>
-#include <yaml-cpp/yaml.h>
-
 #include "common/bitmap.h"
 #include "common/multithreading/thread_pool.h"
 #include "common/types.h"
 #include "util/atomic.h"
 #include "util/logging.h"
+#include <gflags/gflags.h>
+#include <yaml-cpp/yaml.h>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <type_traits>
 
 using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::TaskPackage;
@@ -72,14 +70,13 @@ DEFINE_string(store_strategy, "kUnconstrained",
               "kUnconstrained, incomming, and outgoing.");
 DEFINE_bool(read_head, false, "whether to read header of csv.");
 
-// @DESCRIPTION: convert a edgelist graph from csv file to binery file. Here the
+// @DESCRIPTION: convert a edgelist graph from csv file to binary file. Here the
 // compression operations is default in ConvertEdgelist.
 // @PARAMETER: input_path and output_path indicates the input and output path
 // respectively, sep determines the separator for the csv file, read_head
 // indicates whether to read head.
 void ConvertEdgelist(const std::string& input_path,
-                     const std::string& output_path,
-                     const std::string& sep,
+                     const std::string& output_path, const std::string& sep,
                      bool read_head) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
@@ -87,8 +84,7 @@ void ConvertEdgelist(const std::string& input_path,
 
   if (!exists(output_path)) create_directory(output_path);
   std::ifstream in_file(input_path);
-  if (!in_file)
-    throw std::runtime_error("Open file failed: " + input_path);
+  if (!in_file) throw std::runtime_error("Open file failed: " + input_path);
   std::ofstream out_data_file(output_path + "edgelist.bin");
   std::ofstream out_meta_file(output_path + "meta.yaml");
 
@@ -165,9 +161,13 @@ void ConvertEdgelist(const std::string& input_path,
   out_meta_file.close();
 }
 
-// @DESCRIPTION: convert a binary edgelist graph to binery CSR.
+// @DESCRIPTION: convert a binary edgelist graph to binary CSR.
 // @PARAMETER: input_path and output_path indicates the input and output path
-// respectively.
+// respectively. store_strategy indicates different store strategy where
+// unconstrained store both outgoing and incoming edges of a vertex,
+// incoming_only store incoming edges only, and outgoing_only store outgoing
+// edges of a vertex only. By default, the graph is store in unconstrained
+// manner.
 bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
                                const std::string& output_path,
                                const StoreStrategy store_strategy) {
@@ -191,7 +191,8 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
   auto buffer_edges = (VertexID*)malloc(sizeof(VertexID) * num_edges * 2);
   std::ifstream in_file(input_path + "edgelist.bin");
   if (!in_file)
-    throw std::runtime_error("Open file failed: " + input_path + "edgelist.bin");
+    throw std::runtime_error("Open file failed: " + input_path +
+                             "edgelist.bin");
   in_file.read((char*)buffer_edges, sizeof(VertexID) * 2 * num_edges);
   if (!exists(output_path)) create_directory(output_path);
   if (!exists(output_path + "graphs")) create_directory(output_path + "graphs");
