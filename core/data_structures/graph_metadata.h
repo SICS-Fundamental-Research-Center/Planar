@@ -125,7 +125,7 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
             .as<std::vector<
                 sics::graph::core::data_structures::SubgraphMetadata>>();
     for (int i = 0; i < metadata.get_num_subgraphs(); i++) {
-      metadata.AddSubgraphMetadata(subgraphMetadatas[i]);
+      metadata.set_subgraph_metadatas(subgraphMetadatas);
     }
     return true;
   }
