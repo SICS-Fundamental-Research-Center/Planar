@@ -87,6 +87,8 @@ void ConvertEdgelist(const std::string& input_path,
 
   if (!exists(output_path)) create_directory(output_path);
   std::ifstream in_file(input_path);
+  if (!in_file)
+    throw std::runtime_error("Open file failed: " + input_path);
   std::ofstream out_data_file(output_path + "edgelist.bin");
   std::ofstream out_meta_file(output_path + "meta.yaml");
 
@@ -188,6 +190,8 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
 
   auto buffer_edges = (VertexID*)malloc(sizeof(VertexID) * num_edges * 2);
   std::ifstream in_file(input_path + "edgelist.bin");
+  if (!in_file)
+    throw std::runtime_error("Open file failed: " + input_path + "edgelist.bin");
   in_file.read((char*)buffer_edges, sizeof(VertexID) * 2 * num_edges);
   if (!exists(output_path)) create_directory(output_path);
   if (!exists(output_path + "graphs")) create_directory(output_path + "graphs");
