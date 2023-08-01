@@ -30,46 +30,46 @@ using std::filesystem::create_directory;
 using std::filesystem::exists;
 
 enum StoreStrategy {
-  incomming_only,
-  outgoing_only,
-  unconstrained,
-  undefined_strategy
+  kUnconstrained,  // default
+  kIncomingOnly,
+  kOutgoingOnly,
+  kUndefinedStrategy
 };
 
 inline StoreStrategy String2EnumStoreStrategy(const std::string& s) {
-  if (s == "incomming_only")
-    return incomming_only;
+  if (s == "incoming_only")
+    return kIncomingOnly;
   else if (s == "outgoing_only")
-    return outgoing_only;
+    return kOutgoingOnly;
   else if (s == "unconstrained")
-    return unconstrained;
-  return undefined_strategy;
+    return kUnconstrained;
+  return kUndefinedStrategy;
 };
 
 enum ConvertMode {
-  edgelistcsv2edgelistbin,
-  edgelistcsv2csrbin,
-  edgelistbin2csrbin,
-  undefined_mode
+  kEdgelistCSV2EdgelistBin,
+  kEdgelistCSV2CSRBin,
+  kEdgelistBin2CSRBin,
+  kUndefinedMode
 };
 
 inline ConvertMode String2EnumConvertMode(const std::string& s) {
   if (s == "edgelistcsv2edgelistbin")
-    return edgelistcsv2edgelistbin;
+    return kEdgelistCSV2EdgelistBin;
   else if (s == "edgelistbin2csrbin")
-    return edgelistbin2csrbin;
-  else if (s == "edgelistcsv2csrbin")
-    return edgelistcsv2csrbin;
-  return undefined_mode;
+    return kEdgelistBin2CSRBin;
+  else if (s == "edgelistcsv2bin")
+    return kEdgelistCSV2CSRBin;
+  return kUndefinedMode;
 };
 
 DEFINE_string(convert_mode, "", "Conversion mode");
 DEFINE_string(i, "", "input path.");
 DEFINE_string(o, "", "output path.");
 DEFINE_string(sep, "", "seperator to splite csv file.");
-DEFINE_string(store_strategy, "unconstrained",
+DEFINE_string(store_strategy, "kUnconstrained",
               "graph-systems adopted three strategies to store edges: "
-              "unconstrained, incomming, and outgoing.");
+              "kUnconstrained, incomming, and outgoing.");
 DEFINE_bool(read_head, false, "whether to read header of csv.");
 
 // @DESCRIPTION: convert a edgelist graph from csv file to binery file. Here the
@@ -308,15 +308,15 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
   delete buffer_vdata;
 
   switch (store_strategy) {
-    case outgoing_only:
+    case kOutgoingOnly:
       out_data_file.write((char*)buffer_outdegree,
                           sizeof(size_t) * num_vertices);
       break;
-    case incomming_only:
+    case kIncomingOnly:
       out_data_file.write((char*)buffer_indegree,
                           sizeof(size_t) * num_vertices);
       break;
-    case unconstrained:
+    case kUnconstrained:
       out_data_file.write((char*)buffer_indegree,
                           sizeof(size_t) * num_vertices);
       out_data_file.write((char*)buffer_outdegree,
@@ -343,15 +343,15 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
 
   // Write offset buffer.
   switch (store_strategy) {
-    case outgoing_only:
+    case kOutgoingOnly:
       out_data_file.write((char*)buffer_out_offset,
                           sizeof(size_t) * num_vertices);
       break;
-    case incomming_only:
+    case kIncomingOnly:
       out_data_file.write((char*)buffer_in_offset,
                           sizeof(size_t) * num_vertices);
       break;
-    case unconstrained:
+    case kUnconstrained:
       out_data_file.write((char*)buffer_in_offset,
                           sizeof(size_t) * num_vertices);
       out_data_file.write((char*)buffer_out_offset,
@@ -388,15 +388,15 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
 
   // Write edges buffers.
   switch (store_strategy) {
-    case outgoing_only:
+    case kOutgoingOnly:
       out_data_file.write((char*)buffer_out_edges,
                           sizeof(VertexID) * count_out_edges);
       break;
-    case incomming_only:
+    case kIncomingOnly:
       out_data_file.write((char*)buffer_in_edges,
                           sizeof(VertexID) * count_in_edges);
       break;
-    case unconstrained:
+    case kUnconstrained:
       out_data_file.write((char*)buffer_out_edges,
                           sizeof(VertexID) * count_out_edges);
       out_data_file.write((char*)buffer_in_edges,
@@ -413,15 +413,15 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
   YAML::Node out_node;
   out_node["csr_bin"]["num_vertices"] = num_vertices;
   switch (store_strategy) {
-    case outgoing_only:
+    case kOutgoingOnly:
       out_node["csr_bin"]["num_incomming_edges"] = 0;
       out_node["csr_bin"]["num_outgoing_edges"] = count_out_edges;
       break;
-    case incomming_only:
+    case kIncomingOnly:
       out_node["csr_bin"]["num_outgoing_edges"] = 0;
       out_node["csr_bin"]["num_incomming_edges"] = count_in_edges;
       break;
-    case unconstrained:
+    case kUnconstrained:
       out_node["csr_bin"]["num_outgoing_edges"] = count_out_edges;
       out_node["csr_bin"]["num_incomming_edges"] = count_in_edges;
       break;
@@ -437,15 +437,15 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
   subgraph_node["subgraph"]["gid"] = 0;
   subgraph_node["subgraph"]["num_vertices"] = num_vertices;
   switch (store_strategy) {
-    case outgoing_only:
+    case kOutgoingOnly:
       subgraph_node["subgraph"]["num_incomming_edges"] = 0;
       subgraph_node["subgraph"]["num_outgoing_edges"] = count_out_edges;
       break;
-    case incomming_only:
+    case kIncomingOnly:
       subgraph_node["subgraph"]["num_outgoing_edges"] = 0;
       subgraph_node["subgraph"]["num_incomming_edges"] = count_in_edges;
       break;
-    case unconstrained:
+    case kUnconstrained:
       subgraph_node["subgraph"]["num_outgoing_edges"] = count_out_edges;
       subgraph_node["subgraph"]["num_incomming_edges"] = count_in_edges;
       break;
@@ -481,17 +481,17 @@ int main(int argc, char** argv) {
   }
 
   switch (String2EnumConvertMode(FLAGS_convert_mode)) {
-    case edgelistcsv2edgelistbin:
+    case kEdgelistCSV2EdgelistBin:
       if (FLAGS_sep == "") {
         LOG_ERROR("CSV separator is not empty. Use -sep [e.g. \",\"].");
         return -1;
       }
       ConvertEdgelist(FLAGS_i, FLAGS_o, FLAGS_sep, FLAGS_read_head);
       break;
-    case edgelistcsv2csrbin:
+    case kEdgelistCSV2CSRBin:
       // TODO(hsiaoko): to add edgelist csv 2 csr bin function.
       break;
-    case edgelistbin2csrbin:
+    case kEdgelistBin2CSRBin:
       ConvertEdgelistBin2CSRBin(FLAGS_i, FLAGS_o,
                                 String2EnumStoreStrategy(FLAGS_store_strategy));
       break;
