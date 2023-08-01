@@ -27,4 +27,6 @@ struct EdgeListMetaData {
   VertexID min_vid;
 };
 
+} // namespace tools::common
+
 #endif  // TOOLS_COMMON_TYPES_H_
