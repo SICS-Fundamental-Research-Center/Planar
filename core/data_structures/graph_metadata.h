@@ -1,14 +1,14 @@
 #ifndef GRAPH_SYSTEMS_GRAPH_METADATA_H
 #define GRAPH_SYSTEMS_GRAPH_METADATA_H
 
-#include "common/types.h"
-#include "util/logging.h"
-
 #include <cstdio>
 #include <string>
 #include <vector>
 
 #include <yaml-cpp/yaml.h>
+
+#include "common/types.h"
+#include "util/logging.h"
 
 namespace sics::graph::core::data_structures {
 
@@ -27,16 +27,18 @@ class GraphMetadata {
 
   void set_num_vertices(size_t num_vertices) { num_vertices_ = num_vertices; }
   void set_num_edges(size_t num_edges) { num_edges_ = num_edges; }
-  void set_num_subgraphs(size_t num_subgraphs) { num_subgraphs_ = num_subgraphs; }
+  void set_num_subgraphs(size_t num_subgraphs) {
+    num_subgraphs_ = num_subgraphs;
+  }
   size_t get_num_vertices() const { return num_vertices_; }
   size_t get_num_edges() const { return num_edges_; }
   size_t get_num_subgraphs() const { return num_subgraphs_; }
 
-  void AddSubgraphMetadata(SubgraphMetadata& subgraphMetadata) {
-    subgraph_metadata_.emplace_back(subgraphMetadata);
+  void AddSubgraphMetadata(SubgraphMetadata& subgraph_metadata) {
+    subgraph_metadata_.push_back(subgraph_metadata);
   }
 
-  SubgraphMetadata& GetSubgraphMetadata(common::GraphID gid) {
+  SubgraphMetadata GetSubgraphMetadata(common::GraphID gid) const {
     return subgraph_metadata_.at(gid);
   }
 
@@ -44,7 +46,7 @@ class GraphMetadata {
     return current_round_pending_.at(subgraph_gid);
   }
 
-  bool IsSubgraphPendingNextRound(common::GraphID subgraph_gid) {
+  bool IsSubgraphPendingNextRound(common::GraphID subgraph_gid) const {
     return next_round_pending_.at(subgraph_gid);
   }
 
@@ -92,7 +94,7 @@ struct convert<sics::graph::core::data_structures::SubgraphMetadata> {
 };
 
 // template is needed for this function
-template<>
+template <>
 struct convert<sics::graph::core::data_structures::GraphMetadata> {
   static Node encode(
       const sics::graph::core::data_structures::GraphMetadata& metadata) {

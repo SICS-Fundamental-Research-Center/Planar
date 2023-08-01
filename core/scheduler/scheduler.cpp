@@ -2,7 +2,7 @@
 
 namespace sics::graph::core::scheduler {
 
-int scheduler::GetSubgraphRound(common::GraphID subgraph_gid) const {
+int Scheduler::GetSubgraphRound(common::GraphID subgraph_gid) const {
   if (graph_metadata_.IsSubgraphPendingCurrentRound(subgraph_gid)) {
     return current_round_;
   } else {
@@ -10,7 +10,7 @@ int scheduler::GetSubgraphRound(common::GraphID subgraph_gid) const {
   }
 }
 
-void scheduler::ReadGraphMetadata(const std::string& graph_metadata_path) {
+void Scheduler::ReadGraphMetadata(const std::string& graph_metadata_path) {
   YAML::Node graph_metadata_node;
   try {
     graph_metadata_node = YAML::LoadFile(graph_metadata_path);
