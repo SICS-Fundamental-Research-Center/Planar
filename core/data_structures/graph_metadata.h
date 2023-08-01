@@ -1,14 +1,12 @@
 #ifndef GRAPH_SYSTEMS_GRAPH_METADATA_H
 #define GRAPH_SYSTEMS_GRAPH_METADATA_H
 
+#include "common/types.h"
+#include "util/logging.h"
+#include <yaml-cpp/yaml.h>
 #include <cstdio>
 #include <string>
 #include <vector>
-
-#include <yaml-cpp/yaml.h>
-
-#include "common/types.h"
-#include "util/logging.h"
 
 namespace sics::graph::core::data_structures {
 
@@ -102,10 +100,11 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
     node["num_vertices"] = metadata.get_num_vertices();
     node["num_edges"] = metadata.get_num_edges();
     node["num_subgraphs"] = metadata.get_num_subgraphs();
-    node["subgraphs"] =
-        std::vector<sics::graph::core::data_structures::SubgraphMetadata>();
+    std::vector<sics::graph::core::data_structures::SubgraphMetadata> tmp;
     for (int i = 0; i < metadata.get_num_subgraphs(); i++) {
+      tmp.push_back(metadata.GetSubgraphMetadata(0));
     }
+    node["subgraphs"] = tmp;
     return node;
   }
 

@@ -1,5 +1,7 @@
 #include "data_structures/graph_metadata.h"
 
+#include <fstream>
+
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
 
@@ -13,7 +15,7 @@ class GraphMetadataTest : public ::testing::Test {
   }
 };
 
-TEST_F(GraphMetadataTest, NodeStructure) {
+TEST_F(GraphMetadataTest, NodeStructureRead) {
   YAML::Node metadata;
   metadata = YAML::LoadFile("../../testfile/meta.yaml");
   auto graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
@@ -29,5 +31,18 @@ TEST_F(GraphMetadataTest, NodeStructure) {
     EXPECT_EQ(subgraph_metadata.size_, result_subgraph_metadata[i][2]);
   }
 }
+
+TEST_F(GraphMetadataTest, NodeStructureWrite) {
+  YAML::Node metadata;
+  metadata = YAML::LoadFile("../../testfile/meta.yaml");
+  auto graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
+
+  std::ofstream fout("../../testfile/meta_write.yaml");
+  YAML::Node out;
+  out["GraphMetadata"] = graph_metadata;
+  auto res1 = out["subgraphs"];
+  fout << out << std::endl;
+}
+
 
 }  // namespace sics::graph::core::data_structures
