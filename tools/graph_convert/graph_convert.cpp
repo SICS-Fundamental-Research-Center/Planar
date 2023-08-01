@@ -78,7 +78,8 @@ DEFINE_bool(read_head, false, "whether to read header of csv.");
 // respectively, sep determines the separator for the csv file, read_head
 // indicates whether to read head.
 void ConvertEdgelist(const std::string& input_path,
-                     const std::string& output_path, const std::string& sep,
+                     const std::string& output_path,
+                     const std::string& sep,
                      bool read_head) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
