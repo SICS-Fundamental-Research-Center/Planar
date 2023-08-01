@@ -2,7 +2,7 @@
 #include <iostream>
 #include <filesystem>
 
-#include "io/reader.h"
+#include "io/basic_reader.h"
 #include "data_structures/graph/immutable_csr_graph.h"
 #include "util/logging.h"
 
@@ -26,7 +26,7 @@ class ReaderTest : public ::testing::Test {
 // Test the ReadSubgraph function of the Reader class
 TEST_F(ReaderTest, ReadSubgraphTest) {
   // Create a Reader object
-  Reader reader;
+  BasicReader reader;
 
   // initialize a Serialized object
   SerializedImmutableCSRGraph* serialized_immutable_csr =
@@ -57,7 +57,7 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
 // Test the ReadSubgraph function of the Reader class
 TEST_F(ReaderTest, ReadSubgraphTest1) {
   // Create a Reader object
-  Reader reader;
+  BasicReader reader;
 
   // initialize a Serialized object
   SerializedImmutableCSRGraph* serialized_immutable_csr =

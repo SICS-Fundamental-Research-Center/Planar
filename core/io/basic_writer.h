@@ -1,5 +1,5 @@
-#ifndef CORE_IO_WRITER_H_
-#define CORE_IO_WRITER_H_
+#ifndef CORE_IO_BASIC_WRITER_H_
+#define CORE_IO_BASIC_WRITER_H_
 
 #include <list>
 #include <memory>
@@ -15,12 +15,12 @@
 
 namespace sics::graph::core::io {
 
-class Writer {
+class BasicWriter {
  public:
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
   using Serialized = sics::graph::core::data_structures::Serialized;
 
-  Writer() {}
+  BasicWriter() {}
 
   // Write the subgraph to disk
   // path: path to the subgraph dictionary
@@ -37,4 +37,4 @@ class Writer {
 };
 }  // namespace sics::graph::core::io
 
-#endif  // CORE_IO_WRITER_H_
+#endif  // CORE_IO_BASIC_WRITER_H_
