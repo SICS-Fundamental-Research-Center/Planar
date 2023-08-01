@@ -5,8 +5,8 @@
 #include "common/multithreading/thread_pool.h"
 #include "common/types.h"
 #include "data_structures/graph/immutable_csr_graph_config.h"
-#include "io/reader.h"
-#include "io/writer.h"
+#include "io/basic_reader.h"
+#include "io/basic_writer.h"
 #include "data_structures/graph/serialized_immutable_csr_graph.h"
 
 using ImmutableCSRGraph =
@@ -14,8 +14,8 @@ using ImmutableCSRGraph =
 using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using Serialized = sics::graph::core::data_structures::Serialized;
-using Reader = sics::graph::core::io::Reader;
-using Writer = sics::graph::core::io::Writer;
+using BasicReader = sics::graph::core::io::BasicReader;
+using BasicWriter = sics::graph::core::io::BasicWriter;
 using VertexID = sics::graph::core::common::VertexID;
 using ImmutableCSRGraphConfig =
     sics::graph::core::data_structures::graph::ImmutableCSRGraphConfig;
@@ -89,7 +89,7 @@ class SerializableImmutableCSRTest : public ::testing::Test {
 
 TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_0) {
   // Initialize reader.
-  Reader reader;
+  BasicReader reader;
 
   // Initialize immutable csr.
   ImmutableCSRGraph serializable_immutable_csr(0, std::move(config_0_));
@@ -202,7 +202,7 @@ TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_0) {
 
 TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_1) {
   // Initialize reader.
-  Reader reader;
+  BasicReader reader;
 
   // Initialize immutable csr.
   ImmutableCSRGraph serializable_immutable_csr(1, std::move(config_1_));
@@ -294,8 +294,8 @@ TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_1) {
 
 TEST_F(SerializableImmutableCSRTest, TestSerialize4Subgraph0) {
   // Initialize reader & writer.
-  Reader reader;
-  Writer writer;
+  BasicReader reader;
+  BasicWriter writer;
 
   // Initialize immutable csr.
   ImmutableCSRGraph serializable_immutable_csr(0, std::move(config_0_));

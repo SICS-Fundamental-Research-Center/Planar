@@ -1,13 +1,13 @@
-#include "io/writer.h"
+#include "io/basic_writer.h"
 
 namespace sics::graph::core::io {
-void Writer::WriteSubgraph(const std::string& path, Serialized* src_object, int write_type) {
+void BasicWriter::WriteSubgraph(const std::string& path, Serialized* src_object, int write_type) {
   if (write_type == 0) {
     WriteCSR(path, src_object);
   }
 }
 
-void Writer::WriteCSR(const std::string& path, Serialized* src_object) {
+void BasicWriter::WriteCSR(const std::string& path, Serialized* src_object) {
   std::filesystem::path dir(path);
   std::string subgraph_id_str = dir.filename().string();
   std::string data_file_path =
@@ -21,7 +21,7 @@ void Writer::WriteCSR(const std::string& path, Serialized* src_object) {
   }
 }
 
-void Writer::WriteBinFile(const std::string& path, Serialized* src_object) {
+void BasicWriter::WriteBinFile(const std::string& path, Serialized* src_object) {
   // Get the list of OwnedBuffers from Serialized.
   std::list<OwnedBuffer> buffers = src_object->PopNext();
 

@@ -1,8 +1,8 @@
-#include "io/reader.h"
+#include "io/basic_reader.h"
 
 namespace sics::graph::core::io {
 
-void Reader::ReadSubgraph(const std::string& path, Serialized* dst_object,
+void BasicReader::ReadSubgraph(const std::string& path, Serialized* dst_object,
                           int read_type) {
   if (read_type == 0) {
     ReadCSR(path, dst_object);
@@ -11,7 +11,7 @@ void Reader::ReadSubgraph(const std::string& path, Serialized* dst_object,
 }
 
 
-void Reader::ReadCSR(const std::string& path, Serialized* dst_object) {
+void BasicReader::ReadCSR(const std::string& path, Serialized* dst_object) {
   std::filesystem::path dir(path);
   std::string subgraph_id_str = dir.filename().string();
   std::string data_file_path = path + "/" + subgraph_id_str + "_data.bin";
@@ -26,7 +26,7 @@ void Reader::ReadCSR(const std::string& path, Serialized* dst_object) {
   }
 }
 
-void Reader::ReadBinFile(const std::string& path, Serialized* dst_object) {
+void BasicReader::ReadBinFile(const std::string& path, Serialized* dst_object) {
   std::ifstream file(path, std::ios::binary);
   if (!file) {
     throw std::runtime_error("Error opening bin file: " + path);
