@@ -21,6 +21,7 @@
 #include "common/tools_types.h"
 #include "common/types.h"
 #include "common/yaml_config.h"
+#include "data_structures/graph_metadata.h"
 #include "util/atomic.h"
 #include "util/logging.h"
 
@@ -28,6 +29,8 @@ using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::common::VertexLabel;
+using sics::graph::core::data_structures::SubgraphMetadata;
+using sics::graph::core::data_structures::GraphMetadata;
 using sics::graph::core::util::atomic::WriteAdd;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
@@ -424,28 +427,29 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
 
   // Write Meta date.
   YAML::Node out_node;
-  out_node["GraphMetaData"]["num_vertices"] = num_vertices;
+  out_node["GraphMetadata"]["num_vertices"] = num_vertices;
   switch (store_strategy) {
     case kOutgoingOnly:
-      out_node["GraphMetaData"]["num_incoming_edges"] = 0;
-      out_node["GraphMetaData"]["num_outgoing_edges"] = count_out_edges;
+      out_node["GraphMetadata"]["num_incoming_edges"] = 0;
+      out_node["GraphMetadata"]["num_outgoing_edges"] = count_out_edges;
       break;
     case kIncomingOnly:
-      out_node["GraphMetaData"]["num_incoming_edges"] = count_in_edges;
-      out_node["GraphMetaData"]["num_outgoing_edges"] = 0;
+      out_node["GraphMetadata"]["num_incoming_edges"] = count_in_edges;
+      out_node["GraphMetadata"]["num_outgoing_edges"] = 0;
       break;
     case kUnconstrained:
-      out_node["GraphMetaData"]["num_incoming_edges"] = count_in_edges;
-      out_node["GraphMetaData"]["num_outgoing_edges"] = count_out_edges;
+      out_node["GraphMetadata"]["num_incoming_edges"] = count_in_edges;
+      out_node["GraphMetadata"]["num_outgoing_edges"] = count_out_edges;
       break;
     default:
       LOG_ERROR("Undefined store strategy.");
       return -1;
   }
-  out_node["GraphMetaData"]["max_vid"] = max_vid;
-  out_node["GraphMetaData"]["num_subgraphs"] = 1;
+  out_node["GraphMetadata"]["max_vid"] = max_vid;
+  out_node["GraphMetadata"]["min_vid"] = max_vid;
+  out_node["GraphMetadata"]["num_subgraphs"] = 1;
 
-  std::list<SubgraphMetaData> subgraphs;
+  std::list<SubgraphMetadata> subgraphs;
   switch (store_strategy) {
     case kOutgoingOnly:
       subgraphs.push_front({0, num_vertices, 0, count_out_edges, max_vid, 0});
@@ -461,7 +465,7 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
       LOG_ERROR("Undefined store strategy.");
       return -1;
   }
-  out_node["GraphMetaData"]["subgraphs"] = subgraphs;
+  out_node["GraphMetadata"]["subgraphs"] = subgraphs;
   out_meta_file << out_node << std::endl;
 
   in_file.close();

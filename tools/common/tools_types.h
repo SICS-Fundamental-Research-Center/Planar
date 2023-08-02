@@ -10,22 +10,14 @@ using sics::graph::core::common::GraphID;
 
 namespace tools::common {
 
-struct SubgraphMetaData {
-  GraphID gid;
-  size_t num_vertices;
-  size_t num_incoming_edges;
-  size_t num_outgoing_edges;
-  VertexID max_vid;
-  VertexID min_vid;
-};
-
-// TO DO: Add a structure for the edge list metadata.
 struct EdgeListMetaData {
   size_t num_vertices;
   size_t num_edges;
   VertexID max_vid;
   VertexID min_vid;
 };
+
+// TO DO: Add other data structures.
 
 } // namespace tools::common
 
