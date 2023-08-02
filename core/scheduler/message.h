@@ -92,9 +92,6 @@ class Message {
 template <>
 struct ::fmt::formatter<sics::graph::core::scheduler::Message::Type> {
   typedef sics::graph::core::scheduler::Message::Type MessageType;
-  using sics::graph::core::scheduler::Message::Type::kRead;
-  using sics::graph::core::scheduler::Message::Type::kExecute;
-  using sics::graph::core::scheduler::Message::Type::kWrite;
 
   constexpr auto parse(::fmt::format_parse_context& ctx)
       -> ::fmt::format_parse_context::iterator {
@@ -104,11 +101,11 @@ struct ::fmt::formatter<sics::graph::core::scheduler::Message::Type> {
   auto format(const MessageType& type, ::fmt::format_context& ctx) const
       -> fmt::format_context::iterator {
     switch (type) {
-      case kRead:
+      case MessageType::kRead:
         return fmt::format_to(ctx.out(), "ReadMessage");
-      case kExecute:
+      case MessageType::kExecute:
         return fmt::format_to(ctx.out(), "ExecuteMessage");
-      case kWrite:
+      case MessageType::kWrite:
         return fmt::format_to(ctx.out(), "WriteMessage");
     }
   }
