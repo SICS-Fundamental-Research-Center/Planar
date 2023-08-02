@@ -1,6 +1,7 @@
 #ifndef CORE_COMMON_MESSAGE_QUEUE_H_
 #define CORE_COMMON_MESSAGE_QUEUE_H_
 
+#include <condition_variable>
 #include <queue>
 #include <mutex>
 
