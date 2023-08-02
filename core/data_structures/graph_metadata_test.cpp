@@ -1,9 +1,9 @@
+#include "data_structures/graph_metadata.h"
+
 #include <fstream>
 
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
-
-#include "data_structures/graph_metadata.h"
 
 namespace sics::graph::core::data_structures {
 
@@ -21,8 +21,6 @@ TEST_F(GraphMetadataTest, NodeStructureRead) {
   metadata = YAML::LoadFile("../../../testfile/meta.yaml");
   auto graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
   EXPECT_EQ(graph_metadata.get_num_vertices(), 58);
-  EXPECT_EQ(graph_metadata.get_num_incoming_edges(), 100);
-  EXPECT_EQ(graph_metadata.get_num_outgoing_edges(), 0);
   EXPECT_EQ(graph_metadata.get_num_edges(), 100);
   EXPECT_EQ(graph_metadata.get_max_vid(), 57);
   EXPECT_EQ(graph_metadata.get_min_vid(), 0);

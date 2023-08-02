@@ -1,7 +1,6 @@
 GraphMetadata:
   num_vertices: 58
-  num_incoming_edges: 100
-  num_outgoing_edges: 0
+  num_edges: 100
   max_vid: 57
   min_vid: 0
   num_subgraphs: 2

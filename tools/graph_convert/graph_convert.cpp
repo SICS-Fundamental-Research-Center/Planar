@@ -428,23 +428,7 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
   // Write Meta date.
   YAML::Node out_node;
   out_node["GraphMetadata"]["num_vertices"] = num_vertices;
-  switch (store_strategy) {
-    case kOutgoingOnly:
-      out_node["GraphMetadata"]["num_incoming_edges"] = 0;
-      out_node["GraphMetadata"]["num_outgoing_edges"] = count_out_edges;
-      break;
-    case kIncomingOnly:
-      out_node["GraphMetadata"]["num_incoming_edges"] = count_in_edges;
-      out_node["GraphMetadata"]["num_outgoing_edges"] = 0;
-      break;
-    case kUnconstrained:
-      out_node["GraphMetadata"]["num_incoming_edges"] = count_in_edges;
-      out_node["GraphMetadata"]["num_outgoing_edges"] = count_out_edges;
-      break;
-    default:
-      LOG_ERROR("Undefined store strategy.");
-      return -1;
-  }
+  out_node["GraphMetadata"]["num_edges"] = num_edges;
   out_node["GraphMetadata"]["max_vid"] = max_vid;
   out_node["GraphMetadata"]["min_vid"] = max_vid;
   out_node["GraphMetadata"]["num_subgraphs"] = 1;
