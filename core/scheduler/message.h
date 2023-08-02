@@ -90,7 +90,7 @@ class Message {
 
 // The following snippet helps the logger to format the MessageType enum.
 template <>
-struct ::fmt::formatter<sics::graph::core::scheduler::Message::Type> {
+struct fmt::formatter<sics::graph::core::scheduler::Message::Type> {
   typedef sics::graph::core::scheduler::Message::Type MessageType;
 
   constexpr auto parse(::fmt::format_parse_context& ctx)
