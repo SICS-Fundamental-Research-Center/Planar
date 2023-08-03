@@ -12,10 +12,11 @@
 
 namespace sics::graph::core::data_structures {
 
-using sics::graph::core::common::GraphID;
-using sics::graph::core::common::VertexID;
-
 struct SubgraphMetadata {
+  using GraphID = sics::graph::core::common::GraphID;
+  using VertexID = sics::graph::core::common::VertexID;
+
+  // Subgraph Metadata
   GraphID gid;
   size_t num_vertices;
   size_t num_incoming_edges;
@@ -25,9 +26,12 @@ struct SubgraphMetadata {
 };
 
 class GraphMetadata {
+  using GraphID = sics::graph::core::common::GraphID;
+  using VertexID = sics::graph::core::common::VertexID;
+
  public:
   GraphMetadata() = default;
-  // maybe used later
+  // TO DO: maybe used later
   GraphMetadata(const std::string& root_path);
 
   void set_num_vertices(size_t num_vertices) { num_vertices_ = num_vertices; }
@@ -42,13 +46,13 @@ class GraphMetadata {
   size_t get_num_subgraphs() const { return num_subgraphs_; }
   size_t get_min_vid() const { return min_vid_; }
   size_t get_max_vid() const { return max_vid_; }
-  void set_subgraphs_metadata(
-      const std::vector<SubgraphMetadata>& subgraphs_metadata) {
-    subgraphs_metadata_ = subgraphs_metadata;
+  void set_subgraph_metadata_vec(
+      const std::vector<SubgraphMetadata>& subgraph_metadata_vec) {
+    subgraph_metadata_vec_ = subgraph_metadata_vec;
   }
 
   SubgraphMetadata GetSubgraphMetadata(common::GraphID gid) const {
-    return subgraphs_metadata_.at(gid);
+    return subgraph_metadata_vec_.at(gid);
   }
 
   bool IsSubgraphPendingCurrentRound(common::GraphID subgraph_gid) const {
@@ -69,7 +73,7 @@ class GraphMetadata {
   std::string data_root_path_;
   std::vector<bool> current_round_pending_;
   std::vector<bool> next_round_pending_;
-  std::vector<SubgraphMetadata> subgraphs_metadata_;
+  std::vector<SubgraphMetadata> subgraph_metadata_vec_;
 };
 
 }  // namespace sics::graph::core::data_structures
@@ -140,11 +144,11 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
     metadata.set_max_vid(node["max_vid"].as<VertexID>());
     metadata.set_min_vid(node["min_vid"].as<VertexID>());
     metadata.set_num_subgraphs(node["num_subgraphs"].as<size_t>());
-    auto subgraphs_metadata =
+    auto subgraph_metadata_vec =
         node["subgraphs"]
             .as<std::vector<
                 sics::graph::core::data_structures::SubgraphMetadata>>();
-    metadata.set_subgraphs_metadata(subgraphs_metadata);
+    metadata.set_subgraph_metadata_vec(subgraph_metadata_vec);
     return true;
   }
 };
