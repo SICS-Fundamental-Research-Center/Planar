@@ -60,18 +60,18 @@ TEST_F(WriterTest, WriteSubgraph) {
   // size_t size = serialized_immutable_csr->get_csr_buffer().front().front().GetSize();
   uint32_t* a_uint32 = reinterpret_cast<uint32_t*>(data);
   size_t* a_size_t = reinterpret_cast<size_t*>(data);
-  for (std::size_t i = 0; i < 28; i++) {
-      std::cout << "Element " << i << ": " << a_uint32[i] << std::endl;
-  }
-  std::cout << "##########" << std::endl;
-  for (std::size_t i = 14; i < 14+28*4; i++) {
-      std::cout << "Element " << i+14 << ": " << a_size_t[i] << std::endl;
-  }
-  std::cout << "##########" << std::endl;
-  for (std::size_t i = (14+28*4)*2; i < (14+28*4)*2+71*2; i++) {
-      std::cout << "Element " << i-4*28 << ": " << a_uint32[i] << std::endl;
-  }
-  std::cout << "##########" << std::endl;
+  // for (std::size_t i = 0; i < 28; i++) {
+  //     std::cout << "Element " << i << ": " << a_uint32[i] << std::endl;
+  // }
+  // std::cout << "##########" << std::endl;
+  // for (std::size_t i = 14; i < 14+28*4; i++) {
+  //     std::cout << "Element " << i+14 << ": " << a_size_t[i] << std::endl;
+  // }
+  // std::cout << "##########" << std::endl;
+  // for (std::size_t i = (14+28*4)*2; i < (14+28*4)*2+71*2; i++) {
+  //     std::cout << "Element " << i-4*28 << ": " << a_uint32[i] << std::endl;
+  // }
+  // std::cout << "##########" << std::endl;
 }
 
 // Test the WriteSubgraph function of the Writer class

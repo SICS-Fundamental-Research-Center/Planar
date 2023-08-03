@@ -70,6 +70,7 @@ add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp" EXCLUDE_FROM_ALL)
 #######################
 add_subdirectory(core)
 add_subdirectory(tools)
+add_subdirectory(miniclean)
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/core
 )
