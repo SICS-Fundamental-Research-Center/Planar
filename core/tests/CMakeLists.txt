@@ -35,5 +35,7 @@ foreach (testfile ${testfiles})
             yaml-cpp::yaml-cpp
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
+    target_compile_definitions(${filename} PUBLIC TEST_DATA_DIR="${PROJECT_ROOT_DIR}/testfile")
+#    set_tests_properties(${TESTNAME} PROPERTIES ENVIRONMENT "DATA_DIR=${PROJECT_ROOT_DIR}/testfile")
 endforeach ()
 

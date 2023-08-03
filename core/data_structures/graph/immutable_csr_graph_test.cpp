@@ -21,10 +21,6 @@ using ImmutableCSRGraphConfig =
     sics::graph::core::data_structures::graph::ImmutableCSRGraphConfig;
 using ThreadPool = sics::graph::core::common::ThreadPool;
 
-#define SUBGRAPH_0_PATH "../../../input/small_graph_part/0"
-#define SUBGRAPH_1_PATH "../../../input/small_graph_part/1"
-#define WRITE_0_PATH "../../../output/writer_test/0"
-
 namespace sics::graph::core::test {
 template <typename Derived, typename Base>
 std::unique_ptr<Derived> dynamic_ptr_cast(
@@ -36,6 +32,7 @@ std::unique_ptr<Derived> dynamic_ptr_cast(
 
   return nullptr;
 }
+
 class SerializableImmutableCSRTest : public ::testing::Test {
  protected:
   SerializableImmutableCSRTest() {
@@ -85,6 +82,11 @@ class SerializableImmutableCSRTest : public ::testing::Test {
   std::unique_ptr<SerializedImmutableCSRGraph> serialized_immutable_csr_0_;
   std::unique_ptr<SerializedImmutableCSRGraph> serialized_immutable_csr_1_;
   ImmutableCSRGraphConfig config_0_, config_1_;
+  std::string data_dir = TEST_DATA_DIR;
+  std::string subgraph_0_path = data_dir + "/input/small_graph_part/0";
+  std::string subgraph_1_path = data_dir + "/input/small_graph_part/1";
+  std::string write_0_path = data_dir + "/output/writer_test/0";
+  std::string write_1_path = data_dir + "/output/writer_test/1";
 };
 
 TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_0) {
@@ -95,7 +97,7 @@ TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_0) {
   ImmutableCSRGraph serializable_immutable_csr(0, std::move(config_0_));
 
   // Read a subgraph
-  reader.ReadSubgraph(SUBGRAPH_0_PATH, serialized_immutable_csr_0_.get());
+  reader.ReadSubgraph(subgraph_0_path, serialized_immutable_csr_0_.get());
 
   /* Test: whether loaded */
   size_t loaded_size =
@@ -208,7 +210,7 @@ TEST_F(SerializableImmutableCSRTest, TestDeserialize4Subgraph_1) {
   ImmutableCSRGraph serializable_immutable_csr(1, std::move(config_1_));
 
   // Read a subgraph
-  reader.ReadSubgraph(SUBGRAPH_1_PATH, serialized_immutable_csr_1_.get());
+  reader.ReadSubgraph(subgraph_1_path, serialized_immutable_csr_1_.get());
 
   /* Test: whether loaded */
   size_t loaded_size =
@@ -301,7 +303,7 @@ TEST_F(SerializableImmutableCSRTest, TestSerialize4Subgraph0) {
   ImmutableCSRGraph serializable_immutable_csr(0, std::move(config_0_));
 
   // Read a subgraph
-  reader.ReadSubgraph(SUBGRAPH_0_PATH, serialized_immutable_csr_0_.get());
+  reader.ReadSubgraph(subgraph_0_path, serialized_immutable_csr_0_.get());
 
   // Deserialize
   ThreadPool thread_pool(1);
@@ -318,11 +320,11 @@ TEST_F(SerializableImmutableCSRTest, TestSerialize4Subgraph0) {
   auto serialized_immutable_csr_r = serializable_immutable_csr.Serialize(thread_pool);
 
   // Write the subgraph
-  writer.WriteSubgraph(WRITE_0_PATH, serialized_immutable_csr_r.get());
+  writer.WriteSubgraph(write_0_path, serialized_immutable_csr_r.get());
 
   // re-Read the subgraph
   ImmutableCSRGraph serializable_immutable_csr_r(0, std::move(config_0_));
-  reader.ReadSubgraph(WRITE_0_PATH, serialized_immutable_csr_1_.get());
+  reader.ReadSubgraph(write_0_path, serialized_immutable_csr_1_.get());
   serializable_immutable_csr_r.Deserialize(
       thread_pool, std::move(serialized_immutable_csr_1_));
   

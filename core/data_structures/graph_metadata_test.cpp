@@ -1,9 +1,9 @@
 #include "data_structures/graph_metadata.h"
-
-#include <fstream>
-
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
+#include <fstream>
+
+#define SOURCE_DIR "${CMAKE_SOURCE_DIR}"
 
 namespace sics::graph::core::data_structures {
 
@@ -13,11 +13,18 @@ class GraphMetadataTest : public ::testing::Test {
     // Suppress death test warnings.
     ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   }
+
+  std::string data_dir = TEST_DATA_DIR;
+  std::string meta_yaml_path = data_dir + "/meta.yaml";
 };
 
 TEST_F(GraphMetadataTest, NodeStructureRead) {
   YAML::Node metadata;
-  metadata = YAML::LoadFile("../../testfile/meta.yaml");
+  try {
+    metadata = YAML::LoadFile(meta_yaml_path);
+  } catch (YAML::BadFile& e) {
+    GTEST_LOG_(ERROR) << e.msg;
+  }
   auto graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
   EXPECT_EQ(graph_metadata.get_num_vertices(), 56);
   EXPECT_EQ(graph_metadata.get_num_edges(), 100);
@@ -34,7 +41,11 @@ TEST_F(GraphMetadataTest, NodeStructureRead) {
 
 TEST_F(GraphMetadataTest, NodeStructureWrite) {
   YAML::Node metadata;
-  metadata = YAML::LoadFile("../../testfile/meta.yaml");
+  try {
+    metadata = YAML::LoadFile(meta_yaml_path);
+  } catch (YAML::BadFile& e) {
+    GTEST_LOG_(ERROR) << e.msg;
+  }
   auto graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
 
   std::ofstream fout("../../testfile/meta_write.yaml");
@@ -43,6 +54,5 @@ TEST_F(GraphMetadataTest, NodeStructureWrite) {
   auto res1 = out["subgraphs"];
   fout << out << std::endl;
 }
-
 
 }  // namespace sics::graph::core::data_structures
