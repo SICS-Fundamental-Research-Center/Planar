@@ -6,6 +6,7 @@ project(graph_systems_tools)
 #######################
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/common
         ${PROJECT_ROOT_DIR}/core
 )
 

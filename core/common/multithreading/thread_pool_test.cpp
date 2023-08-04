@@ -27,7 +27,7 @@ TEST_F(TheadPoolTest, CountShouldEqualsToK) {
   int k = random() % (1 << 5);
   int count = 0;
   for (int i = 0; i < k; i++) {
-    auto task = std::bind([i, &parallelism, &count]() {
+    auto task = std::bind([&count]() {
       sics::graph::core::util::atomic::WriteAdd(&count, 1);
       return;
     });

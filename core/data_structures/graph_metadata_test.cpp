@@ -18,6 +18,7 @@ class GraphMetadataTest : public ::testing::Test {
   std::string meta_yaml_path = data_dir + "/meta.yaml";
 };
 
+// Tests reading the metadata from a YAML file.
 TEST_F(GraphMetadataTest, NodeStructureRead) {
   YAML::Node metadata;
   try {
@@ -26,16 +27,23 @@ TEST_F(GraphMetadataTest, NodeStructureRead) {
     GTEST_LOG_(ERROR) << e.msg;
   }
   auto graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
-  EXPECT_EQ(graph_metadata.get_num_vertices(), 56);
+  EXPECT_EQ(graph_metadata.get_num_vertices(), 58);
   EXPECT_EQ(graph_metadata.get_num_edges(), 100);
+  EXPECT_EQ(graph_metadata.get_max_vid(), 57);
+  EXPECT_EQ(graph_metadata.get_min_vid(), 0);
   EXPECT_EQ(graph_metadata.get_num_subgraphs(), 2);
-  std::vector<std::vector<int>> result_subgraph_metadata = {{28, 61, 100},
-                                                            {28, 39, 101}};
-  for (int i = 0; i < graph_metadata.get_num_subgraphs(); i++) {
+  std::vector<std::vector<int>> result_subgraph_metadata = {
+      {0, 32, 87, 0, 47, 0}, {1, 26, 31, 0, 57, 5}};
+  for (size_t i = 0; i < graph_metadata.get_num_subgraphs(); i++) {
     auto subgraph_metadata = graph_metadata.GetSubgraphMetadata(i);
-    EXPECT_EQ(subgraph_metadata.num_vertices_, result_subgraph_metadata[i][0]);
-    EXPECT_EQ(subgraph_metadata.num_edges_, result_subgraph_metadata[i][1]);
-    EXPECT_EQ(subgraph_metadata.size_, result_subgraph_metadata[i][2]);
+    EXPECT_EQ(subgraph_metadata.gid, result_subgraph_metadata[i][0]);
+    EXPECT_EQ(subgraph_metadata.num_vertices, result_subgraph_metadata[i][1]);
+    EXPECT_EQ(subgraph_metadata.num_incoming_edges,
+              result_subgraph_metadata[i][2]);
+    EXPECT_EQ(subgraph_metadata.num_outgoing_edges,
+              result_subgraph_metadata[i][3]);
+    EXPECT_EQ(subgraph_metadata.max_vid, result_subgraph_metadata[i][4]);
+    EXPECT_EQ(subgraph_metadata.min_vid, result_subgraph_metadata[i][5]);
   }
 }
 
