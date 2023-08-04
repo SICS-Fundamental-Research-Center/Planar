@@ -36,17 +36,20 @@ void ThreadPool::SubmitSync(Task&& task) {
 void ThreadPool::SubmitSync(const TaskPackage& tasks) {
   std::mutex mtx;
   std::condition_variable finish_cv;
-  std::unique_lock<std::mutex> lck(mtx);
-  std::atomic<size_t> pending_packages(tasks.size());
 
+  size_t pending_packages = tasks.size();
   for (const auto& t : tasks) {
-    internal_pool_.add([this, &finish_cv, &pending_packages, &t]() {
+    internal_pool_.add([this, &finish_cv, &pending_packages, &mtx, &t]() {
       t();
-      if (pending_packages.fetch_sub(1) == 1) finish_cv.notify_all();
+      {
+        std::lock_guard<std::mutex> lck(mtx);
+        pending_packages--;
+        if (pending_packages == 0) finish_cv.notify_all();
+      }
     });
   }
-  while (pending_packages.load() != 0)
-    finish_cv.wait(lck, [&] { return pending_packages.load() == 0; });
+  std::unique_lock<std::mutex> lck(mtx);
+  finish_cv.wait(lck, [&] { return pending_packages == 0; });
 }
 
 size_t ThreadPool::GetParallelism() const {
