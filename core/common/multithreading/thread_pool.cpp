@@ -3,7 +3,7 @@
 namespace sics::graph::core::common {
 
 ThreadPool::ThreadPool(uint32_t num_threads)
-    : internal_pool_((unsigned int)num_threads) {}
+    : internal_pool_((unsigned int) num_threads) {}
 
 void ThreadPool::SubmitAsync(Task&& task) {
   internal_pool_.add(std::move(task));
