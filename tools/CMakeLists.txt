@@ -6,9 +6,14 @@ project(graph_systems_tools)
 #######################
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/common
+        ${CMAKE_CURRENT_SOURCE_DIR}/tools_common
         ${PROJECT_ROOT_DIR}/core
 )
+
+file(GLOB TOOLS_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/tools_common/*.cpp
+        )
+
 
 # find gflag
 find_package(gflags REQUIRED)
@@ -24,3 +29,4 @@ endif ()
 # Artifacts
 #######################
 add_subdirectory(graph_convert)
+add_subdirectory(graph_partition)

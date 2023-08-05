@@ -7,85 +7,51 @@
 // USAGE: graph-convert --convert_mode=[options] -i <input file path> -o <output
 // file path> --sep=[separator]
 
+#include "common/bitmap.h"
+#include "common/multithreading/thread_pool.h"
+#include "common/types.h"
+#include "data_structures/graph_metadata.h"
+#include "tools_common/data_structures.h"
+#include "tools_common/types.h"
+#include "tools_common/yaml_config.h"
+#include "util/atomic.h"
+#include "util/logging.h"
+#include <gflags/gflags.h>
+#include <yaml-cpp/yaml.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <list>
 #include <type_traits>
 
-#include <gflags/gflags.h>
-#include <yaml-cpp/yaml.h>
-
-#include "common/bitmap.h"
-#include "common/multithreading/thread_pool.h"
-#include "common/tools_types.h"
-#include "common/types.h"
-#include "common/yaml_config.h"
-#include "data_structures/graph_metadata.h"
-#include "util/atomic.h"
-#include "util/logging.h"
-
 using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::common::VertexLabel;
-using sics::graph::core::data_structures::SubgraphMetadata;
 using sics::graph::core::data_structures::GraphMetadata;
+using sics::graph::core::data_structures::SubgraphMetadata;
 using sics::graph::core::util::atomic::WriteAdd;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
+using namespace tools;
 
-enum StoreStrategy {
-  kUnconstrained,  // default
-  kIncomingOnly,
-  kOutgoingOnly,
-  kUndefinedStrategy
-};
-
-inline StoreStrategy String2EnumStoreStrategy(const std::string& s) {
-  if (s == "incoming_only")
-    return kIncomingOnly;
-  else if (s == "outgoing_only")
-    return kOutgoingOnly;
-  else if (s == "unconstrained")
-    return kUnconstrained;
-  return kUndefinedStrategy;
-};
-
-enum ConvertMode {
-  kEdgelistCSV2EdgelistBin,
-  kEdgelistCSV2CSRBin,
-  kEdgelistBin2CSRBin,
-  kUndefinedMode
-};
-
-inline ConvertMode String2EnumConvertMode(const std::string& s) {
-  if (s == "edgelistcsv2edgelistbin")
-    return kEdgelistCSV2EdgelistBin;
-  else if (s == "edgelistbin2csrbin")
-    return kEdgelistBin2CSRBin;
-  else if (s == "edgelistcsv2bin")
-    return kEdgelistCSV2CSRBin;
-  return kUndefinedMode;
-};
-
-DEFINE_string(convert_mode, "", "Conversion mode");
+DEFINE_string(partitioner, "", "partitioner type.");
 DEFINE_string(i, "", "input path.");
 DEFINE_string(o, "", "output path.");
-DEFINE_string(sep, "", "seperator to splite csv file.");
-DEFINE_string(store_strategy, "kUnconstrained",
-              "graph-systems adopted three strategies to store edges: "
-              "kUnconstrained, incoming, and outgoing.");
+DEFINE_uint64(n_partitions, 1, "the number of partitions");
+DEFINE_string(store_strategy, "unconstrained",
+"graph-systems adopted three strategies to store edges: "
+"kUnconstrained, incoming, and outgoing.");
+DEFINE_string(convert_mode, "", "Conversion mode");
+DEFINE_string(sep, "", "separator to split csv file.");
 DEFINE_bool(read_head, false, "whether to read header of csv.");
-
 // @DESCRIPTION: convert a edgelist graph from csv file to binary file. Here the
 // compression operations is default in ConvertEdgelist.
 // @PARAMETER: input_path and output_path indicates the input and output path
 // respectively, sep determines the separator for the csv file, read_head
 // indicates whether to read head.
 void ConvertEdgelist(const std::string& input_path,
-                     const std::string& output_path,
-                     const std::string& sep,
+                     const std::string& output_path, const std::string& sep,
                      bool read_head) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
@@ -158,9 +124,9 @@ void ConvertEdgelist(const std::string& input_path,
 
   // Write Meta date.
   YAML::Node node;
-  node["edgelist_bin"]["num_vertices"] = bitmap.Count();
-  node["edgelist_bin"]["num_edges"] = edges_vec.size() / 2;
-  node["edgelist_bin"]["max_vid"] = compressed_vid - 1;
+  node["EdgelistBin"]["num_vertices"] = bitmap.Count();
+  node["EdgelistBin"]["num_edges"] = edges_vec.size() / 2;
+  node["EdgelistBin"]["max_vid"] = compressed_vid - 1;
   out_meta_file << node << std::endl;
 
   delete buffer_edges;
@@ -180,14 +146,6 @@ void ConvertEdgelist(const std::string& input_path,
 bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
                                const std::string& output_path,
                                const StoreStrategy store_strategy) {
-  struct TMPCSRVertex {
-    VertexID vid;
-    size_t indegree = 0;
-    size_t outdegree = 0;
-    VertexID* in_edges = nullptr;
-    VertexID* out_edges = nullptr;
-  };
-
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
 
@@ -228,8 +186,8 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
             auto dst = buffer_edges[j * 2 + 1];
             visited.SetBit(src);
             visited.SetBit(dst);
-            WriteAdd(num_inedges_by_vid + src, (size_t)1);
-            WriteAdd(num_outedges_by_vid + dst, (size_t)1);
+            WriteAdd(num_inedges_by_vid + dst, (size_t)1);
+            WriteAdd(num_outedges_by_vid + src, (size_t)1);
           }
           return;
         });
@@ -425,12 +383,12 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
   delete buffer_in_edges;
   delete buffer_out_edges;
 
-  // Write Meta date.
+  // Write Metadata.
   YAML::Node out_node;
   out_node["GraphMetadata"]["num_vertices"] = num_vertices;
   out_node["GraphMetadata"]["num_edges"] = num_edges;
   out_node["GraphMetadata"]["max_vid"] = max_vid;
-  out_node["GraphMetadata"]["min_vid"] = max_vid;
+  out_node["GraphMetadata"]["min_vid"] = 0;
   out_node["GraphMetadata"]["num_subgraphs"] = 1;
 
   std::list<SubgraphMetadata> subgraphs;
@@ -477,7 +435,7 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  switch (String2EnumConvertMode(FLAGS_convert_mode)) {
+  switch (tools::String2EnumConvertMode(FLAGS_convert_mode)) {
     case kEdgelistCSV2EdgelistBin:
       if (FLAGS_sep == "") {
         LOG_ERROR("CSV separator is not empty. Use -sep [e.g. \",\"].");
@@ -489,8 +447,9 @@ int main(int argc, char** argv) {
       // TODO(hsiaoko): to add edgelist csv 2 csr bin function.
       break;
     case kEdgelistBin2CSRBin:
-      ConvertEdgelistBin2CSRBin(FLAGS_i, FLAGS_o,
-                                String2EnumStoreStrategy(FLAGS_store_strategy));
+      ConvertEdgelistBin2CSRBin(
+          FLAGS_i, FLAGS_o,
+          tools::String2EnumStoreStrategy(FLAGS_store_strategy));
       break;
     default:
       LOG_INFO("Error convert mode.");
