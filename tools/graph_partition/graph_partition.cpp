@@ -88,7 +88,6 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   // Load Yaml node (Edgelist metadata).
   YAML::Node input_node;
   input_node = YAML::LoadFile(input_path + "meta.yaml");
-  LOG_INFO(input_path + "meta.yaml");
   auto edgelist_metadata = input_node["EdgelistBin"].as<EdgelistMetadata>();
 
   // Create Edgelist Graph.
@@ -130,14 +129,6 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   }
   thread_pool.SubmitSync(task_package);
   task_package.clear();
-
-  for (size_t i = 0; i < edgelist_metadata.num_vertices; i++) {
-    if (!visited.GetBit(i)) {
-      printf("Vertex %lu is isolated\n", i);
-      continue;
-    }
-    LOG_INFO(i, " ", num_inedges_by_vid[i], " ", num_outedges_by_vid[i]);
-  }
 
   TMPCSRVertex* buffer_csr_vertices =
       (TMPCSRVertex*)malloc(sizeof(TMPCSRVertex) * aligned_max_vid);
