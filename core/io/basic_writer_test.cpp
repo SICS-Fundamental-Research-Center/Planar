@@ -7,15 +7,6 @@
 #include "data_structures/graph/immutable_csr_graph.h"
 #include "util/logging.h"
 
-#define SUBGRAPH_0_PATH \
-  "../../../input/small_graph_part/0"
-#define SUBGRAPH_1_PATH \
-  "../../../input/small_graph_part/1"
-#define WRITE_0_PATH \
-  "../../../output/writer_test/0"
-#define WRITE_1_PATH \
-  "../../../output/writer_test/1"
-
 namespace sics::graph::core::io {
 using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
@@ -25,6 +16,10 @@ class WriterTest : public ::testing::Test {
  protected:
   WriterTest() = default;
   ~WriterTest() override = default;
+
+  std::string data_dir = TEST_DATA_DIR;
+  std::string subgraph_1_path = data_dir + "/input/small_graph_part/1";
+  std::string write_1_path = data_dir + "/output/writer_test/1";
 };
 
 // Test the WriteSubgraph function of the Writer class
@@ -39,11 +34,11 @@ TEST_F(WriterTest, WriteSubgraph) {
       new SerializedImmutableCSRGraph();
 
   // Read a subgraph
-  reader.ReadSubgraph(SUBGRAPH_1_PATH, serialized_immutable_csr);
+  reader.ReadSubgraph(subgraph_1_path, serialized_immutable_csr);
   LOG_INFO("end reading");
 
   // Read a subgraph
-  writer.WriteSubgraph(WRITE_1_PATH, serialized_immutable_csr);
+  writer.WriteSubgraph(write_1_path, serialized_immutable_csr);
   LOG_INFO("end writing");
 
   // Create another Reader object
@@ -54,7 +49,7 @@ TEST_F(WriterTest, WriteSubgraph) {
       new SerializedImmutableCSRGraph();
 
   // Read a subgraph
-  rereader.ReadSubgraph(WRITE_1_PATH, serialized_immutable_csr_1);
+  rereader.ReadSubgraph(write_1_path, serialized_immutable_csr_1);
 
   uint8_t* data = serialized_immutable_csr_1->GetCSRBuffer().front().front().Get();
   // size_t size = serialized_immutable_csr->get_csr_buffer().front().front().GetSize();
@@ -86,9 +81,9 @@ TEST_F(WriterTest, WriteSubgraph1) {
       new SerializedImmutableCSRGraph();
 
   // Read a subgraph
-  reader.ReadSubgraph(SUBGRAPH_1_PATH, serialized_immutable_csr);
+  reader.ReadSubgraph(subgraph_1_path, serialized_immutable_csr);
 
   // Read a subgraph
-  writer.WriteSubgraph(WRITE_1_PATH, serialized_immutable_csr);
+  writer.WriteSubgraph(write_1_path, serialized_immutable_csr);
 }
 }  // namespace sics::graph::core::io

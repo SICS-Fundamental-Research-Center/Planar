@@ -1,15 +1,9 @@
 #include <gtest/gtest.h>
 #include <iostream>
-#include <filesystem>
 
 #include "io/basic_reader.h"
 #include "data_structures/graph/immutable_csr_graph.h"
 #include "util/logging.h"
-
-#define SUBGRAPH_0_PATH \
-  "../../../input/small_graph_part/0"
-#define SUBGRAPH_1_PATH \
-  "../../../input/small_graph_part/1"
 
 using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
@@ -21,6 +15,9 @@ class ReaderTest : public ::testing::Test {
  protected:
   ReaderTest() = default;
   ~ReaderTest() override = default;
+
+  std::string data_dir = TEST_DATA_DIR;
+  std::string subgraph_1_path = data_dir + "/input/small_graph_part/1";
 };
 
 // Test the ReadSubgraph function of the Reader class
@@ -33,7 +30,7 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
       new SerializedImmutableCSRGraph();
 
   // Read a subgraph
-  reader.ReadSubgraph(SUBGRAPH_1_PATH, serialized_immutable_csr);
+  reader.ReadSubgraph(subgraph_1_path, serialized_immutable_csr);
 
   LOG_INFO("end reading");
   uint8_t* data = serialized_immutable_csr->GetCSRBuffer().front().front().Get();
