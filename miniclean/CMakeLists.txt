@@ -22,4 +22,16 @@ endif ()
 #######################
 # Artifacts
 #######################
-# add_subdirectory(graph_convert)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/miniclean)
+
+file(GLOB appfiles "${CMAKE_CURRENT_SOURCE_DIR}/apps/*.cpp")
+foreach (appfile ${appfiles})
+    message(STATUS "Found tool: ${appfile}")
+    get_filename_component(app ${appfile} NAME_WE)
+    add_executable("${app}_exec" ${appfile})
+    target_link_libraries("${app}_exec"
+            graph_systems_core
+            yaml-cpp
+            gflags
+    )
+endforeach ()
