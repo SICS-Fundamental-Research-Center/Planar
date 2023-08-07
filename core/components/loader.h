@@ -1,22 +1,23 @@
 #ifndef GRAPH_SYSTEMS_LOADER_H
 #define GRAPH_SYSTEMS_LOADER_H
 
-#include "common/component.h"
-#include "io/reader_writer.h"
-#include "scheduler/message_hub.h"
-#include "util/logging.h"
 #include <memory>
 #include <thread>
 #include <type_traits>
 
-namespace sics::graph::core::io {
+#include "components/component.h"
+#include "io/reader_writer.h"
+#include "scheduler/message_hub.h"
+#include "util/logging.h"
+
+namespace sics::graph::core::components {
 
 // An adapter class that adapts a ReaderInterface to Loader that works
 // against a MessageHub.
 template<typename ReaderType>
-class Loader : public common::Component {
+class Loader : public Component {
  protected:
-  static_assert(std::is_base_of<Reader, ReaderType>::value,
+  static_assert(std::is_base_of<io::Reader, ReaderType>::value,
                 "ReaderType must be a subclass of Reader");
 
  public:
@@ -59,6 +60,6 @@ class Loader : public common::Component {
   std::unique_ptr<std::thread> thread_;
 };
 
-}
+}  // namespace sics::graph::core::components
 
 #endif  // GRAPH_SYSTEMS_LOADER_H
