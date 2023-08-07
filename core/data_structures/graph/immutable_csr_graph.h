@@ -25,9 +25,9 @@ class ImmutableCSRGraph : public Serializable {
   ImmutableCSRGraph(const GraphID gid, ImmutableCSRGraphConfig&& csr_config)
       : Serializable(), gid_(gid), csr_config_(std::move(csr_config)) {}
 
-  std::unique_ptr<Serialized> Serialize(const common::TaskRunner& runner) override;
+  virtual std::unique_ptr<Serialized> Serialize(const common::TaskRunner& runner) override;
 
-  void Deserialize(const common::TaskRunner& runner,
+  virtual void Deserialize(const common::TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override;
 
   GraphID get_gid() const { return gid_; }
@@ -44,15 +44,14 @@ class ImmutableCSRGraph : public Serializable {
   size_t* GetInOffset() const { return in_offset_; }
   size_t* GetOutOffset() const { return out_offset_; }
 
- private:
-  void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
+ protected:
+  virtual void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
 
- private:
   std::unique_ptr<SerializedImmutableCSRGraph> serialized_;
-
   GraphID gid_ = 0;
   uint8_t* buf_graph_ = nullptr;
 
+ private:
   // config. attributes to build the CSR.
   ImmutableCSRGraphConfig csr_config_;
 
