@@ -30,7 +30,7 @@ class ImmutableCSRGraph : public Serializable {
   void Deserialize(const common::TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override;
 
-  GraphID fet_gid() const { return gid_; }
+  GraphID get_gid() const { return gid_; }
   void set_gid(GraphID gid) { gid_ = gid; }
 
   uint8_t* GetGraphBuffer() const { return buf_graph_; }
