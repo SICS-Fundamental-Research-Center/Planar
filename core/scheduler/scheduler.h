@@ -14,25 +14,57 @@ class Scheduler {
 
   int GetCurrentRound() const { return current_round_; }
 
-  int GetSubgraphRound(common::GraphID subgraph_gid) const;
+  int GetSubgraphRound(common::GraphID subgraph_gid) const {
+    if (graph_metadata_info_.IsSubgraphPendingCurrentRound(subgraph_gid)) {
+      return current_round_;
+    } else {
+      return current_round_ + 1;
+    }
+  }
 
   // read graph metadata from meta.yaml file
   // meta file path should be passed by gflags
-  void ReadGraphMetadata(const std::string& graph_metadata_path);
+  void ReadGraphMetadata(const std::string& graph_metadata_path) {
+    YAML::Node graph_metadata_node;
+    try {
+      graph_metadata_node = YAML::LoadFile(graph_metadata_path);
+      graph_metadata_info_ = graph_metadata_node["GraphMetadata"]
+                                 .as<data_structures::GraphMetadata>();
+    } catch (YAML::BadFile& e) {
+      LOG_ERROR("meta.yaml file read failed! ", e.msg);
+    }
+  }
 
-  // message part
+  // get message hub ptr for other component
+  MessageHub* get_message_hub() { return &message_hub_; }
 
+  // global message store
+
+  VertexData ReadGlobalMessage(common::VertexID vid) const {
+    return global_message_read_[vid];
+  }
+
+  bool WriteGlobalMessage(common::VertexID vid, VertexData data) {
+    global_message_write_[vid] = data;
+    return true;
+  }
+
+  bool SyncGlobalMessage() {
+    memcpy(global_message_read_, global_message_write_,
+           global_message_size_ * sizeof(VertexData));
+    return true;
+  }
 
  private:
+  // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
   data_structures::GraphMetadata graph_metadata_info_;
   int current_round_ = 0;
-
+  // message hub
   MessageHub message_hub_;
-
+  // global message store
   VertexData* global_message_read_;
   VertexData* global_message_write_;
   uint32_t global_message_size_;
-
 };
 
 }  // namespace sics::graph::core::scheduler
