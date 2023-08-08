@@ -5,6 +5,7 @@
 
 #include "common/multithreading/task_runner.h"
 #include "data_structures/serializable.h"
+#include "util/logging.h"
 
 namespace sics::graph::core::apis {
 
@@ -37,9 +38,15 @@ class PIE {
   virtual void Assemble(GraphType* graph) = 0;
 
  protected:
-  // TODO: implement this here.
-  virtual void VApply(GraphType* graph) = 0;
-  virtual void EApply(GraphType* graph) = 0;
+  // TODO: implement this here. This function is not intended for overriden.
+  void VApply(GraphType* graph) {
+    LOG_WARN("VApply is not implemented");
+  }
+
+  // TODO: implement this here. This function is not intended for overriden.
+  void EApply(GraphType* graph) {
+    LOG_WARN("EApply is not implemented");
+  }
 
  protected:
   common::TaskRunner* runner_;
