@@ -51,10 +51,6 @@ class ImmutableCSRGraph : public Serializable {
   GraphID gid_ = 0;
   uint8_t* buf_graph_ = nullptr;
 
- private:
-  // config. attributes to build the CSR.
-  ImmutableCSRGraphConfig csr_config_;
-
   // serialized data in CSR format.
   VertexID* localid_by_globalid_ = nullptr;
   VertexID* localid_by_index_ = nullptr;
@@ -65,6 +61,11 @@ class ImmutableCSRGraph : public Serializable {
   size_t* outdegree_ = nullptr;
   size_t* in_offset_ = nullptr;
   size_t* out_offset_ = nullptr;
+
+ private:
+  // config. attributes to build the CSR.
+  ImmutableCSRGraphConfig csr_config_;
+
 };
 }  // namespace sics::graph::core::data_structures::graph
 

@@ -33,7 +33,14 @@ class MinicleanCSRGraph
   void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list) override;
 
  private:
+  // config. attributes to build the CSR.
   MinicleanCSRGraphConfig csr_config_;
+  // Vertex labels
+  VertexID* vertex_label_ = nullptr;
+  // Edge labels
+  VertexID* in_edge_label_ = nullptr;
+  VertexID* out_edge_label_ = nullptr;
+
 };
 }  // namespace sics::graph::miniclean::graphs
 
