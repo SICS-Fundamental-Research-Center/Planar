@@ -33,7 +33,7 @@ class BasicReader {
   // read subgraph from ssd to Serialized object
   // path: path to the subgraph dictionary
   // dst_object: where to move ownedbuffers
-  // read type: 0: csr, other: other type in future version
+  // read type: 0: csr, 1: csr with label, other: other type in future version
   void ReadSubgraph(const std::string& path, Serialized* dst_object, int read_type = 0);
 
  private:
@@ -42,15 +42,25 @@ class BasicReader {
   //  - dir:{work_dir_}
   //    - dir:0
   //      - file:0_data.bin
+  //      - file:0_inedge_label.bin
+  //      - file:0_outedge_label.bin
+  //      - file:0_vertex_label.bin
   //      - file:0_attr.bin
   //    - dir:1
   //      - file:1_data.bin
+  //      - file:1_inedge_label.bin
+  //      - file:1_outedge_label.bin
+  //      - file:1_vertex_label.bin
   //      - file:1_attr.bin
   //    - file:csr_global.yaml
   void ReadCSR(const std::string& path, Serialized* dst_object);
 
+  // read label files
+  void ReadLabel(const std::string& path, Serialized* dst_object);
+
   // read data file
   void ReadBinFile(const std::string& path, Serialized* dst_object);
+
 
  protected:
   std::string path_edgelist_global_yaml_;
