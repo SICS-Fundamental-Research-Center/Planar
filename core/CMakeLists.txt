@@ -18,6 +18,7 @@ include_directories(
 file(GLOB GRAPH_CORE_SOURCES
         "*.cpp"
         "apis/*.cpp"
+        "apps/*.cpp"
         "common/*.cpp"
         "common/multithreading/*.cpp"
         "components/*.cpp"
@@ -33,6 +34,7 @@ message(STATUS "CORE source files: ${GRAPH_CORE_SOURCES}")
 file(GLOB GRAPH_CORE_HEADERS
         "*.h"
         "apis/*.h"
+        "apps/*.h"
         "common/*.h"
         "common/multithreading/*.h"
         "components/*.h"
