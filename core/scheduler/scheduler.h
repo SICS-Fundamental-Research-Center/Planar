@@ -55,6 +55,46 @@ class Scheduler {
     return true;
   }
 
+  // schedule read and write
+  void Start() {
+    thread_ = std::make_unique<std::thread>([this]() {
+      while(true){
+        Message resp = message_hub_.GetResponse();
+
+        if (resp.is_terminated()) {
+          LOG_INFO("*** Scheduler is signaled termination ***");
+          break;
+        }
+        switch (resp.get_type()) {
+          case Message::Type::kRead:
+            ReadMessageResponse();
+            break;
+          case Message::Type::kWrite:
+            WriteMessageResponse();
+            break;
+          case Message::Type::kExecute:
+            ExecuteMessageResponse();
+            break;
+          default:
+            break;
+        }
+      }
+    });
+  }
+
+ private:
+  void ReadMessageResponse() {
+
+  }
+
+  void WriteMessageResponse() {
+
+  }
+
+  void ExecuteMessageResponse() {
+
+  }
+
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
   data_structures::GraphMetadata graph_metadata_info_;
@@ -65,6 +105,8 @@ class Scheduler {
   VertexData* global_message_read_;
   VertexData* global_message_write_;
   uint32_t global_message_size_;
+
+  std::unique_ptr<std::thread> thread_;
 };
 
 }  // namespace sics::graph::core::scheduler

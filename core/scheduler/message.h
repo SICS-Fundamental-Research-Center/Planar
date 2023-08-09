@@ -50,7 +50,6 @@ struct WriteMessage {
   bool terminated = false;
 };
 
-
 // Basically a union of all type of messages.
 class Message {
  public:
@@ -73,8 +72,20 @@ class Message {
   void Get(ExecuteMessage* message) const;
   void Get(WriteMessage* message) const;
 
-  [[nodiscard]]
-  Type get_type() const { return type_; }
+  [[nodiscard]] Type get_type() const { return type_; }
+
+  [[nodiscard]] bool is_terminated() const {
+    switch (type_) {
+      case kRead:
+        return message_.read_message.terminated;
+      case kExecute:
+        return message_.execute_message.terminated;
+      case kWrite:
+        return message_.write_message.terminated;
+      default:
+        return false;
+    }
+  }
 
  private:
   Type type_;
