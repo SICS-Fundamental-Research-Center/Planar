@@ -2,7 +2,7 @@
 #ifndef SICS_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_TYPES_H_
 #define SICS_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_TYPES_H_
 
-namespace tools {
+namespace sics::graph::tools {
 enum StoreStrategy {
   kUnconstrained,  // default
   kIncomingOnly,
@@ -36,7 +36,6 @@ static inline ConvertMode String2EnumConvertMode(const std::string& s) {
     return kEdgelistCSV2CSRBin;
   return kUndefinedMode;
 };
-
 
 }  // namespace tools
 

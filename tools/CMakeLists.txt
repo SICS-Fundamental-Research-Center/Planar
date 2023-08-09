@@ -5,15 +5,16 @@ project(graph_systems_tools)
 # Libraries
 #######################
 include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tools_common
         ${PROJECT_ROOT_DIR}/core
 )
 
 file(GLOB TOOLS_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/tools_common/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp
         )
 
+file(GLOB TOOLS_HEADERS
+        ${CMAKE_CURRENT_SOURCE_DIR}/common/*.h
+        )
 
 # find gflag
 find_package(gflags REQUIRED)

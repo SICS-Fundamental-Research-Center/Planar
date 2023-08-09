@@ -7,22 +7,24 @@
 // USAGE: graph-convert --convert_mode=[options] -i <input file path> -o <output
 // file path> --sep=[separator]
 
-#include "common/bitmap.h"
-#include "common/multithreading/thread_pool.h"
-#include "common/types.h"
-#include "data_structures/graph_metadata.h"
-#include "tools_common/data_structures.h"
-#include "tools_common/types.h"
-#include "tools_common/yaml_config.h"
-#include "util/atomic.h"
-#include "util/logging.h"
-#include <gflags/gflags.h>
-#include <yaml-cpp/yaml.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <list>
 #include <type_traits>
+
+#include <gflags/gflags.h>
+#include <yaml-cpp/yaml.h>
+
+#include "core/common/bitmap.h"
+#include "core/common/multithreading/thread_pool.h"
+#include "core/common/types.h"
+#include "core/data_structures/graph_metadata.h"
+#include "tools/common/data_structures.h"
+#include "tools/common/yaml_config.h"
+#include "tools/common/io.h"
+#include "util/atomic.h"
+#include "util/logging.h"
 
 using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::TaskPackage;
@@ -33,25 +35,27 @@ using sics::graph::core::data_structures::SubgraphMetadata;
 using sics::graph::core::util::atomic::WriteAdd;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
-using namespace tools;
+using namespace sics::graph::tools;
 
 DEFINE_string(partitioner, "", "partitioner type.");
 DEFINE_string(i, "", "input path.");
 DEFINE_string(o, "", "output path.");
 DEFINE_uint64(n_partitions, 1, "the number of partitions");
 DEFINE_string(store_strategy, "unconstrained",
-"graph-systems adopted three strategies to store edges: "
-"kUnconstrained, incoming, and outgoing.");
+              "graph-systems adopted three strategies to store edges: "
+              "kUnconstrained, incoming, and outgoing.");
 DEFINE_string(convert_mode, "", "Conversion mode");
 DEFINE_string(sep, "", "separator to split csv file.");
 DEFINE_bool(read_head, false, "whether to read header of csv.");
+
 // @DESCRIPTION: convert a edgelist graph from csv file to binary file. Here the
 // compression operations is default in ConvertEdgelist.
 // @PARAMETER: input_path and output_path indicates the input and output path
 // respectively, sep determines the separator for the csv file, read_head
 // indicates whether to read head.
 void ConvertEdgelist(const std::string& input_path,
-                     const std::string& output_path, const std::string& sep,
+                     const std::string& output_path,
+                     const std::string& sep,
                      bool read_head) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
@@ -146,13 +150,15 @@ void ConvertEdgelist(const std::string& input_path,
 bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
                                const std::string& output_path,
                                const StoreStrategy store_strategy) {
+
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
 
   YAML::Node node = YAML::LoadFile(input_path + "meta.yaml");
-  auto num_vertices = node["edgelist_bin"]["num_vertices"].as<size_t>();
-  auto num_edges = node["edgelist_bin"]["num_edges"].as<size_t>();
-  auto max_vid = node["edgelist_bin"]["max_vid"].as<VertexID>();
+  LOG_INFO(input_path + "meta.yaml");
+  auto num_vertices = node["EdgelistBin"]["num_vertices"].as<size_t>();
+  auto num_edges = node["EdgelistBin"]["num_edges"].as<size_t>();
+  auto max_vid = node["EdgelistBin"]["max_vid"].as<VertexID>();
   auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
 
   auto buffer_edges = (VertexID*)malloc(sizeof(VertexID) * num_edges * 2);
@@ -161,12 +167,6 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
     throw std::runtime_error("Open file failed: " + input_path +
                              "edgelist.bin");
   in_file.read((char*)buffer_edges, sizeof(VertexID) * 2 * num_edges);
-  if (!exists(output_path)) create_directory(output_path);
-  if (!exists(output_path + "graphs")) create_directory(output_path + "graphs");
-  if (!exists(output_path + "label")) create_directory(output_path + "label");
-  std::ofstream out_data_file(output_path + "graphs/0.bin");
-  std::ofstream out_label_file(output_path + "label/0.bin");
-  std::ofstream out_meta_file(output_path + "meta.yaml");
 
   auto num_inedges_by_vid = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
   auto num_outedges_by_vid = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
@@ -196,224 +196,23 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  TMPCSRVertex* buffer_csr_vertices =
-      (TMPCSRVertex*)malloc(sizeof(TMPCSRVertex) * aligned_max_vid);
-  size_t count_in_edges = 0, count_out_edges = 0;
+  auto edge_bucket = (VertexID**)malloc(sizeof(VertexID*));
+  *edge_bucket = buffer_edges;
 
-  // malloc space for each vertex.
-  for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([i, parallelism, &aligned_max_vid, &buffer_edges,
-                           &num_inedges_by_vid, &num_outedges_by_vid,
-                           &buffer_csr_vertices, &count_in_edges,
-                           &count_out_edges, &visited]() {
-      for (size_t j = i; j < aligned_max_vid; j += parallelism) {
-        if (!visited.GetBit(j)) continue;
-        auto u = TMPCSRVertex();
-        u.vid = j;
-        u.indegree = num_inedges_by_vid[j];
-        u.outdegree = num_outedges_by_vid[j];
-        u.in_edges = (VertexID*)malloc(sizeof(VertexID) * u.indegree);
-        u.out_edges = (VertexID*)malloc(sizeof(VertexID) * u.outdegree);
-        WriteAdd(&count_in_edges, u.indegree);
-        WriteAdd(&count_out_edges, u.outdegree);
-        buffer_csr_vertices[j] = u;
-      }
-      return;
-    });
-    task_package.push_back(task);
-  }
-  thread_pool.SubmitSync(task_package);
-  task_package.clear();
-  delete num_inedges_by_vid;
-  delete num_outedges_by_vid;
+  GraphMetadata graph_metadata;
+  graph_metadata.set_num_vertices(num_vertices);
+  graph_metadata.set_num_edges(num_edges);
+  graph_metadata.set_max_vid(max_vid);
+  graph_metadata.set_min_vid(0);
+  graph_metadata.set_num_subgraphs(1);
 
-  // Fill edges.
-  size_t* offset_in_edges = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
-  size_t* offset_out_edges = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
-  memset(offset_in_edges, 0, sizeof(size_t) * aligned_max_vid);
-  memset(offset_out_edges, 0, sizeof(size_t) * aligned_max_vid);
-  for (unsigned int i = 0; i < parallelism; i++) {
-    auto task =
-        std::bind([i, parallelism, &num_edges, &buffer_edges, &offset_in_edges,
-                   &offset_out_edges, &buffer_csr_vertices]() {
-          for (size_t j = i; j < num_edges; j += parallelism) {
-            auto src = buffer_edges[j * 2];
-            auto dst = buffer_edges[j * 2 + 1];
-            auto offset_out = __sync_fetch_and_add(offset_out_edges + src, 1);
-            auto offset_in = __sync_fetch_and_add(offset_in_edges + dst, 1);
-            buffer_csr_vertices[src].out_edges[offset_out] = dst;
-            buffer_csr_vertices[dst].in_edges[offset_in] = src;
-          }
-          return;
-        });
-    task_package.push_back(task);
-  }
-  thread_pool.SubmitSync(task_package);
-  task_package.clear();
+  std::vector<EdgelistMetadata> edgelist_metadata_vec;
+  edgelist_metadata_vec.push_back({num_vertices, num_edges, max_vid});
 
-  // Construct CSR graph.
-  auto buffer_globalid = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
-  auto buffer_indegree = (size_t*)malloc(sizeof(size_t) * num_vertices);
-  auto buffer_outdegree = (size_t*)malloc(sizeof(size_t) * num_vertices);
-
-  for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([i, parallelism, &num_vertices, &buffer_globalid,
-                           &buffer_indegree, &buffer_outdegree,
-                           &buffer_csr_vertices]() {
-      for (size_t j = i; j < num_vertices; j += parallelism) {
-        buffer_globalid[j] = buffer_csr_vertices[j].vid;
-        buffer_indegree[j] = buffer_csr_vertices[j].indegree;
-        buffer_outdegree[j] = buffer_csr_vertices[j].outdegree;
-      }
-      return;
-    });
-    task_package.push_back(task);
-  }
-  thread_pool.SubmitSync(task_package);
-  task_package.clear();
-
-  // Write globalid_by_index, indegree and outdgree buffer.
-  out_data_file.write((char*)buffer_globalid, sizeof(VertexID) * num_vertices);
-  delete buffer_globalid;
-
-  auto buffer_vdata = (VertexLabel*)malloc(sizeof(VertexLabel) * num_vertices);
-  memset(buffer_vdata, 0, sizeof(VertexLabel) * num_vertices);
-  out_label_file.write((char*)buffer_vdata, sizeof(VertexLabel) * num_vertices);
-  delete buffer_vdata;
-
-  switch (store_strategy) {
-    case kOutgoingOnly:
-      out_data_file.write((char*)buffer_outdegree,
-                          sizeof(size_t) * num_vertices);
-      break;
-    case kIncomingOnly:
-      out_data_file.write((char*)buffer_indegree,
-                          sizeof(size_t) * num_vertices);
-      break;
-    case kUnconstrained:
-      out_data_file.write((char*)buffer_indegree,
-                          sizeof(size_t) * num_vertices);
-      out_data_file.write((char*)buffer_outdegree,
-                          sizeof(size_t) * num_vertices);
-      break;
-    default:
-      LOG_ERROR("Undefined store strategy.");
-      return -1;
-  }
-
-  auto buffer_in_offset = (size_t*)malloc(sizeof(size_t) * num_vertices);
-  auto buffer_out_offset = (size_t*)malloc(sizeof(size_t) * num_vertices);
-  memset(buffer_in_offset, 0, sizeof(size_t) * num_vertices);
-  memset(buffer_out_offset, 0, sizeof(size_t) * num_vertices);
-
-  // Compute offset for each vertex.
-  for (size_t i = 1; i < num_vertices; i++) {
-    buffer_in_offset[i] = buffer_in_offset[i - 1] + buffer_indegree[i - 1];
-    buffer_out_offset[i] = buffer_out_offset[i - 1] + buffer_outdegree[i - 1];
-  }
-
-  delete buffer_indegree;
-  delete buffer_outdegree;
-
-  // Write offset buffer.
-  switch (store_strategy) {
-    case kOutgoingOnly:
-      out_data_file.write((char*)buffer_out_offset,
-                          sizeof(size_t) * num_vertices);
-      break;
-    case kIncomingOnly:
-      out_data_file.write((char*)buffer_in_offset,
-                          sizeof(size_t) * num_vertices);
-      break;
-    case kUnconstrained:
-      out_data_file.write((char*)buffer_in_offset,
-                          sizeof(size_t) * num_vertices);
-      out_data_file.write((char*)buffer_out_offset,
-                          sizeof(size_t) * num_vertices);
-      break;
-    default:
-      LOG_ERROR("Undefined store strategy.");
-      return -1;
-  }
-
-  // Buffer compacted edges.
-  auto buffer_in_edges = (VertexID*)malloc(sizeof(VertexID) * count_in_edges);
-  auto buffer_out_edges = (VertexID*)malloc(sizeof(VertexID) * count_out_edges);
-  for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([i, parallelism, &num_vertices, &buffer_in_edges,
-                           &buffer_out_edges, &buffer_in_offset,
-                           &buffer_out_offset, &buffer_csr_vertices]() {
-      for (size_t j = i; j < num_vertices; j += parallelism) {
-        memcpy(buffer_in_edges + buffer_in_offset[j],
-               buffer_csr_vertices[j].in_edges,
-               buffer_csr_vertices[j].indegree * sizeof(VertexID));
-        memcpy(buffer_out_edges + buffer_out_offset[j],
-               buffer_csr_vertices[j].out_edges,
-               buffer_csr_vertices[j].outdegree * sizeof(VertexID));
-      }
-      return;
-    });
-    task_package.push_back(task);
-  }
-  thread_pool.SubmitSync(task_package);
-  task_package.clear();
-  delete buffer_in_offset;
-  delete buffer_out_offset;
-
-  // Write edges buffers.
-  switch (store_strategy) {
-    case kOutgoingOnly:
-      out_data_file.write((char*)buffer_out_edges,
-                          sizeof(VertexID) * count_out_edges);
-      break;
-    case kIncomingOnly:
-      out_data_file.write((char*)buffer_in_edges,
-                          sizeof(VertexID) * count_in_edges);
-      break;
-    case kUnconstrained:
-      out_data_file.write((char*)buffer_out_edges,
-                          sizeof(VertexID) * count_out_edges);
-      out_data_file.write((char*)buffer_in_edges,
-                          sizeof(VertexID) * count_in_edges);
-      break;
-    default:
-      LOG_ERROR("Undefined store strategy.");
-      return -1;
-  }
-  delete buffer_in_edges;
-  delete buffer_out_edges;
-
-  // Write Metadata.
-  YAML::Node out_node;
-  out_node["GraphMetadata"]["num_vertices"] = num_vertices;
-  out_node["GraphMetadata"]["num_edges"] = num_edges;
-  out_node["GraphMetadata"]["max_vid"] = max_vid;
-  out_node["GraphMetadata"]["min_vid"] = 0;
-  out_node["GraphMetadata"]["num_subgraphs"] = 1;
-
-  std::list<SubgraphMetadata> subgraphs;
-  switch (store_strategy) {
-    case kOutgoingOnly:
-      subgraphs.push_front({0, num_vertices, 0, count_out_edges, max_vid, 0});
-      break;
-    case kIncomingOnly:
-      subgraphs.push_front({0, num_vertices, count_in_edges, 0, max_vid, 0});
-      break;
-    case kUnconstrained:
-      subgraphs.push_front(
-          {0, num_vertices, count_in_edges, count_out_edges, max_vid, 0});
-      break;
-    default:
-      LOG_ERROR("Undefined store strategy.");
-      return -1;
-  }
-  out_node["GraphMetadata"]["subgraphs"] = subgraphs;
-  out_meta_file << out_node << std::endl;
-
-  in_file.close();
-  out_meta_file.close();
-  out_data_file.close();
-  out_label_file.close();
+  // Write the csr graph to disk
+  IOAdapter io_adapter(output_path);
+  io_adapter.WriteSubgraph(edge_bucket, graph_metadata, edgelist_metadata_vec,
+                           store_strategy);
   return 0;
 }
 
@@ -435,7 +234,7 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  switch (tools::String2EnumConvertMode(FLAGS_convert_mode)) {
+  switch (String2EnumConvertMode(FLAGS_convert_mode)) {
     case kEdgelistCSV2EdgelistBin:
       if (FLAGS_sep == "") {
         LOG_ERROR("CSV separator is not empty. Use -sep [e.g. \",\"].");
@@ -447,9 +246,8 @@ int main(int argc, char** argv) {
       // TODO(hsiaoko): to add edgelist csv 2 csr bin function.
       break;
     case kEdgelistBin2CSRBin:
-      ConvertEdgelistBin2CSRBin(
-          FLAGS_i, FLAGS_o,
-          tools::String2EnumStoreStrategy(FLAGS_store_strategy));
+      ConvertEdgelistBin2CSRBin(FLAGS_i, FLAGS_o,
+                                String2EnumStoreStrategy(FLAGS_store_strategy));
       break;
     default:
       LOG_INFO("Error convert mode.");

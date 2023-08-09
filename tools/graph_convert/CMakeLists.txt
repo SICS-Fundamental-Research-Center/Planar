@@ -11,10 +11,6 @@ file(GLOB appfiles "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 foreach (appfile ${appfiles})
     message(STATUS "Found tool: ${appfile}")
     get_filename_component(app ${appfile} NAME_WE)
-    add_executable("${app}_exec" ${appfile})
-    target_link_libraries("${app}_exec"
-            graph_systems_core
-            yaml-cpp
-            gflags
-    )
+    add_executable("${app}_exec" ${appfile} ${TOOLS_SOURCES} ${TOOLS_HEADERS})
+    target_link_libraries("${app}_exec" graph_systems_core yaml-cpp)
 endforeach ()

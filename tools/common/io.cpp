@@ -1,54 +1,28 @@
 #include "io.h"
 
-using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::TaskPackage;
-using sics::graph::core::common::VertexID;
-using sics::graph::core::common::VertexLabel;
-using sics::graph::core::data_structures::GraphMetadata;
-using sics::graph::core::data_structures::SubgraphMetadata;
 using sics::graph::core::util::atomic::WriteAdd;
 using sics::graph::core::util::atomic::WriteMax;
 using sics::graph::core::util::atomic::WriteMin;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
 
-namespace tools {
-
-CSRIOAdapter::CSRIOAdapter(const std::string& output_root_path) {
-  output_root_path_ = output_root_path;
-  if (!std::filesystem::exists(output_root_path))
-    std::filesystem::create_directory(output_root_path);
-  if (!std::filesystem::exists(output_root_path + "/label"))
-    std::filesystem::create_directory(output_root_path + "/label");
-  if (!std::filesystem::exists(output_root_path + "/graphs"))
-    std::filesystem::create_directory(output_root_path + "/graphs");
-};
-
-bool CSRIOAdapter::WriteSubgraph(
+namespace sics::graph::tools {
+bool IOAdapter::WriteSubgraph(
     std::vector<folly::ConcurrentHashMap<VertexID, TMPCSRVertex>*>&
         subgraph_vec,
-    StoreStrategy store_strategy) {
+    GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
 
   GraphID gid = 0;
-  std::list<SubgraphMetadata> subgraphs;
-  size_t global_num_vertices = 0;
-  size_t global_num_edges = 0;
-  VertexID global_max_vid = 0;
-  VertexID global_min_vid = MAX_VERTEX_ID;
+  std::vector<SubgraphMetadata> subgraph_metadata_vec;
+  size_t global_num_vertices = 0, global_num_edges = 0;
+  VertexID global_max_vid = 0, global_min_vid = MAX_VERTEX_ID;
   for (auto iter : subgraph_vec) {
     auto vertex_map = iter;
-    LOG_INFO(vertex_map->size());
-
-    auto it = vertex_map->begin();
-    while (it != vertex_map->end()) {
-      LOG_INFO(it->first);
-      ++it;
-    }
-
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
                                 std::to_string(gid) + ".bin");
     std::ofstream out_label_file(output_root_path_ + "label/" +
@@ -93,13 +67,7 @@ bool CSRIOAdapter::WriteSubgraph(
 
     out_data_file.write(reinterpret_cast<char*>(buffer_globalid),
                         sizeof(VertexID) * num_vertices);
-    auto buffer_vdata =
-        (VertexLabel*)malloc(sizeof(VertexLabel) * num_vertices);
-    memset(buffer_vdata, 0, sizeof(VertexLabel) * num_vertices);
-    out_label_file.write(reinterpret_cast<char*>(buffer_vdata),
-                         sizeof(VertexLabel) * num_vertices);
     delete buffer_globalid;
-    delete buffer_vdata;
     out_label_file.close();
 
     auto buffer_in_offset = (size_t*)malloc(sizeof(size_t) * num_vertices);
@@ -130,9 +98,9 @@ bool CSRIOAdapter::WriteSubgraph(
         out_data_file.write((char*)buffer_out_offset,
                             sizeof(size_t) * num_vertices);
         break;
-      default:
-        LOG_ERROR("Undefined store strategy.");
-        return -1;
+      case kUndefinedStrategy:
+        LOG_ERROR("Store_strategy is undefined");
+        break;
     }
 
     auto buffer_in_edges = (VertexID*)malloc(sizeof(VertexID) * count_in_edges);
@@ -175,9 +143,9 @@ bool CSRIOAdapter::WriteSubgraph(
         out_data_file.write((char*)buffer_in_edges,
                             sizeof(VertexID) * count_in_edges);
         break;
-      default:
-        LOG_ERROR("Undefined store strategy.");
-        return -1;
+      case kUndefinedStrategy:
+        LOG_ERROR("Store_strategy is undefined");
+        break;
     }
     delete buffer_in_edges;
     delete buffer_out_edges;
@@ -186,30 +154,32 @@ bool CSRIOAdapter::WriteSubgraph(
     auto max_vid = csr_vertex_buffer[num_vertices - 1].vid;
     WriteMax(&global_max_vid, max_vid);
     WriteMin(&global_min_vid, min_vid);
+
     switch (store_strategy) {
       case kOutgoingOnly:
         WriteAdd(&global_num_edges, count_out_edges);
-        subgraphs.push_front(
+        subgraph_metadata_vec.push_back(
             {gid, num_vertices, 0, count_out_edges, max_vid, min_vid});
         break;
       case kIncomingOnly:
         WriteAdd(&global_num_edges, count_in_edges);
-        subgraphs.push_front(
+        subgraph_metadata_vec.push_back(
             {gid, num_vertices, count_in_edges, 0, max_vid, min_vid});
         break;
       case kUnconstrained:
         WriteAdd(&global_num_edges, count_out_edges + count_in_edges);
-        subgraphs.push_front({gid, num_vertices, count_in_edges,
-                              count_out_edges, max_vid, min_vid});
+        subgraph_metadata_vec.push_back({gid, num_vertices, count_in_edges,
+                                         count_out_edges, max_vid, min_vid});
         break;
-      default:
-        LOG_ERROR("Undefined store strategy.");
-        return -1;
+      case kUndefinedStrategy:
+        LOG_ERROR("Store_strategy is undefined");
+        break;
     }
     gid++;
 
-    delete csr_vertex_buffer;
+    delete[] csr_vertex_buffer;
     out_data_file.close();
+    out_label_file.close();
   }
 
   // Write Metadata
@@ -219,14 +189,103 @@ bool CSRIOAdapter::WriteSubgraph(
   out_node["GraphMetadata"]["num_edges"] = global_num_edges;
   out_node["GraphMetadata"]["max_vid"] = global_max_vid;
   out_node["GraphMetadata"]["min_vid"] = global_min_vid;
-  out_node["GraphMetadata"]["num_subgraphs"] = subgraphs.size();
+  out_node["GraphMetadata"]["num_subgraphs"] = subgraph_vec.size();
+  out_node["GraphMetadata"]["subgraphs"] = subgraph_metadata_vec;
 
-  out_node["GraphMetadata"]["subgraphs"] = subgraphs;
   out_meta_file << out_node << std::endl;
-
-  // Close files.
   out_meta_file.close();
   return 0;
 }
 
-}  // namespace tools
+bool IOAdapter::WriteSubgraph(
+    VertexID** edge_bucket, GraphMetadata& graph_metadata,
+    std::vector<EdgelistMetadata> edgelist_metadata_vec,
+    StoreStrategy store_strategy) {
+  auto parallelism = std::thread::hardware_concurrency();
+  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
+  auto task_package = TaskPackage();
+
+  if (!exists(output_root_path_)) create_directory(output_root_path_);
+  if (!exists(output_root_path_ + "graphs"))
+    create_directory(output_root_path_ + "graphs");
+  if (!exists(output_root_path_ + "label"))
+    create_directory(output_root_path_ + "label");
+
+  GraphAdapter graph_adapter;
+  size_t n_subgraphs = graph_metadata.get_num_subgraphs();
+
+  std::vector<SubgraphMetadata> subgraph_metadata_vec;
+  std::ofstream out_meta_file(output_root_path_ + "meta.yaml");
+  for (size_t i = 0; i < n_subgraphs; i++) {
+    std::ofstream out_data_file(output_root_path_ + "graphs/" +
+                                std::to_string(i) + ".bin");
+    std::ofstream out_label_file(output_root_path_ + "label/" +
+                                 std::to_string(i) + ".bin");
+    ImmutableCSRGraph csr_graph(i);
+    graph_adapter.Edgelist2CSR(edge_bucket[i], edgelist_metadata_vec[i],
+                               csr_graph, store_strategy);
+    delete edge_bucket[i];
+    subgraph_metadata_vec.push_back(
+        {csr_graph.get_gid(), csr_graph.get_num_vertices(),
+         csr_graph.get_num_incoming_edges(), csr_graph.get_num_outgoing_edges(),
+         csr_graph.get_max_vid(), csr_graph.get_min_vid()});
+
+    out_data_file.write((char*)csr_graph.GetGlobalIDByIndex(),
+                        sizeof(VertexID) * csr_graph.get_num_vertices());
+    switch (store_strategy) {
+      case kOutgoingOnly:
+        out_data_file.write((char*)csr_graph.GetOutDegree(),
+                            sizeof(size_t) * csr_graph.get_num_vertices());
+        out_data_file.write((char*)csr_graph.GetOutOffset(),
+                            sizeof(size_t) * csr_graph.get_num_vertices());
+        out_data_file.write(
+            (char*)csr_graph.GetOutEdges(),
+            sizeof(VertexID) * csr_graph.get_num_outgoing_edges());
+        break;
+      case kIncomingOnly:
+        out_data_file.write((char*)csr_graph.GetInDegree(),
+                            sizeof(size_t) * csr_graph.get_num_vertices());
+        out_data_file.write((char*)csr_graph.GetInOffset(),
+                            sizeof(size_t) * csr_graph.get_num_vertices());
+        out_data_file.write(
+            (char*)csr_graph.GetInEdges(),
+            sizeof(VertexID) * csr_graph.get_num_incoming_edges());
+        break;
+      case kUnconstrained:
+        out_data_file.write((char*)csr_graph.GetInDegree(),
+                            sizeof(size_t) * csr_graph.get_num_vertices());
+        out_data_file.write((char*)csr_graph.GetOutDegree(),
+                            sizeof(size_t) * csr_graph.get_num_vertices());
+        out_data_file.write((char*)csr_graph.GetInOffset(),
+                            sizeof(size_t) * csr_graph.get_num_vertices());
+        out_data_file.write((char*)csr_graph.GetOutOffset(),
+                            sizeof(size_t) * csr_graph.get_num_vertices());
+        out_data_file.write(
+            (char*)csr_graph.GetInEdges(),
+            sizeof(VertexID) * csr_graph.get_num_outgoing_edges());
+        out_data_file.write(
+            (char*)csr_graph.GetOutEdges(),
+            sizeof(VertexID) * csr_graph.get_num_outgoing_edges());
+        break;
+      default:
+        LOG_ERROR("Undefined store strategy.");
+        return -1;
+    }
+    out_data_file.close();
+    out_label_file.close();
+  }
+
+  // Write metadata
+  YAML::Node out_node;
+  out_node["GraphMetadata"]["num_vertices"] = graph_metadata.get_num_vertices();
+  out_node["GraphMetadata"]["num_edges"] = graph_metadata.get_num_edges();
+  out_node["GraphMetadata"]["max_vid"] = graph_metadata.get_max_vid();
+  out_node["GraphMetadata"]["min_vid"] = graph_metadata.get_min_vid();
+  out_node["GraphMetadata"]["num_subgraphs"] = subgraph_metadata_vec;
+
+  out_meta_file << out_node << std::endl;
+  out_meta_file.close();
+  return false;
+}
+
+}  // namespace sics::graph::tools

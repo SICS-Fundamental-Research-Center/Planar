@@ -1,12 +1,6 @@
 // This file belongs to the SICS graph-systems project, a C++ library for
-// exploiting parallelism graph computing. TO DO
+// exploiting parallelism graph computing. TODO (hsiaoko): add description
 //
-
-#include <fstream>
-#include <iostream>
-#include <list>
-#include <string>
-#include <type_traits>
 
 #include <folly/concurrency/ConcurrentHashMap.h>
 #include <folly/concurrency/UnboundedQueue.h>
@@ -14,15 +8,15 @@
 #include <gflags/gflags.h>
 #include <yaml-cpp/yaml.h>
 
-#include "common/bitmap.h"
-#include "common/multithreading/thread_pool.h"
-#include "common/types.h"
-#include "tools_common/data_structures.h"
-#include "tools_common/io.h"
-#include "tools_common/types.h"
-#include "tools_common/yaml_config.h"
+#include "core/common/bitmap.h"
+#include "core/common/multithreading/thread_pool.h"
+#include "core/common/types.h"
+#include "tools/common/data_structures.h"
+#include "tools/common/io.h"
+#include "tools/common/types.h"
 #include "util/atomic.h"
 #include "util/logging.h"
+#include "tools/common/yaml_config.h"
 
 using folly::ConcurrentHashMap;
 using folly::UnboundedQueue;
@@ -31,10 +25,13 @@ using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::common::VertexLabel;
+using sics::graph::core::data_structures::GraphMetadata;
 using sics::graph::core::util::atomic::WriteAdd;
+using sics::graph::core::util::atomic::WriteMax;
+using sics::graph::core::util::atomic::WriteMin;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
-using namespace tools;
+using namespace sics::graph::tools;
 
 enum Partitioner {
   kEdgeCut,  // default
@@ -51,7 +48,8 @@ inline Partitioner String2EnumPartitioner(const std::string& s) {
   else if (s == "hybridcut")
     return kHybridCut;
   else
-    return kUndefinedPartitioner;
+    LOG_ERROR("Unknown partitioner type: %s", s.c_str());
+  return kUndefinedPartitioner;
 };
 
 DEFINE_string(partitioner, "", "partitioner type.");
@@ -61,9 +59,6 @@ DEFINE_uint64(n_partitions, 1, "the number of partitions");
 DEFINE_string(store_strategy, "unconstrained",
               "graph-systems adopted three strategies to store edges: "
               "kUnconstrained, incoming, and outgoing.");
-DEFINE_string(convert_mode, "", "Conversion mode");
-DEFINE_string(sep, "", "separator to split csv file.");
-DEFINE_bool(read_head, false, "whether to read header of csv.");
 
 // @DESCRIPTION With edgecut partitioner, each vertex is assigned to a
 // fragment. In a fragment, inner vertices are those vertices assigned to it,
@@ -78,6 +73,10 @@ DEFINE_bool(read_head, false, "whether to read header of csv.");
 // is split into F0 that consists of V_F0: {v0, v1, v2}, E_F0: {(v0,
 // v2), (v0, v3), (v1, v0)} and F1 that consists of V_F1: {v3, v4}, E_F1: {(v3,
 // v1), (v3, v4), (v4, v1), (v4, v2)}
+// @PARAMETERS
+// partitioner: The partitioner to use.
+// n_partitions: The number of partitions to use.
+// store_strategy: The strategy to use to store edges.
 bool EdgeCut(const std::string& input_path, const std::string& output_path,
              const Partitioner partitioner, const size_t n_partitions,
              StoreStrategy store_strategy) {
@@ -110,11 +109,12 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   visited.Clear();
   memset(num_inedges_by_vid, 0, sizeof(size_t) * aligned_max_vid);
   memset(num_outedges_by_vid, 0, sizeof(size_t) * aligned_max_vid);
+  VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
 
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
-                           &num_inedges_by_vid, &num_outedges_by_vid,
-                           &visited]() {
+                           &num_inedges_by_vid, &num_outedges_by_vid, &visited,
+                           &max_vid, &min_vid]() {
       for (size_t j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto src = buffer_edges[j * 2];
         auto dst = buffer_edges[j * 2 + 1];
@@ -122,6 +122,10 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
         visited.SetBit(dst);
         WriteAdd(num_inedges_by_vid + dst, (size_t)1);
         WriteAdd(num_outedges_by_vid + src, (size_t)1);
+        WriteMax(&max_vid, src);
+        WriteMax(&max_vid, dst);
+        WriteMin(&min_vid, src);
+        WriteMin(&min_vid, dst);
       }
       return;
     });
@@ -185,6 +189,8 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   task_package.clear();
 
   delete buffer_edges;
+  delete offset_in_edges;
+  delete offset_out_edges;
 
   // Construct subgraphs.
   std::vector<ConcurrentHashMap<VertexID, TMPCSRVertex>*> subgraph_vec;
@@ -212,13 +218,42 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   delete buffer_csr_vertices;
 
   // Write the subgraphs to disk
-  CSRIOAdapter csr_io_adapter(output_path);
-  csr_io_adapter.WriteSubgraph(subgraph_vec, store_strategy);
+  IOAdapter io_adapter(output_path);
+  GraphMetadata graph_metadata;
+  graph_metadata.set_num_vertices(edgelist_metadata.num_vertices);
+  graph_metadata.set_num_edges(edgelist_metadata.num_edges);
+  graph_metadata.set_num_subgraphs(n_partitions);
+  graph_metadata.set_max_vid(max_vid);
+  graph_metadata.set_min_vid(min_vid);
+
+  io_adapter.WriteSubgraph(subgraph_vec, graph_metadata, store_strategy);
 
   input_stream.close();
   return 0;
 }
 
+// @DESCRIPTION A vertex-cut partitioning divides edges of a graph into equal
+// size clusters. f vertex-cuts are used. A vertex-cut partitioning divides
+// edges of a graph into equal size clusters. The vertices that hold the
+// endpoints of an edge are also placed in the same cluster as the edge itself.
+// However, the vertices are not unique across clusters and might have to be
+// replicated, due to the distribution of their edges across different clusters.
+
+// For example, a graph
+// G = {V, E}
+// V = {v0, v1, v2, v3, v4}
+// E = {(v0, v2), (v0, v3), (v1, v0), (v3, v1), (v3, v4), (v4, v1), (v4, v2)}
+// is split into F0 that consists of V_F0: {v0, v1, v2, v3}, E_F0: {(v0,
+// v2), (v0, v3), (v1, v0)} and F1 that consists of V_F1: {v1, v2, v3, v4},
+// E_F1: {(v3, v1), (v3, v4), (v4, v1), (v4, v2)}
+// @PARAMETERS
+// input_path: Path to the input graph file.
+// output_path: Path to the output partition file.
+// partitioner: Partitioner to use [edgecut, vertexcut, hybridcut].
+// n_partitions: Number of partitions to use.
+// store_strategy: StoreStrategy to use [incoming_only, outgoing_only,
+// unconstrained], corresponding to store incoming edges only, outgoing edges
+// only, and both two respectively.
 bool VertexCut(const std::string& input_path, const std::string& output_path,
                const Partitioner partitioner, const size_t n_partitions,
                StoreStrategy store_strategy) {
@@ -229,7 +264,6 @@ bool VertexCut(const std::string& input_path, const std::string& output_path,
   // Load Yaml node (Edgelist metadata).
   YAML::Node input_node;
   input_node = YAML::LoadFile(input_path + "meta.yaml");
-  LOG_INFO(input_path + "meta.yaml");
   auto edgelist_metadata = input_node["EdgelistBin"].as<EdgelistMetadata>();
 
   // Create Edgelist Graph.
@@ -245,8 +279,125 @@ bool VertexCut(const std::string& input_path, const std::string& output_path,
   input_stream.read(reinterpret_cast<char*>(buffer_edges),
                     sizeof(VertexID) * edgelist_metadata.num_edges * 2);
 
-  // TODO (hsiaoko): vertex cut.
+  // Precompute the size of each edge bucket.
+  auto size_per_bucket = (size_t*)malloc(sizeof(size_t) * n_partitions);
+  memset(size_per_bucket, 0, sizeof(size_t) * n_partitions);
+  auto max_vid_per_bucket = (VertexID*)malloc(sizeof(VertexID) * n_partitions);
+  memset(max_vid_per_bucket, 0, sizeof(VertexID) * n_partitions);
+  auto min_vid_per_bucket = (VertexID*)malloc(sizeof(VertexID) * n_partitions);
+  VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
+  for (size_t i = 0; i < n_partitions; i++)
+    min_vid_per_bucket[i] = MAX_VERTEX_ID;
 
+  memset(min_vid_per_bucket, 0, sizeof(VertexID) * n_partitions);
+  for (unsigned int i = 0; i < parallelism; i++) {
+    auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
+                           &size_per_bucket, &max_vid_per_bucket, &max_vid,
+                           &min_vid, &n_partitions, &store_strategy]() {
+      for (size_t j = i; j < edgelist_metadata.num_edges; j += parallelism) {
+        auto src = buffer_edges[j * 2];
+        auto dst = buffer_edges[j * 2 + 1];
+        size_t bid;
+        switch (store_strategy) {
+          case kOutgoingOnly:
+            bid = fnv64_append_byte(src, 3) % n_partitions;
+            break;
+          case kIncomingOnly:
+            bid = fnv64_append_byte(dst, 3) % n_partitions;
+            break;
+          case kUnconstrained:
+            bid = fnv64_append_byte(src, 3) % n_partitions;
+            break;
+          default:
+            bid = fnv64_append_byte(src, 3) % n_partitions;
+            break;
+        }
+        WriteAdd(size_per_bucket + bid, (size_t)1);
+        WriteMax(max_vid_per_bucket + bid, src);
+        WriteMax(max_vid_per_bucket + bid, dst);
+        WriteMax(&max_vid, src);
+        WriteMax(&max_vid, dst);
+        WriteMin(&min_vid, src);
+        WriteMin(&min_vid, dst);
+      }
+      return;
+    });
+    task_package.push_back(task);
+  }
+  thread_pool.SubmitSync(task_package);
+  task_package.clear();
+
+  auto edge_bucket = (VertexID**)malloc(sizeof(VertexID*) * n_partitions);
+  for (size_t i = 0; i < n_partitions; i++) {
+    edge_bucket[i] =
+        (VertexID*)malloc(sizeof(VertexID) * size_per_bucket[i] * 2);
+  }
+
+  auto bitmap_vec = new std::vector<Bitmap*>();
+  for (size_t i = 0; i < n_partitions; i++) {
+    auto bitmap = new Bitmap(aligned_max_vid);
+    bitmap->Clear();
+    bitmap_vec->push_back(bitmap);
+  }
+
+  auto buckets_offset = (size_t*)malloc(sizeof(size_t) * n_partitions);
+  memset(buckets_offset, 0, sizeof(size_t) * n_partitions);
+
+  for (unsigned int i = 0; i < parallelism; i++) {
+    auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
+                           &size_per_bucket, &n_partitions, &edge_bucket,
+                           &buckets_offset, &bitmap_vec, &store_strategy]() {
+      for (size_t j = i; j < edgelist_metadata.num_edges; j += parallelism) {
+        auto src = buffer_edges[j * 2];
+        auto dst = buffer_edges[j * 2 + 1];
+        size_t bid;
+        switch (store_strategy) {
+          case kOutgoingOnly:
+            bid = fnv64_append_byte(src, 3) % n_partitions;
+            break;
+          case kIncomingOnly:
+            bid = fnv64_append_byte(dst, 3) % n_partitions;
+            break;
+          case kUnconstrained:
+            bid = fnv64_append_byte(src, 3) % n_partitions;
+            break;
+          default:
+            bid = fnv64_append_byte(src, 3) % n_partitions;
+            break;
+        }
+        auto offset = __sync_fetch_and_add(buckets_offset + bid, 1);
+        edge_bucket[bid][offset * 2] = src;
+        edge_bucket[bid][offset * 2 + 1] = dst;
+        bitmap_vec->at(bid)->SetBit(src);
+        bitmap_vec->at(bid)->SetBit(dst);
+      }
+      return;
+    });
+    task_package.push_back(task);
+  }
+  thread_pool.SubmitSync(task_package);
+  task_package.clear();
+
+  delete buffer_edges;
+
+  std::vector<EdgelistMetadata> edgelist_metadata_vec;
+  for (size_t i = 0; i < n_partitions; i++) {
+    edgelist_metadata_vec.push_back({bitmap_vec->at(i)->Count(),
+                                     size_per_bucket[i],
+                                     max_vid_per_bucket[i]});
+  }
+
+  // Write the subgraphs to disk
+  IOAdapter io_adapter(output_path);
+  GraphMetadata graph_metadata;
+  graph_metadata.set_num_vertices(edgelist_metadata.num_vertices);
+  graph_metadata.set_num_edges(edgelist_metadata.num_edges);
+  graph_metadata.set_num_subgraphs(n_partitions);
+  graph_metadata.set_max_vid(max_vid);
+  graph_metadata.set_min_vid(min_vid);
+
+  io_adapter.WriteSubgraph(edge_bucket, graph_metadata, edgelist_metadata_vec,
+                           store_strategy);
   return 0;
 }
 
@@ -270,15 +421,17 @@ int main(int argc, char** argv) {
 
   switch (String2EnumPartitioner(FLAGS_partitioner)) {
     case kVertexCut:
-      // TODO (hsaioko): Add VertexCut partitioner.
+      VertexCut(FLAGS_i, FLAGS_o, String2EnumPartitioner(FLAGS_partitioner),
+                FLAGS_n_partitions,
+                String2EnumStoreStrategy(FLAGS_store_strategy));
       break;
     case kEdgeCut:
       EdgeCut(FLAGS_i, FLAGS_o, String2EnumPartitioner(FLAGS_partitioner),
               FLAGS_n_partitions,
-              tools::String2EnumStoreStrategy(FLAGS_store_strategy));
+              String2EnumStoreStrategy(FLAGS_store_strategy));
       break;
     case kHybridCut:
-      // TODO (hsiaoko): Add HybridCut partitioner.
+      // TODO (hsaioko): Add HyrbidCut partitioner.
       break;
     default:
       LOG_INFO("Error graph partitioner.");
