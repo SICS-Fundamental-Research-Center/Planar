@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "apis/pie_app_factory.h"
+#include "apis/planar_app_base.h"
 
 namespace sics::graph::core::apps {
 
@@ -30,23 +30,26 @@ class DummyGraph : public data_structures::Serializable {
   std::string status_;
 };
 
-// A sample PIE app that does nothing.
-class SampleApp : public apis::PIE<DummyGraph> {
+// A sample Planar app that does nothing.
+class SampleApp : public apis::PlanarAppBase<DummyGraph> {
  public:
-  explicit SampleApp(common::TaskRunner* runner);
+  explicit SampleApp(common::TaskRunner* runner,
+                     data_structures::Serializable* graph);
   ~SampleApp() override = default;
 
-  void PEval(DummyGraph* graph) final;
-  void IncEval(DummyGraph* graph) final;
-  void Assemble(DummyGraph* graph) final;
+  void PEval() final;
+  void IncEval() final;
+  void Assemble() final;
 
-  // Note: all PIE apps must implement this static method.
-  // PIEAppFactory will use this method to create an app instance.
-  static std::unique_ptr<apis::PIE<DummyGraph>> Create() {
-    return std::make_unique<SampleApp>(nullptr);
+  // Note: all Planar apps must implement this static method.
+  // PlanarAppFactory will use this method to create an app instance.
+  static std::unique_ptr<apis::PlanarAppBase<DummyGraph>>
+  Create(common::TaskRunner* runner, data_structures::Serializable* graph) {
+    return std::make_unique<SampleApp>(runner, graph);
   }
 
-  // Note: all PIE apps must implement this static method, with a unique name.
+  // Note: all Planar apps must implement this static method, with a unique
+  // name.
   static std::string GetAppName() { return "SampleApp"; }
 
  private:

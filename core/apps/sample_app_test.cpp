@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "apis/planar_app_factory.h"
 #include "apps/sample_app.h"
 #include "util/pointer_cast.h"
 
@@ -14,17 +15,26 @@ class SampleAppTest : public ::testing::Test {
 };
 
 TEST_F(SampleAppTest, SampleAppShouldBeInitiatedByFactory) {
-  auto app = util::pointer_upcast<apis::PIE<DummyGraph>, SampleApp>(
-      apis::PIEAppFactory<DummyGraph>::Create("SampleApp"));
-  EXPECT_NE(app, nullptr);
+  apis::PlanarAppFactory<DummyGraph> factory(nullptr);
   DummyGraph graph;
+  auto app = util::pointer_upcast<apis::PlanarAppBase<DummyGraph>, SampleApp>(
+      factory.Create("SampleApp", &graph));
+  EXPECT_NE(app, nullptr);
   EXPECT_EQ(graph.get_status(), "initialized");
-  app->PEval(&graph);
+  app->PEval();
   EXPECT_EQ(graph.get_status(), "PEval");
-  app->IncEval(&graph);
+  app->IncEval();
   EXPECT_EQ(graph.get_status(), "IncEval");
-  app->Assemble(&graph);
+  app->Assemble();
   EXPECT_EQ(graph.get_status(), "Assemble");
+}
+
+TEST_F(SampleAppTest, FactoryCreationShouldFailIfAppIsNotRegistered) {
+  apis::PlanarAppFactory<DummyGraph> factory(nullptr);
+  DummyGraph graph;
+  EXPECT_EQ(nullptr, factory.Create("NotRegisteredApp", nullptr));
+  auto app = factory.Create("SampleApp", &graph);
+  EXPECT_NE(app, nullptr);
 }
 
 }  // namespace sics::graph::core::common
