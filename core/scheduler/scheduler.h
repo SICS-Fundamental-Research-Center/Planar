@@ -67,13 +67,13 @@ class Scheduler {
         }
         switch (resp.get_type()) {
           case Message::Type::kRead:
-            ReadMessageResponse();
+            ReadMessageResponse(resp);
             break;
           case Message::Type::kWrite:
-            WriteMessageResponse();
+            WriteMessageResponse(resp);
             break;
           case Message::Type::kExecute:
-            ExecuteMessageResponse();
+            ExecuteMessageResponse(resp);
             break;
           default:
             break;
@@ -83,16 +83,39 @@ class Scheduler {
   }
 
  private:
-  void ReadMessageResponse() {
+  void ReadMessageResponse(const Message& resp) {
+    // read finish, to execute the loaded graph
+    ReadMessage read_response;
+    resp.Get(&read_response);
+    ExecuteMessage execute_message;
 
+    execute_message.graph_id = read_response.graph_id;
+    execute_message.serialized = read_response.response_serialized;
+
+    message_hub_.get_executor_queue()->Push(execute_message);
   }
 
-  void WriteMessageResponse() {
+  void ExecuteMessageResponse(const Message& resp) {
+    // execute finish, to write back the graph
+    ExecuteMessage execute_response;
+    resp.Get(&execute_response);
+    WriteMessage write_message;
 
+    write_message.graph_id = execute_response.graph_id;
+    write_message.serializable = execute_response.response_serializable;
+
+    message_hub_.get_writer_queue()->Push(write_message);
   }
 
-  void ExecuteMessageResponse() {
+  void WriteMessageResponse(const Message& resp) {
+    // write finish, to decide new graph to be loaded
+    WriteMessage write_response;
+    resp.Get(&write_response);
+    ReadMessage read_message;
 
+    read_message.graph_id = write_response.graph_id;
+
+    message_hub_.get_reader_queue()->Push(read_message);
   }
 
  private:
