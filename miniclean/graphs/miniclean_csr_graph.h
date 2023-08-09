@@ -38,10 +38,17 @@ class MinicleanCSRGraph
   void Deserialize(const TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override;
 
+  VertexID* get_vertex_label() const { return vertex_label_; }
+  VertexID* get_in_edge_label() const { return in_edge_label_; }
+  VertexID* get_out_edge_label() const { return out_edge_label_; }
+
  protected:
   // The graph ID.
   GraphID gid_;
   void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
+  void ParseVertexLabel(const std::list<OwnedBuffer>& buffer_list);
+  void ParseInedgeLabel(const std::list<OwnedBuffer>& buffer_list);
+  void ParseOutedgeLabel(const std::list<OwnedBuffer>& buffer_list);
 
  private:
   // config. attributes to build the CSR.

@@ -25,7 +25,16 @@ void MinicleanCSRGraph::Deserialize(const TaskRunner& runner,
     ParseSubgraphCSR(*iter++);
   }
   if (iter != csr_buffer.end()) {
-    LOG_ERROR("More than one subgraph in a serialized immutable CSR graph.");
+    // Parse in edge label
+    ParseInedgeLabel(*iter++);
+  }
+  if (iter != csr_buffer.end()) {
+    // Parse out edge label
+    ParseOutedgeLabel(*iter++);
+  }
+  if (iter != csr_buffer.end()) {
+    // Parse vertex label
+    ParseVertexLabel(*iter++);
   }
 }
 
@@ -65,5 +74,16 @@ void MinicleanCSRGraph::ParseSubgraphCSR(
   in_offset_ = reinterpret_cast<size_t*>(buf_graph_ + start_in_offset);
   out_offset_ = reinterpret_cast<size_t*>(buf_graph_ + start_out_offset);
 }
+
+void MinicleanCSRGraph::ParseVertexLabel(const std::list<OwnedBuffer>& buffer_list) {
+  vertex_label_ = reinterpret_cast<VertexID*>(buffer_list.front().Get());
+}
+void MinicleanCSRGraph::ParseInedgeLabel(const std::list<OwnedBuffer>& buffer_list) {
+  in_edge_label_ = reinterpret_cast<VertexID*>(buffer_list.front().Get());
+}
+void MinicleanCSRGraph::ParseOutedgeLabel(const std::list<OwnedBuffer>& buffer_list) {
+  out_edge_label_ = reinterpret_cast<VertexID*>(buffer_list.front().Get());
+}
+
 
 }  // namespace sics::graph::miniclean::graphs
