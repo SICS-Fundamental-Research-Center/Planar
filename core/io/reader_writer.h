@@ -1,6 +1,7 @@
 #ifndef CORE_IO_RW_INTERFACE_H_
 #define CORE_IO_RW INTERFACE_H_
 
+#include "common/multithreading/task_runner.h"
 #include "scheduler/message.h"
 
 namespace sics::graph::core::io {
@@ -11,7 +12,13 @@ class Reader {
 
  public:
   virtual ~Reader() = default;
-  virtual void Read(ReadMessage* message) = 0;
+
+  // Read a subgraph, as specified by the message, from the storage.
+  //
+  // If the runner is not null, the read operation will be executed in the
+  // caller thread; otherwise, it will be executed by the provided task runner.
+  virtual void Read(ReadMessage* message,
+                    common::TaskRunner* runner = nullptr) = 0;
 };
 
 class Writer {
@@ -20,7 +27,13 @@ class Writer {
 
  public:
   virtual ~Writer() = default;
-  virtual void Write(WriteMessage* message) = 0;
+
+  // Write a subgraph, as specified by the message, to the storage.
+  //
+  // If the runner is not null, the write operation will be executed in the
+  // caller thread; otherwise, it will be executed by the provided task runner.
+  virtual void Write(WriteMessage* message,
+                     common::TaskRunner* runner = nullptr) = 0;
 };
 
 }  // namespace sics::graph::core::io
