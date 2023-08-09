@@ -1,18 +1,31 @@
 #ifndef CORE_DATA_STRUCTURES_GRAPH_IMMUTABLE_CSR_GRAPH_H_
 #define CORE_DATA_STRUCTURES_GRAPH_IMMUTABLE_CSR_GRAPH_H_
 
+#include <cmath>
+#include <list>
+#include <memory>
+#include <utility>
+
 #include "common/types.h"
 #include "data_structures/graph/immutable_csr_graph_config.h"
 #include "data_structures/graph/serialized_immutable_csr_graph.h"
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
 #include "util/logging.h"
-#include <cmath>
-#include <list>
-#include <memory>
-#include <utility>
 
 namespace sics::graph::core::data_structures::graph {
+
+
+struct ImmutableCSRVertex{
+  using GraphID = sics::graph::core::common::GraphID;
+  using VertexID = sics::graph::core::common::VertexID;
+
+  size_t vid;
+  size_t indegree;
+  size_t outdegree;
+  VertexID * in_edges = nullptr;
+  VertexID * out_edges = nullptr;
+};
 
 class ImmutableCSRGraph : public Serializable {
 
@@ -95,7 +108,6 @@ class ImmutableCSRGraph : public Serializable {
   ImmutableCSRGraphConfig csr_config_;
 
   // serialized data in CSR format.
-  // VertexID* localid_by_index_ = nullptr;
   VertexID* globalid_by_index_ = nullptr;
   VertexID* in_edges_ = nullptr;
   VertexID* out_edges_ = nullptr;
