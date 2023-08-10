@@ -13,7 +13,7 @@ SampleApp::SampleApp(common::TaskRunner* runner,
                      data_structures::Serializable* graph)
     : apis::PlanarAppBase<DummyGraph>(runner, graph) {
   if (!SampleApp::registered_) {
-    LOGF_FATAL("SampleApp is not registered to the factory");
+    LOG_FATAL("SampleApp is not registered to the factory");
   }
 }
 
