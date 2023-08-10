@@ -14,13 +14,14 @@ class Scheduler {
 
   int GetCurrentRound() const { return current_round_; }
 
-  int GetSubgraphRound(common::GraphID subgraph_gid) const {
-    if (graph_metadata_info_.IsSubgraphPendingCurrentRound(subgraph_gid)) {
-      return current_round_;
-    } else {
-      return current_round_ + 1;
-    }
-  }
+  //  does this meaningful?
+  //  int GetSubgraphRound(common::GraphID subgraph_gid) const {
+  //    if (graph_metadata_info_.IsSubgraphPendingCurrentRound(subgraph_gid)) {
+  //      return current_round_;
+  //    } else {
+  //      return current_round_ + 1;
+  //    }
+  //  }
 
   // read graph metadata from meta.yaml file
   // meta file path should be passed by gflags
@@ -58,7 +59,8 @@ class Scheduler {
   // schedule read and write
   void Start() {
     thread_ = std::make_unique<std::thread>([this]() {
-      while(true){
+      bool running = true;
+      while (running) {
         Message resp = message_hub_.GetResponse();
 
         if (resp.is_terminated()) {
@@ -66,36 +68,59 @@ class Scheduler {
           break;
         }
         switch (resp.get_type()) {
-          case Message::Type::kRead:
-            ReadMessageResponse(resp);
+          case Message::Type::kRead: {
+            ReadMessageResponseAndExecute(resp);
             break;
-          case Message::Type::kWrite:
-            WriteMessageResponse(resp);
+          }
+          case Message::Type::kExecute: {
+            ExecuteMessageResponseAndWrite(resp);
             break;
-          case Message::Type::kExecute:
-            ExecuteMessageResponse(resp);
+          }
+          case Message::Type::kWrite: {
+            if (!WriteMessageResponseAndCheckTerminate(resp)) {
+              running = false;
+            }
             break;
+          }
           default:
             break;
         }
       }
+      LOG_INFO("*** Scheduler is signaled termination ***");
     });
   }
 
  private:
-  void ReadMessageResponse(const Message& resp) {
+  bool ReadMessageResponseAndExecute(const Message& resp) {
     // read finish, to execute the loaded graph
     ReadMessage read_response;
     resp.Get(&read_response);
-    ExecuteMessage execute_message;
+    graph_metadata_info_.SetSubgraphLoaded(read_response.graph_id);
 
+    ExecuteMessage execute_message;
     execute_message.graph_id = read_response.graph_id;
     execute_message.serialized = read_response.response_serialized;
-
+    // execute phase check, PEval or IncEval
+    if (current_round_ == 0) {
+      // PEval
+      execute_message.execute_type = ExecuteType::kPEval;
+    } else {
+      // IncEval
+      execute_message.execute_type = ExecuteType::kIncEval;
+    }
     message_hub_.get_executor_queue()->Push(execute_message);
+
+    // read another graph, or do nothing but block
+    auto next_graph_id = graph_metadata_info_.GetNextLoadGraph();
+    if (next_graph_id != INVALID_GRAPH_ID) {
+      ReadMessage read_message;
+      read_message.graph_id = next_graph_id;
+      message_hub_.get_reader_queue()->Push(read_message);
+    }
+    return true;
   }
 
-  void ExecuteMessageResponse(const Message& resp) {
+  bool ExecuteMessageResponseAndWrite(const Message& resp) {
     // execute finish, to write back the graph
     ExecuteMessage execute_response;
     resp.Get(&execute_response);
@@ -105,17 +130,32 @@ class Scheduler {
     write_message.serializable = execute_response.response_serializable;
 
     message_hub_.get_writer_queue()->Push(write_message);
+
+    // check border vertex and dependency matrix, mark active subgraph in next
+    // round
+    // TODO: check border vertex and dependency matrix
+
+    return true;
   }
 
-  void WriteMessageResponse(const Message& resp) {
-    // write finish, to decide new graph to be loaded
-    WriteMessage write_response;
-    resp.Get(&write_response);
-    ReadMessage read_message;
-
-    read_message.graph_id = write_response.graph_id;
-
-    message_hub_.get_reader_queue()->Push(read_message);
+  bool WriteMessageResponseAndCheckTerminate(const Message& resp) {
+    // write finish
+    // check if read next round graph
+    auto current_round_next_graph_id = graph_metadata_info_.GetNextLoadGraph();
+    if (current_round_next_graph_id == INVALID_GRAPH_ID) {
+      current_round_++;
+      graph_metadata_info_.SyncNextRound();
+      auto next_round_first_graph_id = graph_metadata_info_.GetNextLoadGraph();
+      if (next_round_first_graph_id == INVALID_GRAPH_ID) {
+        // no graph should be loaded, terminate system
+        return false;
+      } else {
+        ReadMessage read_message;
+        read_message.graph_id = next_round_first_graph_id;
+        message_hub_.get_reader_queue()->Push(read_message);
+      }
+    }
+    return true;
   }
 
  private:

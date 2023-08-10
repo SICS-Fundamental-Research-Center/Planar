@@ -24,10 +24,16 @@ struct ReadMessage {
   bool terminated = false;
 };
 
+typedef enum {
+  kPEval = 1,
+  kIncEval,
+} ExecuteType;
+
 struct ExecuteMessage {
   // Request fields.
   common::GraphID graph_id;
   data_structures::Serialized* serialized;
+  ExecuteType execute_type = kPEval;
   // TODO: add subgraph metadata fields and API program objects.
 
   // Response fields.

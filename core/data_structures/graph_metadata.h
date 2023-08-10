@@ -1,14 +1,12 @@
 #ifndef GRAPH_SYSTEMS_GRAPH_METADATA_H
 #define GRAPH_SYSTEMS_GRAPH_METADATA_H
 
+#include "common/types.h"
+#include "util/logging.h"
+#include <yaml-cpp/yaml.h>
 #include <cstdio>
 #include <string>
 #include <vector>
-
-#include <yaml-cpp/yaml.h>
-
-#include "common/types.h"
-#include "util/logging.h"
 
 namespace sics::graph::core::data_structures {
 
@@ -32,7 +30,7 @@ class GraphMetadata {
  public:
   GraphMetadata() = default;
   // TO DO: maybe used later
-  GraphMetadata(const std::string& root_path);
+  explicit GraphMetadata(const std::string& root_path);
 
   void set_num_vertices(size_t num_vertices) { num_vertices_ = num_vertices; }
   void set_num_edges(size_t num_edges) { num_edges_ = num_edges; }
@@ -56,12 +54,20 @@ class GraphMetadata {
   }
 
   bool IsSubgraphPendingCurrentRound(common::GraphID subgraph_gid) const {
-    return current_round_pending_.at(subgraph_gid);
+    return !current_round_pending_.at(subgraph_gid);
   }
 
-  bool IsSubgraphPendingNextRound(common::GraphID subgraph_gid) const {
-    return next_round_pending_.at(subgraph_gid);
+//  bool IsSubgraphPendingNextRound(common::GraphID subgraph_gid) const {
+//    return next_round_pending_.at(subgraph_gid);
+//  }
+
+  void SetSubgraphLoaded(common::GraphID gid) {
+    current_round_pending_.at(gid) = false;
   }
+
+  common::GraphID GetNextLoadGraph();
+
+  void SyncNextRound();
 
  private:
   size_t num_vertices_;
