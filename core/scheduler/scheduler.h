@@ -60,6 +60,9 @@ class Scheduler {
   void Start() {
     thread_ = std::make_unique<std::thread>([this]() {
       bool running = true;
+      // init round 0 loaded graph
+      graph_metadata_info_.Init();
+
       while (running) {
         Message resp = message_hub_.GetResponse();
 
@@ -117,6 +120,7 @@ class Scheduler {
       read_message.graph_id = next_graph_id;
       message_hub_.get_reader_queue()->Push(read_message);
     }
+    // TODO: check next round graph that can be loaded first
     return true;
   }
 

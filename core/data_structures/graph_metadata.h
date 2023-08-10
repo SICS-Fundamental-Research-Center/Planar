@@ -44,6 +44,7 @@ class GraphMetadata {
   size_t get_num_subgraphs() const { return num_subgraphs_; }
   size_t get_min_vid() const { return min_vid_; }
   size_t get_max_vid() const { return max_vid_; }
+
   void set_subgraph_metadata_vec(
       const std::vector<SubgraphMetadata>& subgraph_metadata_vec) {
     subgraph_metadata_vec_ = subgraph_metadata_vec;
@@ -53,13 +54,15 @@ class GraphMetadata {
     return subgraph_metadata_vec_.at(gid);
   }
 
+  void Init();
+
   bool IsSubgraphPendingCurrentRound(common::GraphID subgraph_gid) const {
     return !current_round_pending_.at(subgraph_gid);
   }
 
-//  bool IsSubgraphPendingNextRound(common::GraphID subgraph_gid) const {
-//    return next_round_pending_.at(subgraph_gid);
-//  }
+  //  bool IsSubgraphPendingNextRound(common::GraphID subgraph_gid) const {
+  //    return next_round_pending_.at(subgraph_gid);
+  //  }
 
   void SetSubgraphLoaded(common::GraphID gid) {
     current_round_pending_.at(gid) = false;
