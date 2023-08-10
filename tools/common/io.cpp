@@ -281,7 +281,8 @@ bool IOAdapter::WriteSubgraph(
   out_node["GraphMetadata"]["num_edges"] = graph_metadata.get_num_edges();
   out_node["GraphMetadata"]["max_vid"] = graph_metadata.get_max_vid();
   out_node["GraphMetadata"]["min_vid"] = graph_metadata.get_min_vid();
-  out_node["GraphMetadata"]["num_subgraphs"] = subgraph_metadata_vec;
+  out_node["GraphMetadata"]["num_subgraphs"] = subgraph_metadata_vec.size();
+  out_node["GraphMetadata"]["subgraphs"] = subgraph_metadata_vec;
 
   out_meta_file << out_node << std::endl;
   out_meta_file.close();
