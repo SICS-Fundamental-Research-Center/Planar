@@ -2,6 +2,7 @@
 
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::TaskPackage;
+using sics::graph::core::common::VertexID;
 using sics::graph::core::util::atomic::WriteAdd;
 using sics::graph::core::util::atomic::WriteMax;
 using sics::graph::core::util::atomic::WriteMin;
@@ -10,8 +11,7 @@ using std::filesystem::exists;
 
 namespace sics::graph::tools {
 bool IOAdapter::WriteSubgraph(
-    std::vector<folly::ConcurrentHashMap<VertexID, TMPCSRVertex>*>&
-        subgraph_vec,
+    std::vector<folly::ConcurrentHashMap<VertexID, Vertex>*>& subgraph_vec,
     GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
@@ -38,7 +38,7 @@ bool IOAdapter::WriteSubgraph(
 
     // Serialize subgraph
     auto csr_vertex_buffer =
-        (TMPCSRVertex*)malloc(sizeof(TMPCSRVertex) * vertex_map->size());
+        (Vertex*)malloc(sizeof(Vertex) * vertex_map->size());
 
     size_t count = 0;
     for (auto it = vertex_map->begin(); it != vertex_map->end(); ++it) {

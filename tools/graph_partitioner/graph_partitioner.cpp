@@ -11,11 +11,11 @@
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/common/types.h"
+#include "core/util/atomic.h"
+#include "core/util/logging.h"
 #include "tools/common/data_structures.h"
 #include "tools/common/io.h"
 #include "tools/common/types.h"
-#include "util/atomic.h"
-#include "util/logging.h"
 #include "tools/common/yaml_config.h"
 
 using folly::ConcurrentHashMap;
@@ -26,6 +26,7 @@ using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::common::VertexLabel;
 using sics::graph::core::data_structures::GraphMetadata;
+using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
 using sics::graph::core::util::atomic::WriteAdd;
 using sics::graph::core::util::atomic::WriteMax;
 using sics::graph::core::util::atomic::WriteMin;
@@ -134,8 +135,8 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  TMPCSRVertex* buffer_csr_vertices =
-      (TMPCSRVertex*)malloc(sizeof(TMPCSRVertex) * aligned_max_vid);
+  Vertex* buffer_csr_vertices =
+      (Vertex*)malloc(sizeof(Vertex) * aligned_max_vid);
   size_t count_in_edges = 0, count_out_edges = 0;
 
   // malloc space for each vertex.
@@ -146,7 +147,7 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
                            &count_out_edges, &visited]() {
       for (size_t j = i; j < aligned_max_vid; j += parallelism) {
         if (!visited.GetBit(j)) continue;
-        auto u = TMPCSRVertex();
+        auto u = Vertex();
         u.vid = j;
         u.indegree = num_inedges_by_vid[j];
         u.outdegree = num_outedges_by_vid[j];
@@ -193,11 +194,11 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   delete offset_out_edges;
 
   // Construct subgraphs.
-  std::vector<ConcurrentHashMap<VertexID, TMPCSRVertex>*> subgraph_vec;
+  std::vector<ConcurrentHashMap<VertexID, Vertex>*> subgraph_vec;
 
   for (size_t i = 0; i < n_partitions; i++)
     subgraph_vec.push_back(
-        new ConcurrentHashMap<VertexID, TMPCSRVertex>(aligned_max_vid));
+        new ConcurrentHashMap<VertexID, Vertex>(aligned_max_vid));
 
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([i, parallelism, &edgelist_metadata,
@@ -403,7 +404,8 @@ bool VertexCut(const std::string& input_path, const std::string& output_path,
 
 int main(int argc, char** argv) {
   gflags::SetUsageMessage(
-      "\n USAGE: graph-partitioner --partitioner=[options] -i <input file path> "
+      "\n USAGE: graph-partitioner --partitioner=[options] -i <input file "
+      "path> "
       "-o <output file path> --n_partitions \n"
       " General options:\n"
       "\t : edgecut: - Using edge cut partitioner "

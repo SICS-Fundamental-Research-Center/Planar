@@ -15,20 +15,17 @@
 
 namespace sics::graph::core::data_structures::graph {
 
-
-struct ImmutableCSRVertex{
-  using GraphID = sics::graph::core::common::GraphID;
+struct ImmutableCSRVertex {
   using VertexID = sics::graph::core::common::VertexID;
 
-  size_t vid;
+  VertexID vid;
   size_t indegree;
   size_t outdegree;
-  VertexID * in_edges = nullptr;
-  VertexID * out_edges = nullptr;
+  VertexID* in_edges = nullptr;
+  VertexID* out_edges = nullptr;
 };
 
 class ImmutableCSRGraph : public Serializable {
-
  public:
   using GraphID = sics::graph::core::common::GraphID;
   using VertexID = sics::graph::core::common::VertexID;

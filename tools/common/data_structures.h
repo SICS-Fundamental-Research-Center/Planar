@@ -8,16 +8,6 @@
 
 namespace sics::graph::tools {
 
-struct TMPCSRVertex {
-  using VertexID = sics::graph::core::common::VertexID;
-
-  VertexID vid;
-  size_t indegree = 0;
-  size_t outdegree = 0;
-  VertexID* in_edges = nullptr;
-  VertexID* out_edges = nullptr;
-};
-
 struct EdgelistMetadata {
   using VertexID = sics::graph::core::common::VertexID;
   size_t num_vertices;

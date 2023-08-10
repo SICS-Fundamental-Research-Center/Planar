@@ -12,6 +12,8 @@ using sics::graph::core::util::atomic::WriteMax;
 using sics::graph::core::util::atomic::WriteMin;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
+using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
+
 using namespace sics::graph::tools;
 
 namespace sics::graph::tools {
@@ -57,9 +59,9 @@ void GraphAdapter::Edgelist2CSR(
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  TMPCSRVertex* buffer_csr_vertices =
-      (TMPCSRVertex*)malloc(sizeof(TMPCSRVertex) * aligned_max_vid);
-  memset((char*)buffer_csr_vertices, 0, sizeof(TMPCSRVertex) * aligned_max_vid);
+  Vertex* buffer_csr_vertices =
+      (Vertex*)malloc(sizeof(Vertex) * aligned_max_vid);
+  memset((char*)buffer_csr_vertices, 0, sizeof(Vertex) * aligned_max_vid);
 
   // Initialize the buffer_csr_vertices
   size_t count_in_edges = 0, count_out_edges = 0;
@@ -72,7 +74,7 @@ void GraphAdapter::Edgelist2CSR(
                            &count_out_edges, &visited]() {
       for (size_t j = i; j < aligned_max_vid; j += parallelism) {
         if (!visited.GetBit(j)) continue;
-        auto u = TMPCSRVertex();
+        auto u = Vertex();
         u.vid = j;
         u.indegree = num_inedges_by_vid[j];
         u.outdegree = num_outedges_by_vid[j];

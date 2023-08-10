@@ -30,6 +30,7 @@ class IOAdapter {
   using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
   using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
   using EdgelistMetadata = sics::graph::tools::EdgelistMetadata;
+  using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
 
   IOAdapter(const std::string& output_root_path)
       : output_root_path_(output_root_path) {
@@ -44,7 +45,7 @@ class IOAdapter {
   }
 
   bool WriteSubgraph(
-      std::vector<folly::ConcurrentHashMap<VertexID, TMPCSRVertex>*>&,
+      std::vector<folly::ConcurrentHashMap<VertexID, Vertex>*>&,
       GraphMetadata&, StoreStrategy);
 
   bool WriteSubgraph(VertexID** edge_bucket, GraphMetadata& graph_metadata,
