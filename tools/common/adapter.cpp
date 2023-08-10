@@ -26,7 +26,6 @@ void GraphAdapter::Edgelist2CSR(
   auto task_package = TaskPackage();
 
   auto aligned_max_vid = ((edgelist_metadata.max_vid >> 6) << 6) + 64;
-
   auto visited = Bitmap(aligned_max_vid);
   visited.Clear();
   auto num_inedges_by_vid = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
@@ -62,10 +61,10 @@ void GraphAdapter::Edgelist2CSR(
       (TMPCSRVertex*)malloc(sizeof(TMPCSRVertex) * aligned_max_vid);
   memset((char*)buffer_csr_vertices, 0, sizeof(TMPCSRVertex) * aligned_max_vid);
 
-  // initialize the buffer_csr_vertices
+  // Initialize the buffer_csr_vertices
   size_t count_in_edges = 0, count_out_edges = 0;
 
-  // malloc space for each vertex.
+  // Malloc space for each vertex.
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([i, parallelism, &aligned_max_vid, &buffer_edges,
                            &num_inedges_by_vid, &num_outedges_by_vid,

@@ -403,14 +403,14 @@ bool VertexCut(const std::string& input_path, const std::string& output_path,
 
 int main(int argc, char** argv) {
   gflags::SetUsageMessage(
-      "\n USAGE: graph-convert --convert_mode=[options] -i <input file path> "
-      "-o <output file path> --sep=[separator] \n"
+      "\n USAGE: graph-partitioner --partitioner=[options] -i <input file path> "
+      "-o <output file path> --n_partitions \n"
       " General options:\n"
-      "\t edgelistcsv2edgelistbin:  - Convert edge list txt to binary edge "
+      "\t : edgecut: - Using edge cut partitioner "
       "list\n"
-      "\t edgelistcsv2csrbin:   - Convert edge list of txt format to binary "
+      "\t vertexcut: - Using vertex cut partitioner"
       "csr\n"
-      "\t edgelistbin2csrbin:   - Convert edge list of bin format to binary "
+      "\t hybridcut:   - Convert edge list of bin format to binary "
       "csr\n");
 
   gflags::ParseCommandLineFlags(&argc, &argv, true);

@@ -62,13 +62,6 @@ include_directories(
         ${PROJECT_ROOT_DIR}
 )
 
-file(GLOB appfiles "${CMAKE_CURRENT_SOURCE_DIR}/examples/*.cpp")
-foreach (appfile ${appfiles})
-    message(STATUS "Found apps: ${appfile}")
-    get_filename_component(app ${appfile} NAME_WE)
-    add_executable("${app}_exec" ${appfile})
-    target_link_libraries("${app}_exec" graph_systems_core)
-endforeach ()
-
 add_subdirectory(tools)
+#add_subdirectory(examples)
 

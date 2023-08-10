@@ -29,5 +29,5 @@ endif ()
 #######################
 # Artifacts
 #######################
-add_subdirectory(graph_convert)
-add_subdirectory(graph_partition)
+add_subdirectory(graph_converter)
+add_subdirectory(graph_partitioner)

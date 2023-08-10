@@ -20,11 +20,11 @@
 #include "core/common/multithreading/thread_pool.h"
 #include "core/common/types.h"
 #include "core/data_structures/graph_metadata.h"
+#include "core/util/atomic.h"
+#include "core/util/logging.h"
 #include "tools/common/data_structures.h"
-#include "tools/common/yaml_config.h"
 #include "tools/common/io.h"
-#include "util/atomic.h"
-#include "util/logging.h"
+#include "tools/common/yaml_config.h"
 
 using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::TaskPackage;
@@ -150,7 +150,6 @@ void ConvertEdgelist(const std::string& input_path,
 bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
                                const std::string& output_path,
                                const StoreStrategy store_strategy) {
-
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
 
