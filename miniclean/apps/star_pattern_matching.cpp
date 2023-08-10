@@ -72,6 +72,15 @@ void path_matching(
     for (size_t i = 0; i < cand_out_degree; i++) {
       VertexID out_edge_id = graph.GetOutEdges()[cand_out_offset + i];
       VertexID out_edge_label = graph.get_vertex_label()[out_edge_id * 2 + 1]; 
+      if (partial_result.size() > 0 && partial_result[0].first == out_edge_id) continue;
+      bool continue_flag = false;
+      for (auto v : partial_result) {
+        if (v.second == out_edge_id) {
+          continue_flag = true;
+          break;
+        }
+      }
+      if (continue_flag) continue;
       if (out_edge_label == to_be_matched) {
         // Add the candidate to the tmp_candidate set.
         tmp_candidate.insert(out_edge_id);
@@ -80,7 +89,7 @@ void path_matching(
     if (tmp_candidate.size() > 0) {
       for (auto tmp_c : tmp_candidate) {
         partial_result.push_back(std::make_pair(candidate, tmp_c));
-        path_matching(graph, path_pattern, position + 1, tmp_candidate, partial_result, matched_results);
+        path_matching(graph, path_pattern, position + 1, {tmp_c}, partial_result, matched_results);
         partial_result.pop_back();
       }
     }
