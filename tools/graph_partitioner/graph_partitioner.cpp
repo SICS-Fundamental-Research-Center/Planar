@@ -412,7 +412,7 @@ int main(int argc, char** argv) {
       "list\n"
       "\t vertexcut: - Using vertex cut partitioner"
       "csr\n"
-      "\t hybridcut:   - Using hyrbid cut partitioner "
+      "\t hybridcut:   - Using hybrid cut partitioner "
       "csr\n");
 
   gflags::ParseCommandLineFlags(&argc, &argv, true);
