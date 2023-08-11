@@ -103,24 +103,38 @@ class Scheduler {
     ExecuteMessage execute_message;
     execute_message.graph_id = read_response.graph_id;
     execute_message.serialized = read_response.response_serialized;
-    // execute phase check, PEval or IncEval
-    if (current_round_ == 0) {
-      // PEval
-      execute_message.execute_type = ExecuteType::kPEval;
+
+    // decide which execute type the read graph should belong to
+    if (!read_response.is_deserialized) {
+      // deserialize the read graph
+      execute_message.execute_type = ExecuteType::kDeserialize;
     } else {
-      // IncEval
-      execute_message.execute_type = ExecuteType::kIncEval;
+      // execute phase check, PEval or IncEval
+      if (current_round_ == 0) {
+        // PEval
+        execute_message.execute_type = ExecuteType::kPEval;
+      } else {
+        // IncEval
+        execute_message.execute_type = ExecuteType::kIncEval;
+      }
     }
     message_hub_.get_executor_queue()->Push(execute_message);
 
     // read another graph, or do nothing but block
-    auto next_graph_id = graph_metadata_info_.GetNextLoadGraph();
+    auto next_graph_id = graph_metadata_info_.GetNextLoadGraphInCurrentRound();
+    ReadMessage read_message;
     if (next_graph_id != INVALID_GRAPH_ID) {
-      ReadMessage read_message;
       read_message.graph_id = next_graph_id;
       message_hub_.get_reader_queue()->Push(read_message);
+    } else {
+      // check next round graph which can be read, if not just skip
+      auto next_gid_next_round =
+          graph_metadata_info_.GetNextLoadGraphInNextRound();
+      if (next_gid_next_round != INVALID_GRAPH_ID) {
+        read_message.graph_id = next_gid_next_round;
+        message_hub_.get_reader_queue()->Push(read_message);
+      }
     }
-    // TODO: check next round graph that can be loaded first
     return true;
   }
 
@@ -145,11 +159,13 @@ class Scheduler {
   bool WriteMessageResponseAndCheckTerminate(const Message& resp) {
     // write finish
     // check if read next round graph
-    auto current_round_next_graph_id = graph_metadata_info_.GetNextLoadGraph();
+    auto current_round_next_graph_id =
+        graph_metadata_info_.GetNextLoadGraphInCurrentRound();
     if (current_round_next_graph_id == INVALID_GRAPH_ID) {
       current_round_++;
       graph_metadata_info_.SyncNextRound();
-      auto next_round_first_graph_id = graph_metadata_info_.GetNextLoadGraph();
+      auto next_round_first_graph_id =
+          graph_metadata_info_.GetNextLoadGraphInCurrentRound();
       if (next_round_first_graph_id == INVALID_GRAPH_ID) {
         // no graph should be loaded, terminate system
         return false;

@@ -9,7 +9,6 @@
 #include "data_structures/serialized.h"
 #include "util/logging.h"
 
-
 namespace sics::graph::core::scheduler {
 
 struct ReadMessage {
@@ -19,14 +18,16 @@ struct ReadMessage {
 
   // Response fields.
   data_structures::Serialized* response_serialized;
-
+  bool is_deserialized = false;
   // Termination flag.
   bool terminated = false;
 };
 
 typedef enum {
-  kPEval = 1,
+  kDeserialize = 1,
+  kPEval,
   kIncEval,
+  kSerialize,
 } ExecuteType;
 
 struct ExecuteMessage {

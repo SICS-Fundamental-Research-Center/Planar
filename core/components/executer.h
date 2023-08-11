@@ -13,12 +13,7 @@
 
 namespace sics::graph::core::components {
 
-template <typename PIEApp>
 class Executer : public Component {
- protected:
-  static_assert(std::is_base_of<apis::PIE, PIEApp>::value,
-                "PIEApp must be a subclass of PIEApp");
-
  public:
   Executer(scheduler::MessageHub* hub)
       : execute_q_(hub->get_executor_queue()),
@@ -36,10 +31,19 @@ class Executer : public Component {
 
         LOGF_INFO("Executer starts executing subgraph {}", message.graph_id);
         // TODO: execute api logic
-        if (message.execute_type == scheduler::ExecuteType::kPEval) {
-          app_->PEval();
-        } else if (message.execute_type == scheduler::ExecuteType::kIncEval) {
-          app_->IncEval();
+        switch (message.execute_type) {
+          case scheduler::ExecuteType::kDeserialize:
+
+            break;
+          case scheduler::ExecuteType::kPEval:
+
+            break;
+          case scheduler::ExecuteType::kIncEval:
+
+            break;
+          case scheduler::ExecuteType::kSerialize:
+
+            break;
         }
         LOGF_INFO("Executer completes executing subgraph {}", message.graph_id);
         response_q_->Push(scheduler::Message(message));
@@ -55,8 +59,6 @@ class Executer : public Component {
   }
 
  private:
-  PIEApp app_;
-
   scheduler::ExecutorQueue* execute_q_;
   scheduler::ResponseQueue* response_q_;
 

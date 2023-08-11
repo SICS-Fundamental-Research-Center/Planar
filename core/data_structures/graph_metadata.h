@@ -60,15 +60,13 @@ class GraphMetadata {
     return !current_round_pending_.at(subgraph_gid);
   }
 
-  //  bool IsSubgraphPendingNextRound(common::GraphID subgraph_gid) const {
-  //    return next_round_pending_.at(subgraph_gid);
-  //  }
+  common::GraphID GetNextLoadGraphInCurrentRound();
 
-  void SetSubgraphLoaded(common::GraphID gid) {
-    current_round_pending_.at(gid) = false;
-  }
+  common::GraphID GetNextLoadGraphInNextRound();
 
-  common::GraphID GetNextLoadGraph();
+  // set graph state as loaded
+  // this will check both current round and next round
+  void SetSubgraphLoaded(common::GraphID gid);
 
   void SyncNextRound();
 

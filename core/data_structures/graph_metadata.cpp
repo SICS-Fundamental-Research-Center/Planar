@@ -20,13 +20,30 @@ void GraphMetadata::Init() {
   }
 }
 
-common::GraphID GraphMetadata::GetNextLoadGraph() {
-  for (int i = 0; i < num_subgraphs_; ++i) {
+common::GraphID GraphMetadata::GetNextLoadGraphInCurrentRound() {
+  for (int i = 0; i < num_subgraphs_; i++) {
     if (current_round_pending_.at(i)) {
       return i;
     }
   }
   return INVALID_GRAPH_ID;
+}
+
+common::GraphID GraphMetadata::GetNextLoadGraphInNextRound() {
+  for (int i = 0; i < num_subgraphs_; i++) {
+    if (next_round_pending_.at(i)) {
+      return i;
+    }
+  }
+  return INVALID_GRAPH_ID;
+}
+
+void GraphMetadata::SetSubgraphLoaded(common::GraphID gid) {
+  if (current_round_pending_.at(gid)) {
+    current_round_pending_.at(gid) = false;
+  } else {
+    next_round_pending_.at(gid) = false;
+  }
 }
 
 void GraphMetadata::SyncNextRound() {
