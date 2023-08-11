@@ -81,7 +81,7 @@ DEFINE_string(store_strategy, "unconstrained",
 bool EdgeCut(const std::string& input_path,
              const std::string& output_path,
              const Partitioner partitioner,
-             const size_t n_partitions,
+             const VertexID n_partitions,
              StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
@@ -106,25 +106,25 @@ bool EdgeCut(const std::string& input_path,
                     sizeof(VertexID) * edgelist_metadata.num_edges * 2);
 
   // Generate vertices.
-  auto num_inedges_by_vid = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
-  auto num_outedges_by_vid = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
+  auto num_inedges_by_vid = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  auto num_outedges_by_vid = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
   auto visited = Bitmap(aligned_max_vid);
   visited.Clear();
-  memset(num_inedges_by_vid, 0, sizeof(size_t) * aligned_max_vid);
-  memset(num_outedges_by_vid, 0, sizeof(size_t) * aligned_max_vid);
+  memset(num_inedges_by_vid, 0, sizeof(VertexID) * aligned_max_vid);
+  memset(num_outedges_by_vid, 0, sizeof(VertexID) * aligned_max_vid);
   VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
 
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
                            &num_inedges_by_vid, &num_outedges_by_vid, &visited,
                            &max_vid, &min_vid]() {
-      for (size_t j = i; j < edgelist_metadata.num_edges; j += parallelism) {
+      for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto src = buffer_edges[j * 2];
         auto dst = buffer_edges[j * 2 + 1];
         visited.SetBit(src);
         visited.SetBit(dst);
-        WriteAdd(num_inedges_by_vid + dst, (size_t)1);
-        WriteAdd(num_outedges_by_vid + src, (size_t)1);
+        WriteAdd(num_inedges_by_vid + dst, (VertexID)1);
+        WriteAdd(num_outedges_by_vid + src, (VertexID)1);
         WriteMax(&max_vid, src);
         WriteMax(&max_vid, dst);
         WriteMin(&min_vid, src);
@@ -139,7 +139,7 @@ bool EdgeCut(const std::string& input_path,
 
   Vertex* buffer_csr_vertices =
       (Vertex*)malloc(sizeof(Vertex) * aligned_max_vid);
-  size_t count_in_edges = 0, count_out_edges = 0;
+  VertexID count_in_edges = 0, count_out_edges = 0;
 
   // malloc space for each vertex.
   for (unsigned int i = 0; i < parallelism; i++) {
@@ -147,7 +147,7 @@ bool EdgeCut(const std::string& input_path,
                            &num_inedges_by_vid, &num_outedges_by_vid,
                            &buffer_csr_vertices, &count_in_edges,
                            &count_out_edges, &visited]() {
-      for (size_t j = i; j < aligned_max_vid; j += parallelism) {
+      for (VertexID j = i; j < aligned_max_vid; j += parallelism) {
         if (!visited.GetBit(j)) continue;
         auto u = Vertex();
         u.vid = j;
@@ -168,15 +168,15 @@ bool EdgeCut(const std::string& input_path,
   delete num_inedges_by_vid;
 
   // Fill edges.
-  size_t* offset_in_edges = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
-  size_t* offset_out_edges = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
-  memset(offset_in_edges, 0, sizeof(size_t) * aligned_max_vid);
-  memset(offset_out_edges, 0, sizeof(size_t) * aligned_max_vid);
+  VertexID* offset_in_edges = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  VertexID* offset_out_edges = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  memset(offset_in_edges, 0, sizeof(VertexID) * aligned_max_vid);
+  memset(offset_out_edges, 0, sizeof(VertexID) * aligned_max_vid);
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
                            &offset_in_edges, &offset_out_edges,
                            &buffer_csr_vertices]() {
-      for (size_t j = i; j < edgelist_metadata.num_edges; j += parallelism) {
+      for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto src = buffer_edges[j * 2];
         auto dst = buffer_edges[j * 2 + 1];
         auto offset_out = __sync_fetch_and_add(offset_out_edges + src, 1);
@@ -198,7 +198,7 @@ bool EdgeCut(const std::string& input_path,
   // Construct subgraphs.
   std::vector<ConcurrentHashMap<VertexID, Vertex>*> subgraph_vec;
 
-  for (size_t i = 0; i < n_partitions; i++)
+  for (VertexID i = 0; i < n_partitions; i++)
     subgraph_vec.push_back(
         new ConcurrentHashMap<VertexID, Vertex>(aligned_max_vid));
 
@@ -206,7 +206,7 @@ bool EdgeCut(const std::string& input_path,
     auto task = std::bind([i, parallelism, &edgelist_metadata,
                            &buffer_csr_vertices, &subgraph_vec,
                            &n_partitions]() {
-      for (size_t j = i; j < edgelist_metadata.num_vertices; j += parallelism) {
+      for (VertexID j = i; j < edgelist_metadata.num_vertices; j += parallelism) {
         auto gid =
             fnv64_append_byte(buffer_csr_vertices[j].vid, 1) % n_partitions;
         subgraph_vec.at(gid)->insert(
@@ -285,13 +285,13 @@ bool VertexCut(const std::string& input_path,
                     sizeof(VertexID) * edgelist_metadata.num_edges * 2);
 
   // Precompute the size of each edge bucket.
-  auto size_per_bucket = (size_t*)malloc(sizeof(size_t) * n_partitions);
-  memset(size_per_bucket, 0, sizeof(size_t) * n_partitions);
+  auto size_per_bucket = (VertexID*)malloc(sizeof(VertexID) * n_partitions);
+  memset(size_per_bucket, 0, sizeof(VertexID) * n_partitions);
   auto max_vid_per_bucket = (VertexID*)malloc(sizeof(VertexID) * n_partitions);
   memset(max_vid_per_bucket, 0, sizeof(VertexID) * n_partitions);
   auto min_vid_per_bucket = (VertexID*)malloc(sizeof(VertexID) * n_partitions);
   VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
-  for (size_t i = 0; i < n_partitions; i++)
+  for (VertexID i = 0; i < n_partitions; i++)
     min_vid_per_bucket[i] = MAX_VERTEX_ID;
 
   memset(min_vid_per_bucket, 0, sizeof(VertexID) * n_partitions);
@@ -299,10 +299,10 @@ bool VertexCut(const std::string& input_path,
     auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
                            &size_per_bucket, &max_vid_per_bucket, &max_vid,
                            &min_vid, &n_partitions, &store_strategy]() {
-      for (size_t j = i; j < edgelist_metadata.num_edges; j += parallelism) {
+      for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto src = buffer_edges[j * 2];
         auto dst = buffer_edges[j * 2 + 1];
-        size_t bid;
+        VertexID bid;
         switch (store_strategy) {
           case kOutgoingOnly:
             bid = fnv64_append_byte(src, 3) % n_partitions;
@@ -317,7 +317,7 @@ bool VertexCut(const std::string& input_path,
             bid = fnv64_append_byte(src, 3) % n_partitions;
             break;
         }
-        WriteAdd(size_per_bucket + bid, (size_t)1);
+        WriteAdd(size_per_bucket + bid, (VertexID)1);
         WriteMax(max_vid_per_bucket + bid, src);
         WriteMax(max_vid_per_bucket + bid, dst);
         WriteMax(&max_vid, src);
@@ -345,17 +345,17 @@ bool VertexCut(const std::string& input_path,
     bitmap_vec->push_back(bitmap);
   }
 
-  auto buckets_offset = (size_t*)malloc(sizeof(size_t) * n_partitions);
-  memset(buckets_offset, 0, sizeof(size_t) * n_partitions);
+  auto buckets_offset = (VertexID*)malloc(sizeof(VertexID) * n_partitions);
+  memset(buckets_offset, 0, sizeof(VertexID) * n_partitions);
 
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
                            &size_per_bucket, &n_partitions, &edge_bucket,
                            &buckets_offset, &bitmap_vec, &store_strategy]() {
-      for (size_t j = i; j < edgelist_metadata.num_edges; j += parallelism) {
+      for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto src = buffer_edges[j * 2];
         auto dst = buffer_edges[j * 2 + 1];
-        size_t bid;
+        VertexID bid;
         switch (store_strategy) {
           case kOutgoingOnly:
             bid = fnv64_append_byte(src, 3) % n_partitions;

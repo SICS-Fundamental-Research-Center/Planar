@@ -32,23 +32,23 @@ void Edgelist2CSR(VertexID* buffer_edges,
   auto aligned_max_vid = ((edgelist_metadata.max_vid >> 6) << 6) + 64;
   auto visited = Bitmap(aligned_max_vid);
   visited.Clear();
-  auto num_inedges_by_vid = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
-  auto num_outedges_by_vid = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
-  memset(num_inedges_by_vid, 0, sizeof(size_t) * aligned_max_vid);
-  memset(num_outedges_by_vid, 0, sizeof(size_t) * aligned_max_vid);
+  auto num_inedges_by_vid = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  auto num_outedges_by_vid = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  memset(num_inedges_by_vid, 0, sizeof(VertexID) * aligned_max_vid);
+  memset(num_outedges_by_vid, 0, sizeof(VertexID) * aligned_max_vid);
   VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
 
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
                            &num_inedges_by_vid, &num_outedges_by_vid, &max_vid,
                            &min_vid, &visited]() {
-      for (size_t j = i; j < edgelist_metadata.num_edges; j += parallelism) {
+      for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto src = buffer_edges[j * 2];
         auto dst = buffer_edges[j * 2 + 1];
         visited.SetBit(src);
         visited.SetBit(dst);
-        WriteAdd(num_inedges_by_vid + dst, (size_t)1);
-        WriteAdd(num_outedges_by_vid + src, (size_t)1);
+        WriteAdd(num_inedges_by_vid + dst, (VertexID)1);
+        WriteAdd(num_outedges_by_vid + src, (VertexID)1);
         WriteMin(&min_vid, src);
         WriteMin(&min_vid, dst);
         WriteMax(&max_vid, src);
@@ -66,7 +66,7 @@ void Edgelist2CSR(VertexID* buffer_edges,
   memset((char*)buffer_csr_vertices, 0, sizeof(Vertex) * aligned_max_vid);
 
   // Initialize the buffer_csr_vertices
-  size_t count_in_edges = 0, count_out_edges = 0;
+  VertexID count_in_edges = 0, count_out_edges = 0;
 
   // Malloc space for each vertex.
   for (unsigned int i = 0; i < parallelism; i++) {
@@ -74,7 +74,7 @@ void Edgelist2CSR(VertexID* buffer_edges,
                            &num_inedges_by_vid, &num_outedges_by_vid,
                            &buffer_csr_vertices, &count_in_edges,
                            &count_out_edges, &visited]() {
-      for (size_t j = i; j < aligned_max_vid; j += parallelism) {
+      for (VertexID j = i; j < aligned_max_vid; j += parallelism) {
         if (!visited.GetBit(j)) continue;
         auto u = Vertex();
         u.vid = j;
@@ -95,15 +95,15 @@ void Edgelist2CSR(VertexID* buffer_edges,
   delete num_inedges_by_vid;
   delete num_outedges_by_vid;
 
-  size_t* offset_in_edges = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
-  size_t* offset_out_edges = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
-  memset(offset_in_edges, 0, sizeof(size_t) * aligned_max_vid);
-  memset(offset_out_edges, 0, sizeof(size_t) * aligned_max_vid);
+  VertexID* offset_in_edges = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  VertexID* offset_out_edges = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  memset(offset_in_edges, 0, sizeof(VertexID) * aligned_max_vid);
+  memset(offset_out_edges, 0, sizeof(VertexID) * aligned_max_vid);
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
                            &offset_in_edges, &offset_out_edges,
                            &buffer_csr_vertices]() {
-      for (size_t j = i; j < edgelist_metadata.num_edges; j += parallelism) {
+      for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto src = buffer_edges[j * 2];
         auto dst = buffer_edges[j * 2 + 1];
         auto offset_out = __sync_fetch_and_add(offset_out_edges + src, 1);
@@ -122,15 +122,15 @@ void Edgelist2CSR(VertexID* buffer_edges,
   auto buffer_globalid =
       (VertexID*)malloc(sizeof(VertexID) * edgelist_metadata.num_vertices);
   auto buffer_indegree =
-      (size_t*)malloc(sizeof(size_t) * edgelist_metadata.num_vertices);
+      (VertexID*)malloc(sizeof(VertexID) * edgelist_metadata.num_vertices);
   auto buffer_outdegree =
-      (size_t*)malloc(sizeof(size_t) * edgelist_metadata.num_vertices);
+      (VertexID*)malloc(sizeof(VertexID) * edgelist_metadata.num_vertices);
 
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_globalid,
                            &buffer_indegree, &buffer_outdegree,
                            &buffer_csr_vertices]() {
-      for (size_t j = i; j < edgelist_metadata.num_vertices; j += parallelism) {
+      for (VertexID j = i; j < edgelist_metadata.num_vertices; j += parallelism) {
         buffer_globalid[j] = buffer_csr_vertices[j].vid;
         buffer_indegree[j] = buffer_csr_vertices[j].indegree;
         buffer_outdegree[j] = buffer_csr_vertices[j].outdegree;
@@ -143,14 +143,14 @@ void Edgelist2CSR(VertexID* buffer_edges,
   task_package.clear();
 
   auto buffer_in_offset =
-      (size_t*)malloc(sizeof(size_t) * edgelist_metadata.num_vertices);
+      (VertexID*)malloc(sizeof(VertexID) * edgelist_metadata.num_vertices);
   auto buffer_out_offset =
-      (size_t*)malloc(sizeof(size_t) * edgelist_metadata.num_vertices);
-  memset(buffer_in_offset, 0, sizeof(size_t) * edgelist_metadata.num_vertices);
-  memset(buffer_out_offset, 0, sizeof(size_t) * edgelist_metadata.num_vertices);
+      (VertexID*)malloc(sizeof(VertexID) * edgelist_metadata.num_vertices);
+  memset(buffer_in_offset, 0, sizeof(VertexID) * edgelist_metadata.num_vertices);
+  memset(buffer_out_offset, 0, sizeof(VertexID) * edgelist_metadata.num_vertices);
 
   // Compute offset for each vertex.
-  for (size_t i = 1; i < edgelist_metadata.num_vertices; i++) {
+  for (VertexID i = 1; i < edgelist_metadata.num_vertices; i++) {
     buffer_in_offset[i] = buffer_in_offset[i - 1] + buffer_indegree[i - 1];
     buffer_out_offset[i] = buffer_out_offset[i - 1] + buffer_outdegree[i - 1];
   }
@@ -161,7 +161,7 @@ void Edgelist2CSR(VertexID* buffer_edges,
     auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_in_edges,
                            &buffer_out_edges, &buffer_in_offset,
                            &buffer_out_offset, &buffer_csr_vertices]() {
-      for (size_t j = i; j < edgelist_metadata.num_vertices; j += parallelism) {
+      for (VertexID j = i; j < edgelist_metadata.num_vertices; j += parallelism) {
         memcpy(buffer_in_edges + buffer_in_offset[j],
                buffer_csr_vertices[j].in_edges,
                buffer_csr_vertices[j].indegree * sizeof(VertexID));
@@ -176,7 +176,7 @@ void Edgelist2CSR(VertexID* buffer_edges,
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  csr_graph->SetGlobalIDbyIndex(buffer_globalid);
+  csr_graph->SetGlobalID(buffer_globalid);
   csr_graph->SetInDegree(buffer_indegree);
   csr_graph->SetOutDegree(buffer_outdegree);
   csr_graph->SetInOffset(buffer_in_offset);
