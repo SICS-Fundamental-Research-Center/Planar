@@ -56,9 +56,6 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
   size_t start_localid_by_globalid = start_out_edges + size_out_edges;
   size_t start_localid = start_localid_by_globalid + size_localid_by_globalid;
 
-  //localid_by_globalid_ =
-  //    reinterpret_cast<VertexID*>(buf_graph_ + start_localid_by_globalid);
-  //localid_by_index_ = reinterpret_cast<VertexID*>(buf_graph_ + start_localid);
   globalid_by_index_ = reinterpret_cast<VertexID*>(buf_graph_ + start_globalid);
   in_edges_ = reinterpret_cast<VertexID*>(buf_graph_ + start_in_edges);
   out_edges_ = reinterpret_cast<VertexID*>(buf_graph_ + start_out_edges);
