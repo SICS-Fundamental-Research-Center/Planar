@@ -29,6 +29,7 @@ endif ()
 file(GLOB GRAPH_MINICLEAN_SOURCES
         "*.cpp"
         "graphs/*.cpp"
+        "components/*.cpp"
         )
 message(STATUS "CORE source files: ${GRAPH_MINICLEAN_SOURCES}")
 list(FILTER GRAPH_MINICLEAN_SOURCES EXCLUDE REGEX ".*_test\\.cpp$")
@@ -37,6 +38,7 @@ list(FILTER GRAPH_MINICLEAN_SOURCES EXCLUDE REGEX ".*_test\\.cpp$")
 file(GLOB GRAPH_MINICLEAN_HEADERS
         "*.h"
         "graphs/*.h"
+        "components/*.h"
         )
 message(STATUS "CORE header files: ${GRAPH_MINICLEAN_HEADERS}")
 
@@ -44,6 +46,13 @@ message(STATUS "CORE header files: ${GRAPH_MINICLEAN_HEADERS}")
 # Generate libgraph_core
 #######################
 add_library(graph_systems_miniclean ${GRAPH_MINICLEAN_SOURCES} ${GRAPH_MINICLEAN_HEADERS})
+target_link_libraries(graph_systems_miniclean
+        graph_systems_core
+        yaml-cpp
+        gflags
+        ${FOLLY_LIBRARIES}
+        ${LIBFMT_LIBRARY}
+)
 
 file(GLOB appfiles "${CMAKE_CURRENT_SOURCE_DIR}/apps/*.cpp")
 foreach (appfile ${appfiles})
@@ -55,5 +64,7 @@ foreach (appfile ${appfiles})
             graph_systems_miniclean 
             yaml-cpp
             gflags
+            ${FOLLY_LIBRARIES}
+            ${LIBFMT_LIBRARY}
     )
 endforeach ()

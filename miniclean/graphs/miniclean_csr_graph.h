@@ -19,6 +19,7 @@ class MinicleanCSRGraph
       sics::graph::core::data_structures::graph::ImmutableCSRGraph;
   using GraphID = sics::graph::core::common::GraphID;
   using VertexID = sics::graph::core::common::VertexID;
+  using VertexLabel = sics::graph::core::common::VertexLabel;
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
   using Serialized = sics::graph::core::data_structures::Serialized; 
   using TaskRunner = sics::graph::core::common::TaskRunner;
@@ -38,9 +39,9 @@ class MinicleanCSRGraph
   void Deserialize(const TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override;
 
-  VertexID* get_vertex_label() const { return vertex_label_; }
-  VertexID* get_in_edge_label() const { return in_edge_label_; }
-  VertexID* get_out_edge_label() const { return out_edge_label_; }
+  VertexLabel* get_vertex_label() const { return vertex_label_; }
+  VertexLabel* get_in_edge_label() const { return in_edge_label_; }
+  VertexLabel* get_out_edge_label() const { return out_edge_label_; }
 
  protected:
   // The graph ID.
@@ -54,10 +55,10 @@ class MinicleanCSRGraph
   // config. attributes to build the CSR.
   MinicleanCSRGraphConfig csr_config_;
   // Vertex labels
-  VertexID* vertex_label_ = nullptr;
+  VertexLabel* vertex_label_ = nullptr;
   // Edge labels
-  VertexID* in_edge_label_ = nullptr;
-  VertexID* out_edge_label_ = nullptr;
+  VertexLabel* in_edge_label_ = nullptr;
+  VertexLabel* out_edge_label_ = nullptr;
 };
 }  // namespace sics::graph::miniclean::graphs
 
