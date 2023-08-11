@@ -52,6 +52,10 @@ class PathMatcher {
   
   void PrintMatchedResults();
 
+  std::vector<std::vector<std::vector<VertexID>>> get_results() {
+    return matched_results_;
+  }
+
  private:
   void path_match_recur(const std::vector<VertexLabel>& path_pattern,
                         size_t match_position, std::set<VertexID>& candidates,

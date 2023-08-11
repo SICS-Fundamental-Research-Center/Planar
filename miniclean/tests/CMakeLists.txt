@@ -10,7 +10,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/tests/)
 # Build Unit Tests #
 ####################
 file(GLOB testfiles
-        "${CMAKE_CURRENT_SOURCE_DIR}/*_test.cpp"
+        "${PROJECT_ROOT_DIR}/miniclean/components/*_test.cpp"
         )
 
 foreach (testfile ${testfiles})
@@ -22,6 +22,7 @@ foreach (testfile ${testfiles})
     add_executable(${filename} "${testfile}")
     target_link_libraries(${filename}
             graph_systems_core
+            graph_systems_miniclean
             gtest
             gtest_main
             ${FOLLY_LIBRARIES}
@@ -29,4 +30,5 @@ foreach (testfile ${testfiles})
             yaml-cpp::yaml-cpp
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
+    target_compile_definitions(${filename} PUBLIC TEST_DATA_DIR="${PROJECT_ROOT_DIR}/testfile")
 endforeach ()

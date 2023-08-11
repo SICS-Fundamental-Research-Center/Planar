@@ -48,7 +48,7 @@ int main() {
   PathMatcher path_matcher(std::move(graph), std::move(path_patterns),
                            std::move(config), candidates, num_label);
   // path_matcher.LoadGraph("/home/baiwc/workspace/graph-systems/data/dblp_test/0", &graph);
-  path_matcher.LoadGraph("/home/baiwc/workspace/graph-systems/data/small_graph/0");
+  path_matcher.LoadGraph("/home/baiwc/workspace/graph-systems/testfile/input/small_graph_path_matching/0");
 
   path_matcher.BuildCandidateSet(num_label);
 
