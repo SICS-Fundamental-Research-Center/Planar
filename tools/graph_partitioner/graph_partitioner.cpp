@@ -32,7 +32,7 @@ using sics::graph::core::util::atomic::WriteMax;
 using sics::graph::core::util::atomic::WriteMin;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
-using namespace sics::graph::tools;
+using namespace sics::graph::tools::common;
 
 enum Partitioner {
   kEdgeCut,  // default
@@ -41,7 +41,7 @@ enum Partitioner {
   kUndefinedPartitioner
 };
 
-inline Partitioner String2EnumPartitioner(const std::string& s) {
+inline Partitioner Partitioner2Enum(const std::string& s) {
   if (s == "edgecut")
     return kEdgeCut;
   else if (s == "vertexcut")
@@ -78,8 +78,10 @@ DEFINE_string(store_strategy, "unconstrained",
 // partitioner: The partitioner to use.
 // n_partitions: The number of partitions to use.
 // store_strategy: The strategy to use to store edges.
-bool EdgeCut(const std::string& input_path, const std::string& output_path,
-             const Partitioner partitioner, const size_t n_partitions,
+bool EdgeCut(const std::string& input_path,
+             const std::string& output_path,
+             const Partitioner partitioner,
+             const size_t n_partitions,
              StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
@@ -255,8 +257,10 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
 // store_strategy: StoreStrategy to use [incoming_only, outgoing_only,
 // unconstrained], corresponding to store incoming edges only, outgoing edges
 // only, and both two respectively.
-bool VertexCut(const std::string& input_path, const std::string& output_path,
-               const Partitioner partitioner, const size_t n_partitions,
+bool VertexCut(const std::string& input_path,
+               const std::string& output_path,
+               const Partitioner partitioner,
+               const size_t n_partitions,
                StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
@@ -409,11 +413,11 @@ int main(int argc, char** argv) {
       "-o <output file path> --n_partitions \n"
       " General options:\n"
       "\t : edgecut: - Using edge cut partitioner "
-      "list\n"
+      "\n"
       "\t vertexcut: - Using vertex cut partitioner"
-      "csr\n"
+      "\n"
       "\t hybridcut:   - Using hybrid cut partitioner "
-      "csr\n");
+      "\n");
 
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   if (FLAGS_i == "" || FLAGS_o == "") {
@@ -421,16 +425,14 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  switch (String2EnumPartitioner(FLAGS_partitioner)) {
+  switch (Partitioner2Enum(FLAGS_partitioner)) {
     case kVertexCut:
-      VertexCut(FLAGS_i, FLAGS_o, String2EnumPartitioner(FLAGS_partitioner),
-                FLAGS_n_partitions,
-                String2EnumStoreStrategy(FLAGS_store_strategy));
+      VertexCut(FLAGS_i, FLAGS_o, Partitioner2Enum(FLAGS_partitioner),
+                FLAGS_n_partitions, StoreStrategy2Enum(FLAGS_store_strategy));
       break;
     case kEdgeCut:
-      EdgeCut(FLAGS_i, FLAGS_o, String2EnumPartitioner(FLAGS_partitioner),
-              FLAGS_n_partitions,
-              String2EnumStoreStrategy(FLAGS_store_strategy));
+      EdgeCut(FLAGS_i, FLAGS_o, Partitioner2Enum(FLAGS_partitioner),
+              FLAGS_n_partitions, StoreStrategy2Enum(FLAGS_store_strategy));
       break;
     case kHybridCut:
       // TODO (hsaioko): Add HyrbidCut partitioner.

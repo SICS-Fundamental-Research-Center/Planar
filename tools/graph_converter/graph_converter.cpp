@@ -10,7 +10,6 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <list>
 #include <type_traits>
 
 #include <gflags/gflags.h>
@@ -35,7 +34,7 @@ using sics::graph::core::data_structures::SubgraphMetadata;
 using sics::graph::core::util::atomic::WriteAdd;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
-using namespace sics::graph::tools;
+using namespace sics::graph::tools::common;
 
 DEFINE_string(partitioner, "", "partitioner type.");
 DEFINE_string(i, "", "input path.");
@@ -232,8 +231,7 @@ int main(int argc, char** argv) {
     LOG_ERROR("Input (output) path is empty.");
     return -1;
   }
-
-  switch (String2EnumConvertMode(FLAGS_convert_mode)) {
+  switch (ConvertMode2Enum(FLAGS_convert_mode)) {
     case kEdgelistCSV2EdgelistBin:
       if (FLAGS_sep == "") {
         LOG_ERROR("CSV separator is not empty. Use -sep [e.g. \",\"].");
@@ -246,7 +244,7 @@ int main(int argc, char** argv) {
       break;
     case kEdgelistBin2CSRBin:
       ConvertEdgelistBin2CSRBin(FLAGS_i, FLAGS_o,
-                                String2EnumStoreStrategy(FLAGS_store_strategy));
+                                StoreStrategy2Enum(FLAGS_store_strategy));
       break;
     default:
       LOG_INFO("Error convert mode.");

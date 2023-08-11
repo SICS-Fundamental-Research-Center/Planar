@@ -1,8 +1,8 @@
-
 #ifndef SICS_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_TYPES_H_
 #define SICS_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_TYPES_H_
 
-namespace sics::graph::tools {
+namespace sics::graph::tools::common {
+
 enum StoreStrategy {
   kUnconstrained,  // default
   kIncomingOnly,
@@ -10,7 +10,7 @@ enum StoreStrategy {
   kUndefinedStrategy
 };
 
-static inline StoreStrategy String2EnumStoreStrategy(const std::string& s) {
+static inline StoreStrategy StoreStrategy2Enum(const std::string& s) {
   if (s == "incoming_only")
     return kIncomingOnly;
   else if (s == "outgoing_only")
@@ -27,7 +27,7 @@ enum ConvertMode {
   kUndefinedMode
 };
 
-static inline ConvertMode String2EnumConvertMode(const std::string& s) {
+static inline ConvertMode ConvertMode2Enum(const std::string& s) {
   if (s == "edgelistcsv2edgelistbin")
     return kEdgelistCSV2EdgelistBin;
   else if (s == "edgelistbin2csrbin")

@@ -9,10 +9,11 @@ using sics::graph::core::util::atomic::WriteMin;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
 
-namespace sics::graph::tools {
+namespace sics::graph::tools::common {
+
 bool IOAdapter::WriteSubgraph(
-    std::vector<folly::ConcurrentHashMap<VertexID, Vertex>*>& subgraph_vec,
-    GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
+    const std::vector<folly::ConcurrentHashMap<VertexID, Vertex>*>& subgraph_vec,
+    const GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -198,8 +199,9 @@ bool IOAdapter::WriteSubgraph(
 }
 
 bool IOAdapter::WriteSubgraph(
-    VertexID** edge_bucket, GraphMetadata& graph_metadata,
-    std::vector<EdgelistMetadata> edgelist_metadata_vec,
+    VertexID** edge_bucket,
+    const GraphMetadata& graph_metadata,
+    const std::vector<EdgelistMetadata> &edgelist_metadata_vec,
     StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
@@ -211,7 +213,6 @@ bool IOAdapter::WriteSubgraph(
   if (!exists(output_root_path_ + "label"))
     create_directory(output_root_path_ + "label");
 
-  GraphAdapter graph_adapter;
   size_t n_subgraphs = graph_metadata.get_num_subgraphs();
 
   std::vector<SubgraphMetadata> subgraph_metadata_vec;
@@ -222,8 +223,8 @@ bool IOAdapter::WriteSubgraph(
     std::ofstream out_label_file(output_root_path_ + "label/" +
                                  std::to_string(i) + ".bin");
     ImmutableCSRGraph csr_graph(i);
-    graph_adapter.Edgelist2CSR(edge_bucket[i], edgelist_metadata_vec[i],
-                               csr_graph, store_strategy);
+    util::format_converter::Edgelist2CSR(edge_bucket[i], edgelist_metadata_vec[i],
+                               &csr_graph, store_strategy);
     delete edge_bucket[i];
     subgraph_metadata_vec.push_back(
         {csr_graph.get_gid(), csr_graph.get_num_vertices(),

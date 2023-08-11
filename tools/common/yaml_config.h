@@ -3,17 +3,17 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "types.h"
-#include "data_structures/graph_metadata.h"
-#include "data_structures.h"
-#include "util/logging.h"
+#include "core/data_structures/graph_metadata.h"
+#include "core/util/logging.h"
+#include "tools/common/data_structures.h"
+#include "tools/common/types.h"
 
 namespace YAML {
 
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::data_structures::SubgraphMetadata;
-using sics::graph::tools::EdgelistMetadata;
+using sics::graph::tools::common::EdgelistMetadata;
 
 template <>
 struct convert<EdgelistMetadata> {

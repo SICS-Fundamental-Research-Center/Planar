@@ -1,4 +1,7 @@
-#include "adapter.h"
+#include "format_converter.h"
+
+namespace sics::graph::tools::util {
+namespace format_converter {
 
 using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::GraphID;
@@ -13,16 +16,15 @@ using sics::graph::core::util::atomic::WriteMin;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
 using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
+using sics::graph::core::data_structures::graph::ImmutableCSRGraph;
+using sics::graph::tools::common::EdgelistMetadata;
+using sics::graph::tools::common::kUnconstrained;
+using sics::graph::tools::common::StoreStrategy;
 
-using namespace sics::graph::tools;
-
-namespace sics::graph::tools {
-
-void GraphAdapter::Edgelist2CSR(
-    VertexID* buffer_edges, EdgelistMetadata edgelist_metadata,
-    ImmutableCSRGraph& csr_graph,
-    const StoreStrategy store_strategy = kUnconstrained) {
-
+void Edgelist2CSR(VertexID* buffer_edges,
+                  const EdgelistMetadata &edgelist_metadata,
+                  ImmutableCSRGraph* csr_graph,
+                  const StoreStrategy store_strategy = kUnconstrained) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -174,18 +176,19 @@ void GraphAdapter::Edgelist2CSR(
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  csr_graph.SetGlobalIDbyIndex(buffer_globalid);
-  csr_graph.SetInDegree(buffer_indegree);
-  csr_graph.SetOutDegree(buffer_outdegree);
-  csr_graph.SetInOffset(buffer_in_offset);
-  csr_graph.SetOutOffset(buffer_out_offset);
-  csr_graph.SetInEdges(buffer_in_edges);
-  csr_graph.SetOutEdges(buffer_out_edges);
-  csr_graph.set_num_vertices(edgelist_metadata.num_vertices);
-  csr_graph.set_num_incoming_edges(count_in_edges);
-  csr_graph.set_num_outgoing_edges(count_out_edges);
-  csr_graph.set_max_vid(max_vid);
-  csr_graph.set_min_vid(min_vid);
+  csr_graph->SetGlobalIDbyIndex(buffer_globalid);
+  csr_graph->SetInDegree(buffer_indegree);
+  csr_graph->SetOutDegree(buffer_outdegree);
+  csr_graph->SetInOffset(buffer_in_offset);
+  csr_graph->SetOutOffset(buffer_out_offset);
+  csr_graph->SetInEdges(buffer_in_edges);
+  csr_graph->SetOutEdges(buffer_out_edges);
+  csr_graph->set_num_vertices(edgelist_metadata.num_vertices);
+  csr_graph->set_num_incoming_edges(count_in_edges);
+  csr_graph->set_num_outgoing_edges(count_out_edges);
+  csr_graph->set_max_vid(max_vid);
+  csr_graph->set_min_vid(min_vid);
 }
 
-}  // namespace sics::graph::tools
+}  // namespace format_converter
+}  // namespace sics::graph::tools::util

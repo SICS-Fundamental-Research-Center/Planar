@@ -10,10 +10,7 @@ include_directories(
 
 file(GLOB TOOLS_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp
-        )
-
-file(GLOB TOOLS_HEADERS
-        ${CMAKE_CURRENT_SOURCE_DIR}/common/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/util/*.cpp
         )
 
 # find gflag
