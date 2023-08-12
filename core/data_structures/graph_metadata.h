@@ -1,12 +1,14 @@
 #ifndef GRAPH_SYSTEMS_GRAPH_METADATA_H
 #define GRAPH_SYSTEMS_GRAPH_METADATA_H
 
-#include "common/types.h"
-#include "util/logging.h"
 #include <yaml-cpp/yaml.h>
+
 #include <cstdio>
 #include <string>
 #include <vector>
+
+#include "common/types.h"
+#include "util/logging.h"
 
 namespace sics::graph::core::data_structures {
 
@@ -81,6 +83,9 @@ class GraphMetadata {
   std::vector<bool> current_round_pending_;
   std::vector<bool> next_round_pending_;
   std::vector<SubgraphMetadata> subgraph_metadata_vec_;
+  // used for marking if current round graph is deserialized
+  std::vector<bool> is_deserialized;
+  std::vector<bool> aa;
 };
 
 }  // namespace sics::graph::core::data_structures

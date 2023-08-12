@@ -1,9 +1,10 @@
 #include "data_structures/graph_metadata.h"
 
-#include <fstream>
-
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
+
+#include <fstream>
+#include <vector>
 
 namespace sics::graph::core::data_structures {
 

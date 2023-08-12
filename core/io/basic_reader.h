@@ -1,17 +1,18 @@
 #ifndef CORE_IO_BASIC_READER_H_
 #define CORE_IO_BASIC_READER_H_
 
+#include <yaml-cpp/yaml.h>
+
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <list>
 #include <memory>
 #include <string>
 #include <utility>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
 
 #include "data_structures/buffer.h"
 #include "data_structures/serialized.h"
-#include "yaml-cpp/yaml.h"
 
 #define CSR_GLOBLE_FILE_NAME "csr_global.yaml"
 
@@ -34,7 +35,8 @@ class BasicReader {
   // path: path to the subgraph dictionary
   // dst_object: where to move ownedbuffers
   // read type: 0: csr, other: other type in future version
-  void ReadSubgraph(const std::string& path, Serialized* dst_object, int read_type = 0);
+  void ReadSubgraph(const std::string& path, Serialized* dst_object,
+                    int read_type = 0);
 
  private:
   // read csr of a certain subgraph from ssd

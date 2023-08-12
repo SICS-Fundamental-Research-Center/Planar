@@ -14,11 +14,12 @@ namespace sics::graph::core::scheduler {
 struct ReadMessage {
   // Request fields.
   common::GraphID graph_id;
+  bool is_next_round = false;
   // TODO: add subgraph metadata fields.
 
   // Response fields.
   data_structures::Serialized* response_serialized;
-  bool is_deserialized = false;
+
   // Termination flag.
   bool terminated = false;
 };

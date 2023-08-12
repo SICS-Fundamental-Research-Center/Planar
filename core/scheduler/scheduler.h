@@ -6,9 +6,8 @@
 
 namespace sics::graph::core::scheduler {
 
-template <typename VertexData, typename EdgeData>
-class Scheduler {
- public:
+template <typename VertexData, typename EdgeData> class Scheduler {
+public:
   Scheduler() = default;
   virtual ~Scheduler() = default;
 
@@ -25,19 +24,19 @@ class Scheduler {
 
   // read graph metadata from meta.yaml file
   // meta file path should be passed by gflags
-  void ReadGraphMetadata(const std::string& graph_metadata_path) {
+  void ReadGraphMetadata(const std::string &graph_metadata_path) {
     YAML::Node graph_metadata_node;
     try {
       graph_metadata_node = YAML::LoadFile(graph_metadata_path);
       graph_metadata_info_ = graph_metadata_node["GraphMetadata"]
                                  .as<data_structures::GraphMetadata>();
-    } catch (YAML::BadFile& e) {
+    } catch (YAML::BadFile &e) {
       LOG_ERROR("meta.yaml file read failed! ", e.msg);
     }
   }
 
   // get message hub ptr for other component
-  MessageHub* get_message_hub() { return &message_hub_; }
+  MessageHub *get_message_hub() { return &message_hub_; }
 
   // global message store
 
@@ -71,30 +70,30 @@ class Scheduler {
           break;
         }
         switch (resp.get_type()) {
-          case Message::Type::kRead: {
-            ReadMessageResponseAndExecute(resp);
-            break;
+        case Message::Type::kRead: {
+          ReadMessageResponseAndExecute(resp);
+          break;
+        }
+        case Message::Type::kExecute: {
+          ExecuteMessageResponseAndWrite(resp);
+          break;
+        }
+        case Message::Type::kWrite: {
+          if (!WriteMessageResponseAndCheckTerminate(resp)) {
+            running = false;
           }
-          case Message::Type::kExecute: {
-            ExecuteMessageResponseAndWrite(resp);
-            break;
-          }
-          case Message::Type::kWrite: {
-            if (!WriteMessageResponseAndCheckTerminate(resp)) {
-              running = false;
-            }
-            break;
-          }
-          default:
-            break;
+          break;
+        }
+        default:
+          break;
         }
       }
       LOG_INFO("*** Scheduler is signaled termination ***");
     });
   }
 
- private:
-  bool ReadMessageResponseAndExecute(const Message& resp) {
+private:
+  bool ReadMessageResponseAndExecute(const Message &resp) {
     // read finish, to execute the loaded graph
     ReadMessage read_response;
     resp.Get(&read_response);
@@ -104,20 +103,8 @@ class Scheduler {
     execute_message.graph_id = read_response.graph_id;
     execute_message.serialized = read_response.response_serialized;
 
-    // decide which execute type the read graph should belong to
-    if (!read_response.is_deserialized) {
-      // deserialize the read graph
-      execute_message.execute_type = ExecuteType::kDeserialize;
-    } else {
-      // execute phase check, PEval or IncEval
-      if (current_round_ == 0) {
-        // PEval
-        execute_message.execute_type = ExecuteType::kPEval;
-      } else {
-        // IncEval
-        execute_message.execute_type = ExecuteType::kIncEval;
-      }
-    }
+    // read graph need deserialize first
+    execute_message.execute_type = ExecuteType::kDeserialize;
     message_hub_.get_executor_queue()->Push(execute_message);
 
     // read another graph, or do nothing but block
@@ -138,7 +125,7 @@ class Scheduler {
     return true;
   }
 
-  bool ExecuteMessageResponseAndWrite(const Message& resp) {
+  bool ExecuteMessageResponseAndWrite(const Message &resp) {
     // execute finish, to write back the graph
     ExecuteMessage execute_response;
     resp.Get(&execute_response);
@@ -156,7 +143,7 @@ class Scheduler {
     return true;
   }
 
-  bool WriteMessageResponseAndCheckTerminate(const Message& resp) {
+  bool WriteMessageResponseAndCheckTerminate(const Message &resp) {
     // write finish
     // check if read next round graph
     auto current_round_next_graph_id =
@@ -178,20 +165,20 @@ class Scheduler {
     return true;
   }
 
- private:
+private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
   data_structures::GraphMetadata graph_metadata_info_;
   int current_round_ = 0;
   // message hub
   MessageHub message_hub_;
   // global message store
-  VertexData* global_message_read_;
-  VertexData* global_message_write_;
+  VertexData *global_message_read_;
+  VertexData *global_message_write_;
   uint32_t global_message_size_;
 
   std::unique_ptr<std::thread> thread_;
 };
 
-}  // namespace sics::graph::core::scheduler
+} // namespace sics::graph::core::scheduler
 
-#endif  // GRAPH_SYSTEMS_SCHEDULER_H
+#endif // GRAPH_SYSTEMS_SCHEDULER_H

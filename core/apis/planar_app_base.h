@@ -17,40 +17,35 @@ namespace sics::graph::core::apis {
 // - PEval: the initial evaluation phase.
 // - IncEval: the incremental evaluation phase.
 // - Assemble: the final assembly phase.
-template <typename GraphType>
-class PlanarAppBase : public PIE {
+template <typename GraphType> class PlanarAppBase : public PIE {
   static_assert(
       std::is_base_of<data_structures::Serializable, GraphType>::value,
       "GraphType must be a subclass of Serializable");
 
- public:
+public:
   // TODO: add UpdateStore as a parameter, so that PEval, IncEval and Assemble
   //  can access global messages in it.
-  PlanarAppBase(common::TaskRunner* runner,
-                data_structures::Serializable* graph)
-      : runner_(runner), graph_(static_cast<GraphType*>(graph)) {}
+  PlanarAppBase(common::TaskRunner *runner,
+                data_structures::Serializable *graph)
+      : runner_(runner), graph_(static_cast<GraphType *>(graph)) {}
 
   ~PlanarAppBase() override = default;
 
- protected:
+protected:
   // TODO: implement this here. This function is not intended for overriden.
-  void VApply() {
-    LOG_WARN("VApply is not implemented");
-  }
+  void VApply() { LOG_WARN("VApply is not implemented"); }
 
   // TODO: implement this here. This function is not intended for overriden.
-  void EApply() {
-    LOG_WARN("EApply is not implemented");
-  }
+  void EApply() { LOG_WARN("EApply is not implemented"); }
 
- protected:
-  common::TaskRunner* runner_;
+protected:
+  common::TaskRunner *runner_;
 
-  GraphType* graph_;
+  GraphType *graph_;
 
   // TODO: add UpdateStore as a member here.
 };
 
-}  // namespace sics::graph::core::apis
+} // namespace sics::graph::core::apis
 
-#endif  // GRAPH_SYSTEMS_PLANAR_APP_BASE_H
+#endif // GRAPH_SYSTEMS_PLANAR_APP_BASE_H
