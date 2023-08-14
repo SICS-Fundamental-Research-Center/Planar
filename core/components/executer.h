@@ -32,17 +32,20 @@ class Executer : public Component {
         LOGF_INFO("Executer starts executing subgraph {}", message.graph_id);
         // TODO: execute api logic
         switch (message.execute_type) {
-          case scheduler::ExecuteType::kDeserialize:
-
+          case scheduler::ExecuteType::kDeserialize: {
+            //            data_structures::Serializable* graph;
+            //            graph->Deserialize()
+            //            message.response_serializable = graph;
             break;
+          }
           case scheduler::ExecuteType::kPEval:
-
+            message.api->PEval();
             break;
           case scheduler::ExecuteType::kIncEval:
-
+            message.api->IncEval();
             break;
           case scheduler::ExecuteType::kSerialize:
-
+            //            message.graph->Deserialize();
             break;
         }
         LOGF_INFO("Executer completes executing subgraph {}", message.graph_id);

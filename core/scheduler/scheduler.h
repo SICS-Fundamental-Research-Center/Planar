@@ -95,10 +95,12 @@ class Scheduler {
     // read finish, to execute the loaded graph
     ReadMessage read_response;
     resp.Get(&read_response);
-    graph_metadata_info_.SetSubgraphLoaded(read_response.graph_id);
+    graph_state_.SetGraphState(read_response.graph_id,
+                               GraphState::StorageStateType::Serialized);
 
     // read graph need deserialize first
-    if (subgraph_state_.GetSubgraphRound(read_response.graph_id) ==
+    // check current round subgraph and send it to executer to Deserialization.
+    if (graph_state_.GetSubgraphRound(read_response.graph_id) ==
         current_round_) {
       ExecuteMessage execute_message;
       execute_message.graph_id = read_response.graph_id;
@@ -108,22 +110,25 @@ class Scheduler {
       execute_message.execute_type = ExecuteType::kDeserialize;
       message_hub_.get_executor_queue()->Push(execute_message);
     } else {
-
+      graph_state_.SetSubgraphSerialized(read_response.graph_id,
+                                         read_response.response_serialized);
     }
 
-    // read another graph, or do nothing but block
-    auto next_graph_id = graph_metadata_info_.GetNextLoadGraphInCurrentRound();
-    ReadMessage read_message;
-    if (next_graph_id != INVALID_GRAPH_ID) {
-      read_message.graph_id = next_graph_id;
-      message_hub_.get_reader_queue()->Push(read_message);
-    } else {
-      // check next round graph which can be read, if not just skip
-      auto next_gid_next_round =
-          graph_metadata_info_.GetNextLoadGraphInNextRound();
-      if (next_gid_next_round != INVALID_GRAPH_ID) {
-        read_message.graph_id = next_gid_next_round;
+    // TODO: check memory size to decide if read next graph.
+    if (true) {
+      // read another graph, or do nothing but block
+      auto next_graph_id = graph_state_.GetNextReadGraphInCurrentRound();
+      ReadMessage read_message;
+      if (next_graph_id != INVALID_GRAPH_ID) {
+        read_message.graph_id = next_graph_id;
         message_hub_.get_reader_queue()->Push(read_message);
+      } else {
+        // check next round graph which can be read, if not just skip
+        auto next_gid_next_round = graph_state_.GetNextReadGaphInNextRound();
+        if (next_gid_next_round != INVALID_GRAPH_ID) {
+          read_message.graph_id = next_gid_next_round;
+          message_hub_.get_reader_queue()->Push(read_message);
+        }
       }
     }
     return true;
@@ -133,12 +138,51 @@ class Scheduler {
     // execute finish, to write back the graph
     ExecuteMessage execute_response;
     resp.Get(&execute_response);
-    WriteMessage write_message;
 
-    write_message.graph_id = execute_response.graph_id;
-    write_message.serializable = execute_response.response_serializable;
+    switch (execute_response.execute_type) {
+      case ExecuteType::kDeserialize: {
+        ExecuteMessage execute_message;
+        execute_message.graph_id = execute_response.graph_id;
+        execute_message.graph = execute_response.response_serializable;
+        if (current_round_ == 0) {
+          execute_message.execute_type = ExecuteType::kPEval;
+        } else {
+          execute_message.execute_type = ExecuteType::kIncEval;
+        }
+        message_hub_.get_executor_queue()->Push(execute_message);
+        break;
+      }
+      case ExecuteType::kPEval:
+      case ExecuteType::kIncEval: {
+        // check if current round finish
+        if (graph_state_.IsFinalGraphInCurrentRound()) {
+          if (graph_state_.IsGoOn()) {
+            // read graph in next round
+          } else {
+            return false;
+          }
+        } else {
+          // write back to disk or save in memory
+          // TODO: check if graph can stay in memory
+          if (true) {
 
-    message_hub_.get_writer_queue()->Push(write_message);
+          } else {
+
+          }
+        }
+        break;
+      }
+      case ExecuteType::kSerialize: {
+        WriteMessage write_message;
+        write_message.graph_id = execute_response.graph_id;
+        write_message.serializable = execute_response.response_serializable;
+        message_hub_.get_writer_queue()->Push(write_message);
+        break;
+      }
+      default:
+        LOG_WARN("Executer response show it doing nothing!");
+        break;
+    }
 
     // check border vertex and dependency matrix, mark active subgraph in next
     // round
@@ -148,22 +192,28 @@ class Scheduler {
   }
 
   bool WriteMessageResponseAndCheckTerminate(const Message& resp) {
-    // write finish
-    // check if read next round graph
-    auto current_round_next_graph_id =
-        graph_metadata_info_.GetNextLoadGraphInCurrentRound();
-    if (current_round_next_graph_id == INVALID_GRAPH_ID) {
-      current_round_++;
-      graph_metadata_info_.SyncNextRound();
-      auto next_round_first_graph_id =
-          graph_metadata_info_.GetNextLoadGraphInCurrentRound();
-      if (next_round_first_graph_id == INVALID_GRAPH_ID) {
-        // no graph should be loaded, terminate system
-        return false;
-      } else {
-        ReadMessage read_message;
-        read_message.graph_id = next_round_first_graph_id;
-        message_hub_.get_reader_queue()->Push(read_message);
+    // TODO: check memory size to read new subgraph
+    WriteMessage write_response;
+    resp.Get(&write_response);
+    graph_state_.SetGraphState(write_response.graph_id,
+                               GraphState::StorageStateType::OnDisk);
+    if (true) {
+      // check if read next round graph
+      auto current_round_next_graph_id =
+          graph_state_.GetNextReadGraphInCurrentRound();
+      if (current_round_next_graph_id == INVALID_GRAPH_ID) {
+        current_round_++;
+        graph_state_.SyncRoundState();
+        auto next_round_first_graph_id =
+            graph_state_.GetNextReadGaphInNextRound();
+        if (next_round_first_graph_id == INVALID_GRAPH_ID) {
+          // no graph should be loaded, terminate system
+          return false;
+        } else {
+          ReadMessage read_message;
+          read_message.graph_id = next_round_first_graph_id;
+          message_hub_.get_reader_queue()->Push(read_message);
+        }
       }
     }
     return true;
@@ -172,7 +222,7 @@ class Scheduler {
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
   data_structures::GraphMetadata graph_metadata_info_;
-  SubgraphState subgraph_state_;
+  GraphState graph_state_;
 
   int current_round_ = 0;
 
