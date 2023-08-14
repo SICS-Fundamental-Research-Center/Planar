@@ -62,6 +62,14 @@ class GraphMetadata {
     return !current_round_pending_.at(subgraph_gid);
   }
 
+  bool IsDeserialized(common::GraphID gid) const {
+    return is_deserialized.at(gid);
+  }
+
+  bool IsInMemory(common::GraphID gid) const {
+    return is_in_memory.at(gid);
+  }
+
   common::GraphID GetNextLoadGraphInCurrentRound();
 
   common::GraphID GetNextLoadGraphInNextRound();
@@ -69,6 +77,8 @@ class GraphMetadata {
   // set graph state as loaded
   // this will check both current round and next round
   void SetSubgraphLoaded(common::GraphID gid);
+
+  void SetSubgraphDeserialized(common::GraphID gid);
 
   void SyncNextRound();
 
@@ -80,12 +90,13 @@ class GraphMetadata {
   size_t num_subgraphs_;
   std::vector<std::vector<int>> dependency_matrix_;
   std::string data_root_path_;
+  std::vector<SubgraphMetadata> subgraph_metadata_vec_;
+
   std::vector<bool> current_round_pending_;
   std::vector<bool> next_round_pending_;
-  std::vector<SubgraphMetadata> subgraph_metadata_vec_;
-  // used for marking if current round graph is deserialized
+  // used for marking if current round graph state.
   std::vector<bool> is_deserialized;
-  std::vector<bool> aa;
+  std::vector<bool> is_in_memory;
 };
 
 }  // namespace sics::graph::core::data_structures

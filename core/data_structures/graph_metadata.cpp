@@ -44,6 +44,12 @@ void GraphMetadata::SetSubgraphLoaded(common::GraphID gid) {
   } else {
     next_round_pending_.at(gid) = false;
   }
+  // set graph state of loaded
+  is_in_memory.at(gid) = true;
+}
+
+void GraphMetadata::SetSubgraphDeserialized(common::GraphID gid) {
+  is_deserialized.at(gid) = true;
 }
 
 void GraphMetadata::SyncNextRound() {

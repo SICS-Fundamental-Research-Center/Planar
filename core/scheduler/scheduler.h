@@ -3,40 +3,33 @@
 
 #include "data_structures/graph_metadata.h"
 #include "message_hub.h"
+#include "subgraph_state.h"
 
 namespace sics::graph::core::scheduler {
 
-template <typename VertexData, typename EdgeData> class Scheduler {
-public:
+template <typename VertexData, typename EdgeData>
+class Scheduler {
+ public:
   Scheduler() = default;
   virtual ~Scheduler() = default;
 
   int GetCurrentRound() const { return current_round_; }
 
-  //  does this meaningful?
-  //  int GetSubgraphRound(common::GraphID subgraph_gid) const {
-  //    if (graph_metadata_info_.IsSubgraphPendingCurrentRound(subgraph_gid)) {
-  //      return current_round_;
-  //    } else {
-  //      return current_round_ + 1;
-  //    }
-  //  }
-
   // read graph metadata from meta.yaml file
   // meta file path should be passed by gflags
-  void ReadGraphMetadata(const std::string &graph_metadata_path) {
+  void ReadGraphMetadata(const std::string& graph_metadata_path) {
     YAML::Node graph_metadata_node;
     try {
       graph_metadata_node = YAML::LoadFile(graph_metadata_path);
       graph_metadata_info_ = graph_metadata_node["GraphMetadata"]
                                  .as<data_structures::GraphMetadata>();
-    } catch (YAML::BadFile &e) {
+    } catch (YAML::BadFile& e) {
       LOG_ERROR("meta.yaml file read failed! ", e.msg);
     }
   }
 
   // get message hub ptr for other component
-  MessageHub *get_message_hub() { return &message_hub_; }
+  MessageHub* get_message_hub() { return &message_hub_; }
 
   // global message store
 
@@ -55,12 +48,17 @@ public:
     return true;
   }
 
-  // schedule read and write
+  // schedule subgraph execute and its IO(read and write)
   void Start() {
     thread_ = std::make_unique<std::thread>([this]() {
       bool running = true;
       // init round 0 loaded graph
       graph_metadata_info_.Init();
+      ReadMessage first_read_message;
+      first_read_message.graph_id =
+          graph_metadata_info_.GetNextLoadGraphInCurrentRound();
+      // TODO: set read serializable
+      message_hub_.get_reader_queue()->Push(first_read_message);
 
       while (running) {
         Message resp = message_hub_.GetResponse();
@@ -70,42 +68,48 @@ public:
           break;
         }
         switch (resp.get_type()) {
-        case Message::Type::kRead: {
-          ReadMessageResponseAndExecute(resp);
-          break;
-        }
-        case Message::Type::kExecute: {
-          ExecuteMessageResponseAndWrite(resp);
-          break;
-        }
-        case Message::Type::kWrite: {
-          if (!WriteMessageResponseAndCheckTerminate(resp)) {
-            running = false;
+          case Message::Type::kRead: {
+            ReadMessageResponseAndExecute(resp);
+            break;
           }
-          break;
-        }
-        default:
-          break;
+          case Message::Type::kExecute: {
+            ExecuteMessageResponseAndWrite(resp);
+            break;
+          }
+          case Message::Type::kWrite: {
+            if (!WriteMessageResponseAndCheckTerminate(resp)) {
+              running = false;
+            }
+            break;
+          }
+          default:
+            break;
         }
       }
       LOG_INFO("*** Scheduler is signaled termination ***");
     });
   }
 
-private:
-  bool ReadMessageResponseAndExecute(const Message &resp) {
+ private:
+  bool ReadMessageResponseAndExecute(const Message& resp) {
     // read finish, to execute the loaded graph
     ReadMessage read_response;
     resp.Get(&read_response);
     graph_metadata_info_.SetSubgraphLoaded(read_response.graph_id);
 
-    ExecuteMessage execute_message;
-    execute_message.graph_id = read_response.graph_id;
-    execute_message.serialized = read_response.response_serialized;
-
     // read graph need deserialize first
-    execute_message.execute_type = ExecuteType::kDeserialize;
-    message_hub_.get_executor_queue()->Push(execute_message);
+    if (subgraph_state_.GetSubgraphRound(read_response.graph_id) ==
+        current_round_) {
+      ExecuteMessage execute_message;
+      execute_message.graph_id = read_response.graph_id;
+      execute_message.serialized = read_response.response_serialized;
+      assert(graph_metadata_info_.IsDeserialized(read_response.graph_id) ==
+             false);
+      execute_message.execute_type = ExecuteType::kDeserialize;
+      message_hub_.get_executor_queue()->Push(execute_message);
+    } else {
+
+    }
 
     // read another graph, or do nothing but block
     auto next_graph_id = graph_metadata_info_.GetNextLoadGraphInCurrentRound();
@@ -125,7 +129,7 @@ private:
     return true;
   }
 
-  bool ExecuteMessageResponseAndWrite(const Message &resp) {
+  bool ExecuteMessageResponseAndWrite(const Message& resp) {
     // execute finish, to write back the graph
     ExecuteMessage execute_response;
     resp.Get(&execute_response);
@@ -143,7 +147,7 @@ private:
     return true;
   }
 
-  bool WriteMessageResponseAndCheckTerminate(const Message &resp) {
+  bool WriteMessageResponseAndCheckTerminate(const Message& resp) {
     // write finish
     // check if read next round graph
     auto current_round_next_graph_id =
@@ -165,20 +169,23 @@ private:
     return true;
   }
 
-private:
+ private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
   data_structures::GraphMetadata graph_metadata_info_;
+  SubgraphState subgraph_state_;
+
   int current_round_ = 0;
+
   // message hub
   MessageHub message_hub_;
   // global message store
-  VertexData *global_message_read_;
-  VertexData *global_message_write_;
+  VertexData* global_message_read_;
+  VertexData* global_message_write_;
   uint32_t global_message_size_;
 
   std::unique_ptr<std::thread> thread_;
 };
 
-} // namespace sics::graph::core::scheduler
+}  // namespace sics::graph::core::scheduler
 
-#endif // GRAPH_SYSTEMS_SCHEDULER_H
+#endif  // GRAPH_SYSTEMS_SCHEDULER_H
