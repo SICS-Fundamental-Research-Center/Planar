@@ -53,10 +53,10 @@ class Scheduler {
     thread_ = std::make_unique<std::thread>([this]() {
       bool running = true;
       // init round 0 loaded graph
-      graph_metadata_info_.Init();
+      graph_state_.Init();
       ReadMessage first_read_message;
       first_read_message.graph_id =
-          graph_metadata_info_.GetNextLoadGraphInCurrentRound();
+          graph_state_.GetNextReadGraphInCurrentRound();
       // TODO: set read serializable
       message_hub_.get_reader_queue()->Push(first_read_message);
 
@@ -105,8 +105,6 @@ class Scheduler {
       ExecuteMessage execute_message;
       execute_message.graph_id = read_response.graph_id;
       execute_message.serialized = read_response.response_serialized;
-      assert(graph_metadata_info_.IsDeserialized(read_response.graph_id) ==
-             false);
       execute_message.execute_type = ExecuteType::kDeserialize;
       message_hub_.get_executor_queue()->Push(execute_message);
     } else {
@@ -165,9 +163,7 @@ class Scheduler {
           // write back to disk or save in memory
           // TODO: check if graph can stay in memory
           if (true) {
-
           } else {
-
           }
         }
         break;

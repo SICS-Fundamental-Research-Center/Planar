@@ -26,6 +26,13 @@ class GraphState {
     subgraph_storage_state_.resize(num_subgraphs, OnDisk);
     serialized_.resize(num_subgraphs);
     graphs_.resize(num_subgraphs);
+    current_round_pending_.resize(num_subgraphs, true);
+    next_round_pending_.resize(num_subgraphs, false);
+  }
+
+  void Init() {
+    current_round_pending_.resize(num_subgraphs_, true);
+    next_round_pending_.resize(num_subgraphs_, false);
   }
 
   StorageStateType GetSubgraphState(common::GraphID gid) {
