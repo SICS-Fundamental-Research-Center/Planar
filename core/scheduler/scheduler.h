@@ -57,7 +57,6 @@ class Scheduler {
       ReadMessage first_read_message;
       first_read_message.graph_id =
           graph_state_.GetNextReadGraphInCurrentRound();
-      // TODO: set read serializable
       message_hub_.get_reader_queue()->Push(first_read_message);
 
       while (running) {
@@ -91,6 +90,27 @@ class Scheduler {
   }
 
  private:
+  // TODO: check memory size to decide if read next graph.
+  // try to read next graph will be executed.
+  // in current round or next round
+  bool TryReadNextGraph() {
+    if (true) {
+      auto next_graph_id = graph_state_.GetNextReadGraphInCurrentRound();
+      ReadMessage read_message;
+      if (next_graph_id != INVALID_GRAPH_ID) {
+        read_message.graph_id = next_graph_id;
+        message_hub_.get_reader_queue()->Push(read_message);
+      } else {
+        // check next round graph which can be read, if not just skip
+        auto next_gid_next_round = graph_state_.GetNextReadGraphInNextRound();
+        if (next_gid_next_round != INVALID_GRAPH_ID) {
+          read_message.graph_id = next_gid_next_round;
+          message_hub_.get_reader_queue()->Push(read_message);
+        }
+      }
+    }
+  }
+
   bool ReadMessageResponseAndExecute(const Message& resp) {
     // read finish, to execute the loaded graph
     ReadMessage read_response;
@@ -112,23 +132,7 @@ class Scheduler {
                                          read_response.response_serialized);
     }
 
-    // TODO: check memory size to decide if read next graph.
-    if (true) {
-      // read another graph, or do nothing but block
-      auto next_graph_id = graph_state_.GetNextReadGraphInCurrentRound();
-      ReadMessage read_message;
-      if (next_graph_id != INVALID_GRAPH_ID) {
-        read_message.graph_id = next_graph_id;
-        message_hub_.get_reader_queue()->Push(read_message);
-      } else {
-        // check next round graph which can be read, if not just skip
-        auto next_gid_next_round = graph_state_.GetNextReadGaphInNextRound();
-        if (next_gid_next_round != INVALID_GRAPH_ID) {
-          read_message.graph_id = next_gid_next_round;
-          message_hub_.get_reader_queue()->Push(read_message);
-        }
-      }
-    }
+    TryReadNextGraph();
     return true;
   }
 
@@ -162,10 +166,17 @@ class Scheduler {
         } else {
           // write back to disk or save in memory
           // TODO: check if graph can stay in memory
-          if (true) {
+          if (false) {
+            // stay in memory with StorageStateType::Deserialized
           } else {
+            // write back to disk
+            execute_response.execute_type = ExecuteType::kSerialize;
+            message_hub_.get_executor_queue()->Push(execute_response);
           }
         }
+        // check border vertex and dependency matrix, mark active subgraph in
+        // next round
+        // TODO: check border vertex and dependency matrix
         break;
       }
       case ExecuteType::kSerialize: {
@@ -180,10 +191,7 @@ class Scheduler {
         break;
     }
 
-    // check border vertex and dependency matrix, mark active subgraph in next
-    // round
-    // TODO: check border vertex and dependency matrix
-
+    TryReadNextGraph();
     return true;
   }
 
@@ -201,7 +209,7 @@ class Scheduler {
         current_round_++;
         graph_state_.SyncRoundState();
         auto next_round_first_graph_id =
-            graph_state_.GetNextReadGaphInNextRound();
+            graph_state_.GetNextReadGraphInNextRound();
         if (next_round_first_graph_id == INVALID_GRAPH_ID) {
           // no graph should be loaded, terminate system
           return false;

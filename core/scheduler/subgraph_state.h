@@ -17,6 +17,7 @@ class GraphState {
     OnDisk = 1,
     Serialized,
     Deserialized,
+    Computed,
   } StorageStateType;
 
   GraphState() = default;
@@ -39,27 +40,44 @@ class GraphState {
     return subgraph_storage_state_.at(gid);
   }
 
-  size_t GetSubgraphRound(common::GraphID gid) {
-    return subgraph_round_.at(gid);
-  }
-
   void SetGraphState(common::GraphID gid, StorageStateType type) {
     subgraph_storage_state_.at(gid) = type;
   }
 
+  size_t GetSubgraphRound(common::GraphID gid) {
+    return subgraph_round_.at(gid);
+  }
+
+  void SetSubgraphRound(common::GraphID gid, size_t round) {
+    subgraph_round_.at(gid) = round;
+  }
+
   common::GraphID GetNextReadGraphInCurrentRound() {
-    for (int i = 0; i < num_subgraphs_; i++) {
-      if (current_round_pending_.at(i)) {
-        return i;
+    for (int gid = 0; gid < num_subgraphs_; gid++) {
+      if (current_round_pending_.at(gid) &&
+          subgraph_storage_state_.at(gid) == OnDisk) {
+        return gid;
       }
     }
     return INVALID_GRAPH_ID;
   }
 
-  common::GraphID GetNextReadGaphInNextRound() {
-    for (int i = 0; i < num_subgraphs_; i++) {
-      if (next_round_pending_.at(i)) {
-        return i;
+  // get next execute graph in current round
+  common::GraphID GetNextExecuteGraph() {
+    for (int gid = 0; gid < num_subgraphs_; gid++) {
+      if (current_round_pending_.at(gid) &&
+          subgraph_storage_state_.at(gid) == Deserialized) {
+        return gid;
+      }
+    }
+    return INVALID_GRAPH_ID;
+  }
+
+  common::GraphID GetNextReadGraphInNextRound() {
+    for (int gid = 0; gid < num_subgraphs_; gid++) {
+      if (next_round_pending_.at(gid) &&
+          subgraph_storage_state_.at(gid) == OnDisk) {
+        return gid;
       }
     }
     return INVALID_GRAPH_ID;
@@ -71,7 +89,7 @@ class GraphState {
 
   bool IsGoOn() {
     return (GetNextReadGraphInCurrentRound() != INVALID_GRAPH_ID) ||
-           (GetNextReadGaphInNextRound() != INVALID_GRAPH_ID);
+           (GetNextReadGraphInNextRound() != INVALID_GRAPH_ID);
   }
 
   void SyncRoundState() { current_round_pending_.swap(next_round_pending_); }
@@ -95,11 +113,13 @@ class GraphState {
   }
 
  private:
-  size_t num_subgraphs_;
+  size_t num_subgraphs_{};
   std::vector<int> subgraph_round_;
   std::vector<StorageStateType> subgraph_storage_state_;
 
+  // label for if current round graph is executed
   std::vector<bool> current_round_pending_;
+  // label for if next round graph is executed
   std::vector<bool> next_round_pending_;
 
   std::vector<std::unique_ptr<data_structures::Serialized>> serialized_;

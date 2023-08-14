@@ -15,7 +15,6 @@ namespace sics::graph::core::scheduler {
 struct ReadMessage {
   // Request fields.
   common::GraphID graph_id;
-  bool is_next_round = false;
   // TODO: add subgraph metadata fields.
 
   // Response fields.
