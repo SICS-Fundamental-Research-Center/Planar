@@ -18,6 +18,13 @@ using VertexLabel = sics::graph::core::common::VertexLabel;
 using ThreadPool = sics::graph::core::common::ThreadPool;
 using PathMatcher = sics::graph::miniclean::components::PathMatcher;
 
+// @DESCRIPTION: Match path patterns in the graph.
+// @PARAMETER: For temporary usage, parameters are hard-coded.
+//  - number of vertex labels that will exist in path patterns;
+//  - path patterns in `path_patterns` in which each path pattern is represented
+//    by a vector of vertex labels;
+//  - directory of the input graph when calling `LoadGraph`;
+//  - graph configuration in `config`;
 int main() {
 
   // MinicleanCSRGraphConfig config = {
