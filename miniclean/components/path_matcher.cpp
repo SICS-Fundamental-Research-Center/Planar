@@ -26,11 +26,11 @@ void PathMatcher::LoadGraph(const std::string& data_path) {
 
   // Deserialize subgraph.
   ThreadPool thread_pool(1);
-  miniclean_csr_graph_.Deserialize(thread_pool, std::move(serialized_graph));
+  miniclean_csr_graph_->Deserialize(thread_pool, std::move(serialized_graph));
 }
 
 void PathMatcher::BuildCandidateSet(VertexLabel num_label) {
-  VertexLabel* vertex_label = miniclean_csr_graph_.get_vertex_label();
+  VertexLabel* vertex_label = miniclean_csr_graph_->get_vertex_label();
   for (VertexID i = 0; i < miniclean_csr_graph_config_.num_vertex * 2; i += 2) {
     for (VertexLabel j = 0; j < num_label; j++) {
       if (vertex_label[i + 1] == j + 1) candidates_[j].insert(vertex_label[i]);
@@ -67,14 +67,14 @@ void PathMatcher::path_match_recur(
 
   for (VertexID candidate : candidates) {
     // Scan the out-edges of the candidate.
-    size_t cand_out_degree = miniclean_csr_graph_.GetOutDegree()[candidate];
-    size_t cand_out_offset = miniclean_csr_graph_.GetOutOffset()[candidate];
+    size_t cand_out_degree = miniclean_csr_graph_->GetOutDegree()[candidate];
+    size_t cand_out_offset = miniclean_csr_graph_->GetOutOffset()[candidate];
     std::set<VertexID> next_candidates;
     for (size_t i = 0; i < cand_out_degree; i++) {
       VertexID out_edge_id =
-          miniclean_csr_graph_.GetOutEdges()[cand_out_offset + i];
+          miniclean_csr_graph_->GetOutEdges()[cand_out_offset + i];
       VertexLabel out_edge_label =
-          miniclean_csr_graph_.get_vertex_label()[out_edge_id * 2 + 1];
+          miniclean_csr_graph_->get_vertex_label()[out_edge_id * 2 + 1];
       bool continue_flag = false;
       // Check whether cycle exists.
       for (VertexID vid : partial_result) {

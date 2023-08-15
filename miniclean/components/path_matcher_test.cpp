@@ -66,7 +66,7 @@ TEST_F(PathMatcherTest, CheckMatches) {
   MiniCleanCSRGraph graph(0, config_);
   VertexLabel num_label = 4;
   std::set<VertexID> candidates[num_label];
-  PathMatcher path_matcher(std::move(graph), std::move(path_patterns_),
+  PathMatcher path_matcher(&graph, path_patterns_,
                            config_, candidates, num_label);
   
   path_matcher.LoadGraph(data_dir_ + "/input/small_graph_path_matching/0");
