@@ -41,7 +41,7 @@ void PathMatcher::BuildCandidateSet(VertexLabel num_label) {
 void PathMatcher::PathMatching() {
   // initialize the result vector
   matched_results_.resize(path_patterns_.size());
-  for (size_t i=0; i<path_patterns_.size(); i++) {
+  for (size_t i = 0; i < path_patterns_.size(); i++) {
     PathMatching(path_patterns_[i], matched_results_[i]);
   }
 }
