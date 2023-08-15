@@ -76,13 +76,13 @@ void MiniCleanCSRGraph::ParseSubgraphCSR(
 }
 
 void MiniCleanCSRGraph::ParseVertexLabel(const std::list<OwnedBuffer>& buffer_list) {
-  vertex_label_ = reinterpret_cast<VertexID*>(buffer_list.front().Get());
+  vertex_label_base_pointer_ = reinterpret_cast<VertexID*>(buffer_list.front().Get());
 }
 void MiniCleanCSRGraph::ParseInedgeLabel(const std::list<OwnedBuffer>& buffer_list) {
-  in_edge_label_ = reinterpret_cast<VertexID*>(buffer_list.front().Get());
+  in_edge_label_base_pointer = reinterpret_cast<VertexID*>(buffer_list.front().Get());
 }
 void MiniCleanCSRGraph::ParseOutedgeLabel(const std::list<OwnedBuffer>& buffer_list) {
-  out_edge_label_ = reinterpret_cast<VertexID*>(buffer_list.front().Get());
+  out_edge_label_base_pointer = reinterpret_cast<VertexID*>(buffer_list.front().Get());
 }
 
 
