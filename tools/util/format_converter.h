@@ -28,7 +28,7 @@ namespace format_converter {
 void Edgelist2CSR(
     sics::graph::core::common::VertexID* buffer_edges,
     const sics::graph::tools::common::EdgelistMetadata& edgelist_metadata,
-    const sics::graph::tools::common::StoreStrategy store_strategy,
+    sics::graph::tools::common::StoreStrategy store_strategy,
     sics::graph::core::data_structures::graph::ImmutableCSRGraph* csr_graph);
 
 }  // namespace format_converter
