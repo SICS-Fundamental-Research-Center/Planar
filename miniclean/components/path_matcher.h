@@ -45,13 +45,6 @@ class PathMatcher {
   //   Input: graph, a set of path patterns
   //   Output: matched path instances
   void PathMatching(unsigned int parallelism);
-
-  // Match a single path pattern in the graph.
-  //   Input: graph, a single path pattern
-  //   Output: matched path instances
-  void PathMatching(const std::vector<VertexLabel>& path_pattern,
-                    std::vector<std::vector<VertexID>>* results,
-                    unsigned int parallelism, size_t pattern_id);
   
   void PrintMatchedResults();
 
@@ -63,7 +56,7 @@ class PathMatcher {
   void path_match_recur(const std::vector<VertexLabel>& path_pattern,
                         size_t match_position, std::set<VertexID>& candidates,
                         std::vector<VertexID>& partial_result,
-                        std::vector<std::vector<VertexID>>* results, size_t pattern_id);
+                        std::vector<std::vector<VertexID>>* results);
 
   MiniCleanCSRGraph* miniclean_csr_graph_;
   std::vector<std::vector<VertexLabel>> path_patterns_;
