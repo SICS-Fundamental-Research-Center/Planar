@@ -27,26 +27,17 @@ using PathMatcher = sics::graph::miniclean::components::PathMatcher;
 //  - graph configuration in `config`;
 int main() {
 
-  // MinicleanCSRGraphConfig config = {
-  //     12009216,   // num_vertex
-  //     12009215,   // max_vertex
-  //     73286905,   // sum_in_degree
-  //     73286905,   // sum_out_degree
-  // };
   MiniCleanCSRGraphConfig config = {
-      56,   // num_vertex
-      55,   // max_vertex
-      100,   // sum_in_degree
-      100,   // sum_out_degree
+      12009216,   // num_vertex
+      12009215,   // max_vertex
+      73286905,   // sum_in_degree
+      73286905,   // sum_out_degree
   };
-  // // Path patterns to be matched.
-  // std::vector<std::vector<VertexID>> path_patterns = {
-  //     {1, 1},    {1, 2},    {1, 4},    {4, 3},      {1, 1, 1},
-  //     {1, 1, 2}, {1, 1, 4}, {1, 4, 3}, {1, 1, 4, 3}};
+
+  // Path patterns to be matched.
   std::vector<std::vector<VertexID>> path_patterns = {
-      {1, 1}, {1, 2}, {1, 3}, {2, 1},    {2, 2},    {2, 3},
-      {3, 1}, {3, 2}, {3, 3}, {1, 1, 1}, {1, 1, 2}, {1, 1, 3}, {1, 1, 1, 1},
-  };
+      {1, 1},    {1, 2},    {1, 4},    {4, 3},      {1, 1, 1},
+      {1, 1, 2}, {1, 1, 4}, {1, 4, 3}, {1, 1, 4, 3}};
   
   MiniCleanCSRGraph graph(0,config); 
   VertexLabel num_label = 4;
@@ -54,8 +45,7 @@ int main() {
 
   PathMatcher path_matcher(std::move(graph), std::move(path_patterns),
                            config, candidates, num_label);
-  // path_matcher.LoadGraph("/home/baiwc/workspace/graph-systems/data/dblp_test/0", &graph);
-  path_matcher.LoadGraph("/home/baiwc/workspace/graph-systems/testfile/input/small_graph_path_matching/0");
+  path_matcher.LoadGraph("/home/baiwc/workspace/graph-systems/data/dblp_test/0");
 
   path_matcher.BuildCandidateSet(num_label);
 
