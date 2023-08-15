@@ -94,7 +94,7 @@ void ConvertEdgelist(const std::string& input_path,
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind(
         [i, parallelism, &bitmap, &edges_vec, &compressed_vid, &vid_map]() {
-          for (size_t j = i; j < edges_vec.size(); j += parallelism) {
+          for (VertexID j = i; j < edges_vec.size(); j += parallelism) {
             if (!bitmap.GetBit(edges_vec.at(j))) {
               auto local_vid = __sync_fetch_and_add(&compressed_vid, 1);
               bitmap.SetBit(edges_vec.at(j));
@@ -112,7 +112,7 @@ void ConvertEdgelist(const std::string& input_path,
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task =
         std::bind([i, parallelism, &buffer_edges, &edges_vec, &vid_map]() {
-          for (size_t j = i; j < edges_vec.size(); j += parallelism)
+          for (VertexID j = i; j < edges_vec.size(); j += parallelism)
             buffer_edges[j] = vid_map[edges_vec.at(j)];
           return;
         });
@@ -154,8 +154,8 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
 
   YAML::Node node = YAML::LoadFile(input_path + "meta.yaml");
   LOG_INFO(input_path + "meta.yaml");
-  auto num_vertices = node["EdgelistBin"]["num_vertices"].as<size_t>();
-  auto num_edges = node["EdgelistBin"]["num_edges"].as<size_t>();
+  auto num_vertices = node["EdgelistBin"]["num_vertices"].as<VertexID>();
+  auto num_edges = node["EdgelistBin"]["num_edges"].as<VertexID>();
   auto max_vid = node["EdgelistBin"]["max_vid"].as<VertexID>();
   auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
 
@@ -166,10 +166,10 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
                              "edgelist.bin");
   in_file.read((char*)buffer_edges, sizeof(VertexID) * 2 * num_edges);
 
-  auto num_inedges_by_vid = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
-  auto num_outedges_by_vid = (size_t*)malloc(sizeof(size_t) * aligned_max_vid);
-  memset(num_inedges_by_vid, 0, sizeof(size_t) * aligned_max_vid);
-  memset(num_outedges_by_vid, 0, sizeof(size_t) * aligned_max_vid);
+  auto num_inedges_by_vid = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  auto num_outedges_by_vid = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  memset(num_inedges_by_vid, 0, sizeof(VertexID) * aligned_max_vid);
+  memset(num_outedges_by_vid, 0, sizeof(VertexID) * aligned_max_vid);
   auto visited = Bitmap(aligned_max_vid);
   visited.Clear();
 
@@ -179,13 +179,13 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
     auto task =
         std::bind([i, parallelism, &num_edges, &buffer_edges,
                    &num_inedges_by_vid, &num_outedges_by_vid, &visited]() {
-          for (size_t j = i; j < num_edges; j += parallelism) {
+          for (VertexID j = i; j < num_edges; j += parallelism) {
             auto src = buffer_edges[j * 2];
             auto dst = buffer_edges[j * 2 + 1];
             visited.SetBit(src);
             visited.SetBit(dst);
-            WriteAdd(num_inedges_by_vid + dst, (size_t)1);
-            WriteAdd(num_outedges_by_vid + src, (size_t)1);
+            WriteAdd(num_inedges_by_vid + dst, (VertexID)1);
+            WriteAdd(num_outedges_by_vid + src, (VertexID)1);
           }
           return;
         });

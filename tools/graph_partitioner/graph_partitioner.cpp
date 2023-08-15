@@ -78,10 +78,8 @@ DEFINE_string(store_strategy, "unconstrained",
 // partitioner: The partitioner to use.
 // n_partitions: The number of partitions to use.
 // store_strategy: The strategy to use to store edges.
-bool EdgeCut(const std::string& input_path,
-             const std::string& output_path,
-             const Partitioner partitioner,
-             const VertexID n_partitions,
+bool EdgeCut(const std::string& input_path, const std::string& output_path,
+             const Partitioner partitioner, const VertexID n_partitions,
              StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
@@ -106,8 +104,10 @@ bool EdgeCut(const std::string& input_path,
                     sizeof(VertexID) * edgelist_metadata.num_edges * 2);
 
   // Generate vertices.
-  auto num_inedges_by_vid = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
-  auto num_outedges_by_vid = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  auto num_inedges_by_vid =
+      (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  auto num_outedges_by_vid =
+      (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
   auto visited = Bitmap(aligned_max_vid);
   visited.Clear();
   memset(num_inedges_by_vid, 0, sizeof(VertexID) * aligned_max_vid);
@@ -168,8 +168,10 @@ bool EdgeCut(const std::string& input_path,
   delete num_inedges_by_vid;
 
   // Fill edges.
-  VertexID* offset_in_edges = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
-  VertexID* offset_out_edges = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  VertexID* offset_in_edges =
+      (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  VertexID* offset_out_edges =
+      (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
   memset(offset_in_edges, 0, sizeof(VertexID) * aligned_max_vid);
   memset(offset_out_edges, 0, sizeof(VertexID) * aligned_max_vid);
   for (unsigned int i = 0; i < parallelism; i++) {
@@ -203,17 +205,18 @@ bool EdgeCut(const std::string& input_path,
         new ConcurrentHashMap<VertexID, Vertex>(aligned_max_vid));
 
   for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([i, parallelism, &edgelist_metadata,
-                           &buffer_csr_vertices, &subgraph_vec,
-                           &n_partitions]() {
-      for (VertexID j = i; j < edgelist_metadata.num_vertices; j += parallelism) {
-        auto gid =
-            fnv64_append_byte(buffer_csr_vertices[j].vid, 1) % n_partitions;
-        subgraph_vec.at(gid)->insert(
-            std::make_pair(buffer_csr_vertices[j].vid, buffer_csr_vertices[j]));
-      }
-      return;
-    });
+    auto task =
+        std::bind([i, parallelism, &edgelist_metadata, &buffer_csr_vertices,
+                   &subgraph_vec, &n_partitions]() {
+          for (VertexID j = i; j < edgelist_metadata.num_vertices;
+               j += parallelism) {
+            auto gid =
+                fnv64_append_byte(buffer_csr_vertices[j].vid, 1) % n_partitions;
+            subgraph_vec.at(gid)->insert(std::make_pair(
+                buffer_csr_vertices[j].vid, buffer_csr_vertices[j]));
+          }
+          return;
+        });
     task_package.push_back(task);
   }
   thread_pool.SubmitSync(task_package);
@@ -230,8 +233,8 @@ bool EdgeCut(const std::string& input_path,
   graph_metadata.set_min_vid(min_vid);
 
   io_adapter.WriteSubgraph(subgraph_vec, graph_metadata, store_strategy);
-
   input_stream.close();
+  LOG_INFO("Finished writing the subgraphs to disk");
   return 0;
 }
 
@@ -257,10 +260,8 @@ bool EdgeCut(const std::string& input_path,
 // store_strategy: StoreStrategy to use [incoming_only, outgoing_only,
 // unconstrained], corresponding to store incoming edges only, outgoing edges
 // only, and both two respectively.
-bool VertexCut(const std::string& input_path,
-               const std::string& output_path,
-               const Partitioner partitioner,
-               const size_t n_partitions,
+bool VertexCut(const std::string& input_path, const std::string& output_path,
+               const Partitioner partitioner, const size_t n_partitions,
                StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
@@ -403,6 +404,9 @@ bool VertexCut(const std::string& input_path,
 
   io_adapter.WriteSubgraph(edge_bucket, graph_metadata, edgelist_metadata_vec,
                            store_strategy);
+
+  input_stream.close();
+  LOG_INFO("Finished writing the subgraphs to disk");
   return 0;
 }
 
