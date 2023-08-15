@@ -176,7 +176,7 @@ class Scheduler {
     return true;
   }
 
-  bool WriteMessageResponseAndCheckTerminate(const Message& resp) {
+  virtual bool WriteMessageResponseAndCheckTerminate(const Message& resp) {
     // TODO: check memory size to read new subgraph
     WriteMessage write_response;
     resp.Get(&write_response);
