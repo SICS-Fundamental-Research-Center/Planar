@@ -177,28 +177,11 @@ class Scheduler {
   }
 
   virtual bool WriteMessageResponseAndCheckTerminate(const Message& resp) {
-    // TODO: check memory size to read new subgraph
     WriteMessage write_response;
     resp.Get(&write_response);
     graph_state_.SetGraphState(write_response.graph_id,
                                GraphState::StorageStateType::OnDisk);
-    if (true) {
-      // check if read next round graph
-      auto current_round_next_graph_id = GetNextReadGraphInCurrentRound();
-      if (current_round_next_graph_id == INVALID_GRAPH_ID) {
-        current_round_++;
-        graph_state_.SyncRoundState();
-        auto next_round_first_graph_id = GetNextReadGraphInNextRound();
-        if (next_round_first_graph_id == INVALID_GRAPH_ID) {
-          // no graph should be loaded, terminate system
-          return false;
-        } else {
-          ReadMessage read_message;
-          read_message.graph_id = next_round_first_graph_id;
-          message_hub_.get_reader_queue()->Push(read_message);
-        }
-      }
-    }
+    TryReadNextGraph(true);
     return true;
   }
 
@@ -206,7 +189,7 @@ class Scheduler {
   // TODO: check memory size to decide if read next graph.
   // try to read next graph will be executed.
   // in current round or next round
-  bool TryReadNextGraph() {
+  bool TryReadNextGraph(bool sync = false) {
     if (true) {
       auto next_graph_id = GetNextReadGraphInCurrentRound();
       ReadMessage read_message;
@@ -215,10 +198,17 @@ class Scheduler {
         message_hub_.get_reader_queue()->Push(read_message);
       } else {
         // check next round graph which can be read, if not just skip
+        if (sync) {
+          current_round_++;
+          graph_state_.SyncRoundState();
+        }
         auto next_gid_next_round = GetNextReadGraphInNextRound();
         if (next_gid_next_round != INVALID_GRAPH_ID) {
           read_message.graph_id = next_gid_next_round;
           message_hub_.get_reader_queue()->Push(read_message);
+        } else {
+          // no graph can be read, terminate system
+          return false;
         }
       }
     }
