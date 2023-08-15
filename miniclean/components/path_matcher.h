@@ -12,17 +12,17 @@ namespace sics::graph::miniclean::components {
 
 class PathMatcher {
  private:
-  using MinicleanCSRGraph = sics::graph::miniclean::graphs::MinicleanCSRGraph;
-  using MinicleanCSRGraphConfig =
-      sics::graph::miniclean::graphs::MinicleanCSRGraphConfig;
+  using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
+  using MiniCleanCSRGraphConfig =
+      sics::graph::miniclean::graphs::MiniCleanCSRGraphConfig;
   using GraphID = sics::graph::core::common::GraphID;
   using VertexID = sics::graph::core::common::VertexID;
   using VertexLabel = sics::graph::core::common::VertexLabel;
 
  public:
-  PathMatcher(MinicleanCSRGraph&& miniclean_csr_graph,
+  PathMatcher(MiniCleanCSRGraph&& miniclean_csr_graph,
               std::vector<std::vector<VertexLabel>>&& path_patterns,
-              MinicleanCSRGraphConfig&& miniclean_csr_graph_config,
+              MiniCleanCSRGraphConfig&& miniclean_csr_graph_config,
               std::set<VertexID>* candidates,
               int num_label)
       : miniclean_csr_graph_(std::move(miniclean_csr_graph)),
@@ -62,9 +62,9 @@ class PathMatcher {
                         std::vector<VertexID>& partial_result,
                         std::vector<std::vector<VertexID>>& results);
 
-  MinicleanCSRGraph miniclean_csr_graph_;
+  MiniCleanCSRGraph miniclean_csr_graph_;
   std::vector<std::vector<VertexLabel>> path_patterns_;
-  MinicleanCSRGraphConfig miniclean_csr_graph_config_;
+  MiniCleanCSRGraphConfig miniclean_csr_graph_config_;
   std::vector<std::vector<std::vector<VertexID>>> matched_results_;
   std::set<VertexID>* candidates_ = nullptr;
   int num_label_ = 0;

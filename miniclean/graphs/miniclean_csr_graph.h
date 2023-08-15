@@ -11,7 +11,9 @@
 
 namespace sics::graph::miniclean::graphs {
 
-class MinicleanCSRGraph
+// TODO (bai-wenchao): Refactor this class after Xiaoke makes changes to the
+// base class.
+class MiniCleanCSRGraph
     : public sics::graph::core::data_structures::graph::ImmutableCSRGraph {
 
  private:
@@ -27,8 +29,8 @@ class MinicleanCSRGraph
       sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 
  public:
-  explicit MinicleanCSRGraph(const GraphID gid) : ImmutableCSRGraph(gid) {}
-  MinicleanCSRGraph(const GraphID gid, MinicleanCSRGraphConfig&& csr_config)
+  explicit MiniCleanCSRGraph(const GraphID gid) : ImmutableCSRGraph(gid) {}
+  MiniCleanCSRGraph(const GraphID gid, MiniCleanCSRGraphConfig&& csr_config)
       : ImmutableCSRGraph(gid) {
     this->csr_config_ = std::move(csr_config);
   }
@@ -53,7 +55,7 @@ class MinicleanCSRGraph
 
  private:
   // config. attributes to build the CSR.
-  MinicleanCSRGraphConfig csr_config_;
+  MiniCleanCSRGraphConfig csr_config_;
   // Vertex labels
   VertexLabel* vertex_label_ = nullptr;
   // Edge labels

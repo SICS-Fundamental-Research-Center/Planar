@@ -9,8 +9,8 @@
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/common/multithreading/thread_pool.h"
 
-using MinicleanCSRGraph =  sics::graph::miniclean::graphs::MinicleanCSRGraph;
-using MinicleanCSRGraphConfig = sics::graph::miniclean::graphs::MinicleanCSRGraphConfig;
+using MiniCleanCSRGraph =  sics::graph::miniclean::graphs::MiniCleanCSRGraph;
+using MiniCleanCSRGraphConfig = sics::graph::miniclean::graphs::MiniCleanCSRGraphConfig;
 using SerializedImmutableCSRGraph = sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using BasicReader = sics::graph::core::io::BasicReader;
 using VertexID = sics::graph::core::common::VertexID;
@@ -26,7 +26,7 @@ int main() {
   //     73286905,   // sum_in_degree
   //     73286905,   // sum_out_degree
   // };
-  MinicleanCSRGraphConfig config = {
+  MiniCleanCSRGraphConfig config = {
       56,   // num_vertex
       55,   // max_vertex
       100,   // sum_in_degree
@@ -41,7 +41,7 @@ int main() {
       {3, 1}, {3, 2}, {3, 3}, {1, 1, 1}, {1, 1, 2}, {1, 1, 3}, {1, 1, 1, 1},
   };
   
-  MinicleanCSRGraph graph(0, std::move(config));
+  MiniCleanCSRGraph graph(0, std::move(config));
   VertexLabel num_label = 4;
   std::set<VertexID> candidates[num_label];
 

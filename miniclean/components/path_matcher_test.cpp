@@ -13,8 +13,8 @@
 
 namespace sics::graph::miniclean::test {
 
-using MinicleanCSRGraph =  sics::graph::miniclean::graphs::MinicleanCSRGraph;
-using MinicleanCSRGraphConfig = sics::graph::miniclean::graphs::MinicleanCSRGraphConfig;
+using MiniCleanCSRGraph =  sics::graph::miniclean::graphs::MiniCleanCSRGraph;
+using MiniCleanCSRGraphConfig = sics::graph::miniclean::graphs::MiniCleanCSRGraphConfig;
 using PathMatcher = sics::graph::miniclean::components::PathMatcher;
 using VertexID = sics::graph::core::common::VertexID;
 using VertexLabel = sics::graph::core::common::VertexLabel;
@@ -57,13 +57,13 @@ class PathMatcherTest : public ::testing::Test {
   }
   ~PathMatcherTest() override {}
 
-  MinicleanCSRGraphConfig config_;
+  MiniCleanCSRGraphConfig config_;
   std::vector<std::vector<VertexID>> path_patterns_;
   std::string data_dir_ = TEST_DATA_DIR;
 };
 
 TEST_F(PathMatcherTest, CheckMatches) {
-  MinicleanCSRGraph graph(0, std::move(config_));
+  MiniCleanCSRGraph graph(0, std::move(config_));
   VertexLabel num_label = 4;
   std::set<VertexID> candidates[num_label];
   PathMatcher path_matcher(std::move(graph), std::move(path_patterns_),
