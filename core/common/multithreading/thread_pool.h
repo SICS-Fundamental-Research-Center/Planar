@@ -21,10 +21,10 @@ class ThreadPool final : public TaskRunner {
   // One may provide a callback function to invoke after all submitted tasks
   // are completed.
   void SubmitAsync(Task&& task) override;
-  void SubmitAsync(Task&& task, std::function<void ()> callback) override;
+  void SubmitAsync(Task&& task, std::function<void()> callback) override;
   void SubmitAsync(const TaskPackage& tasks) override;
   void SubmitAsync(const TaskPackage& tasks,
-                   std::function<void ()> callback) override;
+                   std::function<void()> callback) override;
 
   // Submit a single task (resp. a package of tasks) for execution.
   // The call will block until all submitted tasks are completed.
