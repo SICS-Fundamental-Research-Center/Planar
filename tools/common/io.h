@@ -36,8 +36,6 @@ class IOAdapter {
       : output_root_path_(output_root_path) {
     if (!std::filesystem::exists(output_root_path))
       std::filesystem::create_directory(output_root_path);
-    if (!std::filesystem::exists(output_root_path))
-      std::filesystem::create_directory(output_root_path);
     if (!std::filesystem::exists(output_root_path + "/label"))
       std::filesystem::create_directory(output_root_path + "/label");
     if (!std::filesystem::exists(output_root_path + "/graphs"))
