@@ -46,8 +46,6 @@ class MiniCleanCSRGraph
   VertexLabel* get_out_edge_label() const { return out_edge_label_; }
 
  protected:
-  // The graph ID.
-  GraphID gid_;
   void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
   void ParseVertexLabel(const std::list<OwnedBuffer>& buffer_list);
   void ParseInedgeLabel(const std::list<OwnedBuffer>& buffer_list);
