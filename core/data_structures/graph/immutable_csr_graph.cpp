@@ -1,4 +1,4 @@
-#include "immutable_csr_graph.h"
+#include "data_structures/graph/immutable_csr_graph.h"
 
 namespace sics::graph::core::data_structures::graph {
 
