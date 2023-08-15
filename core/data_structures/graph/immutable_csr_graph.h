@@ -25,8 +25,8 @@ struct ImmutableCSRVertex {
   VertexID vid;
   VertexID indegree;
   VertexID outdegree;
-  VertexID* in_edges = nullptr;
-  VertexID* out_edges = nullptr;
+  VertexID* in_edges;
+  VertexID* out_edges;
 };
 
 class ImmutableCSRGraph : public Serializable {
@@ -94,7 +94,7 @@ class ImmutableCSRGraph : public Serializable {
   VertexID max_vid_ = 0;
   VertexID min_vid_ = 0;
 
-  uint8_t* buf_graph_ = nullptr;
+  uint8_t* buf_graph_;
 
   // config. attributes to build the CSR.
   ImmutableCSRGraphConfig csr_config_;
