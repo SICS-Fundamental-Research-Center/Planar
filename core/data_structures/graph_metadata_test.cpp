@@ -1,9 +1,10 @@
 #include "data_structures/graph_metadata.h"
+
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
-#include <fstream>
 
-#define SOURCE_DIR "${CMAKE_SOURCE_DIR}"
+#include <fstream>
+#include <vector>
 
 namespace sics::graph::core::data_structures {
 
