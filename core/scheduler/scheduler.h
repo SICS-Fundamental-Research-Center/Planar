@@ -2,12 +2,13 @@
 #define GRAPH_SYSTEMS_SCHEDULER_H
 
 #include "data_structures/graph_metadata.h"
+#include "message_stores/bsp_messgae_store.h"
 #include "scheduler/message_hub.h"
 #include "scheduler/subgraph_state.h"
 
 namespace sics::graph::core::scheduler {
 
-// template <typename VertexData, typename EdgeData>
+template <typename VertexData, typename EdgeData>
 class Scheduler {
  public:
   Scheduler() = default;
@@ -32,21 +33,6 @@ class Scheduler {
   MessageHub* get_message_hub() { return &message_hub_; }
 
   // global message store
-
-  //  VertexData ReadGlobalMessage(common::VertexID vid) const {
-  //    return global_message_read_[vid];
-  //  }
-  //
-  //  bool WriteGlobalMessage(common::VertexID vid, VertexData data) {
-  //    global_message_write_[vid] = data;
-  //    return true;
-  //  }
-  //
-  //  bool SyncGlobalMessage() {
-  //    memcpy(global_message_read_, global_message_write_,
-  //           global_message_size_ * sizeof(VertexData));
-  //    return true;
-  //  }
 
   // schedule subgraph execute and its IO(read and write)
   void Start() {
@@ -269,10 +255,8 @@ class Scheduler {
 
   // message hub
   MessageHub message_hub_;
-  // global message store
-  //  VertexData* global_message_read_;
-  //  VertexData* global_message_write_;
-  //  common::VertexCount global_message_size_;
+
+  message_stores::BspMessageStore<VertexData, EdgeData> global_message_store_;
 
   std::unique_ptr<std::thread> thread_;
 };

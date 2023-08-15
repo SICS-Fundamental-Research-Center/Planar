@@ -10,7 +10,7 @@
 
 namespace sics::graph::core::scheduler {
 
-class GraphState {
+struct GraphState {
  public:
   typedef enum {
     OnDisk = 1,
@@ -73,9 +73,8 @@ class GraphState {
     graphs_.at(gid).swap(subgraph);
   }
 
- private:
-  friend class Scheduler;
-  size_t num_subgraphs_{};
+ public:
+  size_t num_subgraphs_;
   std::vector<int> subgraph_round_;
   std::vector<StorageStateType> subgraph_storage_state_;
 
@@ -84,6 +83,7 @@ class GraphState {
   // label for if next round graph is executed
   std::vector<bool> next_round_pending_;
 
+ private:
   std::vector<std::unique_ptr<data_structures::Serialized>> serialized_;
   std::vector<std::unique_ptr<data_structures::Serializable>> graphs_;
 };
