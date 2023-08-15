@@ -22,12 +22,12 @@ class PathMatcher {
  public:
   PathMatcher(MiniCleanCSRGraph&& miniclean_csr_graph,
               std::vector<std::vector<VertexLabel>>&& path_patterns,
-              MiniCleanCSRGraphConfig&& miniclean_csr_graph_config,
+              MiniCleanCSRGraphConfig miniclean_csr_graph_config,
               std::set<VertexID>* candidates,
               int num_label)
       : miniclean_csr_graph_(std::move(miniclean_csr_graph)),
         path_patterns_(std::move(path_patterns)),
-        miniclean_csr_graph_config_(std::move(miniclean_csr_graph_config)),
+        miniclean_csr_graph_config_(miniclean_csr_graph_config),
         candidates_(candidates),
         num_label_(num_label){};
 

@@ -41,12 +41,12 @@ int main() {
       {3, 1}, {3, 2}, {3, 3}, {1, 1, 1}, {1, 1, 2}, {1, 1, 3}, {1, 1, 1, 1},
   };
   
-  MiniCleanCSRGraph graph(0, std::move(config));
+  MiniCleanCSRGraph graph(0,config); 
   VertexLabel num_label = 4;
   std::set<VertexID> candidates[num_label];
 
   PathMatcher path_matcher(std::move(graph), std::move(path_patterns),
-                           std::move(config), candidates, num_label);
+                           config, candidates, num_label);
   // path_matcher.LoadGraph("/home/baiwc/workspace/graph-systems/data/dblp_test/0", &graph);
   path_matcher.LoadGraph("/home/baiwc/workspace/graph-systems/testfile/input/small_graph_path_matching/0");
 

@@ -63,11 +63,11 @@ class PathMatcherTest : public ::testing::Test {
 };
 
 TEST_F(PathMatcherTest, CheckMatches) {
-  MiniCleanCSRGraph graph(0, std::move(config_));
+  MiniCleanCSRGraph graph(0, config_);
   VertexLabel num_label = 4;
   std::set<VertexID> candidates[num_label];
   PathMatcher path_matcher(std::move(graph), std::move(path_patterns_),
-                           std::move(config_), candidates, num_label);
+                           config_, candidates, num_label);
   
   path_matcher.LoadGraph(data_dir_ + "/input/small_graph_path_matching/0");
   path_matcher.BuildCandidateSet(num_label);
