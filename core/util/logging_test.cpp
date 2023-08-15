@@ -6,6 +6,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <vector>
+
 namespace sics::graph::core::util {
 
 // Define some strings for logging.
