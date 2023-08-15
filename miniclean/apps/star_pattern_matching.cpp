@@ -1,6 +1,5 @@
 #include "core/common/multithreading/thread_pool.h"
 
-#include <iostream>
 #include <memory>
 #include <vector>
 

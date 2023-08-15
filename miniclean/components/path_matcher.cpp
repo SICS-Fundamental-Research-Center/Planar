@@ -1,12 +1,12 @@
 #include "miniclean/components/path_matcher.h"
 
-#include <iostream>
 #include <memory>
 #include <string>
 
 #include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/io/basic_reader.h"
+#include "core/util/logging.h"
 
 namespace sics::graph::miniclean::components {
 
@@ -98,21 +98,17 @@ void PathMatcher::path_match_recur(
 
 void PathMatcher::PrintMatchedResults() {
   for (size_t i = 0; i < matched_results_.size(); i++) {
-    std::cout << "Pattern " << i << ": ";
+    LOG_INFO("Pattern: ", i);
     for (size_t j = 0; j < path_patterns_[i].size(); j++) {
-      std::cout << path_patterns_[i][j] << " ";
+      LOG_INFO(path_patterns_[i][j]);
     }
-    std::cout << "\n";
 
     for (size_t j = 0; j < matched_results_[i].size(); j++) {
-      std::cout << "Match " << j << ": ";
+      LOG_INFO("Match: ", j);
       for (size_t k = 0; k < matched_results_[i][j].size(); k++) {
-        std::cout << matched_results_[i][j][k] << " ";
+        LOG_INFO(matched_results_[i][j][k]);
       }
-      std::cout << "\n";
     }
-
-    std::cout << "-------------------------\n";
   }
 }
 }  // namespace sics::graph::miniclean::components
