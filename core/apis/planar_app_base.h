@@ -34,14 +34,10 @@ class PlanarAppBase : public PIE {
 
  protected:
   // TODO: implement this here. This function is not intended for overriden.
-  void VApply() {
-    LOG_WARN("VApply is not implemented");
-  }
+  void VApply() { LOG_WARN("VApply is not implemented"); }
 
   // TODO: implement this here. This function is not intended for overriden.
-  void EApply() {
-    LOG_WARN("EApply is not implemented");
-  }
+  void EApply() { LOG_WARN("EApply is not implemented"); }
 
  protected:
   common::TaskRunner* runner_;

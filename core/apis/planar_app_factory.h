@@ -19,16 +19,15 @@ class PlanarAppFactory {
 
  public:
   // TODO: add UpdateStore as a parameter.
-  using CreationMethod =
-      std::unique_ptr<PlanarAppBase<GraphType>> (*)(
-          common::TaskRunner* runner, data_structures::Serializable* graph);
+  using CreationMethod = std::unique_ptr<PlanarAppBase<GraphType>> (*)(
+      common::TaskRunner* runner, data_structures::Serializable* graph);
 
  public:
   // TODO: add UpdateStore as a parameter.
   explicit PlanarAppFactory(common::TaskRunner* runner) : runner_(runner) {}
 
   static bool Register(const std::string& name, CreationMethod factory) {
-        if (factories_.find(name) != factories_.end()) {
+    if (factories_.find(name) != factories_.end()) {
       return false;
     }
     factories_[name] = factory;
@@ -36,10 +35,9 @@ class PlanarAppFactory {
   }
 
   std::unique_ptr<PlanarAppBase<GraphType>> Create(
-      const std::string& name,
-      data_structures::Serializable* graph) {
+      const std::string& name, data_structures::Serializable* graph) {
     if (PlanarAppFactory<GraphType>::factories_.find(name) ==
-            PlanarAppFactory<GraphType>::factories_.end()) {
+        PlanarAppFactory<GraphType>::factories_.end()) {
       LOGF_ERROR("PlanarAppFactory: app {} is not registered", name);
       return nullptr;
     }
@@ -56,9 +54,9 @@ class PlanarAppFactory {
 
 template <typename GraphType>
 std::map<std::string,
-    std::unique_ptr<PlanarAppBase<GraphType>> (*)(
-        common::TaskRunner* runner, data_structures::Serializable* graph)>
-PlanarAppFactory<GraphType>::factories_ = {};
+         std::unique_ptr<PlanarAppBase<GraphType>> (*)(
+             common::TaskRunner* runner, data_structures::Serializable* graph)>
+    PlanarAppFactory<GraphType>::factories_ = {};
 
 }  // namespace sics::graph::core::apis
 

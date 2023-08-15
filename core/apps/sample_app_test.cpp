@@ -1,7 +1,10 @@
+#include "apps/sample_app.h"
+
 #include <gtest/gtest.h>
 
+#include <vector>
+
 #include "apis/planar_app_factory.h"
-#include "apps/sample_app.h"
 #include "util/pointer_cast.h"
 
 namespace sics::graph::core::apps {
@@ -37,4 +40,4 @@ TEST_F(SampleAppTest, FactoryCreationShouldFailIfAppIsNotRegistered) {
   EXPECT_NE(app, nullptr);
 }
 
-}  // namespace sics::graph::core::common
+}  // namespace sics::graph::core::apps

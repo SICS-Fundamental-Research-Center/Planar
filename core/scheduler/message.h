@@ -3,6 +3,7 @@
 
 #include <fmt/core.h>
 
+#include "apis/pie.h"
 #include "common/blocking_queue.h"
 #include "common/types.h"
 #include "data_structures/serializable.h"
@@ -18,7 +19,7 @@ struct ReadMessage {
 
   // Response fields.
   data_structures::Serialized* response_serialized;
-  bool is_deserialized = false;
+
   // Termination flag.
   bool terminated = false;
 };
@@ -36,6 +37,8 @@ struct ExecuteMessage {
   data_structures::Serialized* serialized;
   ExecuteType execute_type = kPEval;
   // TODO: add subgraph metadata fields and API program objects.
+  data_structures::Serializable* graph;
+  apis::PIE* api;
 
   // Response fields.
   data_structures::Serializable* response_serializable;
