@@ -1,17 +1,20 @@
+#include "core/common/multithreading/thread_pool.h"
+
 #include <iostream>
 #include <memory>
 #include <vector>
 
+#include "core/data_structures/graph/serialized_immutable_csr_graph.h"
+#include "core/io/basic_reader.h"
 #include "miniclean/components/path_matcher.h"
 #include "miniclean/graphs/miniclean_csr_graph.h"
 #include "miniclean/graphs/miniclean_csr_graph_config.h"
-#include "core/io/basic_reader.h"
-#include "core/data_structures/graph/serialized_immutable_csr_graph.h"
-#include "core/common/multithreading/thread_pool.h"
 
-using MiniCleanCSRGraph =  sics::graph::miniclean::graphs::MiniCleanCSRGraph;
-using MiniCleanCSRGraphConfig = sics::graph::miniclean::graphs::MiniCleanCSRGraphConfig;
-using SerializedImmutableCSRGraph = sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
+using MiniCleanCSRGraphConfig =
+    sics::graph::miniclean::graphs::MiniCleanCSRGraphConfig;
+using SerializedImmutableCSRGraph =
+    sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using BasicReader = sics::graph::core::io::BasicReader;
 using VertexID = sics::graph::core::common::VertexID;
 using VertexLabel = sics::graph::core::common::VertexLabel;
