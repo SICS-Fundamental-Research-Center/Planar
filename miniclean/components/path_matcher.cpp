@@ -1,8 +1,10 @@
 #include "miniclean/components/path_matcher.h"
 
+#include <folly/system/ThreadId.h>
 #include <memory>
 #include <string>
 
+#include "core/common/multithreading/task.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/io/basic_reader.h"
@@ -14,6 +16,8 @@ using BasicReader = sics::graph::core::io::BasicReader;
 using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using ThreadPool = sics::graph::core::common::ThreadPool;
+using Task = sics::graph::core::common::Task;
+using TaskPackage = sics::graph::core::common::TaskPackage;
 
 void PathMatcher::LoadGraph(const std::string& data_path) {
   // Prepare reader.
@@ -38,30 +42,52 @@ void PathMatcher::BuildCandidateSet(VertexLabel num_label) {
   }
 }
 
-void PathMatcher::PathMatching() {
+void PathMatcher::PathMatching(unsigned int parallelism) {
   // initialize the result vector
   matched_results_.resize(path_patterns_.size());
   for (size_t i = 0; i < path_patterns_.size(); i++) {
-    PathMatching(path_patterns_[i], matched_results_[i]);
+    PathMatching(path_patterns_[i], &matched_results_[i], parallelism, i);
   }
 }
 
 void PathMatcher::PathMatching(const std::vector<VertexLabel>& path_pattern,
-                               std::vector<std::vector<VertexID>>& results) {
+                               std::vector<std::vector<VertexID>>* results,
+                               unsigned int parallelism, size_t pattern_id) {
   // Prepare candidates.
   VertexLabel start_label = path_pattern[0];
   std::set<VertexID> candidates = candidates_[start_label - 1];
   std::vector<VertexID> partial_result;
-  path_match_recur(path_pattern, 0, candidates, partial_result, results);
+
+  ThreadPool thread_pool(parallelism);
+  TaskPackage task_package = TaskPackage();
+
+  // Collect tasks.
+  for (VertexID candidate : candidates) {
+    std::set<VertexID> init_candidate = {candidate};
+    Task task = std::bind(
+        &PathMatcher::path_match_recur, this, path_pattern, 0, init_candidate,
+        partial_result, results, pattern_id);
+    LOG_INFO("pattern id: ", pattern_id, " result address: ", std::to_string((size_t)results));
+    task_package.push_back(task);
+  }
+  // Submit tasks.
+  thread_pool.SubmitSync(task_package);
+  task_package.clear();
+  // path_match_recur(path_pattern, 0, candidates, partial_result, results);
 }
 
 void PathMatcher::path_match_recur(
     const std::vector<VertexLabel>& path_pattern, size_t match_position,
     std::set<VertexID>& candidates, std::vector<VertexID>& partial_result,
-    std::vector<std::vector<VertexID>>& results) {
+    std::vector<std::vector<VertexID>>* results, size_t pattern_id) {
   // Return condition.
   if (match_position == path_pattern.size()) {
-    results.push_back(partial_result);
+    std::lock_guard<std::mutex> lck(mtx_);
+    // LOG_INFO("Thread id: ", folly::getCurrentThreadID());
+    LOG_INFO("Thread id: ", folly::getCurrentThreadID(), 
+             " pushed_result: ", std::to_string(partial_result[0]), " ", std::to_string(partial_result[1]),
+             " pattern id: ", pattern_id, " inner result address: ", std::to_string((size_t)results));
+    results->push_back(partial_result);
     return;
   }
 
@@ -91,7 +117,7 @@ void PathMatcher::path_match_recur(
     }
     partial_result.push_back(candidate);
     path_match_recur(path_pattern, match_position + 1, next_candidates,
-                     partial_result, results);
+                     partial_result, results, pattern_id);
     partial_result.pop_back();
   }
 }

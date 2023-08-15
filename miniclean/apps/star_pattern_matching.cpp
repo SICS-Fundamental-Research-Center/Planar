@@ -51,7 +51,7 @@ int main() {
 
   path_matcher.BuildCandidateSet(num_label);
 
-  path_matcher.PathMatching();
+  path_matcher.PathMatching(1);
 
   // Print matched results.
   path_matcher.PrintMatchedResults();
