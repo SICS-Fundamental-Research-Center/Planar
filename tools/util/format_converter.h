@@ -19,7 +19,7 @@
 namespace sics::graph::tools::util {
 namespace format_converter {
 
-// @DESCRIPTION convert edgelist to immutable graph
+// @DESCRIPTION convert edgelist to immutable CSR graph
 // @PARAMETERS
 //  buffer_edges: base pointer of binary edgelist
 //  edgelist_metadata: metadata for the edgelist
