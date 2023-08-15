@@ -68,21 +68,8 @@ add_subdirectory("${THIRD_PARTY_ROOT}/yaml-cpp" EXCLUDE_FROM_ALL)
 #######################
 # Artifacts
 #######################
+include_directories(
+        ${PROJECT_ROOT_DIR}
+)
 add_subdirectory(core)
 add_subdirectory(tools)
-include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}/core
-)
-
-file(GLOB appfiles "${CMAKE_CURRENT_SOURCE_DIR}/examples/*.cpp")
-foreach (appfile ${appfiles})
-    message(STATUS "Found apps: ${appfile}")
-    get_filename_component(app ${appfile} NAME_WE)
-    add_executable("${app}_exec" ${appfile})
-    target_link_libraries("${app}_exec"
-            graph_systems_core
-            ${FOLLY_LIBRARIES}
-            ${LIBFMT_LIBRARY}
-            yaml-cpp::yaml-cpp
-            )
-endforeach ()
