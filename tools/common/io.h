@@ -20,7 +20,7 @@
 namespace sics::graph::tools::common {
 
 // Adapter for the IO operations.
-class IOAdapter {
+class IOConverter {
  private:
   using VertexID = sics::graph::core::common::VertexID;
   using Bitmap = sics::graph::core::common::Bitmap;
@@ -32,7 +32,7 @@ class IOAdapter {
   using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
 
  public:
-  IOAdapter(const std::string& output_root_path)
+  IOConverter(const std::string& output_root_path)
       : output_root_path_(output_root_path) {
     if (!std::filesystem::exists(output_root_path))
       std::filesystem::create_directory(output_root_path);
@@ -42,11 +42,26 @@ class IOAdapter {
       std::filesystem::create_directory(output_root_path + "/graphs");
   }
 
+  // @DESCRIPTION Write a set of vertices to disk. It first merges vertices to
+  // construct CSR graphs, one CSR for each ConcurrentHashMap,and then store the
+  // CSR graphs in output_root_path/graphs.
+  // @PARAMETERS
+  //  subgraph_vec: a vector of vertices to be written to disk.
+  //  graph_metadata: metadata of the graph.
+  //  store_strategy: store strategy to be used.
   bool WriteSubgraph(
       const std::vector<folly::ConcurrentHashMap<VertexID, Vertex>*>&
           subgraph_vec,
       const GraphMetadata& graph_metadata, StoreStrategy store_strategy);
 
+  // @DESCRIPTION Write a set of edges to disk. It first converts edges to CSR
+  // graphs, one CSR for each bucket, and then store the CSR graphs in
+  // output_root_path/graphs.
+  // @PARAMETERS
+  //  edge_bucket: a set of edges.
+  //  graph_metadata: metadata of the graph.
+  //  edgelist_metadata_vec: metadata for each bucket.
+  //  store_strategy: store strategy to be used.
   bool WriteSubgraph(VertexID** edge_bucket,
                      const GraphMetadata& graph_metadata,
                      const std::vector<EdgelistMetadata>& edgelist_metadata_vec,

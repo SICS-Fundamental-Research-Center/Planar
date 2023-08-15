@@ -52,7 +52,7 @@ DEFINE_bool(read_head, false, "whether to read header of csv.");
 // @PARAMETER: input_path and output_path indicates the input and output path
 // respectively, sep determines the separator for the csv file, read_head
 // indicates whether to read head.
-void ConvertEdgelist(const std::string& input_path,
+void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
                      const std::string& output_path,
                      const std::string& sep,
                      bool read_head) {
@@ -208,8 +208,8 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
   edgelist_metadata_vec.push_back({num_vertices, num_edges, max_vid});
 
   // Write the csr graph to disk
-  IOAdapter io_adapter(output_path);
-  io_adapter.WriteSubgraph(edge_bucket, graph_metadata, edgelist_metadata_vec,
+  IOConverter io_converter(output_path);
+  io_converter.WriteSubgraph(edge_bucket, graph_metadata, edgelist_metadata_vec,
                            store_strategy);
   return 0;
 }
@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
         LOG_ERROR("CSV separator is not empty. Use -sep [e.g. \",\"].");
         return -1;
       }
-      ConvertEdgelist(FLAGS_i, FLAGS_o, FLAGS_sep, FLAGS_read_head);
+      ConvertEdgelistCSV2EdgelistBin(FLAGS_i, FLAGS_o, FLAGS_sep, FLAGS_read_head);
       break;
     case kEdgelistCSV2CSRBin:
       // TODO(hsiaoko): to add edgelist csv 2 csr bin function.

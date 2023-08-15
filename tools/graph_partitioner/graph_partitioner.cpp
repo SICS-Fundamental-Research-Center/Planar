@@ -224,7 +224,7 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   delete buffer_csr_vertices;
 
   // Write the subgraphs to disk
-  IOAdapter io_adapter(output_path);
+  IOConverter io_converter(output_path);
   GraphMetadata graph_metadata;
   graph_metadata.set_num_vertices(edgelist_metadata.num_vertices);
   graph_metadata.set_num_edges(edgelist_metadata.num_edges);
@@ -232,7 +232,7 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   graph_metadata.set_max_vid(max_vid);
   graph_metadata.set_min_vid(min_vid);
 
-  io_adapter.WriteSubgraph(subgraph_vec, graph_metadata, store_strategy);
+  io_converter.WriteSubgraph(subgraph_vec, graph_metadata, store_strategy);
   input_stream.close();
   LOG_INFO("Finished writing the subgraphs to disk");
   return 0;
@@ -394,7 +394,7 @@ bool VertexCut(const std::string& input_path, const std::string& output_path,
   }
 
   // Write the subgraphs to disk
-  IOAdapter io_adapter(output_path);
+  IOConverter io_converter(output_path);
   GraphMetadata graph_metadata;
   graph_metadata.set_num_vertices(edgelist_metadata.num_vertices);
   graph_metadata.set_num_edges(edgelist_metadata.num_edges);
@@ -402,7 +402,7 @@ bool VertexCut(const std::string& input_path, const std::string& output_path,
   graph_metadata.set_max_vid(max_vid);
   graph_metadata.set_min_vid(min_vid);
 
-  io_adapter.WriteSubgraph(edge_bucket, graph_metadata, edgelist_metadata_vec,
+  io_converter.WriteSubgraph(edge_bucket, graph_metadata, edgelist_metadata_vec,
                            store_strategy);
 
   input_stream.close();

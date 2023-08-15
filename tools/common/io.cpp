@@ -11,7 +11,7 @@ using std::filesystem::exists;
 
 namespace sics::graph::tools::common {
 
-bool IOAdapter::WriteSubgraph(
+bool IOConverter::WriteSubgraph(
     const std::vector<folly::ConcurrentHashMap<VertexID, Vertex>*>&
         subgraph_vec,
     const GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
@@ -209,7 +209,7 @@ bool IOAdapter::WriteSubgraph(
 }
 
 // For vertex cut.
-bool IOAdapter::WriteSubgraph(
+bool IOConverter::WriteSubgraph(
     VertexID** edge_bucket, const GraphMetadata& graph_metadata,
     const std::vector<EdgelistMetadata>& edgelist_metadata_vec,
     StoreStrategy store_strategy) {
@@ -234,7 +234,7 @@ bool IOAdapter::WriteSubgraph(
                                  std::to_string(i) + ".bin");
     ImmutableCSRGraph csr_graph(i);
     util::format_converter::Edgelist2CSR(
-        edge_bucket[i], edgelist_metadata_vec[i], &csr_graph, store_strategy);
+        edge_bucket[i], edgelist_metadata_vec[i], store_strategy, &csr_graph);
     delete edge_bucket[i];
     out_data_file.write((char*)csr_graph.GetGlobalIDBuffer(),
                         sizeof(VertexID) * csr_graph.get_num_vertices());
