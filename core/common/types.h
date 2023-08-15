@@ -9,6 +9,7 @@ namespace sics::graph::core::common {
 typedef uint32_t GraphID;  // uint32_t: 0 ~ 4,294,967,295
 typedef uint32_t VertexID;
 typedef uint32_t VertexLabel;
+typedef uint32_t VertexCount;
 
 }  // namespace sics::graph::core::common
 

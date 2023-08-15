@@ -1,11 +1,11 @@
 #ifndef GRAPH_SYSTEMS_GRAPH_METADATA_H
 #define GRAPH_SYSTEMS_GRAPH_METADATA_H
 
-#include <yaml-cpp/yaml.h>
-
 #include <cstdio>
 #include <string>
 #include <vector>
+
+#include <yaml-cpp/yaml.h>
 
 #include "common/types.h"
 #include "util/logging.h"

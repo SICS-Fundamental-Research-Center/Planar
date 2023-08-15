@@ -1,7 +1,6 @@
 #ifndef GRAPH_SYSTEMS_CORE_SCHEDULER_SUBGRAPH_STATE_H_
 #define GRAPH_SYSTEMS_CORE_SCHEDULER_SUBGRAPH_STATE_H_
 
-#include <cstdio>
 #include <memory>
 #include <vector>
 
@@ -36,7 +35,7 @@ class GraphState {
     next_round_pending_.resize(num_subgraphs_, false);
   }
 
-  StorageStateType GetSubgraphState(common::GraphID gid) {
+  StorageStateType GetSubgraphState(common::GraphID gid) const {
     return subgraph_storage_state_.at(gid);
   }
 
@@ -44,52 +43,12 @@ class GraphState {
     subgraph_storage_state_.at(gid) = type;
   }
 
-  size_t GetSubgraphRound(common::GraphID gid) {
+  size_t GetSubgraphRound(common::GraphID gid) const {
     return subgraph_round_.at(gid);
   }
 
   void SetSubgraphRound(common::GraphID gid, size_t round) {
     subgraph_round_.at(gid) = round;
-  }
-
-  common::GraphID GetNextReadGraphInCurrentRound() {
-    for (int gid = 0; gid < num_subgraphs_; gid++) {
-      if (current_round_pending_.at(gid) &&
-          subgraph_storage_state_.at(gid) == OnDisk) {
-        return gid;
-      }
-    }
-    return INVALID_GRAPH_ID;
-  }
-
-  // get next execute graph in current round
-  common::GraphID GetNextExecuteGraph() {
-    for (int gid = 0; gid < num_subgraphs_; gid++) {
-      if (current_round_pending_.at(gid) &&
-          subgraph_storage_state_.at(gid) == Deserialized) {
-        return gid;
-      }
-    }
-    return INVALID_GRAPH_ID;
-  }
-
-  common::GraphID GetNextReadGraphInNextRound() {
-    for (int gid = 0; gid < num_subgraphs_; gid++) {
-      if (next_round_pending_.at(gid) &&
-          subgraph_storage_state_.at(gid) == OnDisk) {
-        return gid;
-      }
-    }
-    return INVALID_GRAPH_ID;
-  }
-
-  bool IsFinalGraphInCurrentRound() {
-    return GetNextReadGraphInCurrentRound() == INVALID_GRAPH_ID;
-  }
-
-  bool IsGoOn() {
-    return (GetNextReadGraphInCurrentRound() != INVALID_GRAPH_ID) ||
-           (GetNextReadGraphInNextRound() != INVALID_GRAPH_ID);
   }
 
   void SyncRoundState() { current_round_pending_.swap(next_round_pending_); }
@@ -103,16 +62,19 @@ class GraphState {
     return graphs_.at(gid).get();
   }
 
-  void SetSubgraphSerialized(common::GraphID gid,
-                             data_structures::Serialized* serialized) {
-    serialized_.at(gid).reset(serialized);
+  void SetSubgraphSerialized(
+      common::GraphID gid,
+      std::unique_ptr<data_structures::Serialized> serialized) {
+    serialized_.at(gid).swap(serialized);
   }
 
-  void SetGraph(common::GraphID gid, data_structures::Serializable* subgraph) {
-    graphs_.at(gid).reset(subgraph);
+  void SetGraph(common::GraphID gid,
+                std::unique_ptr<data_structures::Serializable> subgraph) {
+    graphs_.at(gid).swap(subgraph);
   }
 
  private:
+  friend class Scheduler;
   size_t num_subgraphs_{};
   std::vector<int> subgraph_round_;
   std::vector<StorageStateType> subgraph_storage_state_;
