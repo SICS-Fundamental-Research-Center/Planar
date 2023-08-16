@@ -10,13 +10,12 @@ std::unique_ptr<Serialized> ImmutableCSRGraph::Serialize(
 
 void ImmutableCSRGraph::Deserialize(const common::TaskRunner& runner,
                                     std::unique_ptr<Serialized>&& serialized) {
-  LOG_INFO("ImmutableCSRGraph::Deserialize");
   auto new_serialized = std::unique_ptr<SerializedImmutableCSRGraph>(
       static_cast<SerializedImmutableCSRGraph*>(serialized.release()));
   if (new_serialized) {
     serialized_.swap(new_serialized);
   } else {
-    LOG_ERROR("Failed to cast Serialized to SerializedImmutableCSRGraphGraph.");
+    LOG_ERROR("Failed to cast Serialized to SerializedImmutableCSRGraph.");
   }
 
   auto& csr_buffer = serialized_->GetCSRBuffer();
