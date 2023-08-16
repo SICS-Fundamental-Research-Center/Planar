@@ -83,8 +83,8 @@ void Edgelist2CSR(VertexID* buffer_edges,
         u.vid = j;
         u.indegree = num_inedges_by_vid[j];
         u.outdegree = num_outedges_by_vid[j];
-        u.in_edges = (VertexID*)malloc(sizeof(VertexID) * u.indegree);
-        u.out_edges = (VertexID*)malloc(sizeof(VertexID) * u.outdegree);
+        u.incoming_edges = (VertexID*)malloc(sizeof(VertexID) * u.indegree);
+        u.outgoing_edges = (VertexID*)malloc(sizeof(VertexID) * u.outdegree);
         WriteAdd(&count_in_edges, u.indegree);
         WriteAdd(&count_out_edges, u.outdegree);
         buffer_csr_vertices[j] = u;
@@ -113,8 +113,8 @@ void Edgelist2CSR(VertexID* buffer_edges,
         auto dst = buffer_edges[j * 2 + 1];
         auto offset_out = __sync_fetch_and_add(offset_out_edges + src, 1);
         auto offset_in = __sync_fetch_and_add(offset_in_edges + dst, 1);
-        buffer_csr_vertices[src].out_edges[offset_out] = dst;
-        buffer_csr_vertices[dst].in_edges[offset_in] = src;
+        buffer_csr_vertices[src].outgoing_edges[offset_out] = dst;
+        buffer_csr_vertices[dst].incoming_edges[offset_in] = src;
       }
       return;
     });
@@ -183,11 +183,11 @@ void Edgelist2CSR(VertexID* buffer_edges,
         auto local_vid = __sync_fetch_and_add(&vid, 1);
         if (buffer_csr_vertices[j].indegree != 0)
           memcpy(buffer_in_edges + buffer_in_offset[local_vid],
-                 buffer_csr_vertices[j].in_edges,
+                 buffer_csr_vertices[j].incoming_edges,
                  buffer_csr_vertices[j].indegree * sizeof(VertexID));
         if (buffer_csr_vertices[j].outdegree != 0)
           memcpy(buffer_out_edges + buffer_out_offset[local_vid],
-                 buffer_csr_vertices[j].out_edges,
+                 buffer_csr_vertices[j].outgoing_edges,
                  buffer_csr_vertices[j].outdegree * sizeof(VertexID));
       }
       return;
@@ -197,13 +197,13 @@ void Edgelist2CSR(VertexID* buffer_edges,
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  csr_graph->SetGlobalID(buffer_globalid);
-  csr_graph->SetInDegree(buffer_indegree);
-  csr_graph->SetOutDegree(buffer_outdegree);
-  csr_graph->SetInOffset(buffer_in_offset);
-  csr_graph->SetOutOffset(buffer_out_offset);
-  csr_graph->SetInEdges(buffer_in_edges);
-  csr_graph->SetOutEdges(buffer_out_edges);
+  csr_graph->SetGlobalIDBuffer(buffer_globalid);
+  csr_graph->SetInDegreeBuffer(buffer_indegree);
+  csr_graph->SetOutDegreeBuffer(buffer_outdegree);
+  csr_graph->SetInOffsetBuffer(buffer_in_offset);
+  csr_graph->SetOutOffsetBuffer(buffer_out_offset);
+  csr_graph->SetIncomingEdgesBuffer(buffer_in_edges);
+  csr_graph->SetOutgoingEdgesBuffer(buffer_out_edges);
   csr_graph->set_num_vertices(edgelist_metadata.num_vertices);
   csr_graph->set_num_incoming_edges(count_in_edges);
   csr_graph->set_num_outgoing_edges(count_out_edges);
