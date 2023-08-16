@@ -2,9 +2,9 @@
 #define GRAPH_SYSTEMS_SCHEDULER_H
 
 #include "data_structures/graph_metadata.h"
-#include "update_stores/update_store_base.h"
+#include "scheduler/graph_state.h"
 #include "scheduler/message_hub.h"
-#include "scheduler/subgraph_state.h"
+#include "update_stores/update_store_base.h"
 
 namespace sics::graph::core::scheduler {
 
@@ -56,6 +56,10 @@ class Scheduler {
            (GetNextReadGraphInNextRound() == INVALID_GRAPH_ID);
   }
 
+  update_stores::UpdateStoreBase* GetUpdateStore() {
+    return global_update_store_;
+  }
+
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
   data_structures::GraphMetadata graph_metadata_info_;
@@ -67,7 +71,8 @@ class Scheduler {
   MessageHub message_hub_;
 
   // only keep a reference to global message store
-  update_stores::UpdateStoreBase* global_update_store_;
+  // TODO: pass this ptr to execute message
+  update_stores::UpdateStoreBase* global_update_store_ = nullptr;
 
   std::unique_ptr<std::thread> thread_;
 };

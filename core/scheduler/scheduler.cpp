@@ -18,7 +18,6 @@ void Scheduler::Start() {
   thread_ = std::make_unique<std::thread>([this]() {
     bool running = true;
     // init round 0 loaded graph
-    graph_state_.Init();
     ReadMessage first_read_message;
     first_read_message.graph_id = GetNextReadGraphInCurrentRound();
     graph_state_.subgraph_limits_--;

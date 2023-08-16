@@ -19,10 +19,9 @@ struct GraphState {
     Computed,
   } StorageStateType;
 
-  GraphState() = default;
-  GraphState(size_t num_subgraphs, size_t memory_size)
-      : memory_size_(memory_size) {
-    num_subgraphs_ = num_subgraphs;
+  GraphState() : memory_size_(64 * 1024){};
+  GraphState(size_t num_subgraphs, size_t memory_size = 64 * 1024)
+      : num_subgraphs_(num_subgraphs), memory_size_(memory_size) {
     subgraph_round_.resize(num_subgraphs, 0);
     subgraph_storage_state_.resize(num_subgraphs, OnDisk);
     serialized_.resize(num_subgraphs);

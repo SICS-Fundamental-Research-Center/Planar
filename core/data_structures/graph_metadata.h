@@ -18,7 +18,7 @@ struct SubgraphMetadata {
 
   // Subgraph Metadata
   GraphID gid;
-  VertexID num_vertices;
+  size_t num_vertices;
   size_t num_incoming_edges;
   size_t num_outgoing_edges;
   VertexID max_vid;
