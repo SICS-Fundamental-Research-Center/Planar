@@ -11,6 +11,8 @@ typedef uint32_t VertexID;
 typedef uint32_t VertexLabel;
 typedef uint32_t VertexCount;
 
+#define MAX_VERTEX_ID std::numeric_limits<VertexID>::max()
+
 }  // namespace sics::graph::core::common
 
 // all const defined here
