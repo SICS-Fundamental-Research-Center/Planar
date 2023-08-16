@@ -25,7 +25,6 @@ class Bitmap {
   ~Bitmap() {
     delete data_;
     size_ = 0;
-    return;
   }
 
   void Init(size_t size) {
