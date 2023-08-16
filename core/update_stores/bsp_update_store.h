@@ -1,13 +1,13 @@
-#ifndef GRAPH_SYSTEMS_CORE_MESSAGE_STORES_BSP_MESSGAE_STORE_H_
-#define GRAPH_SYSTEMS_CORE_MESSAGE_STORES_BSP_MESSGAE_STORE_H_
+#ifndef GRAPH_SYSTEMS_CORE_MESSAGE_STORES_BSP_UPDATE_STORE_H_
+#define GRAPH_SYSTEMS_CORE_MESSAGE_STORES_BSP_UPDATE_STORE_H_
 
 #include "common/types.h"
-#include "message_stores/message_store_base.h"
+#include "update_stores/update_store_base.h"
 
-namespace sics::graph::core::message_stores {
+namespace sics::graph::core::update_stores {
 
 template <typename VertexData, typename EdgeData>
-class BspMessageStore : public MessageStoreBase {
+class BspUpdateStore : public UpdateStoreBase {
   VertexData* Read(common::GraphID gid) {
     if (gid >= message_count_) {
       return nullptr;
@@ -32,6 +32,6 @@ class BspMessageStore : public MessageStoreBase {
   common::VertexCount message_count_;
 };
 
-}  // namespace sics::graph::core::message_stores
+}  // namespace sics::graph::core::update_stores
 
-#endif  // GRAPH_SYSTEMS_CORE_MESSAGE_STORES_BSP_MESSGAE_STORE_H_
+#endif  // GRAPH_SYSTEMS_CORE_MESSAGE_STORES_BSP_UPDATE_STORE_H_

@@ -2,7 +2,8 @@
 
 namespace sics::graph::core::scheduler {
 
-void Scheduler::ReadGraphMetadata(const std::string& graph_metadata_path) {
+void Scheduler::ReadAndParseGraphMetadata(
+    const std::string& graph_metadata_path) {
   YAML::Node graph_metadata_node;
   try {
     graph_metadata_node = YAML::LoadFile(graph_metadata_path);

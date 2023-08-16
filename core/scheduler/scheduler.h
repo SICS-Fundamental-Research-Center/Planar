@@ -2,7 +2,7 @@
 #define GRAPH_SYSTEMS_SCHEDULER_H
 
 #include "data_structures/graph_metadata.h"
-#include "message_stores/message_store_base.h"
+#include "update_stores/update_store_base.h"
 #include "scheduler/message_hub.h"
 #include "scheduler/subgraph_state.h"
 
@@ -17,7 +17,7 @@ class Scheduler {
 
   // read graph metadata from meta.yaml file
   // meta file path should be passed by gflags
-  void ReadGraphMetadata(const std::string& graph_metadata_path);
+  void ReadAndParseGraphMetadata(const std::string& graph_metadata_path);
 
   // global message store
 
@@ -67,7 +67,7 @@ class Scheduler {
   MessageHub message_hub_;
 
   // only keep a reference to global message store
-  message_stores::MessageStoreBase* global_message_store_;
+  update_stores::UpdateStoreBase* global_update_store_;
 
   std::unique_ptr<std::thread> thread_;
 };

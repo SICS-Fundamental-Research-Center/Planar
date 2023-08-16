@@ -25,7 +25,7 @@ file(GLOB GRAPH_CORE_SOURCES
         "data_structures/*.cpp"
         "data_structures/graph/*.cpp"
         "io/*.cpp"
-        "message_stores/*.cpp"
+        "update_stores/*.cpp"
         "scheduler/*.cpp"
         "util/*.cpp"
         )
@@ -42,7 +42,7 @@ file(GLOB GRAPH_CORE_HEADERS
         "data_structures/*.h"
         "data_structures/graph/*.h"
         "io/*.h"
-        "message_stores/*.h"
+        "update_stores/*.h"
         "scheduler/*.h"
         "util/*.h"
         )

@@ -15,9 +15,9 @@ file(GLOB testfiles
         "${PROJECT_ROOT_DIR}/core/data_structures/*_test.cpp"
         "${PROJECT_ROOT_DIR}/core/data_structures/graph/*_test.cpp"
         "${PROJECT_ROOT_DIR}/core/io/*_test.cpp"
-        "${PROJECT_ROOT_DIR}/core/message_stores/*_test.cpp"
         "${PROJECT_ROOT_DIR}/core/scheduler/*_test.cpp"
         "${PROJECT_ROOT_DIR}/core/tests/*_test.cpp"
+        "${PROJECT_ROOT_DIR}/core/update_stores/*_test.cpp"
         "${PROJECT_ROOT_DIR}/core/util/*_test.cpp"
         )
 
@@ -37,7 +37,7 @@ foreach (testfile ${testfiles})
             yaml-cpp::yaml-cpp
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
-    target_compile_definitions(${filename} PUBLIC TEST_DATA_DIR="${PROJECT_ROOT_DIR}/testfile")
-#    set_tests_properties(${TESTNAME} PROPERTIES ENVIRONMENT "DATA_DIR=${PROJECT_ROOT_DIR}/testfile")
+    target_compile_definitions(${filename} PUBLIC TEST_DATA_DIR= "${PROJECT_ROOT_DIR}/testfile")
+    #    set_tests_properties(${TESTNAME} PROPERTIES ENVIRONMENT "DATA_DIR=${PROJECT_ROOT_DIR}/testfile")
 endforeach ()
 

@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_CORE_SCHEDULER_SUBGRAPH_STATE_H_
-#define GRAPH_SYSTEMS_CORE_SCHEDULER_SUBGRAPH_STATE_H_
+#ifndef GRAPH_SYSTEMS_CORE_SCHEDULER_GRAPH_STATE_H_
+#define GRAPH_SYSTEMS_CORE_SCHEDULER_GRAPH_STATE_H_
 
 #include <memory>
 #include <vector>
@@ -20,7 +20,8 @@ struct GraphState {
   } StorageStateType;
 
   GraphState() = default;
-  GraphState(size_t num_subgraphs) {
+  GraphState(size_t num_subgraphs, size_t memory_size)
+      : memory_size_(memory_size) {
     num_subgraphs_ = num_subgraphs;
     subgraph_round_.resize(num_subgraphs, 0);
     subgraph_storage_state_.resize(num_subgraphs, OnDisk);
@@ -28,11 +29,6 @@ struct GraphState {
     graphs_.resize(num_subgraphs);
     current_round_pending_.resize(num_subgraphs, true);
     next_round_pending_.resize(num_subgraphs, false);
-  }
-
-  void Init() {
-    current_round_pending_.resize(num_subgraphs_, true);
-    next_round_pending_.resize(num_subgraphs_, false);
   }
 
   StorageStateType GetSubgraphState(common::GraphID gid) const {
@@ -94,4 +90,4 @@ struct GraphState {
 };
 }  // namespace sics::graph::core::scheduler
 
-#endif  // GRAPH_SYSTEMS_CORE_SCHEDULER_SUBGRAPH_STATE_H_
+#endif  // GRAPH_SYSTEMS_CORE_SCHEDULER_GRAPH_STATE_H_
