@@ -83,6 +83,10 @@ struct GraphState {
   // label for if next round graph is executed
   std::vector<bool> next_round_pending_;
 
+  // memory size and graph size
+  size_t memory_size_ = 64 * 1024;
+  std::atomic_int subgraph_limits_ = 1;
+
  private:
   std::vector<std::unique_ptr<data_structures::Serialized>> serialized_;
   std::vector<std::unique_ptr<data_structures::Serializable>> graphs_;
