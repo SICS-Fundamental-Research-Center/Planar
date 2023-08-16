@@ -84,7 +84,8 @@ struct GraphState {
   std::vector<bool> next_round_pending_;
 
   // memory size and graph size
-  size_t memory_size_ = 64 * 1024;
+  // TODO: memory size should be set by gflags
+  const size_t memory_size_;
   std::atomic_int subgraph_limits_ = 1;
 
  private:

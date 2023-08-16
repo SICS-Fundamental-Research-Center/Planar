@@ -8,19 +8,28 @@ namespace sics::graph::core::message_stores {
 
 template <typename VertexData, typename EdgeData>
 class BspMessageStore : public MessageStoreBase {
-  VertexData* Read(common::GraphID gid) { return read_data_ + gid; }
+  VertexData* Read(common::GraphID gid) {
+    if (gid >= message_count_) {
+      return nullptr;
+    }
+    return read_data_ + gid;
+  }
 
   bool Write(common::GraphID gid, const VertexData& vdata_new) {
+    if (gid >= message_count_) {
+      return false;
+    }
     write_data_[gid] = vdata_new;
     return true;
   }
 
+  // TODO
   void Clear() override {}
 
  private:
   VertexData* read_data_;
   VertexData* write_data_;
-  common::VertexCount message_size_;
+  common::VertexCount message_count_;
 };
 
 }  // namespace sics::graph::core::message_stores

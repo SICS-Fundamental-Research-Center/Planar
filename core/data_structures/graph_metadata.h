@@ -18,7 +18,7 @@ struct SubgraphMetadata {
 
   // Subgraph Metadata
   GraphID gid;
-  size_t num_vertices;
+  VertexID num_vertices;
   size_t num_incoming_edges;
   size_t num_outgoing_edges;
   VertexID max_vid;
@@ -35,12 +35,11 @@ class GraphMetadata {
   // TO DO: maybe used later
   explicit GraphMetadata(const std::string& root_path);
 
-
-  void set_num_vertices(size_t num_vertices) { num_vertices_ = num_vertices; }
+  void set_num_vertices(VertexID num_vertices) { num_vertices_ = num_vertices; }
   void set_num_edges(size_t num_edges) { num_edges_ = num_edges; }
   void set_max_vid(VertexID max_vid) { max_vid_ = max_vid; }
   void set_min_vid(VertexID min_vid) { min_vid_ = min_vid; }
-  void set_num_subgraphs(size_t num_subgraphs) {
+  void set_num_subgraphs(GraphID num_subgraphs) {
     num_subgraphs_ = num_subgraphs;
   }
   VertexID get_num_vertices() const { return num_vertices_; }

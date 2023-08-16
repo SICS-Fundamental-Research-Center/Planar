@@ -25,11 +25,13 @@ class Scheduler {
   void Start();
 
  protected:
-  virtual bool ReadMessageResponseAndExecute(const Message& resp);
+  virtual bool ReadMessageResponseAndExecute(const ReadMessage& read_resp);
 
-  virtual bool ExecuteMessageResponseAndWrite(const Message& resp);
+  virtual bool ExecuteMessageResponseAndWrite(
+      const ExecuteMessage& execute_resp);
 
-  virtual bool WriteMessageResponseAndCheckTerminate(const Message& resp);
+  virtual bool WriteMessageResponseAndCheckTerminate(
+      const WriteMessage& write_resp);
 
  private:
   // TODO: check memory size to decide if read next graph.

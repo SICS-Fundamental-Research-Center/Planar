@@ -32,15 +32,21 @@ void Scheduler::Start() {
       }
       switch (resp.get_type()) {
         case Message::Type::kRead: {
-          ReadMessageResponseAndExecute(resp);
+          ReadMessage read_response;
+          resp.Get(&read_response);
+          ReadMessageResponseAndExecute(read_response);
           break;
         }
         case Message::Type::kExecute: {
-          ExecuteMessageResponseAndWrite(resp);
+          ExecuteMessage execute_response;
+          resp.Get(&execute_response);
+          ExecuteMessageResponseAndWrite(execute_response);
           break;
         }
         case Message::Type::kWrite: {
-          if (!WriteMessageResponseAndCheckTerminate(resp)) {
+          WriteMessage write_response;
+          resp.Get(&write_response);
+          if (!WriteMessageResponseAndCheckTerminate(write_response)) {
             running = false;
           }
           break;
@@ -56,43 +62,39 @@ void Scheduler::Start() {
 // protected methods: (virtual)
 // should be override by other scheduler
 
-bool Scheduler::ReadMessageResponseAndExecute(const Message& resp) {
+bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
   // read finish, to execute the loaded graph
-  ReadMessage read_response;
-  resp.Get(&read_response);
-  graph_state_.SetGraphState(read_response.graph_id,
+  graph_state_.SetGraphState(read_resp.graph_id,
                              GraphState::StorageStateType::Serialized);
 
   // read graph need deserialize first
   // check current round subgraph and send it to executer to Deserialization.
-  if (graph_state_.GetSubgraphRound(read_response.graph_id) == current_round_) {
+  if (graph_state_.GetSubgraphRound(read_resp.graph_id) == current_round_) {
     ExecuteMessage execute_message;
-    execute_message.graph_id = read_response.graph_id;
-    execute_message.serialized = read_response.response_serialized;
+    execute_message.graph_id = read_resp.graph_id;
+    execute_message.serialized = read_resp.response_serialized;
     execute_message.execute_type = ExecuteType::kDeserialize;
     message_hub_.get_executor_queue()->Push(execute_message);
   } else {
     //      graph_state_.SetSubgraphSerialized(read_response.graph_id,
     //                                         read_response.response_serialized);
     graph_state_.SetSubgraphSerialized(
-        read_response.graph_id, std::unique_ptr<data_structures::Serialized>(
-                                    read_response.response_serialized));
+        read_resp.graph_id, std::unique_ptr<data_structures::Serialized>(
+                                read_resp.response_serialized));
   }
 
   TryReadNextGraph();
   return true;
 }
 
-bool Scheduler::ExecuteMessageResponseAndWrite(const Message& resp) {
+bool Scheduler::ExecuteMessageResponseAndWrite(
+    const ExecuteMessage& execute_resp) {
   // execute finish, to write back the graph
-  ExecuteMessage execute_response;
-  resp.Get(&execute_response);
-
-  switch (execute_response.execute_type) {
+  switch (execute_resp.execute_type) {
     case ExecuteType::kDeserialize: {
       ExecuteMessage execute_message;
-      execute_message.graph_id = execute_response.graph_id;
-      execute_message.graph = execute_response.response_serializable;
+      execute_message.graph_id = execute_resp.graph_id;
+      execute_message.graph = execute_resp.response_serializable;
       if (current_round_ == 0) {
         execute_message.execute_type = ExecuteType::kPEval;
       } else {
@@ -117,8 +119,9 @@ bool Scheduler::ExecuteMessageResponseAndWrite(const Message& resp) {
           // stay in memory with StorageStateType::Deserialized
         } else {
           // write back to disk
-          execute_response.execute_type = ExecuteType::kSerialize;
-          message_hub_.get_executor_queue()->Push(execute_response);
+          ExecuteMessage execute_message(execute_resp);
+          execute_message.execute_type = ExecuteType::kSerialize;
+          message_hub_.get_executor_queue()->Push(execute_resp);
         }
       }
       // check border vertex and dependency matrix, mark active subgraph in
@@ -128,8 +131,8 @@ bool Scheduler::ExecuteMessageResponseAndWrite(const Message& resp) {
     }
     case ExecuteType::kSerialize: {
       WriteMessage write_message;
-      write_message.graph_id = execute_response.graph_id;
-      write_message.serialized = execute_response.serialized;
+      write_message.graph_id = execute_resp.graph_id;
+      write_message.serialized = execute_resp.serialized;
       message_hub_.get_writer_queue()->Push(write_message);
 
       TryReadNextGraph();
@@ -144,10 +147,9 @@ bool Scheduler::ExecuteMessageResponseAndWrite(const Message& resp) {
   return true;
 }
 
-bool Scheduler::WriteMessageResponseAndCheckTerminate(const Message& resp) {
-  WriteMessage write_response;
-  resp.Get(&write_response);
-  graph_state_.SetGraphState(write_response.graph_id,
+bool Scheduler::WriteMessageResponseAndCheckTerminate(
+    const WriteMessage& write_resp) {
+  graph_state_.SetGraphState(write_resp.graph_id,
                              GraphState::StorageStateType::OnDisk);
   TryReadNextGraph(true);
   return true;
