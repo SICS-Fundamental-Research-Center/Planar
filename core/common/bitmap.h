@@ -23,9 +23,8 @@ class Bitmap {
   }
 
   ~Bitmap() {
-    if (data_ != nullptr) delete data_;
+    delete data_;
     size_ = 0;
-    return;
   }
 
   void Init(size_t size) {

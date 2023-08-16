@@ -23,7 +23,7 @@ using sics::graph::tools::common::StoreStrategy;
 
 void Edgelist2CSR(VertexID* buffer_edges,
                   const EdgelistMetadata& edgelist_metadata,
-                  const StoreStrategy store_strategy,
+                  StoreStrategy store_strategy,
                   ImmutableCSRGraph* csr_graph) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(1);
