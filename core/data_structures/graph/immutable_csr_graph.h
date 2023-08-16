@@ -1,4 +1,3 @@
-
 #ifndef CORE_DATA_STRUCTURES_GRAPH_IMMUTABLE_CSR_GRAPH_H_
 #define CORE_DATA_STRUCTURES_GRAPH_IMMUTABLE_CSR_GRAPH_H_
 
@@ -23,22 +22,24 @@ struct ImmutableCSRVertex {
   using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
 
  public:
-  void ShowVertex() {
-    std::cout << "  ===vid: " << vid << ", indegree: " << indegree
+  std::string VertexLog() {
+    std::stringstream ss;
+    ss << "  ===vid: " << vid << ", indegree: " << indegree
               << ", outdegree: " << outdegree << "===" << std::endl;
     if (indegree != 0) {
-      std::cout << "    Incoming edges: ";
+      ss << "    Incoming edges: ";
       for (VertexID i = 0; i < indegree; i++)
-        std::cout << incoming_edges[i] << ",";
-      std::cout << std::endl << std::endl;
+        ss << incoming_edges[i] << ",";
+      ss << std::endl << std::endl;
     }
     if (outdegree != 0) {
-      std::cout << "    Outgoing edges: ";
+      ss << "    Outgoing edges: ";
       for (VertexID i = 0; i < outdegree; i++)
-        std::cout << outgoing_edges[i] << ",";
-      std::cout << std::endl << std::endl;
+        ss << outgoing_edges[i] << ",";
+      ss << std::endl << std::endl;
     }
-    std::cout << "****************************************" << std::endl;
+    ss << "****************************************" << std::endl;
+    return ss.str();
   }
 
   VertexID vid;
@@ -72,27 +73,28 @@ class ImmutableCSRGraph : public Serializable {
     for (VertexID i = 0; i < display_num; i++) {
       if (i >= num_vertices_) break;
       auto u = GetVertexByLocalID(i);
-      u.ShowVertex();
+      std::string s;
+      LOG_INFO(u.VertexLog());
     }
   }
 
-  inline void set_gid(GraphID gid) { gid_ = gid; }
-  inline void set_num_vertices(VertexID val) { num_vertices_ = val; }
-  inline void set_num_incoming_edges(VertexID val) {
+  void set_gid(GraphID gid) { gid_ = gid; }
+  void set_num_vertices(VertexID val) { num_vertices_ = val; }
+  void set_num_incoming_edges(VertexID val) {
     num_incoming_edges_ = val;
   }
-  inline void set_num_outgoing_edges(VertexID val) {
+  void set_num_outgoing_edges(VertexID val) {
     num_outgoing_edges_ = val;
   }
-  inline void set_max_vid(const VertexID val) { max_vid_ = val; }
-  inline void set_min_vid(const VertexID val) { min_vid_ = val; }
+  void set_max_vid(const VertexID val) { max_vid_ = val; }
+  void set_min_vid(const VertexID val) { min_vid_ = val; }
 
-  inline GraphID get_gid() const { return gid_; }
-  inline VertexID get_num_vertices() const { return num_vertices_; }
-  inline VertexID get_num_incoming_edges() const { return num_incoming_edges_; }
-  inline VertexID get_num_outgoing_edges() const { return num_outgoing_edges_; }
-  inline VertexID get_max_vid() const { return max_vid_; }
-  inline VertexID get_min_vid() const { return min_vid_; }
+  GraphID get_gid() const { return gid_; }
+  VertexID get_num_vertices() const { return num_vertices_; }
+  VertexID get_num_incoming_edges() const { return num_incoming_edges_; }
+  VertexID get_num_outgoing_edges() const { return num_outgoing_edges_; }
+  VertexID get_max_vid() const { return max_vid_; }
+  VertexID get_min_vid() const { return min_vid_; }
 
   void SetGlobalIDBuffer(VertexID* buffer) {
     globalid_by_localid_base_pointer_ = buffer;
@@ -130,26 +132,26 @@ class ImmutableCSRGraph : public Serializable {
   VertexID GetGlobalIDByLocalID(VertexID i) const {
     return globalid_by_localid_base_pointer_[i];
   }
-  inline VertexID GetInOffsetByLocalID(VertexID i) const {
+  VertexID GetInOffsetByLocalID(VertexID i) const {
     return in_offset_base_pointer_[i];
   }
-  inline VertexID GetOutOffsetByLocalID(VertexID i) const {
+  VertexID GetOutOffsetByLocalID(VertexID i) const {
     return out_offset_base_pointer_[i];
   }
-  inline VertexID* GetIncomingEdgesByLocalID(VertexID i) {
+  VertexID* GetIncomingEdgesByLocalID(VertexID i) {
     return incoming_edges_base_pointer_ + i;
   }
-  inline VertexID* GetOutgoingEdgesByLocalID(VertexID i) {
+  VertexID* GetOutgoingEdgesByLocalID(VertexID i) {
     return outgoing_edges_base_pointer_ + i;
   }
-  inline VertexID GetInDegreeByLocalID(VertexID i) const {
+  VertexID GetInDegreeByLocalID(VertexID i) const {
     return indegree_base_pointer_[i];
   }
-  inline VertexID GetOutDegreeByLocalID(VertexID i) const {
+  VertexID GetOutDegreeByLocalID(VertexID i) const {
     return outdegree_base_pointer_[i];
   }
 
-  inline ImmutableCSRVertex GetVertexByLocalID(VertexID i) const {
+  ImmutableCSRVertex GetVertexByLocalID(VertexID i) const {
     ImmutableCSRVertex v;
     v.vid = GetGlobalIDByLocalID(i);
     if (num_incoming_edges_ > 0) {
