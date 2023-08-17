@@ -1,6 +1,10 @@
 #ifndef CORE_IO_CSR_READER_H_
 #define CORE_IO_CSR_READER_H_
 
+#include "data_structures/buffer.h"
+#include "data_structures/graph_metadata.h"
+#include "data_structures/serialized.h"
+#include "io/reader_writer.h"
 #include <yaml-cpp/yaml.h>
 #include <filesystem>
 #include <fstream>
@@ -9,11 +13,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-
-#include "data_structures/buffer.h"
-#include "data_structures/graph_metadata.h"
-#include "data_structures/serialized.h"
-#include "io/reader_writer.h"
 
 namespace sics::graph::core::io {
 
@@ -33,7 +32,7 @@ class CSRReader : public Reader {
   using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 
  public:
-  CSRReader(const std::string& root_path) : root_path_(root_path){};
+  CSRReader(const std::string& root_path) : root_path_(root_path) {};
 
   void Read(ReadMessage* message,
             common::TaskRunner* runner = nullptr) override;
