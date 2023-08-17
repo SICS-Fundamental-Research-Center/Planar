@@ -27,11 +27,8 @@ namespace sics::graph::core::io {
 //  csr_reader.Read(&read_message, nullptr);
 class CSRReader : public Reader {
  private:
-  using GraphID = sics::graph::core::common::GraphID;
-  using VertexID = sics::graph::core::common::VertexID;
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
   using Serialized = sics::graph::core::data_structures::Serialized;
-  using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 
  public:
   CSRReader(const std::string& root_path) : root_path_(root_path) {};
