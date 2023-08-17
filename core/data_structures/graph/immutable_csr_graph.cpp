@@ -41,7 +41,7 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
   size_t offset = 0,
          vertices_buffer_size = sizeof(VertexID) * metadata_.num_vertices,
          incoming_edges_buffer_size =
-             sizeof(VertexID) * metadata_.num_outgoing_edges;
+             sizeof(VertexID) * metadata_.num_incoming_edges;
 
   if (metadata_.num_outgoing_edges != 0 && metadata_.num_incoming_edges != 0) {
     start_globalid = offset;
@@ -94,6 +94,7 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
     SetOutgoingEdgesBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer_ +
                                                        start_outgoing_edges));
   }
+  gid_ = metadata_.gid;
   num_vertices_ = metadata_.num_vertices;
   num_incoming_edges_ = metadata_.num_incoming_edges;
   num_outgoing_edges_ = metadata_.num_outgoing_edges;
