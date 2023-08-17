@@ -61,5 +61,4 @@ add_library(graph_systems_core ${GRAPH_CORE_SOURCES} ${GRAPH_CORE_HEADERS})
 
 target_link_libraries(graph_systems_core
         ${FOLLY_LIBRARIES}
-        ${LIBFMT_LIBRARY}
         )

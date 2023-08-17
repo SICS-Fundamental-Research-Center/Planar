@@ -1,4 +1,4 @@
-# This file is used to find folly alibrary in CMake script, modifeid from the
+# This file is used to find folly library in CMake script, modified from the
 # code from
 #
 #   https://github.com/BVLC/caffe/blob/master/cmake/Modules/FindGlog.cmake
@@ -15,6 +15,9 @@
 #  FOLLY_INCLUDE_DIRS
 #  FOLLY_LIBRARIES
 
+find_package(fmt REQUIRED)
+find_package(Glog REQUIRED)
+
 include(FindPackageHandleStandardArgs)
 
 set(FOLLY_ROOT_DIR "" CACHE PATH "Folder contains libfolly")
@@ -28,7 +31,11 @@ find_package_handle_standard_args(FOLLY DEFAULT_MSG FOLLY_INCLUDE_DIR FOLLY_LIBR
 
 if(FOLLY_FOUND)
     set(FOLLY_INCLUDE_DIRS ${FOLLY_INCLUDE_DIR})
-    set(FOLLY_LIBRARIES ${FOLLY_LIBRARY})
+    set(FOLLY_LIBRARIES
+            ${FOLLY_LIBRARY}
+            ${LIBFMT_LIBRARY}
+            ${GLOG_LIBRARIES}
+    )
     message(STATUS "Found folly (include: ${FOLLY_INCLUDE_DIRS}, library: ${FOLLY_LIBRARIES})")
     mark_as_advanced(FOLLY_LIBRARY_DEBUG FOLLY_LIBRARY_RELEASE
             FOLLY_LIBRARY FOLLY_INCLUDE_DIR FOLLY_ROOT_DIR)

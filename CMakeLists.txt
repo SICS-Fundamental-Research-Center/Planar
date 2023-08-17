@@ -37,7 +37,6 @@ endif ()
 
 # folly
 find_package(FOLLY REQUIRED)
-find_package(fmt REQUIRED)
 include_directories(SYSTEM ${FOLLY_INCLUDE_DIR})
 
 ###### Add third party to the project, if necessary ######
