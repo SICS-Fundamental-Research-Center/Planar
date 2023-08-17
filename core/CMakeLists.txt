@@ -63,5 +63,4 @@ target_link_libraries(graph_systems_core
         yaml-cpp
         gflags
         ${FOLLY_LIBRARIES}
-        ${LIBFMT_LIBRARY}
         )
