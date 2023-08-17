@@ -1,8 +1,6 @@
 #ifndef CORE_IO_CSR_READER_H_
 #define CORE_IO_CSR_READER_H_
 
-#include <yaml-cpp/yaml.h>
-
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -10,56 +8,38 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <sstream>
+
+#include <yaml-cpp/yaml.h>
 
 #include "data_structures/buffer.h"
+#include "data_structures/graph_metadata.h"
 #include "data_structures/serialized.h"
 #include "io/reader_writer.h"
-#include "scheduler/message.h"
 
 namespace sics::graph::core::io {
 
-// Class to read data from ssd to memory
-// Example:
-//  Reader reader;
-//  SerializedImmutableCSR* serialized_immutable_csr =
-//      new SerializedImmutableCSR();
-//  reader.ReadSubgraph(PATH, serialized_immutable_csr);
-class CSRReader {
- public:
+// @DESCRIPTION Class to read data from ssd to memory
+// @EXAMPLE
+//  ReadMessage read_message;
+//  auto serialized_csr = std::make_unique<SerializedImmutableCSRGraph>();
+//  read_message.response_serialized = serialized_csr.get();
+//  read_message.graph_id = 0;
+//  csr_reader.Read(&read_message, nullptr);
+class CSRReader : public Reader {
+ private:
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
   using Serialized = sics::graph::core::data_structures::Serialized;
-  using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 
-  CSRReader() {}
+ public:
+  CSRReader(const std::string& root_path) : root_path_(root_path) {}
 
-  // read csr of a certain subgraph from ssd
-  // workdir structure:
-  //  - dir:{work_dir_}
-  //    - dir:0
-  //      - file:0_data.bin
-  //      - file:0_inedge_label.bin
-  //      - file:0_outedge_label.bin
-  //      - file:0_vertex_label.bin
-  //      - file:0_attr.bin
-  //    - dir:1
-  //      - file:1_data.bin
-  //      - file:1_inedge_label.bin
-  //      - file:1_outedge_label.bin
-  //      - file:1_vertex_label.bin
-  //      - file:1_attr.bin
-  //    - file:csr_global.yaml
   void Read(ReadMessage* message,
-            common::TaskRunner* runner = nullptr);
+            common::TaskRunner* runner = nullptr) override;
 
  private:
-  // read label files
-  void ReadLabel(const std::string& path, Serialized* dst_object);
-
-  // read data file
-  void ReadBinFile(const std::string& path, Serialized* dst_object);
+  const std::string root_path_;
 };
 
 }  // namespace sics::graph::core::io
 
-#endif  // CORE_IO_CSR_READER_H_
+#endif  // CORE_IO_CSR_READER_H
