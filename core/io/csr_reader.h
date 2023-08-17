@@ -31,7 +31,7 @@ class CSRReader : public Reader {
   using Serialized = sics::graph::core::data_structures::Serialized;
 
  public:
-  CSRReader(const std::string& root_path) : root_path_(root_path) {};
+  CSRReader(const std::string& root_path) : root_path_(root_path) {}
 
   void Read(ReadMessage* message,
             common::TaskRunner* runner = nullptr) override;
