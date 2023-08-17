@@ -60,6 +60,8 @@ class ImmutableCSRGraph : public Serializable {
 
   ImmutableCSRGraph(GraphID gid) : Serializable(), gid_(gid) {}
 
+  ImmutableCSRGraph() : Serializable() {}
+
   std::unique_ptr<Serialized> Serialize(
       const common::TaskRunner& runner) override;
 
