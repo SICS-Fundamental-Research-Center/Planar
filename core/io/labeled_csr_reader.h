@@ -31,7 +31,7 @@ class LabeledCSRReader {
   using Serialized = sics::graph::core::data_structures::Serialized;
   using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 
-  LabeledCSRReader() {}
+  explicit LabeledCSRReader(const std::string& root_path) : root_path_(root_path) {}
 
   // read csr of a certain subgraph from ssd
   // workdir structure:
@@ -54,10 +54,13 @@ class LabeledCSRReader {
 
  private:
   // read label files
-  void ReadLabel(const std::string& path, Serialized* dst_object);
+  void ReadLabel(const std::string& subgraph_id_str, Serialized* dst_object);
 
   // read data file
   void ReadBinFile(const std::string& path, Serialized* dst_object);
+
+ private:
+  const std::string root_path_;
 };
 
 }  // namespace sics::graph::core::io

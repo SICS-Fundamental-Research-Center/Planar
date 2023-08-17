@@ -18,9 +18,6 @@ struct ReadMessage {
   common::GraphID graph_id;
   // TODO: add subgraph metadata fields.
 
-  std::string path;
-  // TODO(zhj): When adding metadata fields, delete this and modify `func csr_reader.read`.
-
   // Response fields.
   data_structures::Serialized* response_serialized;
 
