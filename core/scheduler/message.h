@@ -1,6 +1,7 @@
 #ifndef GRAPH_SYSTEMS_MESSAGE_H
 #define GRAPH_SYSTEMS_MESSAGE_H
 
+#include <string>
 #include <fmt/core.h>
 
 #include "apis/pie.h"
@@ -16,6 +17,9 @@ struct ReadMessage {
   // Request fields.
   common::GraphID graph_id;
   // TODO: add subgraph metadata fields.
+
+  std::string path;
+  // TODO(zhj): When adding metadata fields, delete this and modify `func csr_reader.read`.
 
   // Response fields.
   data_structures::Serialized* response_serialized;
