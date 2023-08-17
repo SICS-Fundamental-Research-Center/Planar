@@ -149,15 +149,16 @@ bool IOConverter::WriteSubgraph(
                             sizeof(VertexID) * count_in_edges);
         break;
       case kUnconstrained:
-        out_data_file.write((char*)buffer_out_edges,
-                            sizeof(VertexID) * count_out_edges);
         out_data_file.write((char*)buffer_in_edges,
                             sizeof(VertexID) * count_in_edges);
+        out_data_file.write((char*)buffer_out_edges,
+                            sizeof(VertexID) * count_out_edges);
         break;
       case kUndefinedStrategy:
         LOG_ERROR("Store_strategy is undefined");
         break;
     }
+
     delete buffer_in_edges;
     delete buffer_out_edges;
 
@@ -210,8 +211,7 @@ bool IOConverter::WriteSubgraph(
 
 // For vertex cut.
 bool IOConverter::WriteSubgraph(
-    VertexID** edge_bucket,
-    const GraphMetadata& graph_metadata,
+    VertexID** edge_bucket, const GraphMetadata& graph_metadata,
     const std::vector<EdgelistMetadata>& edgelist_metadata_vec,
     StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
