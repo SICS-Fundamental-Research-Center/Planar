@@ -58,11 +58,25 @@ class ImmutableCSRGraph : public Serializable {
   explicit ImmutableCSRGraph(SubgraphMetadata metadata)
       : Serializable(), metadata_(metadata) {}
 
+  ImmutableCSRGraph(GraphID gid) : Serializable(), gid_(gid) {}
+
   std::unique_ptr<Serialized> Serialize(
       const common::TaskRunner& runner) override;
 
-  virtual void Deserialize(const common::TaskRunner& runner,
+  void Deserialize(const common::TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override;
+
+  void ShowGraph(VertexID display_num = 0) {
+    LOG_INFO("### GID: ", gid_, ",  num_vertices: ", num_vertices_,
+             ", num_incoming_edges: ", num_incoming_edges_,
+             ", num_outgoing_edges: ", num_outgoing_edges_, " ###");
+    for (VertexID i = 0; i < display_num; i++) {
+      if (i >= num_vertices_) break;
+      auto u = GetVertexByLocalID(i);
+      std::string s;
+      LOG_INFO(u.VertexLog());
+    }
+  }
 
   void set_gid(GraphID gid) { gid_ = gid; }
   void set_num_vertices(VertexID val) { num_vertices_ = val; }
@@ -152,10 +166,12 @@ class ImmutableCSRGraph : public Serializable {
     return v;
   }
 
- protected:
+ private:
   void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
 
+ private:
   std::unique_ptr<SerializedImmutableCSRGraph> serialized_;
+
   GraphID gid_ = 0;
   VertexID num_vertices_ = 0;
   VertexID num_incoming_edges_ = 0;
