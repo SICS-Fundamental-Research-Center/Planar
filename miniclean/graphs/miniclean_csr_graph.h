@@ -5,9 +5,9 @@
 
 #include "core/data_structures/graph/immutable_csr_graph.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
+#include "core/data_structures/graph_metadata.h"
 #include "core/data_structures/serializable.h"
 #include "core/data_structures/serialized.h"
-#include "miniclean/graphs/miniclean_csr_graph_config.h"
 
 namespace sics::graph::miniclean::graphs {
 
@@ -19,6 +19,7 @@ class MiniCleanCSRGraph
  private:
   using ImmutableCSRGraph =
       sics::graph::core::data_structures::graph::ImmutableCSRGraph;
+  using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
   using GraphID = sics::graph::core::common::GraphID;
   using VertexID = sics::graph::core::common::VertexID;
   using VertexLabel = sics::graph::core::common::VertexLabel;
@@ -29,10 +30,10 @@ class MiniCleanCSRGraph
       sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 
  public:
-  explicit MiniCleanCSRGraph(GraphID gid) : ImmutableCSRGraph(gid) {}
-  MiniCleanCSRGraph(GraphID gid, MiniCleanCSRGraphConfig csr_config)
-      : ImmutableCSRGraph(gid), csr_config_(csr_config) {}
-
+  explicit MiniCleanCSRGraph(SubgraphMetadata metadata)
+      : ImmutableCSRGraph(metadata) {}
+  
+  MiniCleanCSRGraph(GraphID gid) : ImmutableCSRGraph(gid) {} 
 
   std::unique_ptr<Serialized> Serialize(const TaskRunner& runner) override;
 
@@ -40,8 +41,8 @@ class MiniCleanCSRGraph
                    std::unique_ptr<Serialized>&& serialized) override;
 
   VertexLabel* get_vertex_label() const { return vertex_label_base_pointer_; }
-  VertexLabel* get_in_edge_label() const { return in_edge_label_base_pointer; }
-  VertexLabel* get_out_edge_label() const { return out_edge_label_base_pointer; }
+  VertexLabel* get_in_edge_label() const { return in_edge_label_base_pointer_; }
+  VertexLabel* get_out_edge_label() const { return out_edge_label_base_pointer_; }
 
  protected:
   void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
@@ -50,13 +51,22 @@ class MiniCleanCSRGraph
   void ParseOutedgeLabel(const std::list<OwnedBuffer>& buffer_list);
 
  private:
+  std::unique_ptr<SerializedImmutableCSRGraph> serialized_;
+
+  GraphID gid_ = 0;
+  VertexID num_vertices_ = 0;
+  VertexID num_incoming_edges_ = 0;
+  VertexID num_outgoing_edges_ = 0;
+  VertexID max_vid_ = 0;
+  VertexID min_vid_ = 0;
+
   // config. attributes to build the CSR.
-  MiniCleanCSRGraphConfig csr_config_;
+  SubgraphMetadata metadata_;
   // Vertex labels
-  VertexLabel* vertex_label_base_pointer_ = nullptr;
+  VertexLabel* vertex_label_base_pointer_;
   // Edge labels
-  VertexLabel* in_edge_label_base_pointer = nullptr;
-  VertexLabel* out_edge_label_base_pointer = nullptr;
+  VertexLabel* in_edge_label_base_pointer_;
+  VertexLabel* out_edge_label_base_pointer_;
 };
 }  // namespace sics::graph::miniclean::graphs
 
