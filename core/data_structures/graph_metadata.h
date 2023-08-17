@@ -1,11 +1,11 @@
 #ifndef GRAPH_SYSTEMS_GRAPH_METADATA_H
 #define GRAPH_SYSTEMS_GRAPH_METADATA_H
 
+#include <yaml-cpp/yaml.h>
+
 #include <cstdio>
 #include <string>
 #include <vector>
-
-#include <yaml-cpp/yaml.h>
 
 #include "common/types.h"
 #include "util/logging.h"
@@ -35,18 +35,18 @@ class GraphMetadata {
   // TO DO: maybe used later
   explicit GraphMetadata(const std::string& root_path);
 
-  void set_num_vertices(size_t num_vertices) { num_vertices_ = num_vertices; }
+  void set_num_vertices(VertexID num_vertices) { num_vertices_ = num_vertices; }
   void set_num_edges(size_t num_edges) { num_edges_ = num_edges; }
   void set_max_vid(VertexID max_vid) { max_vid_ = max_vid; }
   void set_min_vid(VertexID min_vid) { min_vid_ = min_vid; }
-  void set_num_subgraphs(size_t num_subgraphs) {
+  void set_num_subgraphs(GraphID num_subgraphs) {
     num_subgraphs_ = num_subgraphs;
   }
-  size_t get_num_vertices() const { return num_vertices_; }
+  VertexID get_num_vertices() const { return num_vertices_; }
   size_t get_num_edges() const { return num_edges_; }
-  size_t get_num_subgraphs() const { return num_subgraphs_; }
-  size_t get_min_vid() const { return min_vid_; }
-  size_t get_max_vid() const { return max_vid_; }
+  GraphID get_num_subgraphs() const { return num_subgraphs_; }
+  VertexID get_min_vid() const { return min_vid_; }
+  VertexID get_max_vid() const { return max_vid_; }
 
   void set_subgraph_metadata_vec(
       const std::vector<SubgraphMetadata>& subgraph_metadata_vec) {
@@ -58,11 +58,11 @@ class GraphMetadata {
   }
 
  private:
-  size_t num_vertices_;
+  VertexID num_vertices_;
   size_t num_edges_;
   VertexID max_vid_;
   VertexID min_vid_;
-  size_t num_subgraphs_;
+  GraphID num_subgraphs_;
   std::vector<std::vector<int>> dependency_matrix_;
   std::string data_root_path_;
   std::vector<SubgraphMetadata> subgraph_metadata_vec_;

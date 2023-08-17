@@ -14,9 +14,12 @@ namespace sics::graph::core::data_structures {
 // a Serialized object.
 class Serializable {
  public:
+  virtual ~Serializable() = default;
+
   // Serialize the `Serializable` object to a `Serialized` object.
   // This function will submit the serialization task to the given TaskRunner
-  virtual std::unique_ptr<Serialized> Serialize(const common::TaskRunner& runner) = 0;
+  virtual std::unique_ptr<Serialized> Serialize(
+      const common::TaskRunner& runner) = 0;
 
   // Deserialize the `Serializable` object from a `Serialized` object.
   // This function will submit the deserialization task to the given TaskRunner

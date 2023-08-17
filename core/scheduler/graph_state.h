@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_CORE_SCHEDULER_SUBGRAPH_STATE_H_
-#define GRAPH_SYSTEMS_CORE_SCHEDULER_SUBGRAPH_STATE_H_
+#ifndef GRAPH_SYSTEMS_CORE_SCHEDULER_GRAPH_STATE_H_
+#define GRAPH_SYSTEMS_CORE_SCHEDULER_GRAPH_STATE_H_
 
 #include <memory>
 #include <vector>
@@ -10,7 +10,7 @@
 
 namespace sics::graph::core::scheduler {
 
-class GraphState {
+struct GraphState {
  public:
   typedef enum {
     OnDisk = 1,
@@ -19,20 +19,15 @@ class GraphState {
     Computed,
   } StorageStateType;
 
-  GraphState() = default;
-  GraphState(size_t num_subgraphs) {
-    num_subgraphs_ = num_subgraphs;
+  GraphState() : memory_size_(64 * 1024){};
+  GraphState(size_t num_subgraphs, size_t memory_size = 64 * 1024)
+      : num_subgraphs_(num_subgraphs), memory_size_(memory_size) {
     subgraph_round_.resize(num_subgraphs, 0);
     subgraph_storage_state_.resize(num_subgraphs, OnDisk);
     serialized_.resize(num_subgraphs);
     graphs_.resize(num_subgraphs);
     current_round_pending_.resize(num_subgraphs, true);
     next_round_pending_.resize(num_subgraphs, false);
-  }
-
-  void Init() {
-    current_round_pending_.resize(num_subgraphs_, true);
-    next_round_pending_.resize(num_subgraphs_, false);
   }
 
   StorageStateType GetSubgraphState(common::GraphID gid) const {
@@ -73,9 +68,8 @@ class GraphState {
     graphs_.at(gid).swap(subgraph);
   }
 
- private:
-  friend class Scheduler;
-  size_t num_subgraphs_{};
+ public:
+  size_t num_subgraphs_;
   std::vector<int> subgraph_round_;
   std::vector<StorageStateType> subgraph_storage_state_;
 
@@ -84,9 +78,15 @@ class GraphState {
   // label for if next round graph is executed
   std::vector<bool> next_round_pending_;
 
+  // memory size and graph size
+  // TODO: memory size should be set by gflags
+  const size_t memory_size_;
+  std::atomic_int subgraph_limits_ = 1;
+
+ private:
   std::vector<std::unique_ptr<data_structures::Serialized>> serialized_;
   std::vector<std::unique_ptr<data_structures::Serializable>> graphs_;
 };
 }  // namespace sics::graph::core::scheduler
 
-#endif  // GRAPH_SYSTEMS_CORE_SCHEDULER_SUBGRAPH_STATE_H_
+#endif  // GRAPH_SYSTEMS_CORE_SCHEDULER_GRAPH_STATE_H_

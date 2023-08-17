@@ -4,15 +4,14 @@ namespace sics::graph::core::data_structures::graph {
 
 std::unique_ptr<Serialized> ImmutableCSRGraph::Serialize(
     const common::TaskRunner& runner) {
-  return std::unique_ptr<Serialized>(static_cast<Serialized*>(
-      serialized_.release()));
+  return std::unique_ptr<Serialized>(
+      static_cast<Serialized*>(serialized_.release()));
 }
 
 void ImmutableCSRGraph::Deserialize(const common::TaskRunner& runner,
                                     std::unique_ptr<Serialized>&& serialized) {
-  // TODO(bwc): Submit to the task runner.
-  auto new_serialized = std::unique_ptr<SerializedImmutableCSRGraph>
-      (static_cast<SerializedImmutableCSRGraph*>(serialized.release()));
+  auto new_serialized = std::unique_ptr<SerializedImmutableCSRGraph>(
+      static_cast<SerializedImmutableCSRGraph*>(serialized.release()));
   if (new_serialized) {
     serialized_.swap(new_serialized);
   } else {
@@ -30,41 +29,76 @@ void ImmutableCSRGraph::Deserialize(const common::TaskRunner& runner,
   }
 }
 
-
 void ImmutableCSRGraph::ParseSubgraphCSR(
     const std::list<OwnedBuffer>& buffer_list) {
   // Fetch the OwnedBuffer object.
-  buf_graph_ = buffer_list.front().Get();
+  buf_graph_base_pointer_ = buffer_list.front().Get();
 
-  VertexID aligned_max_vertex = (csr_config_.max_vertex + 63) / 64 * 64;
+  VertexID start_globalid = 0, start_indegree = 0, start_outdegree = 0,
+           start_in_offset = 0, start_out_offset = 0, start_incoming_edges = 0,
+           start_outgoing_edges = 0;
 
-  size_t size_globalid = sizeof(VertexID) * csr_config_.num_vertex;
-  size_t size_indegree = sizeof(size_t) * csr_config_.num_vertex;
-  size_t size_outdegree = sizeof(size_t) * csr_config_.num_vertex;
-  size_t size_in_offset = sizeof(size_t) * csr_config_.num_vertex;
-  size_t size_out_offset = sizeof(size_t) * csr_config_.num_vertex;
-  size_t size_in_edges = sizeof(VertexID) * csr_config_.sum_in_edges;
-  size_t size_out_edges = sizeof(VertexID) * csr_config_.sum_out_edges;
-  size_t size_localid_by_globalid = sizeof(VertexID) * aligned_max_vertex;
+  size_t offset = 0,
+         vertices_buffer_size = sizeof(VertexID) * metadata_.num_vertices,
+         incoming_edges_buffer_size =
+             sizeof(VertexID) * metadata_.num_outgoing_edges;
 
-  size_t start_globalid = 0;
-  size_t start_indegree = start_globalid + size_globalid;
-  size_t start_outdegree = start_indegree + size_indegree;
-  size_t start_in_offset = start_outdegree + size_outdegree;
-  size_t start_out_offset = start_in_offset + size_in_offset;
-  size_t start_in_edges = start_out_offset + size_out_offset;
-  size_t start_out_edges = start_in_edges + size_in_edges;
-  size_t start_localid_by_globalid = start_out_edges + size_out_edges;
-  size_t start_localid = start_localid_by_globalid + size_localid_by_globalid;
+  if (metadata_.num_outgoing_edges != 0 && metadata_.num_incoming_edges != 0) {
+    start_globalid = offset;
+    offset += vertices_buffer_size;
+    start_indegree = offset;
+    offset += vertices_buffer_size;
+    start_outdegree = offset;
+    offset += vertices_buffer_size;
+    start_in_offset = offset;
+    offset += vertices_buffer_size;
+    start_out_offset = offset;
+    offset += vertices_buffer_size;
+    start_incoming_edges = offset;
+    offset += incoming_edges_buffer_size;
+    start_outgoing_edges = offset;
+  } else if (metadata_.num_outgoing_edges != 0) {
+    start_globalid = offset;
+    offset += vertices_buffer_size;
+    start_outdegree = offset;
+    offset += vertices_buffer_size;
+    start_out_offset = offset;
+    offset += vertices_buffer_size;
+    start_outgoing_edges = offset;
+  } else if (metadata_.num_incoming_edges != 0) {
+    start_globalid = offset;
+    offset += vertices_buffer_size;
+    start_indegree = offset;
+    offset += vertices_buffer_size;
+    start_in_offset = offset;
+    offset += vertices_buffer_size;
+    start_incoming_edges = offset;
+  }
 
-  localid_by_globalid_ = reinterpret_cast<VertexID*>(buf_graph_ + start_localid_by_globalid);
-  localid_by_index_ = reinterpret_cast<VertexID*>(buf_graph_ + start_localid);
-  globalid_by_index_ = reinterpret_cast<VertexID*>(buf_graph_ + start_globalid);
-  in_edges_ = reinterpret_cast<VertexID*>(buf_graph_ + start_in_edges);
-  out_edges_ = reinterpret_cast<VertexID*>(buf_graph_ + start_out_edges);
-  indegree_ = reinterpret_cast<size_t*>(buf_graph_ + start_indegree);
-  outdegree_ = reinterpret_cast<size_t*>(buf_graph_ + start_outdegree);
-  in_offset_ = reinterpret_cast<size_t*>(buf_graph_ + start_in_offset);
-  out_offset_ = reinterpret_cast<size_t*>(buf_graph_ + start_out_offset);
+  SetGlobalIDBuffer(
+      reinterpret_cast<VertexID*>(buf_graph_base_pointer_ + start_globalid));
+
+  if (metadata_.num_incoming_edges != 0) {
+    SetInDegreeBuffer(
+        reinterpret_cast<VertexID*>(buf_graph_base_pointer_ + start_indegree));
+    SetInOffsetBuffer(
+        reinterpret_cast<VertexID*>(buf_graph_base_pointer_ + start_in_offset));
+    SetIncomingEdgesBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer_ +
+                                                       start_incoming_edges));
+  }
+  if (metadata_.num_outgoing_edges != 0) {
+    SetOutDegreeBuffer(
+        reinterpret_cast<VertexID*>(buf_graph_base_pointer_ + start_outdegree));
+    SetOutOffsetBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer_ +
+                                                   start_out_offset));
+    SetOutgoingEdgesBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer_ +
+                                                       start_outgoing_edges));
+  }
+  num_vertices_ = metadata_.num_vertices;
+  num_incoming_edges_ = metadata_.num_incoming_edges;
+  num_outgoing_edges_ = metadata_.num_outgoing_edges;
+  max_vid_ = metadata_.max_vid;
+  min_vid_ = metadata_.min_vid;
 }
+
 }  // namespace sics::graph::core::data_structures::graph
