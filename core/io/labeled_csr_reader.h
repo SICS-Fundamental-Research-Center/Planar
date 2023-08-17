@@ -19,12 +19,15 @@
 
 namespace sics::graph::core::io {
 
-// Class to read data from ssd to memory
-// Example:
-//  Reader reader;
-//  SerializedImmutableCSR* serialized_immutable_csr =
-//      new SerializedImmutableCSR();
-//  reader.ReadSubgraph(PATH, serialized_immutable_csr);
+// @DESCRIPTION Class to read data from ssd to memory
+// @EXAMPLE
+// LabeledCSRReader reader(subgraph_1_path);
+// SerializedImmutableCSRGraph* serialized_immutable_csr =
+//     new SerializedImmutableCSRGraph();
+// ReadMessage* read_message = new ReadMessage();
+// read_message->graph_id = 1;
+// read_message->response_serialized = serialized_immutable_csr;
+// reader.Read(read_message);
 class LabeledCSRReader : public Reader {
  public:
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
