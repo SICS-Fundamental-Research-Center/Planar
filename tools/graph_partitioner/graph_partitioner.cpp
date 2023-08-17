@@ -153,8 +153,8 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
         u.vid = j;
         u.indegree = num_inedges_by_vid[j];
         u.outdegree = num_outedges_by_vid[j];
-        u.in_edges = (VertexID*)malloc(sizeof(VertexID) * u.indegree);
-        u.out_edges = (VertexID*)malloc(sizeof(VertexID) * u.outdegree);
+        u.incoming_edges = (VertexID*)malloc(sizeof(VertexID) * u.indegree);
+        u.outgoing_edges = (VertexID*)malloc(sizeof(VertexID) * u.outdegree);
         WriteAdd(&count_in_edges, u.indegree);
         WriteAdd(&count_out_edges, u.outdegree);
         buffer_csr_vertices[j] = u;
@@ -183,8 +183,8 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
         auto dst = buffer_edges[j * 2 + 1];
         auto offset_out = __sync_fetch_and_add(offset_out_edges + src, 1);
         auto offset_in = __sync_fetch_and_add(offset_in_edges + dst, 1);
-        buffer_csr_vertices[src].out_edges[offset_out] = dst;
-        buffer_csr_vertices[dst].in_edges[offset_in] = src;
+        buffer_csr_vertices[src].outgoing_edges[offset_out] = dst;
+        buffer_csr_vertices[dst].incoming_edges[offset_in] = src;
       }
       return;
     });
@@ -403,7 +403,7 @@ bool VertexCut(const std::string& input_path, const std::string& output_path,
   graph_metadata.set_min_vid(min_vid);
 
   io_converter.WriteSubgraph(edge_bucket, graph_metadata, edgelist_metadata_vec,
-                           store_strategy);
+                             store_strategy);
 
   input_stream.close();
   LOG_INFO("Finished writing the subgraphs to disk");

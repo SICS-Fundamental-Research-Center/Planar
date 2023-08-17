@@ -123,10 +123,10 @@ bool IOConverter::WriteSubgraph(
                              &csr_vertex_buffer, &buffer_out_offset]() {
         for (VertexID j = i; j < num_vertices; j += parallelism) {
           memcpy(buffer_in_edges + buffer_in_offset[j],
-                 csr_vertex_buffer[j].in_edges,
+                 csr_vertex_buffer[j].incoming_edges,
                  csr_vertex_buffer[j].indegree * sizeof(VertexID));
           memcpy(buffer_out_edges + buffer_out_offset[j],
-                 csr_vertex_buffer[j].out_edges,
+                 csr_vertex_buffer[j].outgoing_edges,
                  csr_vertex_buffer[j].outdegree * sizeof(VertexID));
         }
         return;
@@ -210,7 +210,8 @@ bool IOConverter::WriteSubgraph(
 
 // For vertex cut.
 bool IOConverter::WriteSubgraph(
-    VertexID** edge_bucket, const GraphMetadata& graph_metadata,
+    VertexID** edge_bucket,
+    const GraphMetadata& graph_metadata,
     const std::vector<EdgelistMetadata>& edgelist_metadata_vec,
     StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
@@ -236,7 +237,7 @@ bool IOConverter::WriteSubgraph(
     util::format_converter::Edgelist2CSR(
         edge_bucket[i], edgelist_metadata_vec[i], store_strategy, &csr_graph);
     delete edge_bucket[i];
-    out_data_file.write((char*)csr_graph.GetGlobalIDBuffer(),
+    out_data_file.write((char*)csr_graph.GetGloablIDBasePointer(),
                         sizeof(VertexID) * csr_graph.get_num_vertices());
     switch (store_strategy) {
       case kOutgoingOnly:
@@ -244,12 +245,12 @@ bool IOConverter::WriteSubgraph(
             {csr_graph.get_gid(), csr_graph.get_num_vertices(), 0,
              csr_graph.get_num_outgoing_edges(), csr_graph.get_max_vid(),
              csr_graph.get_min_vid()});
-        out_data_file.write((char*)csr_graph.GetOutDegree(),
+        out_data_file.write((char*)csr_graph.GetOutDegreeBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*)csr_graph.GetOutOffset(),
+        out_data_file.write((char*)csr_graph.GetOutOffsetBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
-            (char*)csr_graph.GetOutEdges(),
+            (char*)csr_graph.GetOutgoingEdgesBasePointer(),
             sizeof(VertexID) * csr_graph.get_num_outgoing_edges());
         break;
       case kIncomingOnly:
@@ -257,28 +258,28 @@ bool IOConverter::WriteSubgraph(
             {csr_graph.get_gid(), csr_graph.get_num_vertices(),
              csr_graph.get_num_incoming_edges(), 0, csr_graph.get_max_vid(),
              csr_graph.get_min_vid()});
-        out_data_file.write((char*)csr_graph.GetInDegree(),
+        out_data_file.write((char*)csr_graph.GetInDegreeBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*)csr_graph.GetInOffset(),
+        out_data_file.write((char*)csr_graph.GetInOffsetBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
-            (char*)csr_graph.GetInEdges(),
+            (char*)csr_graph.GetIncomingEdgesBasePointer(),
             sizeof(VertexID) * csr_graph.get_num_incoming_edges());
         break;
       case kUnconstrained:
-        out_data_file.write((char*)csr_graph.GetInDegree(),
+        out_data_file.write((char*)csr_graph.GetInDegreeBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*)csr_graph.GetOutDegree(),
+        out_data_file.write((char*)csr_graph.GetOutDegreeBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*)csr_graph.GetInOffset(),
+        out_data_file.write((char*)csr_graph.GetInOffsetBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*)csr_graph.GetOutOffset(),
+        out_data_file.write((char*)csr_graph.GetOutOffsetBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
-            (char*)csr_graph.GetInEdges(),
+            (char*)csr_graph.GetIncomingEdgesBasePointer(),
             sizeof(VertexID) * csr_graph.get_num_outgoing_edges());
         out_data_file.write(
-            (char*)csr_graph.GetOutEdges(),
+            (char*)csr_graph.GetOutgoingEdgesBasePointer(),
             sizeof(VertexID) * csr_graph.get_num_outgoing_edges());
         subgraph_metadata_vec.push_back(
             {csr_graph.get_gid(), csr_graph.get_num_vertices(),

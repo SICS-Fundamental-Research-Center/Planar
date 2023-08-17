@@ -51,6 +51,7 @@ struct WriteMessage {
   // Request fields.
   common::GraphID graph_id;
   data_structures::Serializable* serializable;
+  data_structures::Serialized* serialized;
   // TODO: add subgraph metadata fields.
 
   // Response fields.
