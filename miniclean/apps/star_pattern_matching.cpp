@@ -29,32 +29,32 @@ using PathMatcher = sics::graph::miniclean::components::PathMatcher;
 //  - graph configuration in `config`;
 int main() {
 
-  MiniCleanCSRGraphConfig config = {
-      12009216,   // num_vertex
-      12009215,   // max_vertex
-      73286905,   // sum_in_degree
-      73286905,   // sum_out_degree
-  };
+//   MiniCleanCSRGraphConfig config = {
+//       12009216,   // num_vertex
+//       12009215,   // max_vertex
+//       73286905,   // sum_in_degree
+//       73286905,   // sum_out_degree
+//   };
 
-  // Path patterns to be matched.
-  std::vector<std::vector<VertexID>> path_patterns = {
-      {1, 1},    {1, 2},    {1, 4},    {4, 3},      {1, 1, 1},
-      {1, 1, 2}, {1, 1, 4}, {1, 4, 3}, {1, 1, 4, 3}};
+//   // Path patterns to be matched.
+//   std::vector<std::vector<VertexID>> path_patterns = {
+//       {1, 1},    {1, 2},    {1, 4},    {4, 3},      {1, 1, 1},
+//       {1, 1, 2}, {1, 1, 4}, {1, 4, 3}, {1, 1, 4, 3}};
   
-  MiniCleanCSRGraph graph(0,config); 
-  VertexLabel num_label = 4;
-  std::set<VertexID> candidates[num_label];
+//   MiniCleanCSRGraph graph(0,config); 
+//   VertexLabel num_label = 4;
+//   std::set<VertexID> candidates[num_label];
 
-  PathMatcher path_matcher(&graph, path_patterns,
-                           config, candidates, num_label);
-  path_matcher.LoadGraph("/home/baiwc/workspace/graph-systems/data/dblp_test/0");
+//   PathMatcher path_matcher(&graph, path_patterns,
+//                            config, candidates, num_label);
+//   path_matcher.LoadGraph("/home/baiwc/workspace/graph-systems/data/dblp_test/0");
 
-  path_matcher.BuildCandidateSet(num_label);
+//   path_matcher.BuildCandidateSet(num_label);
 
-  path_matcher.PathMatching();
+//   path_matcher.PathMatching();
 
-  // Print matched results.
-  path_matcher.PrintMatchedResults();
+//   // Print matched results.
+//   path_matcher.PrintMatchedResults();
 
   return 0;
 }

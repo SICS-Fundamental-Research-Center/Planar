@@ -58,9 +58,7 @@ void MiniCleanCSRGraph::ParseSubgraphCSR(
   
   size_t vertices_buffer_size = sizeof(VertexID) * num_vertices_,
          incoming_edges_buffer_size =
-             sizeof(VertexID) * num_incoming_edges_,
-         outgoing_edges_buffer_size =
-             sizeof(VertexID) * num_outgoing_edges_;
+             sizeof(VertexID) * num_incoming_edges_;
   
   start_globalid = 0;
   start_indegree = start_globalid + vertices_buffer_size;

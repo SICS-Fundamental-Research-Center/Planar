@@ -27,11 +27,13 @@ void PathMatcher::LoadGraph(const std::string& data_path) {
   // Deserialize subgraph.
   ThreadPool thread_pool(1);
   miniclean_csr_graph_->Deserialize(thread_pool, std::move(serialized_graph));
+
+  miniclean_csr_graph_->ShowGraph(miniclean_csr_graph_->get_num_vertices());
 }
 
 void PathMatcher::BuildCandidateSet(VertexLabel num_label) {
   VertexLabel* vertex_label = miniclean_csr_graph_->get_vertex_label();
-  for (VertexID i = 0; i < miniclean_csr_graph_config_.num_vertex * 2; i += 2) {
+  for (VertexID i = 0; i < miniclean_csr_graph_->get_num_vertices() * 2; i += 2) {
     for (VertexLabel j = 0; j < num_label; j++) {
       if (vertex_label[i + 1] == j + 1) candidates_[j].insert(vertex_label[i]);
     }
@@ -42,12 +44,12 @@ void PathMatcher::PathMatching() {
   // initialize the result vector
   matched_results_.resize(path_patterns_.size());
   for (size_t i = 0; i < path_patterns_.size(); i++) {
-    PathMatching(path_patterns_[i], matched_results_[i]);
+    PathMatching(path_patterns_[i], &matched_results_[i]);
   }
 }
 
 void PathMatcher::PathMatching(const std::vector<VertexLabel>& path_pattern,
-                               std::vector<std::vector<VertexID>>& results) {
+                               std::vector<std::vector<VertexID>>* results) {
   // Prepare candidates.
   VertexLabel start_label = path_pattern[0];
   std::set<VertexID> candidates = candidates_[start_label - 1];
@@ -58,21 +60,23 @@ void PathMatcher::PathMatching(const std::vector<VertexLabel>& path_pattern,
 void PathMatcher::path_match_recur(
     const std::vector<VertexLabel>& path_pattern, size_t match_position,
     std::set<VertexID>& candidates, std::vector<VertexID>& partial_result,
-    std::vector<std::vector<VertexID>>& results) {
+    std::vector<std::vector<VertexID>>* results) {
   // Return condition.
   if (match_position == path_pattern.size()) {
-    results.push_back(partial_result);
+    results->push_back(partial_result);
     return;
   }
 
   for (VertexID candidate : candidates) {
     // Scan the out-edges of the candidate.
-    size_t cand_out_degree = miniclean_csr_graph_->GetOutDegree()[candidate];
-    size_t cand_out_offset = miniclean_csr_graph_->GetOutOffset()[candidate];
+    VertexID cand_out_degree = miniclean_csr_graph_->GetOutDegreeBasePointer()[candidate];
+    VertexID cand_out_offset = miniclean_csr_graph_->GetOutOffsetBasePointer()[candidate];
     std::set<VertexID> next_candidates;
+
+
     for (size_t i = 0; i < cand_out_degree; i++) {
       VertexID out_edge_id =
-          miniclean_csr_graph_->GetOutEdges()[cand_out_offset + i];
+          miniclean_csr_graph_->GetOutgoingEdgesBasePointer()[cand_out_offset + i];
       VertexLabel out_edge_label =
           miniclean_csr_graph_->get_vertex_label()[out_edge_id * 2 + 1];
       bool continue_flag = false;

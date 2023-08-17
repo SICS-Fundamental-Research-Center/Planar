@@ -8,8 +8,42 @@
 #include "core/data_structures/graph_metadata.h"
 #include "core/data_structures/serializable.h"
 #include "core/data_structures/serialized.h"
+#include "core/util/logging.h"
 
 namespace sics::graph::miniclean::graphs {
+
+struct MiniCleanCSRVertex {
+ private:
+  using VertexID = sics::graph::core::common::VertexID;
+  using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
+
+ public:
+  std::string VertexLog() {
+    std::stringstream ss;
+    ss << "  ===vid: " << vid << ", indegree: " << indegree
+               << ", outdegree: " << outdegree << "===" << std::endl;
+    if (indegree != 0) {
+      ss << "    Incoming edges: ";
+      for (VertexID i = 0; i < indegree; i++)
+        ss << incoming_edges[i] << ",";
+      ss << std::endl << std::endl;
+    }
+    if (outdegree != 0) {
+      ss << "    Outgoing edges: ";
+      for (VertexID i = 0; i < outdegree; i++)
+        ss << outgoing_edges[i] << ",";
+      ss << std::endl << std::endl;
+    }
+    ss << "****************************************" << std::endl;
+    return ss.str();
+  }
+
+  VertexID vid;
+  VertexID indegree = 0;
+  VertexID outdegree = 0;
+  VertexID* incoming_edges;
+  VertexID* outgoing_edges;
+};
 
 // TODO (bai-wenchao): Refactor this class after Xiaoke makes changes to the
 // base class.
@@ -31,7 +65,7 @@ class MiniCleanCSRGraph
 
  public:
   explicit MiniCleanCSRGraph(SubgraphMetadata metadata)
-      : ImmutableCSRGraph(metadata) {}
+      : metadata_(metadata) {}
   
   MiniCleanCSRGraph(GraphID gid) : ImmutableCSRGraph(gid) {} 
 
@@ -40,11 +74,44 @@ class MiniCleanCSRGraph
   void Deserialize(const TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override;
 
+  void ShowGraph(VertexID display_num = 0) {
+    LOG_INFO("### GID: ", gid_, ",  num_vertices: ", num_vertices_,
+             ", num_incoming_edges: ", num_incoming_edges_,
+             ", num_outgoing_edges: ", num_outgoing_edges_, " ###");
+    for (VertexID i = 0; i < display_num; i++) {
+      if (i >= num_vertices_) break;
+      auto u = GetVertexByLocalID(i);
+      std::string s;
+      LOG_INFO(u.VertexLog());
+    }
+  }
+
+  GraphID get_gid() const { return gid_; }
+  VertexID get_num_vertices() const { return num_vertices_; }
+  VertexID get_num_incoming_edges() const { return num_incoming_edges_; }
+  VertexID get_num_outgoing_edges() const { return num_outgoing_edges_; }
+  VertexID get_max_vid() const { return max_vid_; }
+  VertexID get_min_vid() const { return min_vid_; }
+
   VertexLabel* get_vertex_label() const { return vertex_label_base_pointer_; }
   VertexLabel* get_in_edge_label() const { return in_edge_label_base_pointer_; }
   VertexLabel* get_out_edge_label() const { return out_edge_label_base_pointer_; }
 
- protected:
+  MiniCleanCSRVertex GetVertexByLocalID(VertexID i) {
+    MiniCleanCSRVertex v;
+    v.vid = GetGlobalIDByLocalID(i);
+    if (num_incoming_edges_ > 0) {
+        v.indegree = GetInDegreeByLocalID(i);
+        v.incoming_edges = GetIncomingEdgesBasePointer() + GetInOffsetByLocalID(i);
+    }
+    if (num_outgoing_edges_ > 0) {
+        v.outdegree = GetOutDegreeByLocalID(i);
+        v.outgoing_edges = GetOutgoingEdgesBasePointer() + GetOutOffsetByLocalID(i);
+    }
+    return v;
+  }
+
+ private:
   void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
   void ParseVertexLabel(const std::list<OwnedBuffer>& buffer_list);
   void ParseInedgeLabel(const std::list<OwnedBuffer>& buffer_list);

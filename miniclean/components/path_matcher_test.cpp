@@ -4,30 +4,29 @@
 #include <sstream>
 
 #include <gtest/gtest.h>
+#include <yaml-cpp/yaml.h>
 
 #include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
+#include "core/data_structures/graph_metadata.h"
 #include "core/io/basic_reader.h"
 #include "miniclean/graphs/miniclean_csr_graph.h"
 #include "miniclean/graphs/miniclean_csr_graph_config.h"
 
 namespace sics::graph::miniclean::test {
 
+using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph =  sics::graph::miniclean::graphs::MiniCleanCSRGraph;
 using MiniCleanCSRGraphConfig = sics::graph::miniclean::graphs::MiniCleanCSRGraphConfig;
 using PathMatcher = sics::graph::miniclean::components::PathMatcher;
+using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
 using VertexID = sics::graph::core::common::VertexID;
 using VertexLabel = sics::graph::core::common::VertexLabel;
+
 
 class PathMatcherTest : public ::testing::Test {
  protected:
   PathMatcherTest() {
-    config_ = {
-        56,    // num_vertex
-        55,    // max_vertex
-        100,   // sum_in_degree
-        100,   // sum_out_degree
-    };
     path_patterns_ = {
         {1, 1},       {1, 2},       {1, 3},       {2, 1},       {2, 2},
         {2, 3},       {3, 1},       {3, 2},       {3, 3},       {1, 1, 1},
@@ -63,7 +62,17 @@ class PathMatcherTest : public ::testing::Test {
 };
 
 TEST_F(PathMatcherTest, CheckMatches) {
-  MiniCleanCSRGraph graph(0, config_);
+  YAML::Node metadata;
+  try {
+    metadata = YAML::LoadFile(data_dir_ + "/input/small_graph_path_matching/0/meta.yaml");
+  } catch (YAML::BadFile& e) {
+    GTEST_LOG_(ERROR) << e.msg;
+  }
+  
+  GraphMetadata graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
+
+  MiniCleanCSRGraph graph(graph_metadata.GetSubgraphMetadata(0));
+
   VertexLabel num_label = 4;
   std::set<VertexID> candidates[num_label];
   PathMatcher path_matcher(&graph, path_patterns_,
