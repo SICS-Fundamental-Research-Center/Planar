@@ -6,6 +6,7 @@
 
 #include "apis/planar_app_base.h"
 #include "data_structures/serializable.h"
+#include "update_stores/bsp_update_store.h"
 #include "util/logging.h"
 
 namespace sics::graph::core::apis {
@@ -18,9 +19,13 @@ class PlanarAppFactory {
       "GraphType must be a subclass of Serializable");
 
  public:
+  using VertexData = typename GraphType::VertexData;
+  using EdgeData = typename GraphType::EdgeData;
   // TODO: add UpdateStore as a parameter.
   using CreationMethod = std::unique_ptr<PlanarAppBase<GraphType>> (*)(
-      common::TaskRunner* runner, data_structures::Serializable* graph);
+      common::TaskRunner* runner,
+      update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
+      data_structures::Serializable* graph);
 
  public:
   // TODO: add UpdateStore as a parameter.
@@ -53,9 +58,7 @@ class PlanarAppFactory {
 };
 
 template <typename GraphType>
-std::map<std::string,
-         std::unique_ptr<PlanarAppBase<GraphType>> (*)(
-             common::TaskRunner* runner, data_structures::Serializable* graph)>
+std::map<std::string, typename PlanarAppFactory<GraphType>::CreationMethod>
     PlanarAppFactory<GraphType>::factories_ = {};
 
 }  // namespace sics::graph::core::apis
