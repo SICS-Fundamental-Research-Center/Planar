@@ -1,8 +1,10 @@
 #include "miniclean/components/path_matcher.h"
 
+#include <folly/system/ThreadId.h>
 #include <memory>
 #include <string>
 
+#include "core/common/multithreading/task.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/io/basic_reader.h"
@@ -14,6 +16,8 @@ using BasicReader = sics::graph::core::io::BasicReader;
 using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using ThreadPool = sics::graph::core::common::ThreadPool;
+using Task = sics::graph::core::common::Task;
+using TaskPackage = sics::graph::core::common::TaskPackage;
 
 void PathMatcher::LoadGraph(const std::string& data_path) {
   // Prepare reader.
@@ -40,9 +44,12 @@ void PathMatcher::BuildCandidateSet(VertexLabel num_label) {
   }
 }
 
-void PathMatcher::PathMatching() {
+void PathMatcher::PathMatching(unsigned int parallelism) {
   // initialize the result vector
   matched_results_.resize(path_patterns_.size());
+  ThreadPool thread_pool(parallelism);
+  TaskPackage task_package = TaskPackage();
+
   for (size_t i = 0; i < path_patterns_.size(); i++) {
     PathMatching(path_patterns_[i], &matched_results_[i]);
   }

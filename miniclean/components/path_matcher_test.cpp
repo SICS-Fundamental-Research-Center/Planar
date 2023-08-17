@@ -80,10 +80,17 @@ TEST_F(PathMatcherTest, CheckMatches) {
   
   path_matcher.LoadGraph(data_dir_ + "/input/small_graph_path_matching/0");
   path_matcher.BuildCandidateSet(num_label);
-  path_matcher.PathMatching();
+
+  // parallelism = 20 in current server
+  path_matcher.PathMatching(std::thread::hardware_concurrency());  
 
   // Load matched result
   std::vector<std::vector<std::vector<VertexID>>> matched_results = path_matcher.get_results();
+
+  // Sort matched result
+  for (std::vector<std::vector<VertexID>>& single_matched_result : matched_results) {
+    std::sort(single_matched_result.begin(), single_matched_result.end());
+  }
 
   // Read ground truth
   std::vector<std::vector<std::vector<VertexID>>> ground_truth;

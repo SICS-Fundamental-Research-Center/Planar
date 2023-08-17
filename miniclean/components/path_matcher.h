@@ -63,6 +63,7 @@ class PathMatcher {
                         size_t match_position, std::set<VertexID>& candidates,
                         std::vector<VertexID>& partial_result,
                         std::vector<std::vector<VertexID>>* results);
+                        std::vector<std::vector<VertexID>>* results);
 
   MiniCleanCSRGraph* miniclean_csr_graph_;
   std::vector<std::vector<VertexLabel>> path_patterns_;
@@ -70,6 +71,8 @@ class PathMatcher {
   std::vector<std::vector<std::vector<VertexID>>> matched_results_;
   std::set<VertexID>* candidates_ = nullptr;
   int num_label_ = 0;
+
+  std::mutex mtx_;
 };
 }  // namespace sics::graph::miniclean::components
 
