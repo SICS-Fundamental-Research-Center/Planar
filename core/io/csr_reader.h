@@ -10,10 +10,12 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <sstream>
 
 #include "data_structures/buffer.h"
 #include "data_structures/serialized.h"
 #include "io/reader_writer.h"
+#include "scheduler/message.h"
 
 namespace sics::graph::core::io {
 
@@ -27,6 +29,7 @@ class CSRReader {
  public:
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
   using Serialized = sics::graph::core::data_structures::Serialized;
+  using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 
   CSRReader() {}
 
