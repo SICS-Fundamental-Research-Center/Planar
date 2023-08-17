@@ -91,7 +91,7 @@ class ImmutableCSRGraph : public Serializable {
   VertexID get_min_vid() const { return min_vid_; }
 
   void SetGraphBuffer(uint8_t* buffer) {
-    return buf_graph_base_pointer_ = buffer;
+    buf_graph_base_pointer_ = buffer;
   }
   void SetGlobalIDBuffer(VertexID* buffer) {
     globalid_by_localid_base_pointer_ = buffer;
@@ -136,10 +136,10 @@ class ImmutableCSRGraph : public Serializable {
     return out_offset_base_pointer_[i];
   }
   VertexID* GetIncomingEdgesByLocalID(VertexID i) {
-    return incoming_edges_base_pointer_ + i;
+    return incoming_edges_base_pointer_ + in_offset_base_pointer_[i];
   }
   VertexID* GetOutgoingEdgesByLocalID(VertexID i) {
-    return outgoing_edges_base_pointer_ + i;
+    return outgoing_edges_base_pointer_ + out_offset_base_pointer_[i];
   }
   VertexID GetInDegreeByLocalID(VertexID i) const {
     return indegree_base_pointer_[i];
