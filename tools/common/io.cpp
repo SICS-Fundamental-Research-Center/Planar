@@ -211,7 +211,8 @@ bool IOConverter::WriteSubgraph(
 
 // For vertex cut.
 bool IOConverter::WriteSubgraph(
-    VertexID** edge_bucket, const GraphMetadata& graph_metadata,
+    VertexID** edge_bucket,
+    const GraphMetadata& graph_metadata,
     const std::vector<EdgelistMetadata>& edgelist_metadata_vec,
     StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
