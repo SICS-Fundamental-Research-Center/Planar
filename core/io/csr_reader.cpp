@@ -2,7 +2,8 @@
 
 namespace sics::graph::core::io {
 
-void CSRReader::Read(scheduler::ReadMessage* message, common::TaskRunner* runner) {
+void CSRReader::Read(scheduler::ReadMessage* message,
+                     common::TaskRunner* /* runner */) {
   // Init path.
   std::string file_path =
       root_path_ + "graphs/" + std::to_string(message->graph_id) + ".bin";
