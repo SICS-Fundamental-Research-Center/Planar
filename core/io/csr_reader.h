@@ -1,6 +1,7 @@
 #ifndef CORE_IO_CSR_READER_H_
 #define CORE_IO_CSR_READER_H_
 
+#include <yaml-cpp/yaml.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -9,42 +10,35 @@
 #include <string>
 #include <utility>
 
-#include <yaml-cpp/yaml.h>
-
 #include "data_structures/buffer.h"
 #include "data_structures/graph_metadata.h"
 #include "data_structures/serialized.h"
+#include "io/reader_writer.h"
 
 namespace sics::graph::core::io {
 
-// Class to read data from ssd to memory
-// Example:
-//  Reader reader;
-//  SerializedImmutableCSR* serialized_immutable_csr =
-//      new SerializedImmutableCSR();
-//  reader.ReadSubgraph(PATH, serialized_immutable_csr);
-class CSRReader {
- public:
+// @DESCRIPTION Class to read data from ssd to memory
+// @EXAMPLE
+//  ReadMessage read_message;
+//  auto serialized_csr = std::make_unique<SerializedImmutableCSRGraph>();
+//  read_message.response_serialized = serialized_csr.get();
+//  read_message.graph_id = 0;
+//  csr_reader.Read(&read_message, nullptr);
+class CSRReader : public Reader {
+ private:
   using GraphID = sics::graph::core::common::GraphID;
   using VertexID = sics::graph::core::common::VertexID;
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
   using Serialized = sics::graph::core::data_structures::Serialized;
   using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 
+ public:
   CSRReader(const std::string& root_path) : root_path_(root_path){};
 
-  void SetGraphMetadata(const GraphMetadata& graph_metadata) {
-    graph_metadata_ = graph_metadata;
-  }
-
-  // @DESCRIPTION read subgraph from ssd to Serialized object
-  // @PARAMETER
-  // gid: graph id,
-  // dst_object: where to move ownedbuffers
-  void Read(const GraphID gid, Serialized* dst_object);
+  void Read(ReadMessage* message,
+            common::TaskRunner* runner = nullptr) override;
 
  private:
-  GraphMetadata graph_metadata_;
   const std::string root_path_;
 };
 
