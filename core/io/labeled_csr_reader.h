@@ -25,7 +25,7 @@ namespace sics::graph::core::io {
 //  SerializedImmutableCSR* serialized_immutable_csr =
 //      new SerializedImmutableCSR();
 //  reader.ReadSubgraph(PATH, serialized_immutable_csr);
-class LabeledCSRReader {
+class LabeledCSRReader : public Reader {
  public:
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
   using Serialized = sics::graph::core::data_structures::Serialized;
@@ -50,11 +50,11 @@ class LabeledCSRReader {
   //      - file:1_attr.bin
   //    - file:csr_global.yaml
   void Read(ReadMessage* message,
-            common::TaskRunner* runner = nullptr);
+            common::TaskRunner* runner = nullptr) override;
 
  private:
   // read label files
-  void ReadLabel(const std::string& subgraph_id_str, Serialized* dst_object);
+  void ReadLabel(const std::string& subgraph_folder_path, Serialized* dst_object);
 
   // read data file
   void ReadBinFile(const std::string& path, Serialized* dst_object);
