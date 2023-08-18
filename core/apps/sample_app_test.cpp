@@ -20,8 +20,10 @@ class SampleAppTest : public ::testing::Test {
 TEST_F(SampleAppTest, SampleAppShouldBeInitiatedByFactory) {
   apis::PlanarAppFactory<DummyGraph> factory(nullptr);
   DummyGraph graph;
+  update_stores::BspUpdateStore<DummyGraph::VertexData, DummyGraph::EdgeData>
+      update_store;
   auto app = util::pointer_upcast<apis::PlanarAppBase<DummyGraph>, SampleApp>(
-      factory.Create("SampleApp", &graph));
+      factory.Create("SampleApp", &update_store, &graph));
   EXPECT_NE(app, nullptr);
   EXPECT_EQ(graph.get_status(), "initialized");
   app->PEval();
@@ -35,8 +37,10 @@ TEST_F(SampleAppTest, SampleAppShouldBeInitiatedByFactory) {
 TEST_F(SampleAppTest, FactoryCreationShouldFailIfAppIsNotRegistered) {
   apis::PlanarAppFactory<DummyGraph> factory(nullptr);
   DummyGraph graph;
-  EXPECT_EQ(nullptr, factory.Create("NotRegisteredApp", nullptr));
-  auto app = factory.Create("SampleApp", &graph);
+  update_stores::BspUpdateStore<DummyGraph::VertexData, DummyGraph::EdgeData>
+      update_store;
+  EXPECT_EQ(nullptr, factory.Create("NotRegisteredApp", nullptr, nullptr));
+  auto app = factory.Create("SampleApp", &update_store, &graph);
   EXPECT_NE(app, nullptr);
 }
 
