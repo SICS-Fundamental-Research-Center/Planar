@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 project(graph_system_miniclean_apps)
 
 # Directories
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/miniclean/apps)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/miniclean)
 
 #######################
 # Artifacts
