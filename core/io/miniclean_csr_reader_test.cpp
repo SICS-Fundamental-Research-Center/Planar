@@ -42,8 +42,7 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
   // Load metadata.
   YAML::Node metadata;
   try {
-    metadata = YAML::LoadFile(subgraph_path_ + "/" + std::to_string(gid_) +
-                              "/meta.yaml");
+    metadata = YAML::LoadFile(subgraph_path_ + "/meta.yaml");
   } catch (YAML::BadFile& e) {
     GTEST_LOG_(ERROR) << e.msg;
   }
