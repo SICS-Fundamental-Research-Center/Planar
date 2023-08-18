@@ -1,6 +1,7 @@
 #ifndef GRAPH_SYSTEMS_MESSAGE_H
 #define GRAPH_SYSTEMS_MESSAGE_H
 
+#include <string>
 #include <fmt/core.h>
 
 #include "apis/pie.h"

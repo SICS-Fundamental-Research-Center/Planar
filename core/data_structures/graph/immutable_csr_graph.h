@@ -56,7 +56,9 @@ class ImmutableCSRGraph : public Serializable {
   explicit ImmutableCSRGraph(SubgraphMetadata metadata)
       : Serializable(), metadata_(metadata) {}
 
-  ImmutableCSRGraph(GraphID gid) : Serializable(), gid_(gid) {}
+  explicit ImmutableCSRGraph(GraphID gid) : Serializable(), gid_(gid) {}
+
+  ImmutableCSRGraph() : Serializable() {}
 
   std::unique_ptr<Serialized> Serialize(
       const common::TaskRunner& runner) override;
@@ -93,6 +95,7 @@ class ImmutableCSRGraph : public Serializable {
   void SetGraphBuffer(uint8_t* buffer) {
     buf_graph_base_pointer_ = buffer;
   }
+
   void SetGlobalIDBuffer(VertexID* buffer) {
     globalid_by_localid_base_pointer_ = buffer;
   }
