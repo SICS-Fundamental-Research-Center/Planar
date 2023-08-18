@@ -12,11 +12,8 @@
 
 namespace sics::graph::miniclean::graphs {
 
-// TODO (bai-wenchao): Refactor this class after Xiaoke makes changes to the
-// base class.
 class MiniCleanCSRGraph
     : public sics::graph::core::data_structures::graph::ImmutableCSRGraph {
-
  private:
   using ImmutableCSRGraph =
       sics::graph::core::data_structures::graph::ImmutableCSRGraph;
@@ -25,16 +22,13 @@ class MiniCleanCSRGraph
   using VertexID = sics::graph::core::common::VertexID;
   using VertexLabel = sics::graph::core::common::VertexLabel;
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
-  using Serialized = sics::graph::core::data_structures::Serialized; 
+  using Serialized = sics::graph::core::data_structures::Serialized;
   using TaskRunner = sics::graph::core::common::TaskRunner;
   using SerializedImmutableCSRGraph =
       sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 
  public:
-  explicit MiniCleanCSRGraph(SubgraphMetadata metadata)
-      : metadata_(metadata) {}
-  
-  MiniCleanCSRGraph(GraphID gid) : ImmutableCSRGraph(gid) {} 
+  explicit MiniCleanCSRGraph(SubgraphMetadata metadata) : metadata_(metadata) {}
 
   std::unique_ptr<Serialized> Serialize(const TaskRunner& runner) override;
 
@@ -50,7 +44,9 @@ class MiniCleanCSRGraph
 
   VertexLabel* get_vertex_label() const { return vertex_label_base_pointer_; }
   VertexLabel* get_in_edge_label() const { return in_edge_label_base_pointer_; }
-  VertexLabel* get_out_edge_label() const { return out_edge_label_base_pointer_; }
+  VertexLabel* get_out_edge_label() const {
+    return out_edge_label_base_pointer_;
+  }
 
  private:
   void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);

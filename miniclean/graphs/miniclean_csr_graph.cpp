@@ -55,11 +55,10 @@ void MiniCleanCSRGraph::ParseSubgraphCSR(
   VertexID start_globalid = 0, start_indegree = 0, start_outdegree = 0,
            start_in_offset = 0, start_out_offset = 0, start_incoming_edges = 0,
            start_outgoing_edges = 0;
-  
+
   size_t vertices_buffer_size = sizeof(VertexID) * num_vertices_,
-         incoming_edges_buffer_size =
-             sizeof(VertexID) * num_incoming_edges_;
-  
+         incoming_edges_buffer_size = sizeof(VertexID) * num_incoming_edges_;
+
   start_globalid = 0;
   start_indegree = start_globalid + vertices_buffer_size;
   start_outdegree = start_indegree + vertices_buffer_size;
@@ -75,26 +74,30 @@ void MiniCleanCSRGraph::ParseSubgraphCSR(
       reinterpret_cast<VertexID*>(buf_graph_base_pointer + start_indegree));
   SetInOffsetBuffer(
       reinterpret_cast<VertexID*>(buf_graph_base_pointer + start_in_offset));
-  SetIncomingEdgesBuffer(
-      reinterpret_cast<VertexID*>(buf_graph_base_pointer + start_incoming_edges));
+  SetIncomingEdgesBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer +
+                                                     start_incoming_edges));
   SetOutDegreeBuffer(
       reinterpret_cast<VertexID*>(buf_graph_base_pointer + start_outdegree));
   SetOutOffsetBuffer(
       reinterpret_cast<VertexID*>(buf_graph_base_pointer + start_out_offset));
-  SetOutgoingEdgesBuffer(
-      reinterpret_cast<VertexID*>(buf_graph_base_pointer + start_outgoing_edges));
-
+  SetOutgoingEdgesBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer +
+                                                     start_outgoing_edges));
 }
 
-void MiniCleanCSRGraph::ParseVertexLabel(const std::list<OwnedBuffer>& buffer_list) {
-  vertex_label_base_pointer_ = reinterpret_cast<VertexID*>(buffer_list.front().Get());
+void MiniCleanCSRGraph::ParseVertexLabel(
+    const std::list<OwnedBuffer>& buffer_list) {
+  vertex_label_base_pointer_ =
+      reinterpret_cast<VertexID*>(buffer_list.front().Get());
 }
-void MiniCleanCSRGraph::ParseInedgeLabel(const std::list<OwnedBuffer>& buffer_list) {
-  in_edge_label_base_pointer_ = reinterpret_cast<VertexID*>(buffer_list.front().Get());
+void MiniCleanCSRGraph::ParseInedgeLabel(
+    const std::list<OwnedBuffer>& buffer_list) {
+  in_edge_label_base_pointer_ =
+      reinterpret_cast<VertexID*>(buffer_list.front().Get());
 }
-void MiniCleanCSRGraph::ParseOutedgeLabel(const std::list<OwnedBuffer>& buffer_list) {
-  out_edge_label_base_pointer_ = reinterpret_cast<VertexID*>(buffer_list.front().Get());
+void MiniCleanCSRGraph::ParseOutedgeLabel(
+    const std::list<OwnedBuffer>& buffer_list) {
+  out_edge_label_base_pointer_ =
+      reinterpret_cast<VertexID*>(buffer_list.front().Get());
 }
-
 
 }  // namespace sics::graph::miniclean::graphs

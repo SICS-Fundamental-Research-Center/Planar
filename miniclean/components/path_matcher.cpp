@@ -15,9 +15,9 @@ namespace sics::graph::miniclean::components {
 using BasicReader = sics::graph::core::io::BasicReader;
 using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
-using ThreadPool = sics::graph::core::common::ThreadPool;
 using Task = sics::graph::core::common::Task;
 using TaskPackage = sics::graph::core::common::TaskPackage;
+using ThreadPool = sics::graph::core::common::ThreadPool;
 
 void PathMatcher::LoadGraph(const std::string& data_path) {
   // Prepare reader.
@@ -37,7 +37,8 @@ void PathMatcher::LoadGraph(const std::string& data_path) {
 
 void PathMatcher::BuildCandidateSet(VertexLabel num_label) {
   VertexLabel* vertex_label = miniclean_csr_graph_->get_vertex_label();
-  for (VertexID i = 0; i < miniclean_csr_graph_->get_num_vertices() * 2; i += 2) {
+  for (VertexID i = 0; i < miniclean_csr_graph_->get_num_vertices() * 2;
+       i += 2) {
     for (VertexLabel j = 0; j < num_label; j++) {
       if (vertex_label[i + 1] == j + 1) candidates_[j].insert(vertex_label[i]);
     }
@@ -58,35 +59,38 @@ void PathMatcher::PathMatching(const std::vector<VertexLabel>& path_pattern,
   // Prepare candidates.
   VertexLabel start_label = path_pattern[0];
   std::set<VertexID> candidates = candidates_[start_label - 1];
-  std::vector<VertexID> partial_result;
-  PathMatchRecur(path_pattern, 0, candidates, partial_result, results);
+  std::vector<VertexID> partial_results;
+  PathMatchRecur(path_pattern, 0, candidates, &partial_results, results);
 }
 
-void PathMatcher::PathMatchRecur(
-    const std::vector<VertexLabel>& path_pattern, size_t match_position,
-    std::set<VertexID>& candidates, std::vector<VertexID>& partial_result,
-    std::vector<std::vector<VertexID>>* results) {
+void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
+                                 size_t match_position,
+                                 const std::set<VertexID>& candidates,
+                                 std::vector<VertexID>* partial_results,
+                                 std::vector<std::vector<VertexID>>* results) {
   // Return condition.
   if (match_position == path_pattern.size()) {
-    results->push_back(partial_result);
+    results->push_back(*partial_results);
     return;
   }
 
   for (VertexID candidate : candidates) {
     // Scan the out-edges of the candidate.
-    VertexID cand_out_degree = miniclean_csr_graph_->GetOutDegreeBasePointer()[candidate];
-    VertexID cand_out_offset = miniclean_csr_graph_->GetOutOffsetBasePointer()[candidate];
+    VertexID cand_out_degree =
+        miniclean_csr_graph_->GetOutDegreeBasePointer()[candidate];
+    VertexID cand_out_offset =
+        miniclean_csr_graph_->GetOutOffsetBasePointer()[candidate];
     std::set<VertexID> next_candidates;
-
 
     for (size_t i = 0; i < cand_out_degree; i++) {
       VertexID out_edge_id =
-          miniclean_csr_graph_->GetOutgoingEdgesBasePointer()[cand_out_offset + i];
+          miniclean_csr_graph_
+              ->GetOutgoingEdgesBasePointer()[cand_out_offset + i];
       VertexLabel out_edge_label =
           miniclean_csr_graph_->get_vertex_label()[out_edge_id * 2 + 1];
       bool continue_flag = false;
       // Check whether cycle exists.
-      for (VertexID vid : partial_result) {
+      for (VertexID vid : *partial_results) {
         if (vid == out_edge_id) {
           continue_flag = true;
           break;
@@ -94,14 +98,14 @@ void PathMatcher::PathMatchRecur(
       }
       if (continue_flag) continue;
       // Check whether the label matches.
-      if (out_edge_label == path_pattern[match_position+1]) {
+      if (out_edge_label == path_pattern[match_position + 1]) {
         next_candidates.insert(out_edge_id);
       }
     }
-    partial_result.push_back(candidate);
+    partial_results->push_back(candidate);
     PathMatchRecur(path_pattern, match_position + 1, next_candidates,
-                     partial_result, results);
-    partial_result.pop_back();
+                   partial_results, results);
+    partial_results->pop_back();
   }
 }
 

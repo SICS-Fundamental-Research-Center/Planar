@@ -9,8 +9,7 @@
 
 namespace sics::graph::miniclean::components {
 
-// TODO (bai-wenchao): Load pattern and graph from configuration. 
-// (Hard-coded for temporary usage.)
+// TODO (bai-wenchao): Load patterns from config.
 class PathMatcher {
  private:
   using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
@@ -21,8 +20,7 @@ class PathMatcher {
  public:
   PathMatcher(MiniCleanCSRGraph* miniclean_csr_graph,
               std::vector<std::vector<VertexLabel>> path_patterns,
-              std::set<VertexID>* candidates,
-              int num_label)
+              std::set<VertexID>* candidates, int num_label)
       : miniclean_csr_graph_(miniclean_csr_graph),
         path_patterns_(path_patterns),
         candidates_(candidates),
@@ -46,7 +44,7 @@ class PathMatcher {
   //   Output: matched path instances
   void PathMatching(const std::vector<VertexLabel>& path_pattern,
                     std::vector<std::vector<VertexID>>* results);
-  
+
   void PrintMatchedResults();
 
   std::vector<std::vector<std::vector<VertexID>>> get_results() {
@@ -55,9 +53,10 @@ class PathMatcher {
 
  private:
   void PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
-                        size_t match_position, std::set<VertexID>& candidates,
-                        std::vector<VertexID>& partial_result,
-                        std::vector<std::vector<VertexID>>* results);
+                      size_t match_position,
+                      const std::set<VertexID>& candidates,
+                      std::vector<VertexID>* partial_results,
+                      std::vector<std::vector<VertexID>>* results);
 
   MiniCleanCSRGraph* miniclean_csr_graph_;
   std::vector<std::vector<VertexLabel>> path_patterns_;

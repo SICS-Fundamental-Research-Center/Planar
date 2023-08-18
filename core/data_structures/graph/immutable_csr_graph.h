@@ -56,7 +56,7 @@ class ImmutableCSRGraph : public Serializable {
   explicit ImmutableCSRGraph(SubgraphMetadata metadata)
       : Serializable(), metadata_(metadata) {}
 
-  ImmutableCSRGraph(GraphID gid) : Serializable(), gid_(gid) {}
+  explicit ImmutableCSRGraph(GraphID gid) : Serializable(), gid_(gid) {}
 
   ImmutableCSRGraph() : Serializable() {}
 
