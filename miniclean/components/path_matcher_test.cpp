@@ -21,7 +21,6 @@ using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
 using VertexID = sics::graph::core::common::VertexID;
 using VertexLabel = sics::graph::core::common::VertexLabel;
 
-
 class PathMatcherTest : public ::testing::Test {
  protected:
   PathMatcherTest() {
@@ -61,11 +60,12 @@ class PathMatcherTest : public ::testing::Test {
 TEST_F(PathMatcherTest, CheckMatches) {
   YAML::Node metadata;
   try {
-    metadata = YAML::LoadFile(data_dir_ + "/input/small_graph_path_matching/0/meta.yaml");
+    metadata = YAML::LoadFile(data_dir_ +
+                              "/input/small_graph_path_matching/0/meta.yaml");
   } catch (YAML::BadFile& e) {
     GTEST_LOG_(ERROR) << e.msg;
   }
-  
+
   GraphMetadata graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
 
   MiniCleanCSRGraph graph(graph_metadata.GetSubgraphMetadata(0));
@@ -73,17 +73,19 @@ TEST_F(PathMatcherTest, CheckMatches) {
   VertexLabel num_label = 3;
   std::set<VertexID> candidates[num_label];
   PathMatcher path_matcher(&graph, path_patterns_, candidates, num_label);
-  
+
   path_matcher.LoadGraph(data_dir_ + "/input/small_graph_path_matching/0");
   path_matcher.BuildCandidateSet(num_label);
 
-  path_matcher.PathMatching();  
+  path_matcher.PathMatching();
 
   // Load matched result
-  std::vector<std::vector<std::vector<VertexID>>> matched_results = path_matcher.get_results();
+  std::vector<std::vector<std::vector<VertexID>>> matched_results =
+      path_matcher.get_results();
 
   // Sort matched result
-  for (std::vector<std::vector<VertexID>>& single_matched_result : matched_results) {
+  for (std::vector<std::vector<VertexID>>& single_matched_result :
+       matched_results) {
     std::sort(single_matched_result.begin(), single_matched_result.end());
   }
 
@@ -91,7 +93,7 @@ TEST_F(PathMatcherTest, CheckMatches) {
   std::vector<std::vector<std::vector<VertexID>>> ground_truth;
   std::ifstream ground_truth_file(
       data_dir_ + "/input/small_graph_path_matching/0/ground_truth.txt");
-  
+
   std::string line;
   std::vector<std::vector<VertexID>> temp;
 
@@ -130,14 +132,13 @@ TEST_F(PathMatcherTest, CheckMatches) {
     for (size_t j = 0; j < single_matched_result.size(); j++) {
       auto single_matched_result_inst = single_matched_result[j];
       auto single_ground_truth_inst = single_ground_truth[j];
-      EXPECT_EQ(single_matched_result_inst.size(), single_ground_truth_inst.size());
+      EXPECT_EQ(single_matched_result_inst.size(),
+                single_ground_truth_inst.size());
       for (size_t k = 0; k < single_matched_result_inst.size(); k++) {
         EXPECT_EQ(single_matched_result_inst[k], single_ground_truth_inst[k]);
       }
     }
   }
-
 }
 
-
-}
+}  // namespace sics::graph::miniclean::test

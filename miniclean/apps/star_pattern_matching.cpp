@@ -12,25 +12,24 @@
 #include "miniclean/components/path_matcher.h"
 #include "miniclean/graphs/miniclean_csr_graph.h"
 
+using BasicReader = sics::graph::core::io::BasicReader;
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
+using PathMatcher = sics::graph::miniclean::components::PathMatcher;
 using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
-using BasicReader = sics::graph::core::io::BasicReader;
+using ThreadPool = sics::graph::core::common::ThreadPool;
 using VertexID = sics::graph::core::common::VertexID;
 using VertexLabel = sics::graph::core::common::VertexLabel;
-using ThreadPool = sics::graph::core::common::ThreadPool;
-using PathMatcher = sics::graph::miniclean::components::PathMatcher;
 
 DEFINE_string(i, "", "input graph directory");
 
 // @DESCRIPTION: Match path patterns in the graph.
-// @PARAMETER: For temporary usage, parameters are hard-coded.
+// @PARAMETER: For temporary usage, only data directory is passed by user.
 //  - number of vertex labels that will exist in path patterns;
 //  - path patterns in `path_patterns` in which each path pattern is represented
 //    by a vector of vertex labels;
 //  - directory of the input graph when calling `LoadGraph`;
-//  - graph configuration in `config`;
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
@@ -62,7 +61,7 @@ int main(int argc, char* argv[]) {
       std::chrono::duration_cast<std::chrono::microseconds>(end - start)
           .count() /
       (double)CLOCKS_PER_SEC;
-  
+
   LOG_INFO("Path matching time: ", duration, " seconds.");
 
   return 0;
