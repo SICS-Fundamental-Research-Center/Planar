@@ -1,8 +1,8 @@
-#include "io/labeled_csr_reader.h"
+#include "io/miniclean_csr_reader.h"
 
 namespace sics::graph::core::io {
-
-void LabeledCSRReader::Read(ReadMessage* message, common::TaskRunner* runner) {
+  
+void MiniCleanCSRReader::Read(ReadMessage* message, common::TaskRunner* runner) {
   std::ostringstream ss;
   ss << message->graph_id;
   std::string subgraph_id_str = ss.str();
@@ -24,7 +24,7 @@ void LabeledCSRReader::Read(ReadMessage* message, common::TaskRunner* runner) {
   dst_object->SetComplete();
 }
 
-void LabeledCSRReader::ReadLabel(const std::string& subgraph_folder_path, Serialized* dst_object) {
+void MiniCleanCSRReader::ReadLabel(const std::string& subgraph_folder_path, Serialized* dst_object) {
   std::string inedge_data_file_path = subgraph_folder_path + "_inedge_label.bin";
   std::string outedge_data_file_path = subgraph_folder_path + "_outedge_label.bin";
   std::string vertex_data_file_path = subgraph_folder_path + "_vertex_label.bin";
@@ -40,7 +40,7 @@ void LabeledCSRReader::ReadLabel(const std::string& subgraph_folder_path, Serial
   }
 }
 
-void LabeledCSRReader::ReadBinFile(const std::string& path, Serialized* dst_object) {
+void MiniCleanCSRReader::ReadBinFile(const std::string& path, Serialized* dst_object) {
   std::ifstream file(path, std::ios::binary);
   if (!file) {
     throw std::runtime_error("Error opening bin file: " + path);

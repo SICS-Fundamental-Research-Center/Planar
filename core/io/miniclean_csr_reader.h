@@ -28,14 +28,15 @@ namespace sics::graph::core::io {
 // read_message->graph_id = 1;
 // read_message->response_serialized = serialized_immutable_csr;
 // reader.Read(read_message);
-class LabeledCSRReader : public Reader {
+class MiniCleanCSRReader : public Reader {
  public:
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
   using Serialized = sics::graph::core::data_structures::Serialized;
   using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 
-  explicit LabeledCSRReader(const std::string& root_path) : root_path_(root_path) {}
+  explicit MiniCleanCSRReader(const std::string& root_path) : root_path_(root_path) {}
 
+  // TODO (bai-wenchao): add a function to read attribute file.
   // read csr of a certain subgraph from ssd
   // workdir structure:
   //  - dir:{work_dir_}
