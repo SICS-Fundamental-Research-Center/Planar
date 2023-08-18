@@ -59,18 +59,18 @@ void PathMatcher::PathMatching(const std::vector<VertexLabel>& path_pattern,
   // Prepare candidates.
   VertexLabel start_label = path_pattern[0];
   std::set<VertexID> candidates = candidates_[start_label - 1];
-  std::vector<VertexID> partial_result;
-  PathMatchRecur(path_pattern, 0, candidates, &partial_result, results);
+  std::vector<VertexID> partial_results;
+  PathMatchRecur(path_pattern, 0, candidates, &partial_results, results);
 }
 
 void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
                                  size_t match_position,
                                  const std::set<VertexID>& candidates,
-                                 std::vector<VertexID>* partial_result,
+                                 std::vector<VertexID>* partial_results,
                                  std::vector<std::vector<VertexID>>* results) {
   // Return condition.
   if (match_position == path_pattern.size()) {
-    results->push_back(*partial_result);
+    results->push_back(*partial_results);
     return;
   }
 
@@ -90,7 +90,7 @@ void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
           miniclean_csr_graph_->get_vertex_label()[out_edge_id * 2 + 1];
       bool continue_flag = false;
       // Check whether cycle exists.
-      for (VertexID vid : *partial_result) {
+      for (VertexID vid : *partial_results) {
         if (vid == out_edge_id) {
           continue_flag = true;
           break;
@@ -102,10 +102,10 @@ void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
         next_candidates.insert(out_edge_id);
       }
     }
-    partial_result->push_back(candidate);
+    partial_results->push_back(candidate);
     PathMatchRecur(path_pattern, match_position + 1, next_candidates,
-                   partial_result, results);
-    partial_result->pop_back();
+                   partial_results, results);
+    partial_results->pop_back();
   }
 }
 
