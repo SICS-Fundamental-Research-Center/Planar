@@ -64,7 +64,7 @@ void PathMatcher::PathMatching(const std::vector<VertexLabel>& path_pattern,
 
 void PathMatcher::PathMatchRecur(
     const std::vector<VertexLabel>& path_pattern, size_t match_position,
-    std::set<VertexID>& candidates, std::vector<VertexID>& partial_result,
+    const std::set<VertexID>& candidates, std::vector<VertexID>& partial_result,
     std::vector<std::vector<VertexID>>* results) {
   // Return condition.
   if (match_position == path_pattern.size()) {
@@ -77,7 +77,6 @@ void PathMatcher::PathMatchRecur(
     VertexID cand_out_degree = miniclean_csr_graph_->GetOutDegreeBasePointer()[candidate];
     VertexID cand_out_offset = miniclean_csr_graph_->GetOutOffsetBasePointer()[candidate];
     std::set<VertexID> next_candidates;
-
 
     for (size_t i = 0; i < cand_out_degree; i++) {
       VertexID out_edge_id =
@@ -100,7 +99,7 @@ void PathMatcher::PathMatchRecur(
     }
     partial_result.push_back(candidate);
     PathMatchRecur(path_pattern, match_position + 1, next_candidates,
-                     partial_result, results);
+                   partial_result, results);
     partial_result.pop_back();
   }
 }
