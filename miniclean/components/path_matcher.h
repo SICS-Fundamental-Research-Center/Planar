@@ -55,9 +55,10 @@ class PathMatcher {
 
  private:
   void PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
-                        size_t match_position, std::set<VertexID>& candidates,
-                        std::vector<VertexID>& partial_result,
-                        std::vector<std::vector<VertexID>>* results);
+                      size_t match_position, 
+                      const std::set<VertexID>& candidates,
+                      std::vector<VertexID>& partial_result,
+                      std::vector<std::vector<VertexID>>* results);
 
   MiniCleanCSRGraph* miniclean_csr_graph_;
   std::vector<std::vector<VertexLabel>> path_patterns_;
