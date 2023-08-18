@@ -92,6 +92,10 @@ class ImmutableCSRGraph : public Serializable {
   VertexID get_max_vid() const { return max_vid_; }
   VertexID get_min_vid() const { return min_vid_; }
 
+  void SetGraphBuffer(uint8_t* buffer) {
+    buf_graph_base_pointer_ = buffer;
+  }
+
   void SetGlobalIDBuffer(VertexID* buffer) {
     globalid_by_localid_base_pointer_ = buffer;
   }
