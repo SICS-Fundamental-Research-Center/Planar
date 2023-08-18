@@ -49,7 +49,7 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
   }
   GraphMetadata graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
 
-  // initialize a Serialized object.
+  // Initialize a Serialized object.
   std::unique_ptr<SerializedImmutableCSRGraph> serialized_immutable_csr =
       std::make_unique<SerializedImmutableCSRGraph>();
 
