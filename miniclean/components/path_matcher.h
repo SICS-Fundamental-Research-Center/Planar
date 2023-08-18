@@ -6,7 +6,6 @@
 
 #include "core/common/types.h"
 #include "miniclean/graphs/miniclean_csr_graph.h"
-#include "miniclean/graphs/miniclean_csr_graph_config.h"
 
 namespace sics::graph::miniclean::components {
 
@@ -15,8 +14,6 @@ namespace sics::graph::miniclean::components {
 class PathMatcher {
  private:
   using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
-  using MiniCleanCSRGraphConfig =
-      sics::graph::miniclean::graphs::MiniCleanCSRGraphConfig;
   using GraphID = sics::graph::core::common::GraphID;
   using VertexID = sics::graph::core::common::VertexID;
   using VertexLabel = sics::graph::core::common::VertexLabel;
@@ -24,12 +21,10 @@ class PathMatcher {
  public:
   PathMatcher(MiniCleanCSRGraph* miniclean_csr_graph,
               std::vector<std::vector<VertexLabel>> path_patterns,
-              MiniCleanCSRGraphConfig miniclean_csr_graph_config,
               std::set<VertexID>* candidates,
               int num_label)
       : miniclean_csr_graph_(miniclean_csr_graph),
         path_patterns_(path_patterns),
-        miniclean_csr_graph_config_(miniclean_csr_graph_config),
         candidates_(candidates),
         num_label_(num_label){};
 
@@ -42,8 +37,8 @@ class PathMatcher {
   void BuildCandidateSet(VertexLabel num_label);
 
   // Match path patterns in the graph.
-  //   Input: graph, a set of path patterns
-  //   Output: matched path instances
+  //   This function will call `PathMatching(path_pattern, results)` for each
+  //   pattern and collect their results.
   void PathMatching();
 
   // Match a single path pattern in the graph.
@@ -59,15 +54,13 @@ class PathMatcher {
   }
 
  private:
-  void path_match_recur(const std::vector<VertexLabel>& path_pattern,
+  void PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
                         size_t match_position, std::set<VertexID>& candidates,
                         std::vector<VertexID>& partial_result,
-                        std::vector<std::vector<VertexID>>* results);
                         std::vector<std::vector<VertexID>>* results);
 
   MiniCleanCSRGraph* miniclean_csr_graph_;
   std::vector<std::vector<VertexLabel>> path_patterns_;
-  MiniCleanCSRGraphConfig miniclean_csr_graph_config_;
   std::vector<std::vector<std::vector<VertexID>>> matched_results_;
   std::set<VertexID>* candidates_ = nullptr;
   int num_label_ = 0;

@@ -44,11 +44,9 @@ void PathMatcher::BuildCandidateSet(VertexLabel num_label) {
   }
 }
 
-void PathMatcher::PathMatching(unsigned int parallelism) {
+void PathMatcher::PathMatching() {
   // initialize the result vector
   matched_results_.resize(path_patterns_.size());
-  ThreadPool thread_pool(parallelism);
-  TaskPackage task_package = TaskPackage();
 
   for (size_t i = 0; i < path_patterns_.size(); i++) {
     PathMatching(path_patterns_[i], &matched_results_[i]);
@@ -61,10 +59,10 @@ void PathMatcher::PathMatching(const std::vector<VertexLabel>& path_pattern,
   VertexLabel start_label = path_pattern[0];
   std::set<VertexID> candidates = candidates_[start_label - 1];
   std::vector<VertexID> partial_result;
-  path_match_recur(path_pattern, 0, candidates, partial_result, results);
+  PathMatchRecur(path_pattern, 0, candidates, partial_result, results);
 }
 
-void PathMatcher::path_match_recur(
+void PathMatcher::PathMatchRecur(
     const std::vector<VertexLabel>& path_pattern, size_t match_position,
     std::set<VertexID>& candidates, std::vector<VertexID>& partial_result,
     std::vector<std::vector<VertexID>>* results) {
@@ -101,7 +99,7 @@ void PathMatcher::path_match_recur(
       }
     }
     partial_result.push_back(candidate);
-    path_match_recur(path_pattern, match_position + 1, next_candidates,
+    PathMatchRecur(path_pattern, match_position + 1, next_candidates,
                      partial_result, results);
     partial_result.pop_back();
   }

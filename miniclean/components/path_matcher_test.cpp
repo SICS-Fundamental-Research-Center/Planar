@@ -11,13 +11,11 @@
 #include "core/data_structures/graph_metadata.h"
 #include "core/io/basic_reader.h"
 #include "miniclean/graphs/miniclean_csr_graph.h"
-#include "miniclean/graphs/miniclean_csr_graph_config.h"
 
 namespace sics::graph::miniclean::test {
 
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph =  sics::graph::miniclean::graphs::MiniCleanCSRGraph;
-using MiniCleanCSRGraphConfig = sics::graph::miniclean::graphs::MiniCleanCSRGraphConfig;
 using PathMatcher = sics::graph::miniclean::components::PathMatcher;
 using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
 using VertexID = sics::graph::core::common::VertexID;
@@ -56,7 +54,6 @@ class PathMatcherTest : public ::testing::Test {
   }
   ~PathMatcherTest() override {}
 
-  MiniCleanCSRGraphConfig config_;
   std::vector<std::vector<VertexID>> path_patterns_;
   std::string data_dir_ = TEST_DATA_DIR;
 };
@@ -73,16 +70,14 @@ TEST_F(PathMatcherTest, CheckMatches) {
 
   MiniCleanCSRGraph graph(graph_metadata.GetSubgraphMetadata(0));
 
-  VertexLabel num_label = 4;
+  VertexLabel num_label = 3;
   std::set<VertexID> candidates[num_label];
-  PathMatcher path_matcher(&graph, path_patterns_,
-                           config_, candidates, num_label);
+  PathMatcher path_matcher(&graph, path_patterns_, candidates, num_label);
   
   path_matcher.LoadGraph(data_dir_ + "/input/small_graph_path_matching/0");
   path_matcher.BuildCandidateSet(num_label);
 
-  // parallelism = 20 in current server
-  path_matcher.PathMatching(std::thread::hardware_concurrency());  
+  path_matcher.PathMatching();  
 
   // Load matched result
   std::vector<std::vector<std::vector<VertexID>>> matched_results = path_matcher.get_results();
@@ -95,10 +90,15 @@ TEST_F(PathMatcherTest, CheckMatches) {
   // Read ground truth
   std::vector<std::vector<std::vector<VertexID>>> ground_truth;
   std::ifstream ground_truth_file(
-      data_dir_ + "/input/small_graph_path_matching/ground_truth.txt");
+      data_dir_ + "/input/small_graph_path_matching/0/ground_truth.txt");
   
   std::string line;
   std::vector<std::vector<VertexID>> temp;
+
+  if (!ground_truth_file.is_open()) {
+    GTEST_LOG_(ERROR) << "Failed to open ground truth file.";
+  }
+
   while (std::getline(ground_truth_file, line)) {
     if (line.empty()) {
       ground_truth.push_back(temp);

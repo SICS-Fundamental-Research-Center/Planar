@@ -3,15 +3,17 @@
 #include <memory>
 #include <vector>
 
+#include <gflags/gflags.h>
+
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
+#include "core/data_structures/graph_metadata.h"
 #include "core/io/basic_reader.h"
+#include "core/util/logging.h"
 #include "miniclean/components/path_matcher.h"
 #include "miniclean/graphs/miniclean_csr_graph.h"
-#include "miniclean/graphs/miniclean_csr_graph_config.h"
 
+using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
-using MiniCleanCSRGraphConfig =
-    sics::graph::miniclean::graphs::MiniCleanCSRGraphConfig;
 using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using BasicReader = sics::graph::core::io::BasicReader;
@@ -20,6 +22,8 @@ using VertexLabel = sics::graph::core::common::VertexLabel;
 using ThreadPool = sics::graph::core::common::ThreadPool;
 using PathMatcher = sics::graph::miniclean::components::PathMatcher;
 
+DEFINE_string(i, "", "input graph directory");
+
 // @DESCRIPTION: Match path patterns in the graph.
 // @PARAMETER: For temporary usage, parameters are hard-coded.
 //  - number of vertex labels that will exist in path patterns;
@@ -27,34 +31,39 @@ using PathMatcher = sics::graph::miniclean::components::PathMatcher;
 //    by a vector of vertex labels;
 //  - directory of the input graph when calling `LoadGraph`;
 //  - graph configuration in `config`;
-int main() {
+int main(int argc, char* argv[]) {
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-//   MiniCleanCSRGraphConfig config = {
-//       12009216,   // num_vertex
-//       12009215,   // max_vertex
-//       73286905,   // sum_in_degree
-//       73286905,   // sum_out_degree
-//   };
+  // Load metadata.
+  YAML::Node metadata = YAML::LoadFile(FLAGS_i + "/meta.yaml");
+  GraphMetadata graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
 
-//   // Path patterns to be matched.
-//   std::vector<std::vector<VertexID>> path_patterns = {
-//       {1, 1},    {1, 2},    {1, 4},    {4, 3},      {1, 1, 1},
-//       {1, 1, 2}, {1, 1, 4}, {1, 4, 3}, {1, 1, 4, 3}};
+  // Initialize graph.
+  MiniCleanCSRGraph graph(graph_metadata.GetSubgraphMetadata(0));
+
+  // Initialize label candidates.
+  VertexLabel num_label = 4;
+  std::set<VertexID> candidates[num_label];
+
+  // Initialize path patterns.
+  std::vector<std::vector<VertexID>> path_patterns = {{1, 1}, {1, 2}};
+
+  // Initialize path matcher.
+  PathMatcher path_matcher(&graph, path_patterns, candidates, num_label);
+
+  path_matcher.LoadGraph(FLAGS_i);
+  path_matcher.BuildCandidateSet(num_label);
+
+  auto start = std::chrono::system_clock::now();
+  path_matcher.PathMatching();
+  auto end = std::chrono::system_clock::now();
+
+  auto duration =
+      std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+          .count() /
+      (double)CLOCKS_PER_SEC;
   
-//   MiniCleanCSRGraph graph(0,config); 
-//   VertexLabel num_label = 4;
-//   std::set<VertexID> candidates[num_label];
-
-//   PathMatcher path_matcher(&graph, path_patterns,
-//                            config, candidates, num_label);
-//   path_matcher.LoadGraph("/home/baiwc/workspace/graph-systems/data/dblp_test/0");
-
-//   path_matcher.BuildCandidateSet(num_label);
-
-//   path_matcher.PathMatching();
-
-//   // Print matched results.
-//   path_matcher.PrintMatchedResults();
+  LOG_INFO("Path matching time: ", duration, " seconds.");
 
   return 0;
 }
