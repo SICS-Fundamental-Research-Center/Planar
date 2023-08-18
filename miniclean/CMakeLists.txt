@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.12)
 project(graph_systems_miniclean)
 
 # Directories
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/miniclean)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/miniclean) 
 
 #######################
@@ -42,6 +41,8 @@ file(GLOB GRAPH_MINICLEAN_HEADERS
         )
 message(STATUS "CORE header files: ${GRAPH_MINICLEAN_HEADERS}")
 
+add_subdirectory(apps)
+
 #######################
 # Generate libgraph_core
 #######################
@@ -53,18 +54,3 @@ target_link_libraries(graph_systems_miniclean
         ${FOLLY_LIBRARIES}
         ${LIBFMT_LIBRARY}
 )
-
-file(GLOB appfiles "${CMAKE_CURRENT_SOURCE_DIR}/apps/*.cpp")
-foreach (appfile ${appfiles})
-    message(STATUS "Found tool: ${appfile}")
-    get_filename_component(app ${appfile} NAME_WE)
-    add_executable("${app}_exec" ${appfile})
-    target_link_libraries("${app}_exec"
-            graph_systems_core
-            graph_systems_miniclean 
-            yaml-cpp
-            gflags
-            ${FOLLY_LIBRARIES}
-            ${LIBFMT_LIBRARY}
-    )
-endforeach ()
