@@ -40,13 +40,16 @@ class PlanarAppFactory {
   }
 
   std::unique_ptr<PlanarAppBase<GraphType>> Create(
-      const std::string& name, data_structures::Serializable* graph) {
+      const std::string& name,
+      update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
+      data_structures::Serializable* graph) {
     if (PlanarAppFactory<GraphType>::factories_.find(name) ==
         PlanarAppFactory<GraphType>::factories_.end()) {
       LOGF_ERROR("PlanarAppFactory: app {} is not registered", name);
       return nullptr;
     }
-    return PlanarAppFactory<GraphType>::factories_[name](runner_, graph);
+    return PlanarAppFactory<GraphType>::factories_[name](runner_, update_store,
+                                                         graph);
   }
 
  private:
