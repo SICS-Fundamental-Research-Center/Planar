@@ -7,12 +7,14 @@
 #include "core/common/multithreading/task.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
-#include "core/io/basic_reader.h"
+#include "core/io/miniclean_csr_reader.h"
 #include "core/util/logging.h"
+#include "core/scheduler/message.h"
 
 namespace sics::graph::miniclean::components {
 
-using BasicReader = sics::graph::core::io::BasicReader;
+using MiniCleanCSRReader = sics::graph::core::io::MiniCleanCSRReader;
+using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using Task = sics::graph::core::common::Task;
@@ -21,18 +23,23 @@ using ThreadPool = sics::graph::core::common::ThreadPool;
 
 void PathMatcher::LoadGraph(const std::string& data_path) {
   // Prepare reader.
-  BasicReader reader;
+  MiniCleanCSRReader reader(data_path);
 
-  // Read subgraph.
+  // Initialize Serialized object.
   std::unique_ptr<SerializedImmutableCSRGraph> serialized_graph =
       std::make_unique<SerializedImmutableCSRGraph>();
-  reader.ReadSubgraph(data_path, serialized_graph.get(), 1);
+
+  // Initialize ReadMessage object.
+  ReadMessage read_message;
+  read_message.graph_id = miniclean_csr_graph_->get_metadata().gid;
+  read_message.response_serialized = serialized_graph.get();
+
+  // Read a subgraph.
+  reader.Read(&read_message, nullptr);
 
   // Deserialize subgraph.
   ThreadPool thread_pool(1);
   miniclean_csr_graph_->Deserialize(thread_pool, std::move(serialized_graph));
-
-  miniclean_csr_graph_->ShowGraph(miniclean_csr_graph_->get_num_vertices());
 }
 
 void PathMatcher::BuildCandidateSet(VertexLabel num_label) {

@@ -7,12 +7,10 @@
 
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/data_structures/graph_metadata.h"
-#include "core/io/basic_reader.h"
 #include "core/util/logging.h"
 #include "miniclean/components/path_matcher.h"
 #include "miniclean/graphs/miniclean_csr_graph.h"
 
-using BasicReader = sics::graph::core::io::BasicReader;
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
 using PathMatcher = sics::graph::miniclean::components::PathMatcher;
@@ -30,6 +28,8 @@ DEFINE_string(i, "", "input graph directory");
 //  - path patterns in `path_patterns` in which each path pattern is represented
 //    by a vector of vertex labels;
 //  - directory of the input graph when calling `LoadGraph`;
+//    (for testing, the directory is:
+//    {PROJECT_ROOT_DIR}/testfile/input/small_graph_path_matching)
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
