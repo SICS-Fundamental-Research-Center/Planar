@@ -30,7 +30,6 @@ foreach (testfile ${testfiles})
     add_executable(${filename} "${testfile}")
     target_link_libraries(${filename}
             graph_systems_core
-            graph_systems_miniclean
             gtest
             gtest_main
             ${FOLLY_LIBRARIES}

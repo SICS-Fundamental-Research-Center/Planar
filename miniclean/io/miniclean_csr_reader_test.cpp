@@ -1,4 +1,4 @@
-#include "core/io/miniclean_csr_reader.h"
+#include "miniclean/io/miniclean_csr_reader.h"
 
 #include <memory>
 
@@ -21,13 +21,13 @@ using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using ThreadPool = sics::graph::core::common::ThreadPool;
 
-namespace sics::graph::core::io {
+namespace sics::graph::miniclean::io {
 
 // The fixture for testing class LogTest
-class ReaderTest : public ::testing::Test {
+class MiniCleanCSRReaderTest : public ::testing::Test {
  protected:
-  ReaderTest() = default;
-  ~ReaderTest() override = default;
+  MiniCleanCSRReaderTest() = default;
+  ~MiniCleanCSRReaderTest() override = default;
 
   std::string data_dir_ = TEST_DATA_DIR;
   std::string subgraph_path_ = data_dir_ + "/input/small_graph_path_matching";
@@ -35,20 +35,21 @@ class ReaderTest : public ::testing::Test {
 };
 
 // Test the ReadSubgraph function of the Reader class
-TEST_F(ReaderTest, ReadSubgraphTest) {
+TEST_F(MiniCleanCSRReaderTest, ReadSubgraphTest) {
   // Create a Reader object.
   MiniCleanCSRReader reader(subgraph_path_);
 
   // Load metadata.
   YAML::Node metadata;
   try {
-    metadata = YAML::LoadFile(subgraph_path_ + "/meta.yaml");
+    metadata = YAML::LoadFile(subgraph_path_ + "/" + std::to_string(gid_) +
+                              "/meta.yaml");
   } catch (YAML::BadFile& e) {
     GTEST_LOG_(ERROR) << e.msg;
   }
   GraphMetadata graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
 
-  // Initialize a Serialized object.
+  // initialize a Serialized object.
   std::unique_ptr<SerializedImmutableCSRGraph> serialized_immutable_csr =
       std::make_unique<SerializedImmutableCSRGraph>();
 
@@ -97,7 +98,7 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
 }
 
 // Test the ReadSubgraph function of the Reader class
-TEST_F(ReaderTest, ReadWrongSubgraphTest) {
+TEST_F(MiniCleanCSRReaderTest, ReadWrongSubgraphTest) {
   // Create a Reader object
   MiniCleanCSRReader reader("non_existing_path");
 
