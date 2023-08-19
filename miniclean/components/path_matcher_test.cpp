@@ -12,7 +12,7 @@
 #include "core/io/basic_reader.h"
 #include "miniclean/graphs/miniclean_csr_graph.h"
 
-namespace sics::graph::miniclean::test {
+namespace sics::graph::miniclean::components {
 
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph =  sics::graph::miniclean::graphs::MiniCleanCSRGraph;
