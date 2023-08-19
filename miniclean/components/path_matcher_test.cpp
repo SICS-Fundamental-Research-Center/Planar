@@ -14,7 +14,7 @@
 namespace sics::graph::miniclean::components {
 
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
-using MiniCleanCSRGraph =  sics::graph::miniclean::graphs::MiniCleanCSRGraph;
+using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
 using PathMatcher = sics::graph::miniclean::components::PathMatcher;
 using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
 using VertexID = sics::graph::core::common::VertexID;
@@ -141,4 +141,4 @@ TEST_F(PathMatcherTest, CheckMatches) {
   }
 }
 
-}  // namespace sics::graph::miniclean::test
+}  // namespace sics::graph::miniclean::components
