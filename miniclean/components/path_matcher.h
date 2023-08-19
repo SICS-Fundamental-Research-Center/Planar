@@ -45,6 +45,9 @@ class PathMatcher {
   void PathMatching(const std::vector<VertexLabel>& path_pattern,
                     std::vector<std::vector<VertexID>>* results);
 
+  // Match path patterns in the graph parallelly.
+  void PathMatching(unsigned int parallelism);
+
   void PrintMatchedResults();
 
   std::vector<std::vector<std::vector<VertexID>>> get_results() {

@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
   path_matcher.BuildCandidateSet(num_label);
 
   auto start = std::chrono::system_clock::now();
-  path_matcher.PathMatching();
+  path_matcher.PathMatching(std::thread::hardware_concurrency());
   auto end = std::chrono::system_clock::now();
 
   auto duration =

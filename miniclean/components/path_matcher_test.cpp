@@ -23,6 +23,7 @@ using VertexLabel = sics::graph::core::common::VertexLabel;
 class PathMatcherTest : public ::testing::Test {
  protected:
   PathMatcherTest() {
+    // path_patterns_ = {{1,1}};
     path_patterns_ = {
         {1, 1},       {1, 2},       {1, 3},       {2, 1},       {2, 2},
         {2, 3},       {3, 1},       {3, 2},       {3, 3},       {1, 1, 1},
@@ -76,7 +77,7 @@ TEST_F(PathMatcherTest, CheckMatches) {
   path_matcher.LoadGraph(data_dir_ + "/input/small_graph_path_matching");
   path_matcher.BuildCandidateSet(num_label);
 
-  path_matcher.PathMatching();
+  path_matcher.PathMatching(std::thread::hardware_concurrency());
 
   // Load matched result
   std::vector<std::vector<std::vector<VertexID>>> matched_results =

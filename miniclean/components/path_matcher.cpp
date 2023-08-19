@@ -70,6 +70,48 @@ void PathMatcher::PathMatching(const std::vector<VertexLabel>& path_pattern,
   PathMatchRecur(path_pattern, 0, candidates, &partial_results, results);
 }
 
+void PathMatcher::PathMatching(unsigned int parallelism) {
+  // Initialize the result vector.
+  matched_results_.resize(path_patterns_.size());
+  // Initialize the thread pool.
+  ThreadPool thread_pool(parallelism);
+  // Initialize the task package.
+  TaskPackage task_package;
+
+  std::vector<std::vector<VertexID>*> partial_result_pool;
+
+  // Package tasks.
+  for (size_t i = 0; i < path_patterns_.size(); i++) {
+    // Initialize candidates.
+    VertexLabel start_label = path_patterns_[i][0];
+    std::set<VertexID> candidates = candidates_[start_label - 1];
+    
+    // Collect tasks.
+    for (VertexID candidate : candidates) {
+      std::set<VertexID> init_candidate = {candidate};
+      // Initialize partial results.
+      std::vector<VertexID>* partial_results = new std::vector<VertexID>;
+      partial_result_pool.push_back(partial_results);
+
+      Task task = std::bind(&PathMatcher::PathMatchRecur, this,
+                            path_patterns_[i], 0, init_candidate,
+                            partial_results, &matched_results_[i]);
+      task_package.push_back(task);
+    }
+  }
+
+  // Submit tasks.
+  thread_pool.SubmitSync(task_package);
+
+  // Clear task package.
+  task_package.clear();
+
+  // Delete partial results.
+  for (std::vector<VertexID>* partial_results : partial_result_pool) {
+    delete partial_results;
+  }
+}
+
 void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
                                  size_t match_position,
                                  const std::set<VertexID>& candidates,
@@ -77,6 +119,7 @@ void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
                                  std::vector<std::vector<VertexID>>* results) {
   // Return condition.
   if (match_position == path_pattern.size()) {
+    std::lock_guard<std::mutex> lck(mtx_);
     results->push_back(*partial_results);
     return;
   }
@@ -88,7 +131,7 @@ void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
     VertexID cand_out_offset =
         miniclean_csr_graph_->GetOutOffsetBasePointer()[candidate];
     std::set<VertexID> next_candidates;
-
+    
     for (size_t i = 0; i < cand_out_degree; i++) {
       VertexID out_edge_id =
           miniclean_csr_graph_
