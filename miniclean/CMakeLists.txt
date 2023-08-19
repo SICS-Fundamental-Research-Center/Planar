@@ -29,15 +29,16 @@ file(GLOB GRAPH_MINICLEAN_SOURCES
         "*.cpp"
         "graphs/*.cpp"
         "components/*.cpp"
+        "io/*.cpp"
         )
 message(STATUS "CORE source files: ${GRAPH_MINICLEAN_SOURCES}")
 list(FILTER GRAPH_MINICLEAN_SOURCES EXCLUDE REGEX ".*_test\\.cpp$")
-
 
 file(GLOB GRAPH_MINICLEAN_HEADERS
         "*.h"
         "graphs/*.h"
         "components/*.h"
+        "io/*.h"
         )
 message(STATUS "CORE header files: ${GRAPH_MINICLEAN_HEADERS}")
 
