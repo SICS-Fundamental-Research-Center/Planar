@@ -61,7 +61,7 @@ TEST_F(PathMatcherTest, CheckMatches) {
   YAML::Node metadata;
   try {
     metadata = YAML::LoadFile(data_dir_ +
-                              "/input/small_graph_path_matching/0/meta.yaml");
+                              "/input/small_graph_path_matching/meta.yaml");
   } catch (YAML::BadFile& e) {
     GTEST_LOG_(ERROR) << e.msg;
   }
