@@ -208,9 +208,11 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
   edgelist_metadata_vec.push_back({num_vertices, num_edges, max_vid});
 
   // Write the csr graph to disk
-  IOConverter io_converter(output_path);
-  io_converter.WriteSubgraph(edge_bucket, graph_metadata, edgelist_metadata_vec,
-                           store_strategy);
+  GraphFormatConverter graph_format_converter(output_path);
+  graph_format_converter.WriteSubgraph(edge_bucket,
+                                       graph_metadata,
+                                       edgelist_metadata_vec,
+                                       store_strategy);
   return 0;
 }
 

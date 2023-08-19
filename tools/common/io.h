@@ -20,7 +20,7 @@
 namespace sics::graph::tools::common {
 
 // Adapter for the IO operations.
-class IOConverter {
+class GraphFormatConverter {
  private:
   using VertexID = sics::graph::core::common::VertexID;
   using Bitmap = sics::graph::core::common::Bitmap;
@@ -32,7 +32,7 @@ class IOConverter {
   using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
 
  public:
-  IOConverter(const std::string& output_root_path)
+  GraphFormatConverter(const std::string& output_root_path)
       : output_root_path_(output_root_path) {
     if (!std::filesystem::exists(output_root_path))
       std::filesystem::create_directory(output_root_path);

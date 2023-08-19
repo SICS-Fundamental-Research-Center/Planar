@@ -11,7 +11,7 @@ using std::filesystem::exists;
 
 namespace sics::graph::tools::common {
 
-bool IOConverter::WriteSubgraph(
+bool GraphFormatConverter::WriteSubgraph(
     const std::vector<folly::ConcurrentHashMap<VertexID, Vertex>*>&
         subgraph_vec,
     const GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
@@ -210,7 +210,7 @@ bool IOConverter::WriteSubgraph(
 }
 
 // For vertex cut.
-bool IOConverter::WriteSubgraph(
+bool GraphFormatConverter::WriteSubgraph(
     VertexID** edge_bucket,
     const GraphMetadata& graph_metadata,
     const std::vector<EdgelistMetadata>& edgelist_metadata_vec,
