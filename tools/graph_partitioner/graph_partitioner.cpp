@@ -221,6 +221,7 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   }
   thread_pool.SubmitSync(task_package);
   task_package.clear();
+
   delete buffer_csr_vertices;
 
   // Write the subgraphs to disk
