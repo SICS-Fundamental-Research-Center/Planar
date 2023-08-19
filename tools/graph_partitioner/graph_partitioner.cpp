@@ -233,7 +233,9 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   graph_metadata.set_max_vid(max_vid);
   graph_metadata.set_min_vid(min_vid);
 
-  graph_format_converter.WriteSubgraph(subgraph_vec, graph_metadata, store_strategy);
+  graph_format_converter.WriteSubgraph(subgraph_vec,
+                                       graph_metadata,
+                                       store_strategy);
   input_stream.close();
   LOG_INFO("Finished writing the subgraphs to disk");
   return 0;

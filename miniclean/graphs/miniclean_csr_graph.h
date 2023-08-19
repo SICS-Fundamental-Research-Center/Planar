@@ -11,7 +11,7 @@
 #include "core/util/logging.h"
 
 namespace sics::graph::miniclean::graphs {
-
+// TODO (bai-wenchao): implement MiniCleanCSRVertex which contains label and attributes.
 class MiniCleanCSRGraph
     : public sics::graph::core::data_structures::graph::ImmutableCSRGraph {
  private:
@@ -28,7 +28,7 @@ class MiniCleanCSRGraph
       sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 
  public:
-  explicit MiniCleanCSRGraph(SubgraphMetadata metadata) : metadata_(metadata) {}
+  explicit MiniCleanCSRGraph(SubgraphMetadata metadata) : ImmutableCSRGraph(metadata) {}
 
   std::unique_ptr<Serialized> Serialize(const TaskRunner& runner) override;
 
@@ -48,6 +48,8 @@ class MiniCleanCSRGraph
     return out_edge_label_base_pointer_;
   }
 
+  SubgraphMetadata get_metadata() const { return metadata_; }
+
  private:
   void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
   void ParseVertexLabel(const std::list<OwnedBuffer>& buffer_list);
@@ -55,22 +57,12 @@ class MiniCleanCSRGraph
   void ParseOutedgeLabel(const std::list<OwnedBuffer>& buffer_list);
 
  private:
-  std::unique_ptr<SerializedImmutableCSRGraph> serialized_;
-
-  GraphID gid_ = 0;
-  VertexID num_vertices_ = 0;
-  VertexID num_incoming_edges_ = 0;
-  VertexID num_outgoing_edges_ = 0;
-  VertexID max_vid_ = 0;
-  VertexID min_vid_ = 0;
-
-  // config. attributes to build the CSR.
-  SubgraphMetadata metadata_;
   // Vertex labels
   VertexLabel* vertex_label_base_pointer_;
   // Edge labels
   VertexLabel* in_edge_label_base_pointer_;
   VertexLabel* out_edge_label_base_pointer_;
+  // TODO (bai-wenchao): design and add vertex attribute base pointer
 };
 }  // namespace sics::graph::miniclean::graphs
 

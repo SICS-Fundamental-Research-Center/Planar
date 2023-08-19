@@ -11,6 +11,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/tests/)
 ####################
 file(GLOB testfiles
         "${PROJECT_ROOT_DIR}/miniclean/components/*_test.cpp"
+        "${PROJECT_ROOT_DIR}/miniclean/io/*_test.cpp"
         )
 
 foreach (testfile ${testfiles})
