@@ -21,13 +21,13 @@ using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using ThreadPool = sics::graph::core::common::ThreadPool;
 
-namespace sics::graph::core::io {
+namespace sics::graph::miniclean::io {
 
 // The fixture for testing class LogTest
-class ReaderTest : public ::testing::Test {
+class MiniCleanCSRReaderTest : public ::testing::Test {
  protected:
-  ReaderTest() = default;
-  ~ReaderTest() override = default;
+  MiniCleanCSRReaderTest() = default;
+  ~MiniCleanCSRReaderTest() override = default;
 
   std::string data_dir_ = TEST_DATA_DIR;
   std::string subgraph_path_ = data_dir_ + "/input/small_graph_path_matching";
@@ -35,7 +35,7 @@ class ReaderTest : public ::testing::Test {
 };
 
 // Test the ReadSubgraph function of the Reader class
-TEST_F(ReaderTest, ReadSubgraphTest) {
+TEST_F(MiniCleanCSRReaderTest, ReadSubgraphTest) {
   // Create a Reader object.
   MiniCleanCSRReader reader(subgraph_path_);
 
@@ -98,7 +98,7 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
 }
 
 // Test the ReadSubgraph function of the Reader class
-TEST_F(ReaderTest, ReadWrongSubgraphTest) {
+TEST_F(MiniCleanCSRReaderTest, ReadWrongSubgraphTest) {
   // Create a Reader object
   MiniCleanCSRReader reader("non_existing_path");
 
