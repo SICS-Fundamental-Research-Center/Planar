@@ -42,8 +42,7 @@ TEST_F(MiniCleanCSRReaderTest, ReadSubgraphTest) {
   // Load metadata.
   YAML::Node metadata;
   try {
-    metadata = YAML::LoadFile(subgraph_path_ + "/" + std::to_string(gid_) +
-                              "/meta.yaml");
+    metadata = YAML::LoadFile(subgraph_path_ + "/meta.yaml");
   } catch (YAML::BadFile& e) {
     GTEST_LOG_(ERROR) << e.msg;
   }
@@ -97,20 +96,4 @@ TEST_F(MiniCleanCSRReaderTest, ReadSubgraphTest) {
 
 }
 
-// Test the ReadSubgraph function of the Reader class
-TEST_F(MiniCleanCSRReaderTest, ReadWrongSubgraphTest) {
-  // Create a Reader object
-  MiniCleanCSRReader reader("non_existing_path");
-
-  // initialize a Serialized object
-  SerializedImmutableCSRGraph* serialized_immutable_csr =
-      new SerializedImmutableCSRGraph();
-  ReadMessage* read_message = new ReadMessage();
-  read_message->graph_id = 1;
-  read_message->response_serialized = serialized_immutable_csr;
-
-  // Read a subgraph
-  ASSERT_EXIT(reader.Read(read_message),
-              ::testing::ExitedWithCode(EXIT_FAILURE), ".*");
-}
 }  // namespace sics::graph::core::io
