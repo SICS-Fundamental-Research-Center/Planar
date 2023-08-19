@@ -149,9 +149,11 @@ bool GraphFormatConverter::WriteSubgraph(
                             sizeof(VertexID) * count_in_edges);
         break;
       case kUnconstrained:
-        out_data_file.write((char*)buffer_in_edges,
+        out_data_file.write((char*) buffer_in_edges,
+
                             sizeof(VertexID) * count_in_edges);
-        out_data_file.write((char*)buffer_out_edges,
+        out_data_file.write((char*) buffer_out_edges,
+
                             sizeof(VertexID) * count_out_edges);
         break;
       case kUndefinedStrategy:
