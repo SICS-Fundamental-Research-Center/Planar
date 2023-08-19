@@ -64,5 +64,6 @@ int main(int argc, char* argv[]) {
 
   LOG_INFO("Path matching time: ", duration, " seconds.");
 
+  gflags::ShutDownCommandLineFlags();
   return 0;
 }
