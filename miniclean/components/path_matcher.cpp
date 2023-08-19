@@ -131,7 +131,7 @@ void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
     VertexID cand_out_offset =
         miniclean_csr_graph_->GetOutOffsetBasePointer()[candidate];
     std::set<VertexID> next_candidates;
-    
+
     for (size_t i = 0; i < cand_out_degree; i++) {
       VertexID out_edge_id =
           miniclean_csr_graph_

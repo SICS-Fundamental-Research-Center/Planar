@@ -11,7 +11,7 @@
 #include "core/util/logging.h"
 
 namespace sics::graph::miniclean::graphs {
-// TODO (bai-wenchao): implement MiniCleanCSRVertex which contains label and attributes.
+// TODO (bai-wenchao): implement MiniCleanCSRVertex with label and attributes.
 class MiniCleanCSRGraph
     : public sics::graph::core::data_structures::graph::ImmutableCSRGraph {
  private:
@@ -28,7 +28,8 @@ class MiniCleanCSRGraph
       sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 
  public:
-  explicit MiniCleanCSRGraph(SubgraphMetadata metadata) : ImmutableCSRGraph(metadata) {}
+  explicit MiniCleanCSRGraph(SubgraphMetadata metadata)
+      : ImmutableCSRGraph(metadata) {}
 
   std::unique_ptr<Serialized> Serialize(const TaskRunner& runner) override;
 

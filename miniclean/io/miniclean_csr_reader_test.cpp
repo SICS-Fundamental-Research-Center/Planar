@@ -93,7 +93,6 @@ TEST_F(MiniCleanCSRReaderTest, ReadSubgraphTest) {
   EXPECT_EQ(vertex_57.vid, 57);
   EXPECT_EQ(vertex_57.indegree, 1);
   EXPECT_EQ(vertex_57.outdegree, 0);
-
 }
 
-}  // namespace sics::graph::core::io
+}  // namespace sics::graph::miniclean::io

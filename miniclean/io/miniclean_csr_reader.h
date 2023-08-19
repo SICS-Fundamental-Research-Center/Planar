@@ -6,17 +6,17 @@
 #include <iostream>
 #include <list>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <utility>
-#include <sstream>
 
 #include <yaml-cpp/yaml.h>
 
+#include "core/common/multithreading/task_runner.h"
 #include "core/data_structures/buffer.h"
 #include "core/data_structures/serialized.h"
 #include "core/io/reader_writer.h"
 #include "core/scheduler/message.h"
-#include "core/common/multithreading/task_runner.h"
 
 namespace sics::graph::miniclean::io {
 
@@ -37,7 +37,8 @@ class MiniCleanCSRReader : public sics::graph::core::io::Reader {
   using TaskRunner = sics::graph::core::common::TaskRunner;
 
  public:
-  explicit MiniCleanCSRReader(const std::string& root_path) : root_path_(root_path) {}
+  explicit MiniCleanCSRReader(const std::string& root_path)
+      : root_path_(root_path) {}
 
   // TODO (bai-wenchao): add a function to read attribute file.
   // read csr of a certain subgraph from ssd
@@ -56,12 +57,12 @@ class MiniCleanCSRReader : public sics::graph::core::io::Reader {
   //      - file:1_vertex_label.bin
   //      - file:1_attr.bin
   //    - file:csr_global.yaml
-  void Read(ReadMessage* message,
-            TaskRunner* runner = nullptr) override;
+  void Read(ReadMessage* message, TaskRunner* runner = nullptr) override;
 
  private:
   // read label files
-  void ReadLabel(const std::string& subgraph_folder_path, Serialized* dst_object);
+  void ReadLabel(const std::string& subgraph_folder_path,
+                 Serialized* dst_object);
 
   // read data file
   void ReadBinFile(const std::string& path, Serialized* dst_object);
@@ -70,6 +71,6 @@ class MiniCleanCSRReader : public sics::graph::core::io::Reader {
   const std::string root_path_;
 };
 
-}  // namespace sics::graph::core::io
+}  // namespace sics::graph::miniclean::io
 
 #endif  // CORE_IO_LABELED_CSR_READER_H_
