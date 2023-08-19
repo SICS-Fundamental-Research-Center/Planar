@@ -37,7 +37,7 @@ TEST_F(LogTest, DefaultLoggerLevelIsInfo) {
 
   // Test macro: `LOG_ERROR`.
   EXPECT_DEATH(LOG_FATAL(fatal_message), fatal_message);
-  EXPECT_DEATH(LOGF_FATAL(formatted_message, fatal_message),
+  EXPECT_DEATH(LOG_FATAL(formatted_message, fatal_message),
                folly::sformat("message:", fatal_message));
 
   // Test macro: `LOG_ERROR`.
