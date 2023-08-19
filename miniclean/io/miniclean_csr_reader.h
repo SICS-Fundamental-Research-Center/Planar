@@ -16,8 +16,9 @@
 #include "core/data_structures/serialized.h"
 #include "core/io/reader_writer.h"
 #include "core/scheduler/message.h"
+#include "core/common/multithreading/task_runner.h"
 
-namespace sics::graph::core::io {
+namespace sics::graph::miniclean::io {
 
 // @DESCRIPTION Class to read data from ssd to memory
 // @EXAMPLE
@@ -28,11 +29,12 @@ namespace sics::graph::core::io {
 // read_message->graph_id = 1;
 // read_message->response_serialized = serialized_immutable_csr;
 // reader.Read(read_message);
-class MiniCleanCSRReader : public Reader {
+class MiniCleanCSRReader : public sics::graph::core::io::Reader {
  private:
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
   using Serialized = sics::graph::core::data_structures::Serialized;
   using ReadMessage = sics::graph::core::scheduler::ReadMessage;
+  using TaskRunner = sics::graph::core::common::TaskRunner;
 
  public:
   explicit MiniCleanCSRReader(const std::string& root_path) : root_path_(root_path) {}
@@ -55,7 +57,7 @@ class MiniCleanCSRReader : public Reader {
   //      - file:1_attr.bin
   //    - file:csr_global.yaml
   void Read(ReadMessage* message,
-            common::TaskRunner* runner = nullptr) override;
+            TaskRunner* runner = nullptr) override;
 
  private:
   // read label files
