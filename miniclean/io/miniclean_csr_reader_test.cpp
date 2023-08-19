@@ -71,29 +71,51 @@ TEST_F(MiniCleanCSRReaderTest, ReadSubgraphTest) {
 
   /* Test vertex id, degree, related edges, labels, and attributes */
   // TODO (bai-wenchao): Add tests for labels and attributes.
-  // TODO (bai-wenchao): Add tests for incoming edges and outgoing edges, since
-  //                     the order of edge list is inconsistent with that
-  //                     provided by Xiaoke. Although the content of two
-  //                     edgelists are the same, it needs a further check.
 
   // Test vertex 0.
   auto vertex_0 = graph.GetVertexByLocalID(0);
+  // test vertex id
   EXPECT_EQ(vertex_0.vid, 0);
+  // test degree
   EXPECT_EQ(vertex_0.indegree, 3);
   EXPECT_EQ(vertex_0.outdegree, 3);
+  // test incoming edges
+  auto incomeing_edges_0 = vertex_0.incoming_edges;
+  EXPECT_EQ(incomeing_edges_0[0], 10);
+  EXPECT_EQ(incomeing_edges_0[1], 23);
+  EXPECT_EQ(incomeing_edges_0[2], 1);
+  // test outgoing edges
+  auto outgoing_edges_0 = vertex_0.outgoing_edges;
+  EXPECT_EQ(outgoing_edges_0[0], 10);
+  EXPECT_EQ(outgoing_edges_0[1], 23);
+  EXPECT_EQ(outgoing_edges_0[2], 1);
 
   // Test vertex 30.
   auto vertex_30 = graph.GetVertexByLocalID(30);
+  // test vertex id
   EXPECT_EQ(vertex_30.vid, 30);
+  // test degree
   EXPECT_EQ(vertex_30.indegree, 1);
   EXPECT_EQ(vertex_30.outdegree, 3);
+  // test incoming edges
+  auto incomeing_edges_30 = vertex_30.incoming_edges;
+  EXPECT_EQ(incomeing_edges_30[0], 24);
+  // test outgoing edges
+  auto outgoing_edges_30 = vertex_30.outgoing_edges;
+  EXPECT_EQ(outgoing_edges_30[0], 24);
+  EXPECT_EQ(outgoing_edges_30[1], 40);
+  EXPECT_EQ(outgoing_edges_30[2], 43);
 
   // Test vertex 57.
   auto vertex_57 = graph.GetVertexByLocalID(57);
+  // test vertex id
   EXPECT_EQ(vertex_57.vid, 57);
+  // test degree
   EXPECT_EQ(vertex_57.indegree, 1);
   EXPECT_EQ(vertex_57.outdegree, 0);
-
+  // test incoming edges
+  auto incomeing_edges_57 = vertex_57.incoming_edges;
+  EXPECT_EQ(incomeing_edges_57[0], 45);
 }
 
-}  // namespace sics::graph::core::io
+}  // namespace sics::graph::miniclean::io
