@@ -52,24 +52,6 @@ void PathMatcher::BuildCandidateSet(VertexLabel num_label) {
   }
 }
 
-void PathMatcher::PathMatching() {
-  // initialize the result vector
-  matched_results_.resize(path_patterns_.size());
-
-  for (size_t i = 0; i < path_patterns_.size(); i++) {
-    PathMatching(path_patterns_[i], &matched_results_[i]);
-  }
-}
-
-void PathMatcher::PathMatching(const std::vector<VertexLabel>& path_pattern,
-                               std::vector<std::vector<VertexID>>* results) {
-  // Prepare candidates.
-  VertexLabel start_label = path_pattern[0];
-  std::set<VertexID> candidates = candidates_[start_label - 1];
-  std::vector<VertexID> partial_results;
-  PathMatchRecur(path_pattern, 0, candidates, &partial_results, results);
-}
-
 void PathMatcher::PathMatching(unsigned int parallelism) {
   // Initialize the result vector.
   matched_results_.resize(path_patterns_.size());

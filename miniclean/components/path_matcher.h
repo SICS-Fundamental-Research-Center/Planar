@@ -34,17 +34,6 @@ class PathMatcher {
   // It would be contained in `Graph Partitioner` or `Preprocessing` module.
   void BuildCandidateSet(VertexLabel num_label);
 
-  // Match path patterns in the graph.
-  //   This function will call `PathMatching(path_pattern, results)` for each
-  //   pattern and collect their results.
-  void PathMatching();
-
-  // Match a single path pattern in the graph.
-  //   Input: graph, a single path pattern
-  //   Output: matched path instances
-  void PathMatching(const std::vector<VertexLabel>& path_pattern,
-                    std::vector<std::vector<VertexID>>* results);
-
   // Match path patterns in the graph parallelly.
   void PathMatching(unsigned int parallelism);
 
