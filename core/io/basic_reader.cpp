@@ -3,13 +3,12 @@
 namespace sics::graph::core::io {
 
 void BasicReader::ReadSubgraph(const std::string& path, Serialized* dst_object,
-                          int read_type) {
+                               int read_type) {
   if (read_type == 0) {
     ReadCSR(path, dst_object);
     dst_object->SetComplete();
   }
 }
-
 
 void BasicReader::ReadCSR(const std::string& path, Serialized* dst_object) {
   std::filesystem::path dir(path);

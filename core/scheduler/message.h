@@ -3,12 +3,12 @@
 
 #include <fmt/core.h>
 
+#include "apis/pie.h"
 #include "common/blocking_queue.h"
 #include "common/types.h"
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
 #include "util/logging.h"
-
 
 namespace sics::graph::core::scheduler {
 
@@ -24,11 +24,21 @@ struct ReadMessage {
   bool terminated = false;
 };
 
+typedef enum {
+  kDeserialize = 1,
+  kPEval,
+  kIncEval,
+  kSerialize,
+} ExecuteType;
+
 struct ExecuteMessage {
   // Request fields.
   common::GraphID graph_id;
   data_structures::Serialized* serialized;
+  ExecuteType execute_type = kPEval;
   // TODO: add subgraph metadata fields and API program objects.
+  data_structures::Serializable* graph;
+  apis::PIE* api;
 
   // Response fields.
   data_structures::Serializable* response_serializable;
@@ -41,6 +51,7 @@ struct WriteMessage {
   // Request fields.
   common::GraphID graph_id;
   data_structures::Serializable* serializable;
+  data_structures::Serialized* serialized;
   // TODO: add subgraph metadata fields.
 
   // Response fields.
@@ -49,7 +60,6 @@ struct WriteMessage {
   // Termination flag.
   bool terminated = false;
 };
-
 
 // Basically a union of all type of messages.
 class Message {
@@ -73,8 +83,20 @@ class Message {
   void Get(ExecuteMessage* message) const;
   void Get(WriteMessage* message) const;
 
-  [[nodiscard]]
-  Type get_type() const { return type_; }
+  [[nodiscard]] Type get_type() const { return type_; }
+
+  [[nodiscard]] bool is_terminated() const {
+    switch (type_) {
+      case kRead:
+        return message_.read_message.terminated;
+      case kExecute:
+        return message_.execute_message.terminated;
+      case kWrite:
+        return message_.write_message.terminated;
+      default:
+        return false;
+    }
+  }
 
  private:
   Type type_;

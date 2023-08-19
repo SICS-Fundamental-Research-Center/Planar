@@ -25,7 +25,6 @@ foreach (testfile ${testfiles})
             gtest
             gtest_main
             ${FOLLY_LIBRARIES}
-            ${LIBFMT_LIBRARY}
             yaml-cpp::yaml-cpp
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")

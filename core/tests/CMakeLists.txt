@@ -17,6 +17,7 @@ file(GLOB testfiles
         "${PROJECT_ROOT_DIR}/core/io/*_test.cpp"
         "${PROJECT_ROOT_DIR}/core/scheduler/*_test.cpp"
         "${PROJECT_ROOT_DIR}/core/tests/*_test.cpp"
+        "${PROJECT_ROOT_DIR}/core/update_stores/*_test.cpp"
         "${PROJECT_ROOT_DIR}/core/util/*_test.cpp"
         )
 
@@ -32,7 +33,6 @@ foreach (testfile ${testfiles})
             gtest
             gtest_main
             ${FOLLY_LIBRARIES}
-            ${LIBFMT_LIBRARY}
             yaml-cpp::yaml-cpp
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
