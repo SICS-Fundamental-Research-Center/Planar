@@ -1,4 +1,4 @@
-#include "io/miniclean_csr_reader.h"
+#include "miniclean/io/miniclean_csr_reader.h"
 
 namespace sics::graph::core::io {
   

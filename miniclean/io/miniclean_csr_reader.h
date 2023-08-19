@@ -1,8 +1,6 @@
 #ifndef CORE_IO_LABELED_CSR_READER_H_
 #define CORE_IO_LABELED_CSR_READER_H_
 
-#include <yaml-cpp/yaml.h>
-
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -12,10 +10,12 @@
 #include <utility>
 #include <sstream>
 
-#include "data_structures/buffer.h"
-#include "data_structures/serialized.h"
-#include "io/reader_writer.h"
-#include "scheduler/message.h"
+#include <yaml-cpp/yaml.h>
+
+#include "core/data_structures/buffer.h"
+#include "core/data_structures/serialized.h"
+#include "core/io/reader_writer.h"
+#include "core/scheduler/message.h"
 
 namespace sics::graph::core::io {
 
