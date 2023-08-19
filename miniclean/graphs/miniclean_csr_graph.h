@@ -48,6 +48,8 @@ class MiniCleanCSRGraph
     return out_edge_label_base_pointer_;
   }
 
+  SubgraphMetadata get_metadata() const { return metadata_; }
+
  private:
   void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
   void ParseVertexLabel(const std::list<OwnedBuffer>& buffer_list);

@@ -9,7 +9,6 @@
 #include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/data_structures/graph_metadata.h"
-#include "core/io/basic_reader.h"
 #include "miniclean/graphs/miniclean_csr_graph.h"
 
 namespace sics::graph::miniclean::components {
@@ -74,7 +73,7 @@ TEST_F(PathMatcherTest, CheckMatches) {
   std::set<VertexID> candidates[num_label];
   PathMatcher path_matcher(&graph, path_patterns_, candidates, num_label);
 
-  path_matcher.LoadGraph(data_dir_ + "/input/small_graph_path_matching/0");
+  path_matcher.LoadGraph(data_dir_ + "/input/small_graph_path_matching");
   path_matcher.BuildCandidateSet(num_label);
 
   path_matcher.PathMatching();
