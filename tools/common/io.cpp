@@ -1,15 +1,18 @@
 #include "io.h"
 
+
+namespace sics::graph::tools::common {
+
+
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::util::atomic::WriteAdd;
 using sics::graph::core::util::atomic::WriteMax;
 using sics::graph::core::util::atomic::WriteMin;
+using sics::graph::tools::util::QuickSort;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
-
-namespace sics::graph::tools::common {
 
 bool GraphFormatConverter::WriteSubgraph(
     const std::vector<folly::ConcurrentHashMap<VertexID, Vertex>*>&
@@ -128,6 +131,10 @@ bool GraphFormatConverter::WriteSubgraph(
           memcpy(buffer_out_edges + buffer_out_offset[j],
                  csr_vertex_buffer[j].outgoing_edges,
                  csr_vertex_buffer[j].outdegree * sizeof(VertexID));
+          auto upper_bound = csr_vertex_buffer[j].indegree - 1;
+          QuickSort(buffer_in_edges + buffer_in_offset[j], 0, upper_bound);
+          upper_bound = csr_vertex_buffer[j].outdegree - 1;
+          QuickSort(buffer_out_edges + buffer_out_offset[j], 0, upper_bound);
         }
         return;
       });

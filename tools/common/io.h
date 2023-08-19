@@ -16,6 +16,7 @@
 #include "tools/common/types.h"
 #include "tools/common/yaml_config.h"
 #include "tools/util/format_converter.h"
+#include "tools/util/sort.h"
 
 namespace sics::graph::tools::common {
 
