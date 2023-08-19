@@ -12,5 +12,10 @@ foreach (appfile ${appfiles})
     message(STATUS "Found tool: ${appfile}")
     get_filename_component(app ${appfile} NAME_WE)
     add_executable("${app}_exec" ${appfile} ${TOOLS_SOURCES})
-    target_link_libraries("${app}_exec" graph_systems_core yaml-cpp gflags)
+    target_link_libraries("${app}_exec"
+            graph_systems_core
+            yaml-cpp
+            gflags
+            ${FOLLY_LIBRARIES}
+    )
 endforeach ()

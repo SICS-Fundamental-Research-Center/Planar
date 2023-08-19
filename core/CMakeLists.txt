@@ -25,6 +25,7 @@ file(GLOB GRAPH_CORE_SOURCES
         "data_structures/*.cpp"
         "data_structures/graph/*.cpp"
         "io/*.cpp"
+        "update_stores/*.cpp"
         "scheduler/*.cpp"
         "util/*.cpp"
         )
@@ -41,6 +42,7 @@ file(GLOB GRAPH_CORE_HEADERS
         "data_structures/*.h"
         "data_structures/graph/*.h"
         "io/*.h"
+        "update_stores/*.h"
         "scheduler/*.h"
         "util/*.h"
         )
@@ -58,6 +60,7 @@ endif ()
 add_library(graph_systems_core ${GRAPH_CORE_SOURCES} ${GRAPH_CORE_HEADERS})
 
 target_link_libraries(graph_systems_core
+        yaml-cpp
+        gflags
         ${FOLLY_LIBRARIES}
-        ${LIBFMT_LIBRARY}
         )

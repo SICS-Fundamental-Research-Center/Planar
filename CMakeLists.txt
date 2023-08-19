@@ -37,7 +37,6 @@ endif ()
 
 # folly
 find_package(FOLLY REQUIRED)
-find_package(fmt REQUIRED)
 include_directories(SYSTEM ${FOLLY_INCLUDE_DIR})
 
 ###### Add third party to the project, if necessary ######
@@ -73,3 +72,7 @@ include_directories(
 )
 add_subdirectory(core)
 add_subdirectory(tools)
+add_subdirectory(miniclean)
+include_directories(
+        ${CMAKE_CURRENT_SOURCE_DIR}/core
+)

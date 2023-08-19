@@ -52,6 +52,19 @@ TEST_F(ReaderTest, ReadSubgraphTest) {
 }
 
 // Test the ReadSubgraph function of the Reader class
+TEST_F(ReaderTest, ReadSubgraphReadTypeTest) {
+  // Create a Reader object
+  BasicReader reader;
+
+  // initialize a Serialized object
+  SerializedImmutableCSRGraph* serialized_immutable_csr =
+      new SerializedImmutableCSRGraph();
+
+  // Read a subgraph
+  reader.ReadSubgraph(subgraph_1_path, serialized_immutable_csr, 1);
+}
+
+// Test the ReadSubgraph function of the Reader class
 TEST_F(ReaderTest, ReadSubgraphTest1) {
   // Create a Reader object
   BasicReader reader;

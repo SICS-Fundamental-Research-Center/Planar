@@ -3,13 +3,38 @@
 namespace sics::graph::core::io {
 
 void BasicReader::ReadSubgraph(const std::string& path, Serialized* dst_object,
-                          int read_type) {
+                               int read_type) {
   if (read_type == 0) {
     ReadCSR(path, dst_object);
     dst_object->SetComplete();
+    return;
+  }
+  if (read_type == 1) {
+    ReadCSR(path, dst_object);
+    ReadLabel(path, dst_object);
+    dst_object->SetComplete();
+    return;
   }
 }
 
+void BasicReader::ReadLabel(const std::string& path, Serialized* dst_object) {
+  std::filesystem::path dir(path);
+  std::string subgraph_id_str = dir.filename().string();
+  std::string inedge_data_file_path = path + "/" + subgraph_id_str + "_inedge_label.bin";
+  std::string outedge_data_file_path = path + "/" + subgraph_id_str + "_outedge_label.bin";
+  std::string vertex_data_file_path = path + "/" + subgraph_id_str + "_vertex_label.bin";
+  // leave for reading other files like attribute
+
+  // read files
+  try {
+    ReadBinFile(inedge_data_file_path, dst_object);
+    ReadBinFile(outedge_data_file_path, dst_object);
+    ReadBinFile(vertex_data_file_path, dst_object);
+  } catch (const std::exception& e) {
+    std::cerr << e.what() << std::endl;
+    exit(EXIT_FAILURE);
+  }
+}
 
 void BasicReader::ReadCSR(const std::string& path, Serialized* dst_object) {
   std::filesystem::path dir(path);

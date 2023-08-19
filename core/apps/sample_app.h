@@ -14,8 +14,8 @@ class DummyGraph : public data_structures::Serializable {
   DummyGraph();
   ~DummyGraph() = default;
 
-  std::unique_ptr<data_structures::Serialized>
-  Serialize(const common::TaskRunner& runner) final;
+  std::unique_ptr<data_structures::Serialized> Serialize(
+      const common::TaskRunner& runner) final;
 
   // Deserialize the `Serializable` object from a `Serialized` object.
   // This function will submit the deserialization task to the given TaskRunner
@@ -43,8 +43,8 @@ class SampleApp : public apis::PlanarAppBase<DummyGraph> {
 
   // Note: all Planar apps must implement this static method.
   // PlanarAppFactory will use this method to create an app instance.
-  static std::unique_ptr<apis::PlanarAppBase<DummyGraph>>
-  Create(common::TaskRunner* runner, data_structures::Serializable* graph) {
+  static std::unique_ptr<apis::PlanarAppBase<DummyGraph>> Create(
+      common::TaskRunner* runner, data_structures::Serializable* graph) {
     return std::make_unique<SampleApp>(runner, graph);
   }
 
