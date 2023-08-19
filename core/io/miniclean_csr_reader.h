@@ -29,11 +29,12 @@ namespace sics::graph::core::io {
 // read_message->response_serialized = serialized_immutable_csr;
 // reader.Read(read_message);
 class MiniCleanCSRReader : public Reader {
- public:
+ private:
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
   using Serialized = sics::graph::core::data_structures::Serialized;
   using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 
+ public:
   explicit MiniCleanCSRReader(const std::string& root_path) : root_path_(root_path) {}
 
   // TODO (bai-wenchao): add a function to read attribute file.
