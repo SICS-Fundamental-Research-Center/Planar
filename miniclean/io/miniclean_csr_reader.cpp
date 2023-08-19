@@ -43,16 +43,13 @@ void MiniCleanCSRReader::ReadLabel(const std::string& subgraph_folder_path, Seri
 void MiniCleanCSRReader::ReadBinFile(const std::string& path, Serialized* dst_object) {
   std::ifstream file(path, std::ios::binary);
   if (!file) {
-    throw std::runtime_error("Error opening bin file: " + path);
+    LOG_FATAL("Error opening bin file: ", path.c_str());
   }
 
   // Get the file size.
   file.seekg(0, std::ios::end);
   size_t fileSize = file.tellg();
   file.seekg(0, std::ios::beg);
-
-  // Allocate memory to store file data using smart pointers (unique_ptr).
-  std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(fileSize);
 
   // create list of owned buffer
   std::list<OwnedBuffer> file_buffers;
@@ -61,7 +58,7 @@ void MiniCleanCSRReader::ReadBinFile(const std::string& path, Serialized* dst_ob
   // Read the file data.
   file.read(reinterpret_cast<char*>(file_buffers.back().Get()), fileSize);
   if (!file) {
-    throw std::runtime_error("Error reading file: " + path);
+    LOG_FATAL("Error reading file: ", path.c_str());
   }
 
   // give it to serialized object
