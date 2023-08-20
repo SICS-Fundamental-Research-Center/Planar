@@ -1,8 +1,8 @@
 #include "io.h"
 
+#include "tools/util/sort.h"
 
 namespace sics::graph::tools::common {
-
 
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::TaskPackage;
@@ -314,7 +314,7 @@ bool GraphFormatConverter::WriteSubgraph(
 
   out_meta_file << out_node << std::endl;
   out_meta_file.close();
-  return false;
+  return 0;
 }
 
 }  // namespace sics::graph::tools::common
