@@ -25,17 +25,15 @@ struct ImmutableCSRVertex {
   std::string VertexLog() {
     std::stringstream ss;
     ss << "  ===vid: " << vid << ", indegree: " << indegree
-              << ", outdegree: " << outdegree << "===" << std::endl;
+       << ", outdegree: " << outdegree << "===" << std::endl;
     if (indegree != 0) {
       ss << "    Incoming edges: ";
-      for (VertexID i = 0; i < indegree; i++)
-        ss << incoming_edges[i] << ",";
+      for (VertexID i = 0; i < indegree; i++) ss << incoming_edges[i] << ",";
       ss << std::endl << std::endl;
     }
     if (outdegree != 0) {
       ss << "    Outgoing edges: ";
-      for (VertexID i = 0; i < outdegree; i++)
-        ss << outgoing_edges[i] << ",";
+      for (VertexID i = 0; i < outdegree; i++) ss << outgoing_edges[i] << ",";
       ss << std::endl << std::endl;
     }
     ss << "****************************************" << std::endl;
@@ -58,7 +56,9 @@ class ImmutableCSRGraph : public Serializable {
   explicit ImmutableCSRGraph(SubgraphMetadata metadata)
       : Serializable(), metadata_(metadata) {}
 
-  ImmutableCSRGraph(GraphID gid) : Serializable(), gid_(gid) {}
+  explicit ImmutableCSRGraph(GraphID gid) : Serializable(), gid_(gid) {}
+
+  ImmutableCSRGraph() : Serializable() {}
 
   std::unique_ptr<Serialized> Serialize(
       const common::TaskRunner& runner) override;
@@ -80,12 +80,8 @@ class ImmutableCSRGraph : public Serializable {
 
   void set_gid(GraphID gid) { gid_ = gid; }
   void set_num_vertices(VertexID val) { num_vertices_ = val; }
-  void set_num_incoming_edges(VertexID val) {
-    num_incoming_edges_ = val;
-  }
-  void set_num_outgoing_edges(VertexID val) {
-    num_outgoing_edges_ = val;
-  }
+  void set_num_incoming_edges(VertexID val) { num_incoming_edges_ = val; }
+  void set_num_outgoing_edges(VertexID val) { num_outgoing_edges_ = val; }
   void set_max_vid(const VertexID val) { max_vid_ = val; }
   void set_min_vid(const VertexID val) { min_vid_ = val; }
 
@@ -95,6 +91,10 @@ class ImmutableCSRGraph : public Serializable {
   VertexID get_num_outgoing_edges() const { return num_outgoing_edges_; }
   VertexID get_max_vid() const { return max_vid_; }
   VertexID get_min_vid() const { return min_vid_; }
+
+  void SetGraphBuffer(uint8_t* buffer) {
+    buf_graph_base_pointer_ = buffer;
+  }
 
   void SetGlobalIDBuffer(VertexID* buffer) {
     globalid_by_localid_base_pointer_ = buffer;
@@ -139,10 +139,10 @@ class ImmutableCSRGraph : public Serializable {
     return out_offset_base_pointer_[i];
   }
   VertexID* GetIncomingEdgesByLocalID(VertexID i) {
-    return incoming_edges_base_pointer_ + i;
+    return incoming_edges_base_pointer_ + in_offset_base_pointer_[i];
   }
   VertexID* GetOutgoingEdgesByLocalID(VertexID i) {
-    return outgoing_edges_base_pointer_ + i;
+    return outgoing_edges_base_pointer_ + out_offset_base_pointer_[i];
   }
   VertexID GetInDegreeByLocalID(VertexID i) const {
     return indegree_base_pointer_[i];
@@ -169,7 +169,7 @@ class ImmutableCSRGraph : public Serializable {
  private:
   void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
 
- private:
+ protected:
   std::unique_ptr<SerializedImmutableCSRGraph> serialized_;
 
   GraphID gid_ = 0;

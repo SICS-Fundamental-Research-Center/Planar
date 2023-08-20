@@ -20,7 +20,7 @@
 namespace sics::graph::tools::common {
 
 // Adapter for the IO operations.
-class IOConverter {
+class GraphFormatConverter {
  private:
   using VertexID = sics::graph::core::common::VertexID;
   using Bitmap = sics::graph::core::common::Bitmap;
@@ -32,7 +32,7 @@ class IOConverter {
   using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
 
  public:
-  IOConverter(const std::string& output_root_path)
+  GraphFormatConverter(const std::string& output_root_path)
       : output_root_path_(output_root_path) {
     if (!std::filesystem::exists(output_root_path))
       std::filesystem::create_directory(output_root_path);
@@ -49,7 +49,7 @@ class IOConverter {
   //  subgraph_vec: a vector of vertices to be written to disk.
   //  graph_metadata: metadata of the graph.
   //  store_strategy: store strategy to be used.
-  bool WriteSubgraph(
+  void WriteSubgraph(
       const std::vector<folly::ConcurrentHashMap<VertexID, Vertex>*>&
           subgraph_vec,
       const GraphMetadata& graph_metadata, StoreStrategy store_strategy);
@@ -62,7 +62,7 @@ class IOConverter {
   //  graph_metadata: metadata of the graph.
   //  edgelist_metadata_vec: metadata for each bucket.
   //  store_strategy: store strategy to be used.
-  bool WriteSubgraph(VertexID** edge_bucket,
+  void WriteSubgraph(VertexID** edge_bucket,
                      const GraphMetadata& graph_metadata,
                      const std::vector<EdgelistMetadata>& edgelist_metadata_vec,
                      StoreStrategy store_strategy);
