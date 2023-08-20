@@ -1,7 +1,5 @@
 #include "io.h"
 
-#include "tools/util/sort.h"
-
 namespace sics::graph::tools::common {
 
 using sics::graph::core::common::GraphID;
@@ -10,11 +8,10 @@ using sics::graph::core::common::VertexID;
 using sics::graph::core::util::atomic::WriteAdd;
 using sics::graph::core::util::atomic::WriteMax;
 using sics::graph::core::util::atomic::WriteMin;
-using sics::graph::tools::util::QuickSort;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
 
-bool GraphFormatConverter::WriteSubgraph(
+void GraphFormatConverter::WriteSubgraph(
     const std::vector<folly::ConcurrentHashMap<VertexID, Vertex>*>&
         subgraph_vec,
     const GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
@@ -112,7 +109,7 @@ bool GraphFormatConverter::WriteSubgraph(
         break;
       case kUndefinedStrategy:
         LOG_ERROR("Store_strategy is undefined");
-        break;
+        return;
     }
     delete buffer_indegree;
     delete buffer_outdegree;
@@ -120,6 +117,7 @@ bool GraphFormatConverter::WriteSubgraph(
     auto buffer_in_edges = (VertexID*)malloc(sizeof(VertexID) * count_in_edges);
     auto buffer_out_edges =
         (VertexID*)malloc(sizeof(VertexID) * count_out_edges);
+    parallelism = 1;
     for (unsigned int i = 0; i < parallelism; i++) {
       auto task = std::bind([i, parallelism, &num_vertices, &buffer_in_edges,
                              &buffer_out_edges, &buffer_in_offset,
@@ -131,10 +129,12 @@ bool GraphFormatConverter::WriteSubgraph(
           memcpy(buffer_out_edges + buffer_out_offset[j],
                  csr_vertex_buffer[j].outgoing_edges,
                  csr_vertex_buffer[j].outdegree * sizeof(VertexID));
-          auto upper_bound = csr_vertex_buffer[j].indegree - 1;
-          QuickSort(buffer_in_edges + buffer_in_offset[j], 0, upper_bound);
-          upper_bound = csr_vertex_buffer[j].outdegree - 1;
-          QuickSort(buffer_out_edges + buffer_out_offset[j], 0, upper_bound);
+          std::sort(buffer_in_edges + buffer_in_offset[j],
+                    buffer_in_edges + buffer_in_offset[j] +
+                        csr_vertex_buffer[j].indegree);
+          std::sort(buffer_out_edges + buffer_out_offset[j],
+                    buffer_out_edges + buffer_out_offset[j] +
+                        csr_vertex_buffer[j].outdegree);
         }
         return;
       });
@@ -156,14 +156,14 @@ bool GraphFormatConverter::WriteSubgraph(
                             sizeof(VertexID) * count_in_edges);
         break;
       case kUnconstrained:
-        out_data_file.write((char*) buffer_in_edges,
+        out_data_file.write((char*)buffer_in_edges,
                             sizeof(VertexID) * count_in_edges);
-        out_data_file.write((char*) buffer_out_edges,
+        out_data_file.write((char*)buffer_out_edges,
                             sizeof(VertexID) * count_out_edges);
         break;
       case kUndefinedStrategy:
         LOG_ERROR("Store_strategy is undefined");
-        break;
+        return;
     }
 
     delete buffer_in_edges;
@@ -192,7 +192,7 @@ bool GraphFormatConverter::WriteSubgraph(
         break;
       case kUndefinedStrategy:
         LOG_ERROR("Store_strategy is undefined");
-        break;
+        return;
     }
     gid++;
 
@@ -213,13 +213,11 @@ bool GraphFormatConverter::WriteSubgraph(
 
   out_meta_file << out_node << std::endl;
   out_meta_file.close();
-  return 0;
 }
 
 // For vertex cut.
-bool GraphFormatConverter::WriteSubgraph(
-    VertexID** edge_bucket,
-    const GraphMetadata& graph_metadata,
+void GraphFormatConverter::WriteSubgraph(
+    VertexID** edge_bucket, const GraphMetadata& graph_metadata,
     const std::vector<EdgelistMetadata>& edgelist_metadata_vec,
     StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
@@ -297,7 +295,7 @@ bool GraphFormatConverter::WriteSubgraph(
         break;
       default:
         LOG_ERROR("Undefined store strategy.");
-        return -1;
+        return;
     }
     out_data_file.close();
     out_label_file.close();
@@ -314,7 +312,6 @@ bool GraphFormatConverter::WriteSubgraph(
 
   out_meta_file << out_node << std::endl;
   out_meta_file.close();
-  return 0;
 }
 
 }  // namespace sics::graph::tools::common
