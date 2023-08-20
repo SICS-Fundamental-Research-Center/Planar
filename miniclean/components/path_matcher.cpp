@@ -1,8 +1,11 @@
 #include "miniclean/components/path_matcher.h"
 
-#include <folly/system/ThreadId.h>
+#include <fstream>
 #include <memory>
+#include <sstream>
 #include <string>
+
+#include <folly/system/ThreadId.h>
 
 #include "core/common/multithreading/task.h"
 #include "core/common/multithreading/thread_pool.h"
@@ -42,11 +45,40 @@ void PathMatcher::LoadGraph(const std::string& data_path) {
   miniclean_csr_graph_->Deserialize(thread_pool, std::move(serialized_graph));
 }
 
-void PathMatcher::BuildCandidateSet(VertexLabel num_label) {
+void PathMatcher::LoadPatterns(const std::string& pattern_path) {
+  std::ifstream pattern_file(pattern_path);
+  if (!pattern_file) {
+    LOG_FATAL("Error opening pattern file: ", pattern_path.c_str());
+  }
+
+  std::set<VertexLabel> vertex_labels;
+
+  std::string line;
+  while (std::getline(pattern_file, line)) {
+    // if the line is empty or the first char is `#`, continue.
+    if (line.empty() || line[0] == '#') continue;
+
+    std::vector<VertexLabel> pattern;
+    std::stringstream ss(line);
+    std::string label;
+
+    while (std::getline(ss, label, ',')) {
+      vertex_labels.insert(static_cast<VertexLabel>(std::stoi(label)));
+      pattern.push_back(static_cast<VertexLabel>(std::stoi(label)));
+    }
+
+    path_patterns_.push_back(pattern);
+  }
+
+  num_label_ = vertex_labels.size();
+}
+
+void PathMatcher::BuildCandidateSet() {
+  candidates_ = new std::set<VertexID>[num_label_];
   VertexLabel* vertex_label = miniclean_csr_graph_->get_vertex_label();
   for (VertexID i = 0; i < miniclean_csr_graph_->get_num_vertices() * 2;
        i += 2) {
-    for (VertexLabel j = 0; j < num_label; j++) {
+    for (VertexLabel j = 0; j < num_label_; j++) {
       if (vertex_label[i + 1] == j + 1) candidates_[j].insert(vertex_label[i]);
     }
   }
@@ -67,7 +99,7 @@ void PathMatcher::PathMatching(unsigned int parallelism) {
     // Initialize candidates.
     VertexLabel start_label = path_patterns_[i][0];
     std::set<VertexID> candidates = candidates_[start_label - 1];
-    
+
     // Collect tasks.
     for (VertexID candidate : candidates) {
       std::set<VertexID> init_candidate = {candidate};
@@ -75,9 +107,9 @@ void PathMatcher::PathMatching(unsigned int parallelism) {
       std::vector<VertexID>* partial_results = new std::vector<VertexID>;
       partial_result_pool.push_back(partial_results);
 
-      Task task = std::bind(&PathMatcher::PathMatchRecur, this,
-                            path_patterns_[i], 0, init_candidate,
-                            partial_results, &matched_results_[i]);
+      Task task =
+          std::bind(&PathMatcher::PathMatchRecur, this, path_patterns_[i], 0,
+                    init_candidate, partial_results, &matched_results_[i]);
       task_package.push_back(task);
     }
   }
