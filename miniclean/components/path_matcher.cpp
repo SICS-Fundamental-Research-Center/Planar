@@ -5,8 +5,6 @@
 #include <sstream>
 #include <string>
 
-#include <folly/system/ThreadId.h>
-
 #include "core/common/multithreading/task.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
