@@ -1,17 +1,18 @@
 #include "io.h"
 
+namespace sics::graph::tools::common {
+
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
+using sics::graph::core::common::VertexLabel;
 using sics::graph::core::util::atomic::WriteAdd;
 using sics::graph::core::util::atomic::WriteMax;
 using sics::graph::core::util::atomic::WriteMin;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
 
-namespace sics::graph::tools::common {
-
-bool GraphFormatConverter::WriteSubgraph(
+void GraphFormatConverter::WriteSubgraph(
     const std::vector<folly::ConcurrentHashMap<VertexID, Vertex>*>&
         subgraph_vec,
     const GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
@@ -29,16 +30,20 @@ bool GraphFormatConverter::WriteSubgraph(
                                 std::to_string(gid) + ".bin");
     std::ofstream out_label_file(output_root_path_ + "label/" +
                                  std::to_string(gid) + ".bin");
-    out_label_file.close();
 
     auto num_vertices = vertex_map->size();
-    auto buffer_globalid =
-        (VertexID*)malloc(sizeof(VertexID) * vertex_map->size());
-    auto buffer_indegree =
-        (VertexID*)malloc(sizeof(VertexID) * vertex_map->size());
-    auto buffer_outdegree =
-        (VertexID*)malloc(sizeof(VertexID) * vertex_map->size());
     size_t count_in_edges = 0, count_out_edges = 0;
+
+    auto buffer_label =
+        (VertexLabel*)malloc(sizeof(VertexLabel) * num_vertices);
+    auto buffer_globalid = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
+    auto buffer_indegree = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
+    auto buffer_outdegree = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
+
+    // Write label data with all 0.
+    memset(buffer_label, 0, sizeof(VertexLabel) * num_vertices);
+    out_label_file.write((char*) buffer_label,
+                         sizeof(VertexLabel) * num_vertices);
 
     // Serialize subgraph
     auto csr_vertex_buffer =
@@ -86,30 +91,29 @@ bool GraphFormatConverter::WriteSubgraph(
 
     switch (store_strategy) {
       case kOutgoingOnly:
-        out_data_file.write((char*)buffer_outdegree,
+        out_data_file.write((char*) buffer_outdegree,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*)buffer_out_offset,
+        out_data_file.write((char*) buffer_out_offset,
                             sizeof(VertexID) * num_vertices);
         break;
       case kIncomingOnly:
-        out_data_file.write((char*)buffer_indegree,
+        out_data_file.write((char*) buffer_indegree,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*)buffer_in_offset,
+        out_data_file.write((char*) buffer_in_offset,
                             sizeof(VertexID) * num_vertices);
         break;
       case kUnconstrained:
-        out_data_file.write((char*)buffer_indegree,
+        out_data_file.write((char*) buffer_indegree,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*)buffer_outdegree,
+        out_data_file.write((char*) buffer_outdegree,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*)buffer_in_offset,
+        out_data_file.write((char*) buffer_in_offset,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*)buffer_out_offset,
+        out_data_file.write((char*) buffer_out_offset,
                             sizeof(VertexID) * num_vertices);
         break;
       case kUndefinedStrategy:
-        LOG_ERROR("Store_strategy is undefined");
-        break;
+        LOG_FATAL("Store_strategy is undefined");
     }
     delete buffer_indegree;
     delete buffer_outdegree;
@@ -117,6 +121,7 @@ bool GraphFormatConverter::WriteSubgraph(
     auto buffer_in_edges = (VertexID*)malloc(sizeof(VertexID) * count_in_edges);
     auto buffer_out_edges =
         (VertexID*)malloc(sizeof(VertexID) * count_out_edges);
+    parallelism = 1;
     for (unsigned int i = 0; i < parallelism; i++) {
       auto task = std::bind([i, parallelism, &num_vertices, &buffer_in_edges,
                              &buffer_out_edges, &buffer_in_offset,
@@ -128,6 +133,12 @@ bool GraphFormatConverter::WriteSubgraph(
           memcpy(buffer_out_edges + buffer_out_offset[j],
                  csr_vertex_buffer[j].outgoing_edges,
                  csr_vertex_buffer[j].outdegree * sizeof(VertexID));
+          std::sort(buffer_in_edges + buffer_in_offset[j],
+                    buffer_in_edges + buffer_in_offset[j] +
+                        csr_vertex_buffer[j].indegree);
+          std::sort(buffer_out_edges + buffer_out_offset[j],
+                    buffer_out_edges + buffer_out_offset[j] +
+                        csr_vertex_buffer[j].outdegree);
         }
         return;
       });
@@ -141,11 +152,11 @@ bool GraphFormatConverter::WriteSubgraph(
     // Write edges buffers.
     switch (store_strategy) {
       case kOutgoingOnly:
-        out_data_file.write((char*)buffer_out_edges,
+        out_data_file.write((char*) buffer_out_edges,
                             sizeof(VertexID) * count_out_edges);
         break;
       case kIncomingOnly:
-        out_data_file.write((char*)buffer_in_edges,
+        out_data_file.write((char*) buffer_in_edges,
                             sizeof(VertexID) * count_in_edges);
         break;
       case kUnconstrained:
@@ -155,8 +166,7 @@ bool GraphFormatConverter::WriteSubgraph(
                             sizeof(VertexID) * count_out_edges);
         break;
       case kUndefinedStrategy:
-        LOG_ERROR("Store_strategy is undefined");
-        break;
+        LOG_FATAL("Store_strategy is undefined");
     }
 
     delete buffer_in_edges;
@@ -184,8 +194,7 @@ bool GraphFormatConverter::WriteSubgraph(
                                          count_out_edges, max_vid, min_vid});
         break;
       case kUndefinedStrategy:
-        LOG_ERROR("Store_strategy is undefined");
-        break;
+        LOG_FATAL("Store_strategy is undefined");
     }
     gid++;
 
@@ -206,13 +215,11 @@ bool GraphFormatConverter::WriteSubgraph(
 
   out_meta_file << out_node << std::endl;
   out_meta_file.close();
-  return 0;
 }
 
 // For vertex cut.
-bool GraphFormatConverter::WriteSubgraph(
-    VertexID** edge_bucket,
-    const GraphMetadata& graph_metadata,
+void GraphFormatConverter::WriteSubgraph(
+    VertexID** edge_bucket, const GraphMetadata& graph_metadata,
     const std::vector<EdgelistMetadata>& edgelist_metadata_vec,
     StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
@@ -238,20 +245,32 @@ bool GraphFormatConverter::WriteSubgraph(
     util::format_converter::Edgelist2CSR(
         edge_bucket[i], edgelist_metadata_vec[i], store_strategy, &csr_graph);
     delete edge_bucket[i];
-    out_data_file.write((char*)csr_graph.GetGloablIDBasePointer(),
+
+
+    // Write label data with all 0.
+    auto buffer_label = (VertexLabel*)malloc(sizeof(VertexLabel) *
+        csr_graph.get_num_vertices());
+    memset(buffer_label, 0, sizeof(VertexLabel) * csr_graph.get_num_vertices());
+    out_label_file.write((char*) buffer_label,
+                         sizeof(VertexLabel) * csr_graph.get_num_vertices());
+
+    // Write topology of graph.
+    out_data_file.write((char*) csr_graph.GetGloablIDBasePointer(),
                         sizeof(VertexID) * csr_graph.get_num_vertices());
+
+    // Write subgraph metadata.
     switch (store_strategy) {
       case kOutgoingOnly:
         subgraph_metadata_vec.push_back(
             {csr_graph.get_gid(), csr_graph.get_num_vertices(), 0,
              csr_graph.get_num_outgoing_edges(), csr_graph.get_max_vid(),
              csr_graph.get_min_vid()});
-        out_data_file.write((char*)csr_graph.GetOutDegreeBasePointer(),
+        out_data_file.write((char*) csr_graph.GetOutDegreeBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*)csr_graph.GetOutOffsetBasePointer(),
+        out_data_file.write((char*) csr_graph.GetOutOffsetBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
-            (char*)csr_graph.GetOutgoingEdgesBasePointer(),
+            (char*) csr_graph.GetOutgoingEdgesBasePointer(),
             sizeof(VertexID) * csr_graph.get_num_outgoing_edges());
         break;
       case kIncomingOnly:
@@ -259,28 +278,28 @@ bool GraphFormatConverter::WriteSubgraph(
             {csr_graph.get_gid(), csr_graph.get_num_vertices(),
              csr_graph.get_num_incoming_edges(), 0, csr_graph.get_max_vid(),
              csr_graph.get_min_vid()});
-        out_data_file.write((char*)csr_graph.GetInDegreeBasePointer(),
+        out_data_file.write((char*) csr_graph.GetInDegreeBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*)csr_graph.GetInOffsetBasePointer(),
+        out_data_file.write((char*) csr_graph.GetInOffsetBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
-            (char*)csr_graph.GetIncomingEdgesBasePointer(),
+            (char*) csr_graph.GetIncomingEdgesBasePointer(),
             sizeof(VertexID) * csr_graph.get_num_incoming_edges());
         break;
       case kUnconstrained:
-        out_data_file.write((char*)csr_graph.GetInDegreeBasePointer(),
+        out_data_file.write((char*) csr_graph.GetInDegreeBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*)csr_graph.GetOutDegreeBasePointer(),
+        out_data_file.write((char*) csr_graph.GetOutDegreeBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*)csr_graph.GetInOffsetBasePointer(),
+        out_data_file.write((char*) csr_graph.GetInOffsetBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*)csr_graph.GetOutOffsetBasePointer(),
+        out_data_file.write((char*) csr_graph.GetOutOffsetBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
-            (char*)csr_graph.GetIncomingEdgesBasePointer(),
+            (char*) csr_graph.GetIncomingEdgesBasePointer(),
             sizeof(VertexID) * csr_graph.get_num_outgoing_edges());
         out_data_file.write(
-            (char*)csr_graph.GetOutgoingEdgesBasePointer(),
+            (char*) csr_graph.GetOutgoingEdgesBasePointer(),
             sizeof(VertexID) * csr_graph.get_num_outgoing_edges());
         subgraph_metadata_vec.push_back(
             {csr_graph.get_gid(), csr_graph.get_num_vertices(),
@@ -289,8 +308,7 @@ bool GraphFormatConverter::WriteSubgraph(
              csr_graph.get_min_vid()});
         break;
       default:
-        LOG_ERROR("Undefined store strategy.");
-        return -1;
+        LOG_FATAL("Undefined store strategy.");
     }
     out_data_file.close();
     out_label_file.close();
@@ -307,7 +325,6 @@ bool GraphFormatConverter::WriteSubgraph(
 
   out_meta_file << out_node << std::endl;
   out_meta_file.close();
-  return false;
 }
 
 }  // namespace sics::graph::tools::common

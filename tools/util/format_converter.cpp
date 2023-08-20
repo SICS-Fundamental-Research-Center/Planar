@@ -23,8 +23,7 @@ using sics::graph::tools::common::StoreStrategy;
 
 void Edgelist2CSR(VertexID* buffer_edges,
                   const EdgelistMetadata& edgelist_metadata,
-                  StoreStrategy store_strategy,
-                  ImmutableCSRGraph* csr_graph) {
+                  StoreStrategy store_strategy, ImmutableCSRGraph* csr_graph) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(1);
   auto task_package = TaskPackage();
@@ -181,14 +180,22 @@ void Edgelist2CSR(VertexID* buffer_edges,
       for (VertexID j = i; j < aligned_max_vid; j += parallelism) {
         if (!visited.GetBit(j)) continue;
         auto local_vid = __sync_fetch_and_add(&vid, 1);
-        if (buffer_csr_vertices[j].indegree != 0)
+        if (buffer_csr_vertices[j].indegree != 0) {
           memcpy(buffer_in_edges + buffer_in_offset[local_vid],
                  buffer_csr_vertices[j].incoming_edges,
                  buffer_csr_vertices[j].indegree * sizeof(VertexID));
-        if (buffer_csr_vertices[j].outdegree != 0)
+          std::sort(buffer_in_edges + buffer_in_offset[local_vid],
+                    buffer_in_edges + buffer_in_offset[local_vid] +
+                        buffer_csr_vertices[j].indegree);
+        }
+        if (buffer_csr_vertices[j].outdegree != 0) {
           memcpy(buffer_out_edges + buffer_out_offset[local_vid],
                  buffer_csr_vertices[j].outgoing_edges,
                  buffer_csr_vertices[j].outdegree * sizeof(VertexID));
+          std::sort(buffer_out_edges + buffer_out_offset[local_vid],
+                    buffer_out_edges + buffer_out_offset[local_vid] +
+                        buffer_csr_vertices[j].outdegree);
+        }
       }
       return;
     });
