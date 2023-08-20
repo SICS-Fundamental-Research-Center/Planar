@@ -18,9 +18,10 @@ class PlanarAppFactory {
       std::is_base_of<data_structures::Serializable, GraphType>::value,
       "GraphType must be a subclass of Serializable");
 
- public:
   using VertexData = typename GraphType::VertexData;
   using EdgeData = typename GraphType::EdgeData;
+
+ public:
   // TODO: add UpdateStore as a parameter.
   using CreationMethod = std::unique_ptr<PlanarAppBase<GraphType>> (*)(
       common::TaskRunner* runner,
@@ -48,8 +49,8 @@ class PlanarAppFactory {
       LOGF_ERROR("PlanarAppFactory: app {} is not registered", name);
       return nullptr;
     }
-    return PlanarAppFactory<GraphType>::factories_[name](runner_, update_store,
-                                                         graph);
+    return PlanarAppFactory<GraphType>::factories_[name](
+        runner_, update_store, graph);
   }
 
  private:
