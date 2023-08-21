@@ -82,25 +82,25 @@ void GraphFormatConverter::WriteSubgraph(
 
     switch (store_strategy) {
       case kOutgoingOnly:
-        out_data_file.write((char*)buffer_outdegree,
+        out_data_file.write((char*) buffer_outdegree,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*)buffer_out_offset,
+        out_data_file.write((char*) buffer_out_offset,
                             sizeof(VertexID) * num_vertices);
         break;
       case kIncomingOnly:
-        out_data_file.write((char*)buffer_indegree,
+        out_data_file.write((char*) buffer_indegree,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*)buffer_in_offset,
+        out_data_file.write((char*) buffer_in_offset,
                             sizeof(VertexID) * num_vertices);
         break;
       case kUnconstrained:
-        out_data_file.write((char*)buffer_indegree,
+        out_data_file.write((char*) buffer_indegree,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*)buffer_outdegree,
+        out_data_file.write((char*) buffer_outdegree,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*)buffer_in_offset,
+        out_data_file.write((char*) buffer_in_offset,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*)buffer_out_offset,
+        out_data_file.write((char*) buffer_out_offset,
                             sizeof(VertexID) * num_vertices);
         break;
       case kUndefinedStrategy:
@@ -143,17 +143,17 @@ void GraphFormatConverter::WriteSubgraph(
     // Write edges buffers.
     switch (store_strategy) {
       case kOutgoingOnly:
-        out_data_file.write((char*)buffer_out_edges,
+        out_data_file.write((char*) buffer_out_edges,
                             sizeof(VertexID) * count_out_edges);
         break;
       case kIncomingOnly:
-        out_data_file.write((char*)buffer_in_edges,
+        out_data_file.write((char*) buffer_in_edges,
                             sizeof(VertexID) * count_in_edges);
         break;
       case kUnconstrained:
-        out_data_file.write((char*)buffer_in_edges,
+        out_data_file.write((char*) buffer_in_edges,
                             sizeof(VertexID) * count_in_edges);
-        out_data_file.write((char*)buffer_out_edges,
+        out_data_file.write((char*) buffer_out_edges,
                             sizeof(VertexID) * count_out_edges);
         break;
       case kUndefinedStrategy:
