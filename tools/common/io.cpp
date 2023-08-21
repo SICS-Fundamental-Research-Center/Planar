@@ -239,22 +239,13 @@ void GraphFormatConverter::WriteSubgraph(
   for (VertexID i = 0; i < n_subgraphs; i++) {
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
                                 std::to_string(i) + ".bin");
-    std::ofstream out_label_file(output_root_path_ + "label/" +
-                                 std::to_string(i) + ".bin");
     ImmutableCSRGraph csr_graph(i);
     util::format_converter::Edgelist2CSR(
         edge_bucket[i], edgelist_metadata_vec[i], store_strategy, &csr_graph);
     delete edge_bucket[i];
 
-    // Write label data with all 0.
-    auto buffer_label = (VertexLabel*)malloc(sizeof(VertexLabel) *
-                                             csr_graph.get_num_vertices());
-    memset(buffer_label, 0, sizeof(VertexLabel) * csr_graph.get_num_vertices());
-    out_label_file.write((char*) buffer_label,
-                         sizeof(VertexLabel) * csr_graph.get_num_vertices());
-
     // Write topology of graph.
-    out_data_file.write((char*) csr_graph.GetGloablIDBasePointer(),
+    out_data_file.write((char*)csr_graph.GetGloablIDBasePointer(),
                         sizeof(VertexID) * csr_graph.get_num_vertices());
 
     // Write subgraph metadata.
@@ -282,7 +273,7 @@ void GraphFormatConverter::WriteSubgraph(
         out_data_file.write((char*) csr_graph.GetInOffsetBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
-            (char*) csr_graph.GetIncomingEdgesBasePointer(),
+            (char*)csr_graph.GetIncomingEdgesBasePointer(),
             sizeof(VertexID) * csr_graph.get_num_incoming_edges());
         break;
       case kUnconstrained:
@@ -310,11 +301,11 @@ void GraphFormatConverter::WriteSubgraph(
         LOG_FATAL("Undefined store strategy.");
     }
     std::ofstream out_label_file(output_root_path_ + "label/" +
-                                 std::to_string(gid) + ".bin");
+                                 std::to_string(csr_graph.get_gid()) + ".bin");
     auto buffer_label = (VertexLabel*)malloc(sizeof(VertexLabel) *
                                              csr_graph.get_num_vertices());
     memset(buffer_label, 0, sizeof(VertexLabel) * csr_graph.get_num_vertices());
-    out_label_file.write((char*) buffer_label,
+    out_label_file.write((char*)buffer_label,
                          sizeof(VertexLabel) * csr_graph.get_num_vertices());
     delete buffer_label;
 
