@@ -16,7 +16,7 @@ using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 using ThreadPool = sics::graph::core::common::ThreadPool;
 
 // The fixture for testing class LogTest
-class ReaderTest : public ::testing::Test {
+class CSRReaderTest : public ::testing::Test {
  protected:
   ReaderTest() = default;
   ~ReaderTest() override = default;
