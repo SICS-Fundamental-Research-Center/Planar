@@ -19,11 +19,8 @@ typedef uint64_t EdgeIndex;
 #define INVALID_GRAPH_ID \
   std::numeric_limits<sics::graph::core::common::GraphID>::max()
 
+static int kDefaultMaxTaskPackage = 4000;
+
 }  // namespace sics::graph::core::common
-
-
-// gflags define
-DEFINE_uint32(task_size, 100000, "edge task size of parallel function");
-
 
 #endif  // CORE_COMMON_TYPES_H_

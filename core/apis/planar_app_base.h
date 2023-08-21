@@ -50,7 +50,7 @@ class PlanarAppBase : public PIE {
   // Parallel execute vertex_func in task_size chunks.
   void ParallelVertexDo(const std::function<void(VertexID)>& vertex_func) {
     LOG_DEBUG("ParallelVertexDo is begin");
-    uint32_t task_size = FLAGS_task_size;
+    uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
     VertexIndex beginIdx = 0, endIdx;
     for (; beginIdx < graph_->GetVertexNums();) {
@@ -74,7 +74,7 @@ class PlanarAppBase : public PIE {
   void ParallelEdgeDo(
       const std::function<void(VertexID, VertexID)>& edge_func) {
     LOG_DEBUG("ParallelEdgeDo is begin");
-    uint32_t task_size = FLAGS_task_size;
+    uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
     VertexIndex begin_idx = 0, end_idx;
     for (; begin_idx < graph_->GetVertexNums();) {
@@ -100,7 +100,7 @@ class PlanarAppBase : public PIE {
   void ParallelEdgeMutateDo(
       const std::function<void(VertexID, VertexID, EdgeIndex)>& edge_del_func) {
     LOG_DEBUG("ParallelEdgeDelDo is begin");
-    uint32_t task_size = FLAGS_task_size;
+    uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
     VertexIndex begin_idx = 0, end_idx;
     for (; begin_idx < graph_->GetVertexNums();) {
@@ -110,8 +110,8 @@ class PlanarAppBase : public PIE {
         for (VertexIndex i = begin_idx; i < end_idx;) {
           for (VertexIndex j = 0; j < graph_->GetOutDegree(i); j++) {
             edge_del_func(graph_->GetVertexIdByIndex(i),
-                      graph_->GetVertexIdByIndex(graph_->GetOutEdge(i, j)),
-                      graph_->GetOutOffset(i) + j);
+                          graph_->GetVertexIdByIndex(graph_->GetOutEdge(i, j)),
+                          graph_->GetOutOffset(i) + j);
           }
         }
       });
@@ -121,6 +121,10 @@ class PlanarAppBase : public PIE {
     runner_->SubmitSync(tasks);
     graph_->MutateGraphEdge();
     LOG_DEBUG("ParallelEdgedelDo is done");
+  }
+
+  uint32_t GetTaskSize(VertexID max_vid) {
+    return max_vid / common::kDefaultMaxTaskPackage;
   }
 
  protected:
