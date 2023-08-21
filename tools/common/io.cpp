@@ -245,7 +245,7 @@ void GraphFormatConverter::WriteSubgraph(
     delete edge_bucket[i];
 
     // Write topology of graph.
-    out_data_file.write((char*)csr_graph.GetGloablIDBasePointer(),
+    out_data_file.write((char*) csr_graph.GetGloablIDBasePointer(),
                         sizeof(VertexID) * csr_graph.get_num_vertices());
 
     // Write subgraph metadata.
@@ -273,7 +273,7 @@ void GraphFormatConverter::WriteSubgraph(
         out_data_file.write((char*) csr_graph.GetInOffsetBasePointer(),
                             sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
-            (char*)csr_graph.GetIncomingEdgesBasePointer(),
+            (char*) csr_graph.GetIncomingEdgesBasePointer(),
             sizeof(VertexID) * csr_graph.get_num_incoming_edges());
         break;
       case kUnconstrained:
@@ -300,6 +300,8 @@ void GraphFormatConverter::WriteSubgraph(
       default:
         LOG_FATAL("Undefined store strategy.");
     }
+
+    // Write label data with all 0.
     std::ofstream out_label_file(output_root_path_ + "label/" +
                                  std::to_string(csr_graph.get_gid()) + ".bin");
     auto buffer_label = (VertexLabel*)malloc(sizeof(VertexLabel) *
