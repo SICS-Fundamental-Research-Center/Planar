@@ -49,7 +49,7 @@ void PathMatcher::LoadPatterns(const std::string& pattern_path) {
     LOG_FATAL("Error opening pattern file: ", pattern_path.c_str());
   }
 
-  std::unordered_set<VertexLabel> vertex_labels;
+  VertexLabel max_label_id = 1;
 
   std::string line;
   while (std::getline(pattern_file, line)) {
@@ -61,14 +61,15 @@ void PathMatcher::LoadPatterns(const std::string& pattern_path) {
     std::string label;
 
     while (std::getline(ss, label, ',')) {
-      vertex_labels.insert(static_cast<VertexLabel>(std::stoi(label)));
-      pattern.push_back(static_cast<VertexLabel>(std::stoi(label)));
+      VertexLabel label_id = static_cast<VertexLabel>(std::stoi(label));
+      max_label_id = std::max(max_label_id, label_id);
+      pattern.push_back(label_id);
     }
 
     path_patterns_.push_back(pattern);
   }
 
-  num_label_ = vertex_labels.size();
+  num_label_ = max_label_id;
 }
 
 void PathMatcher::BuildCandidateSet() {
@@ -159,7 +160,8 @@ void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
       }
       if (continue_flag) continue;
       // Check whether the label matches.
-      if (out_edge_label == path_pattern[match_position + 1]) {
+      if (match_position < path_pattern.size() &&
+          out_edge_label == path_pattern[match_position + 1]) {
         next_candidates.insert(out_edge_id);
       }
     }
