@@ -21,15 +21,21 @@ using VertexID = sics::graph::core::common::VertexID;
 using VertexLabel = sics::graph::core::common::VertexLabel;
 
 DEFINE_string(i, "", "input graph directory");
+DEFINE_uint64(p, 1, "number of threads for path matching");
 
 // @DESCRIPTION: Match path patterns in the graph.
-// @PARAMETER: For temporary usage, only data directory is passed by user.
-//  - number of vertex labels that will exist in path patterns;
-//  - path patterns in `path_patterns` in which each path pattern is represented
-//    by a vector of vertex labels;
-//  - directory of the input graph when calling `LoadGraph`;
-//    (for testing, the directory is:
-//    {PROJECT_ROOT_DIR}/testfile/input/small_graph_path_matching)
+// @PARAMETER:
+//  - input graph directory: the directory of the input graph which contains
+//      topology, edge label, vertex label, and vertex attributes of each
+//      subgraph, the meta data of the graph, and the path patterns.
+//      (for testing, the directory is:
+//      {PROJECT_ROOT_DIR}/testfile/input/small_graph_path_matching).
+//  - parallism: the number of threads for path matching.
+//      The default value is 1. The maximum value is the hardware concurrency.
+//      User input that less than 1 would adopt 1;
+//      User input that greater than the hardware concurrency would adopt the
+//      hardware concurrency.
+//      The hardware concurrency in sics::50.10 is 20.
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
@@ -40,21 +46,22 @@ int main(int argc, char* argv[]) {
   // Initialize graph.
   MiniCleanCSRGraph graph(graph_metadata.GetSubgraphMetadata(0));
 
-  // Initialize label candidates.
-  VertexLabel num_label = 4;
-  std::set<VertexID> candidates[num_label];
-
-  // Initialize path patterns.
-  std::vector<std::vector<VertexID>> path_patterns = {{1, 1}, {1, 2}};
-
   // Initialize path matcher.
-  PathMatcher path_matcher(&graph, path_patterns, candidates, num_label);
+  PathMatcher path_matcher(&graph);
 
   path_matcher.LoadGraph(FLAGS_i);
-  path_matcher.BuildCandidateSet(num_label);
+  path_matcher.LoadPatterns(FLAGS_i + "/path_patterns.txt");
+  path_matcher.BuildCandidateSet();
 
   auto start = std::chrono::system_clock::now();
-  path_matcher.PathMatching(std::thread::hardware_concurrency());
+  // the parallelism should greater than 0 and less than the hardware
+  // concurrency.
+  unsigned int parallelism = FLAGS_p;
+  if (parallelism <= 0) {
+    LOG_FATAL("The parallelism should greater than 0.");
+  }
+  parallelism = std::min(parallelism, std::thread::hardware_concurrency());
+  path_matcher.PathMatching(parallelism);
   auto end = std::chrono::system_clock::now();
 
   auto duration =

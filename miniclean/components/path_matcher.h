@@ -1,7 +1,7 @@
 #ifndef MINICLEAN_COMPONENTS_PATH_MATCHER_H_
 #define MINICLEAN_COMPONENTS_PATH_MATCHER_H_
 
-#include <set>
+#include <unordered_set>
 #include <vector>
 
 #include "core/common/types.h"
@@ -9,7 +9,6 @@
 
 namespace sics::graph::miniclean::components {
 
-// TODO (bai-wenchao): Load patterns from config.
 class PathMatcher {
  private:
   using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
@@ -18,21 +17,18 @@ class PathMatcher {
   using VertexLabel = sics::graph::core::common::VertexLabel;
 
  public:
-  PathMatcher(MiniCleanCSRGraph* miniclean_csr_graph,
-              std::vector<std::vector<VertexLabel>> path_patterns,
-              std::set<VertexID>* candidates, int num_label)
-      : miniclean_csr_graph_(miniclean_csr_graph),
-        path_patterns_(path_patterns),
-        candidates_(candidates),
-        num_label_(num_label){};
-
+  PathMatcher(MiniCleanCSRGraph* miniclean_csr_graph)
+      : miniclean_csr_graph_(miniclean_csr_graph){};
+  ~PathMatcher() {}
   // For temporary usage.
   // It would be removed when `Graph Loader` API is available.
   void LoadGraph(const std::string& data_path);
 
+  void LoadPatterns(const std::string& pattern_path);
+
   // For temporary usage.
   // It would be contained in `Graph Partitioner` or `Preprocessing` module.
-  void BuildCandidateSet(VertexLabel num_label);
+  void BuildCandidateSet();
 
   // Match path patterns in the graph parallelly.
   void PathMatching(unsigned int parallelism);
@@ -46,15 +42,15 @@ class PathMatcher {
  private:
   void PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
                       size_t match_position,
-                      const std::set<VertexID>& candidates,
+                      const std::unordered_set<VertexID>& candidates,
                       std::vector<VertexID>* partial_results,
                       std::vector<std::vector<VertexID>>* results);
 
   MiniCleanCSRGraph* miniclean_csr_graph_;
   std::vector<std::vector<VertexLabel>> path_patterns_;
   std::vector<std::vector<std::vector<VertexID>>> matched_results_;
-  std::set<VertexID>* candidates_ = nullptr;
-  int num_label_ = 0;
+  std::vector<std::unordered_set<VertexID>> candidates_;
+  VertexLabel num_label_ = 0;
 
   std::mutex mtx_;
 };
