@@ -22,38 +22,9 @@ using VertexLabel = sics::graph::core::common::VertexLabel;
 
 class PathMatcherTest : public ::testing::Test {
  protected:
-  PathMatcherTest() {
-    // path_patterns_ = {{1,1}};
-    path_patterns_ = {
-        {1, 1},       {1, 2},       {1, 3},       {2, 1},       {2, 2},
-        {2, 3},       {3, 1},       {3, 2},       {3, 3},       {1, 1, 1},
-        {1, 1, 2},    {1, 1, 3},    {1, 2, 1},    {1, 2, 2},    {1, 2, 3},
-        {1, 3, 1},    {1, 3, 2},    {1, 3, 3},    {2, 1, 1},    {2, 1, 2},
-        {2, 1, 3},    {2, 2, 1},    {2, 2, 2},    {2, 2, 3},    {2, 3, 1},
-        {2, 3, 2},    {2, 3, 3},    {3, 1, 1},    {3, 1, 2},    {3, 1, 3},
-        {3, 2, 1},    {3, 2, 2},    {3, 2, 3},    {3, 3, 1},    {3, 3, 2},
-        {3, 3, 3},    {1, 1, 1, 1}, {1, 1, 1, 2}, {1, 1, 1, 3}, {1, 1, 2, 1},
-        {1, 1, 2, 2}, {1, 1, 2, 3}, {1, 1, 3, 1}, {1, 1, 3, 2}, {1, 1, 3, 3},
-        {1, 2, 1, 1}, {1, 2, 1, 2}, {1, 2, 1, 3}, {1, 2, 2, 1}, {1, 2, 2, 2},
-        {1, 2, 2, 3}, {1, 2, 3, 1}, {1, 2, 3, 2}, {1, 2, 3, 3}, {1, 3, 1, 1},
-        {1, 3, 1, 2}, {1, 3, 1, 3}, {1, 3, 2, 1}, {1, 3, 2, 2}, {1, 3, 2, 3},
-        {1, 3, 3, 1}, {1, 3, 3, 2}, {1, 3, 3, 3}, {2, 1, 1, 1}, {2, 1, 1, 2},
-        {2, 1, 1, 3}, {2, 1, 2, 1}, {2, 1, 2, 2}, {2, 1, 2, 3}, {2, 1, 3, 1},
-        {2, 1, 3, 2}, {2, 1, 3, 3}, {2, 2, 1, 1}, {2, 2, 1, 2}, {2, 2, 1, 3},
-        {2, 2, 2, 1}, {2, 2, 2, 2}, {2, 2, 2, 3}, {2, 2, 3, 1}, {2, 2, 3, 2},
-        {2, 2, 3, 3}, {2, 3, 1, 1}, {2, 3, 1, 2}, {2, 3, 1, 3}, {2, 3, 2, 1},
-        {2, 3, 2, 2}, {2, 3, 2, 3}, {2, 3, 3, 1}, {2, 3, 3, 2}, {2, 3, 3, 3},
-        {3, 1, 1, 1}, {3, 1, 1, 2}, {3, 1, 1, 3}, {3, 1, 2, 1}, {3, 1, 2, 2},
-        {3, 1, 2, 3}, {3, 1, 3, 1}, {3, 1, 3, 2}, {3, 1, 3, 3}, {3, 2, 1, 1},
-        {3, 2, 1, 2}, {3, 2, 1, 3}, {3, 2, 2, 1}, {3, 2, 2, 2}, {3, 2, 2, 3},
-        {3, 2, 3, 1}, {3, 2, 3, 2}, {3, 2, 3, 3}, {3, 3, 1, 1}, {3, 3, 1, 2},
-        {3, 3, 1, 3}, {3, 3, 2, 1}, {3, 3, 2, 2}, {3, 3, 2, 3}, {3, 3, 3, 1},
-        {3, 3, 3, 2}, {3, 3, 3, 3},
-    };
-  }
+  PathMatcherTest() {}
   ~PathMatcherTest() override {}
 
-  std::vector<std::vector<VertexID>> path_patterns_;
   std::string data_dir_ = TEST_DATA_DIR;
 };
 
@@ -70,12 +41,12 @@ TEST_F(PathMatcherTest, CheckMatches) {
 
   MiniCleanCSRGraph graph(graph_metadata.GetSubgraphMetadata(0));
 
-  VertexLabel num_label = 3;
-  std::set<VertexID> candidates[num_label];
-  PathMatcher path_matcher(&graph, path_patterns_, candidates, num_label);
+  PathMatcher path_matcher(&graph);
 
   path_matcher.LoadGraph(data_dir_ + "/input/small_graph_path_matching");
-  path_matcher.BuildCandidateSet(num_label);
+  path_matcher.LoadPatterns(
+      data_dir_ + "/input/small_graph_path_matching/path_patterns.txt");
+  path_matcher.BuildCandidateSet();
 
   path_matcher.PathMatching(std::thread::hardware_concurrency());
 
