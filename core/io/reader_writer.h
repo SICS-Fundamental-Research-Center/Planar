@@ -1,5 +1,5 @@
 #ifndef CORE_IO_RW_INTERFACE_H_
-#define CORE_IO_RW INTERFACE_H_
+#define CORE_IO_RW_INTERFACE_H_
 
 #include "common/multithreading/task_runner.h"
 #include "scheduler/message.h"
