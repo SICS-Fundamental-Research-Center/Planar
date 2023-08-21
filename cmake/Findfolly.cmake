@@ -17,6 +17,7 @@
 
 find_package(fmt REQUIRED)
 find_package(Glog REQUIRED)
+find_package(DoubleConversion REQUIRED)
 
 include(FindPackageHandleStandardArgs)
 
@@ -35,6 +36,7 @@ if(FOLLY_FOUND)
             ${FOLLY_LIBRARY}
             ${LIBFMT_LIBRARY}
             ${GLOG_LIBRARIES}
+            ${DoubleConversion_LIBRARIES}
     )
     message(STATUS "Found folly (include: ${FOLLY_INCLUDE_DIRS}, library: ${FOLLY_LIBRARIES})")
     mark_as_advanced(FOLLY_LIBRARY_DEBUG FOLLY_LIBRARY_RELEASE
