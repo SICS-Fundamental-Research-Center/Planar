@@ -33,24 +33,6 @@ class DummyGraph : public data_structures::Serializable {
   std::string get_status() const { return status_; }
   void set_status(const std::string& new_status) { status_ = new_status; }
 
-  bool Write(common::VertexID id, VertexData data) { return true; }
-
-  VertexData* Read(common::VertexID id) { return nullptr; }
-
-  int GetVertexNums() { return 2; }
-
-  int GetVertexIdByIndex(int index) { return 0; }
-
-  void SyncVertexData() {}
-
-  void MutateGraphEdge() {}
-
-  size_t GetOutDegree(VertexIndex i) { return 0; }
-
-  size_t GetOutEdge(VertexIndex i, VertexIndex j) { return 0; }
-
-  size_t GetOutOffset(VertexIndex i) { return 0; }
-
  private:
   std::string status_;
 };
@@ -68,21 +50,6 @@ class SampleApp : public apis::PlanarAppBase<DummyGraph> {
                                     DummyGraph::EdgeData>* update_store,
       data_structures::Serializable* graph);
   ~SampleApp() override = default;
-
-  void init(common::VertexID id) {
-    // TODO: init for vertex
-    LOG_INFO("test for init");
-  }
-
-  void graft(common::VertexID src_id, common::VertexID dst_id) {
-    auto t = update_store_->Read(src_id);
-    graph_->Write(src_id, *t);
-  }
-
-  void contract(common::VertexID src_id, common::VertexID dst_id, EdgeIndex idx) {
-    auto t = update_store_->Read(src_id);
-    graph_->Write(src_id, *t);
-  }
 
   void PEval() final;
   void IncEval() final;
