@@ -20,7 +20,10 @@ SampleApp::SampleApp(
   }
 }
 
-void SampleApp::PEval() { graph_->set_status("PEval"); }
+void SampleApp::PEval() {
+  graph_->set_status("PEval");
+  ParallelVertexDo(std::bind(&SampleApp::init, this, std::placeholders::_1));
+}
 
 void SampleApp::IncEval() { graph_->set_status("IncEval"); }
 

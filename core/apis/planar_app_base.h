@@ -1,7 +1,9 @@
 #ifndef GRAPH_SYSTEMS_PLANAR_APP_BASE_H
 #define GRAPH_SYSTEMS_PLANAR_APP_BASE_H
 
+#include <functional>
 #include <type_traits>
+#include <vector>
 
 #include "apis/pie.h"
 #include "common/multithreading/task_runner.h"
@@ -26,6 +28,9 @@ class PlanarAppBase : public PIE {
 
   using VertexData = typename GraphType::VertexData;
   using EdgeData = typename GraphType::EdgeData;
+  using VertexID = common::VertexID;
+  using VertexIndex = common::VertexIndex;
+  using GraphID = common::GraphID;
 
  public:
   // TODO: add UpdateStore as a parameter, so that PEval, IncEval and Assemble
@@ -42,10 +47,45 @@ class PlanarAppBase : public PIE {
 
  protected:
   // TODO: implement this here. This function is not intended for overriden.
-  void VApply() { LOG_WARN("VApply is not implemented"); }
+  void ParallelVertexDo(const std::function<void(int)>& func) {
+    LOG_DEBUG("ParallelVertexDo is begin");
+    // TODO: task granularity
+//    int task_size = FLAGS_task_size;
+
+    common::TaskPackage tasks;
+    for (VertexIndex idx = 0; idx < graph_->GetVertexNums(); idx++) {
+      auto beginIdx = 0;
+      auto endIdx = 0;
+      auto task = std::bind([&, beginIdx, endIdx]() {
+        for (VertexIndex idx = beginIdx; idx < endIdx; idx++) {
+          func(graph_->GetVertexIdByIndex(idx));
+        }
+      });
+      tasks.push_back(task);
+    }
+    runner_->SubmitSync(tasks);
+    // TODO: sync of update_store and graph_ vertex data
+    graph_->SyncVertexData();
+    LOG_DEBUG("ParallelVertexDo is done");
+  }
 
   // TODO: implement this here. This function is not intended for overriden.
-  void EApply() { LOG_WARN("EApply is not implemented"); }
+  void ParallelEdgeDo() {
+    LOG_DEBUG("EApply is not implemented");
+
+    common::TaskPackage tasks;
+
+    for (VertexIndex src_idx = 0; src_idx < graph_->GetVertexNums();
+         src_idx++) {
+      auto src = graph_->GetVertexByIndex(src_idx);
+      auto src_degree = src->GetOutDegree();
+      for (VertexIndex idx = 0; idx < src_degree; idx++) {
+        auto dst = graph_->GetVertexByIndex(src->GetOutEdge(idx));
+      }
+    }
+
+    LOG_DEBUG("EApply is not implemented");
+  }
 
  protected:
   common::TaskRunner* runner_;

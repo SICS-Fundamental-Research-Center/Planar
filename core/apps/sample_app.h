@@ -29,12 +29,25 @@ class DummyGraph : public data_structures::Serializable {
   std::string get_status() const { return status_; }
   void set_status(const std::string& new_status) { status_ = new_status; }
 
+  bool Write(common::VertexID id, VertexData data) { return true; }
+
+  VertexData* Read(common::VertexID id) { return nullptr; }
+
+  int GetVertexNums() { return 2; }
+
+  int GetVertexIdByIndex(int index) { return 0; }
+
+  void SyncVertexData() {}
+
  private:
   std::string status_;
 };
 
 // A sample Planar app that does nothing.
 class SampleApp : public apis::PlanarAppBase<DummyGraph> {
+  using VertexData = DummyGraph::VertexData;
+  using EdgeData = DummyGraph::EdgeData;
+
  public:
   explicit SampleApp(
       common::TaskRunner* runner,
@@ -42,6 +55,21 @@ class SampleApp : public apis::PlanarAppBase<DummyGraph> {
                                     DummyGraph::EdgeData>* update_store,
       data_structures::Serializable* graph);
   ~SampleApp() override = default;
+
+  void init(common::VertexID id) {
+    // TODO: init for vertex
+    LOG_INFO("test for init");
+  }
+
+  void point_jump(common::VertexID src_id) {
+    // do something with vertex src
+    graph_->Write(src_id, 1);
+  }
+
+  void point_jump_inc(common::VertexID src_id) {
+    auto t = update_store_->Read(src_id);
+    graph_->Write(src_id, *t);
+  }
 
   void PEval() final;
   void IncEval() final;

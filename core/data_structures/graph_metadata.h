@@ -1,14 +1,14 @@
 #ifndef GRAPH_SYSTEMS_GRAPH_METADATA_H
 #define GRAPH_SYSTEMS_GRAPH_METADATA_H
 
-#include <yaml-cpp/yaml.h>
-
 #include <cstdio>
 #include <string>
 #include <vector>
 
 #include "common/types.h"
 #include "util/logging.h"
+
+#include <yaml-cpp/yaml.h>
 
 namespace sics::graph::core::data_structures {
 
@@ -73,8 +73,8 @@ class GraphMetadata {
 // used for read meta.yaml when serialized(encode) and deserialize(decode)
 namespace YAML {
 
-using sics::graph::core::common::GraphID;
-using sics::graph::core::common::VertexID;
+using GraphID = sics::graph::core::common::GraphID;
+using VertexID = sics::graph::core::common::VertexID;
 // template is needed for this function
 template <>
 struct convert<sics::graph::core::data_structures::SubgraphMetadata> {

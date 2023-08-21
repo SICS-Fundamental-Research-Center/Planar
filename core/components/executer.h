@@ -7,7 +7,6 @@
 
 #include "apis/pie.h"
 #include "components/component.h"
-#include "io/reader_writer.h"
 #include "scheduler/message_hub.h"
 #include "util/logging.h"
 

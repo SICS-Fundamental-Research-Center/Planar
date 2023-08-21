@@ -1,6 +1,7 @@
 #ifndef GRAPH_SYSTEMS_SCHEDULER_H
 #define GRAPH_SYSTEMS_SCHEDULER_H
 
+#include "common/types.h"
 #include "data_structures/graph_metadata.h"
 #include "scheduler/graph_state.h"
 #include "scheduler/message_hub.h"

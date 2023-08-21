@@ -8,6 +8,7 @@ namespace sics::graph::core::update_stores {
 
 template <typename VertexData, typename EdgeData>
 class BspUpdateStore : public UpdateStoreBase {
+ public:
   VertexData* Read(common::GraphID gid) {
     if (gid >= message_count_) {
       return nullptr;
