@@ -28,22 +28,13 @@ void GraphFormatConverter::WriteSubgraph(
     auto vertex_map = iter;
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
                                 std::to_string(gid) + ".bin");
-    std::ofstream out_label_file(output_root_path_ + "label/" +
-                                 std::to_string(gid) + ".bin");
 
     auto num_vertices = vertex_map->size();
     size_t count_in_edges = 0, count_out_edges = 0;
 
-    auto buffer_label =
-        (VertexLabel*)malloc(sizeof(VertexLabel) * num_vertices);
     auto buffer_globalid = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
     auto buffer_indegree = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
     auto buffer_outdegree = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
-
-    // Write label data with all 0.
-    memset(buffer_label, 0, sizeof(VertexLabel) * num_vertices);
-    out_label_file.write((char*) buffer_label,
-                         sizeof(VertexLabel) * num_vertices);
 
     // Serialize subgraph
     auto csr_vertex_buffer =
@@ -91,25 +82,25 @@ void GraphFormatConverter::WriteSubgraph(
 
     switch (store_strategy) {
       case kOutgoingOnly:
-        out_data_file.write((char*) buffer_outdegree,
+        out_data_file.write((char*)buffer_outdegree,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*) buffer_out_offset,
+        out_data_file.write((char*)buffer_out_offset,
                             sizeof(VertexID) * num_vertices);
         break;
       case kIncomingOnly:
-        out_data_file.write((char*) buffer_indegree,
+        out_data_file.write((char*)buffer_indegree,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*) buffer_in_offset,
+        out_data_file.write((char*)buffer_in_offset,
                             sizeof(VertexID) * num_vertices);
         break;
       case kUnconstrained:
-        out_data_file.write((char*) buffer_indegree,
+        out_data_file.write((char*)buffer_indegree,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*) buffer_outdegree,
+        out_data_file.write((char*)buffer_outdegree,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*) buffer_in_offset,
+        out_data_file.write((char*)buffer_in_offset,
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*) buffer_out_offset,
+        out_data_file.write((char*)buffer_out_offset,
                             sizeof(VertexID) * num_vertices);
         break;
       case kUndefinedStrategy:
@@ -152,17 +143,17 @@ void GraphFormatConverter::WriteSubgraph(
     // Write edges buffers.
     switch (store_strategy) {
       case kOutgoingOnly:
-        out_data_file.write((char*) buffer_out_edges,
+        out_data_file.write((char*)buffer_out_edges,
                             sizeof(VertexID) * count_out_edges);
         break;
       case kIncomingOnly:
-        out_data_file.write((char*) buffer_in_edges,
+        out_data_file.write((char*)buffer_in_edges,
                             sizeof(VertexID) * count_in_edges);
         break;
       case kUnconstrained:
-        out_data_file.write((char*) buffer_in_edges,
+        out_data_file.write((char*)buffer_in_edges,
                             sizeof(VertexID) * count_in_edges);
-        out_data_file.write((char*) buffer_out_edges,
+        out_data_file.write((char*)buffer_out_edges,
                             sizeof(VertexID) * count_out_edges);
         break;
       case kUndefinedStrategy:
@@ -196,8 +187,17 @@ void GraphFormatConverter::WriteSubgraph(
       case kUndefinedStrategy:
         LOG_FATAL("Store_strategy is undefined");
     }
-    gid++;
+    // Write label data with all 0.
+    std::ofstream out_label_file(output_root_path_ + "label/" +
+                                 std::to_string(gid) + ".bin");
+    auto buffer_label =
+        (VertexLabel*)malloc(sizeof(VertexLabel) * num_vertices);
+    memset(buffer_label, 0, sizeof(VertexLabel) * num_vertices);
+    out_label_file.write((char*) buffer_label,
+                         sizeof(VertexLabel) * num_vertices);
+    delete buffer_label;
 
+    gid++;
     delete[] csr_vertex_buffer;
     out_data_file.close();
     out_label_file.close();
@@ -246,10 +246,9 @@ void GraphFormatConverter::WriteSubgraph(
         edge_bucket[i], edgelist_metadata_vec[i], store_strategy, &csr_graph);
     delete edge_bucket[i];
 
-
     // Write label data with all 0.
     auto buffer_label = (VertexLabel*)malloc(sizeof(VertexLabel) *
-        csr_graph.get_num_vertices());
+                                             csr_graph.get_num_vertices());
     memset(buffer_label, 0, sizeof(VertexLabel) * csr_graph.get_num_vertices());
     out_label_file.write((char*) buffer_label,
                          sizeof(VertexLabel) * csr_graph.get_num_vertices());
@@ -310,6 +309,15 @@ void GraphFormatConverter::WriteSubgraph(
       default:
         LOG_FATAL("Undefined store strategy.");
     }
+    std::ofstream out_label_file(output_root_path_ + "label/" +
+                                 std::to_string(gid) + ".bin");
+    auto buffer_label = (VertexLabel*)malloc(sizeof(VertexLabel) *
+                                             csr_graph.get_num_vertices());
+    memset(buffer_label, 0, sizeof(VertexLabel) * csr_graph.get_num_vertices());
+    out_label_file.write((char*) buffer_label,
+                         sizeof(VertexLabel) * csr_graph.get_num_vertices());
+    delete buffer_label;
+
     out_data_file.close();
     out_label_file.close();
   }
