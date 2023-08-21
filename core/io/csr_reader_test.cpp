@@ -18,15 +18,15 @@ using ThreadPool = sics::graph::core::common::ThreadPool;
 // The fixture for testing class LogTest
 class CSRReaderTest : public ::testing::Test {
  protected:
-  ReaderTest() = default;
-  ~ReaderTest() override = default;
+  CSRReaderTest() = default;
+  ~CSRReaderTest() override = default;
 
   const std::string root_path_ =
       std::string(TEST_DATA_DIR) + "/edgecut_csr_in/";
 };
 
 // Test the ReadSubgraph function of the Reader class
-TEST_F(ReaderTest, ReadShouldNotHaveFatalFalure) {
+TEST_F(CSRReaderTest, ReadShouldNotHaveFatalFalure) {
   auto metadata = YAML::LoadFile(root_path_ + "meta.yaml");
   auto graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
 
