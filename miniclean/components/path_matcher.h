@@ -1,7 +1,7 @@
 #ifndef MINICLEAN_COMPONENTS_PATH_MATCHER_H_
 #define MINICLEAN_COMPONENTS_PATH_MATCHER_H_
 
-#include <set>
+#include <unordered_set>
 #include <vector>
 
 #include "core/common/types.h"
@@ -19,11 +19,7 @@ class PathMatcher {
  public:
   PathMatcher(MiniCleanCSRGraph* miniclean_csr_graph)
       : miniclean_csr_graph_(miniclean_csr_graph){};
-  ~PathMatcher() {
-    if (candidates_ != nullptr) {
-      delete[] candidates_;
-    }
-  }
+  ~PathMatcher() {}
   // For temporary usage.
   // It would be removed when `Graph Loader` API is available.
   void LoadGraph(const std::string& data_path);
@@ -46,14 +42,14 @@ class PathMatcher {
  private:
   void PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
                       size_t match_position,
-                      const std::set<VertexID>& candidates,
+                      const std::unordered_set<VertexID>& candidates,
                       std::vector<VertexID>* partial_results,
                       std::vector<std::vector<VertexID>>* results);
 
   MiniCleanCSRGraph* miniclean_csr_graph_;
   std::vector<std::vector<VertexLabel>> path_patterns_;
   std::vector<std::vector<std::vector<VertexID>>> matched_results_;
-  std::set<VertexID>* candidates_ = nullptr;
+  std::vector<std::unordered_set<VertexID>> candidates_;
   VertexLabel num_label_ = 0;
 
   std::mutex mtx_;

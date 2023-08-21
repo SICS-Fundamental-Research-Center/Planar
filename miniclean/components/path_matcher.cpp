@@ -49,7 +49,7 @@ void PathMatcher::LoadPatterns(const std::string& pattern_path) {
     LOG_FATAL("Error opening pattern file: ", pattern_path.c_str());
   }
 
-  std::set<VertexLabel> vertex_labels;
+  std::unordered_set<VertexLabel> vertex_labels;
 
   std::string line;
   while (std::getline(pattern_file, line)) {
@@ -72,7 +72,12 @@ void PathMatcher::LoadPatterns(const std::string& pattern_path) {
 }
 
 void PathMatcher::BuildCandidateSet() {
-  candidates_ = new std::set<VertexID>[num_label_];
+  // Reserve memory space for candidates_.
+  candidates_.reserve(num_label_);
+  // Initialize candidates_.
+  for (VertexLabel i = 0; i < num_label_; i++) {
+    candidates_.emplace_back();
+  }
   VertexLabel* vertex_label = miniclean_csr_graph_->get_vertex_label();
   for (VertexID i = 0; i < miniclean_csr_graph_->get_num_vertices() * 2;
        i += 2) {
@@ -90,24 +95,23 @@ void PathMatcher::PathMatching(unsigned int parallelism) {
   // Initialize the task package.
   TaskPackage task_package;
 
-  std::vector<std::vector<VertexID>*> partial_result_pool;
+  std::list<std::vector<VertexID>> partial_result_pool;
 
   // Package tasks.
   for (size_t i = 0; i < path_patterns_.size(); i++) {
     // Initialize candidates.
     VertexLabel start_label = path_patterns_[i][0];
-    std::set<VertexID> candidates = candidates_[start_label - 1];
+    std::unordered_set<VertexID> candidates = candidates_[start_label - 1];
 
     // Collect tasks.
     for (VertexID candidate : candidates) {
-      std::set<VertexID> init_candidate = {candidate};
+      std::unordered_set<VertexID> init_candidate = {candidate};
       // Initialize partial results.
-      std::vector<VertexID>* partial_results = new std::vector<VertexID>;
-      partial_result_pool.push_back(partial_results);
+      partial_result_pool.emplace_back();
 
-      Task task =
-          std::bind(&PathMatcher::PathMatchRecur, this, path_patterns_[i], 0,
-                    init_candidate, partial_results, &matched_results_[i]);
+      Task task = std::bind(&PathMatcher::PathMatchRecur, this,
+                            path_patterns_[i], 0, init_candidate,
+                            &partial_result_pool.back(), &matched_results_[i]);
       task_package.push_back(task);
     }
   }
@@ -117,16 +121,11 @@ void PathMatcher::PathMatching(unsigned int parallelism) {
 
   // Clear task package.
   task_package.clear();
-
-  // Delete partial results.
-  for (std::vector<VertexID>* partial_results : partial_result_pool) {
-    delete partial_results;
-  }
 }
 
 void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
                                  size_t match_position,
-                                 const std::set<VertexID>& candidates,
+                                 const std::unordered_set<VertexID>& candidates,
                                  std::vector<VertexID>* partial_results,
                                  std::vector<std::vector<VertexID>>* results) {
   // Return condition.
@@ -142,7 +141,7 @@ void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
         miniclean_csr_graph_->GetOutDegreeBasePointer()[candidate];
     VertexID cand_out_offset =
         miniclean_csr_graph_->GetOutOffsetBasePointer()[candidate];
-    std::set<VertexID> next_candidates;
+    std::unordered_set<VertexID> next_candidates;
 
     for (size_t i = 0; i < cand_out_degree; i++) {
       VertexID out_edge_id =
