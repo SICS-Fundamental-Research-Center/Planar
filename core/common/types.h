@@ -13,6 +13,7 @@ typedef uint32_t VertexID;
 typedef uint32_t VertexIndex;
 typedef uint32_t VertexLabel;
 typedef uint32_t VertexCount;
+typedef uint64_t EdgeIndex;
 
 #define MAX_VERTEX_ID std::numeric_limits<VertexID>::max()
 #define INVALID_GRAPH_ID \
@@ -22,8 +23,7 @@ typedef uint32_t VertexCount;
 
 
 // gflags define
-//DEFINE_uint32(task_size, 1000, "task size of parallel function");
-
+DEFINE_uint32(task_size, 100000, "edge task size of parallel function");
 
 
 #endif  // CORE_COMMON_TYPES_H_

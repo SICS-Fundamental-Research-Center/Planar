@@ -26,11 +26,12 @@ class PlanarAppBase : public PIE {
       std::is_base_of<data_structures::Serializable, GraphType>::value,
       "GraphType must be a subclass of Serializable");
 
+  using GraphID = common::GraphID;
   using VertexData = typename GraphType::VertexData;
   using EdgeData = typename GraphType::EdgeData;
   using VertexID = common::VertexID;
   using VertexIndex = common::VertexIndex;
-  using GraphID = common::GraphID;
+  using EdgeIndex = common::EdgeIndex;
 
  public:
   // TODO: add UpdateStore as a parameter, so that PEval, IncEval and Assemble
@@ -46,22 +47,22 @@ class PlanarAppBase : public PIE {
   ~PlanarAppBase() override = default;
 
  protected:
-  // TODO: implement this here. This function is not intended for overriden.
-  void ParallelVertexDo(const std::function<void(int)>& func) {
+  // Parallel execute vertex_func in task_size chunks.
+  void ParallelVertexDo(const std::function<void(VertexID)>& vertex_func) {
     LOG_DEBUG("ParallelVertexDo is begin");
-    // TODO: task granularity
-//    int task_size = FLAGS_task_size;
-
+    uint32_t task_size = FLAGS_task_size;
     common::TaskPackage tasks;
-    for (VertexIndex idx = 0; idx < graph_->GetVertexNums(); idx++) {
-      auto beginIdx = 0;
-      auto endIdx = 0;
+    VertexIndex beginIdx = 0, endIdx;
+    for (; beginIdx < graph_->GetVertexNums();) {
+      endIdx += task_size;
+      if (endIdx > graph_->GetVertexNums()) endIdx = graph_->GetVertexNums();
       auto task = std::bind([&, beginIdx, endIdx]() {
         for (VertexIndex idx = beginIdx; idx < endIdx; idx++) {
-          func(graph_->GetVertexIdByIndex(idx));
+          vertex_func(graph_->GetVertexIdByIndex(idx));
         }
       });
       tasks.push_back(task);
+      beginIdx = endIdx;
     }
     runner_->SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
@@ -69,22 +70,57 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelVertexDo is done");
   }
 
-  // TODO: implement this here. This function is not intended for overriden.
-  void ParallelEdgeDo() {
-    LOG_DEBUG("EApply is not implemented");
-
+  // Parallel execute edge_func in task_size chunks.
+  void ParallelEdgeDo(
+      const std::function<void(VertexID, VertexID)>& edge_func) {
+    LOG_DEBUG("ParallelEdgeDo is begin");
+    uint32_t task_size = FLAGS_task_size;
     common::TaskPackage tasks;
-
-    for (VertexIndex src_idx = 0; src_idx < graph_->GetVertexNums();
-         src_idx++) {
-      auto src = graph_->GetVertexByIndex(src_idx);
-      auto src_degree = src->GetOutDegree();
-      for (VertexIndex idx = 0; idx < src_degree; idx++) {
-        auto dst = graph_->GetVertexByIndex(src->GetOutEdge(idx));
-      }
+    VertexIndex begin_idx = 0, end_idx;
+    for (; begin_idx < graph_->GetVertexNums();) {
+      end_idx += task_size;
+      if (end_idx > graph_->GetVertexNums()) end_idx = graph_->GetVertexNums();
+      auto task = std::bind([&, begin_idx, end_idx]() {
+        for (VertexIndex i = begin_idx; i < end_idx;) {
+          for (VertexIndex j = 0; j < graph_->GetOutDegree(i); j++) {
+            edge_func(graph_->GetVertexIdByIndex(i),
+                      graph_->GetVertexIdByIndex(graph_->GetOutEdge(i, j)));
+          }
+        }
+      });
+      tasks.push_back(task);
+      begin_idx = end_idx;
     }
+    runner_->SubmitSync(tasks);
+    graph_->SyncVertexData();
+    LOG_DEBUG("ParallelEdgeDo is done");
+  }
 
-    LOG_DEBUG("EApply is not implemented");
+  // Parallel execute edge_delete_func in task_size chunks.
+  void ParallelEdgeMutateDo(
+      const std::function<void(VertexID, VertexID, EdgeIndex)>& edge_del_func) {
+    LOG_DEBUG("ParallelEdgeDelDo is begin");
+    uint32_t task_size = FLAGS_task_size;
+    common::TaskPackage tasks;
+    VertexIndex begin_idx = 0, end_idx;
+    for (; begin_idx < graph_->GetVertexNums();) {
+      end_idx += task_size;
+      if (end_idx > graph_->GetVertexNums()) end_idx = graph_->GetVertexNums();
+      auto task = std::bind([&, begin_idx, end_idx]() {
+        for (VertexIndex i = begin_idx; i < end_idx;) {
+          for (VertexIndex j = 0; j < graph_->GetOutDegree(i); j++) {
+            edge_del_func(graph_->GetVertexIdByIndex(i),
+                      graph_->GetVertexIdByIndex(graph_->GetOutEdge(i, j)),
+                      graph_->GetOutOffset(i) + j);
+          }
+        }
+      });
+      tasks.push_back(task);
+      begin_idx = end_idx;
+    }
+    runner_->SubmitSync(tasks);
+    graph_->MutateGraphEdge();
+    LOG_DEBUG("ParallelEdgedelDo is done");
   }
 
  protected:

@@ -23,6 +23,12 @@ SampleApp::SampleApp(
 void SampleApp::PEval() {
   graph_->set_status("PEval");
   ParallelVertexDo(std::bind(&SampleApp::init, this, std::placeholders::_1));
+
+  ParallelEdgeDo(std::bind(&SampleApp::graft, this, std::placeholders::_1,
+                           std::placeholders::_2));
+  ParallelEdgeMutateDo(std::bind(&SampleApp::contract, this,
+                                 std::placeholders::_1, std::placeholders::_2,
+                                 std::placeholders::_3));
 }
 
 void SampleApp::IncEval() { graph_->set_status("IncEval"); }

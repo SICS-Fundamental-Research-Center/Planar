@@ -13,6 +13,10 @@ class DummyGraph : public data_structures::Serializable {
  public:
   using VertexData = int;
   using EdgeData = int;
+  using VertexID = common::VertexID;
+  using VertexIndex = common::VertexIndex;
+  using EdgeIndex = common::EdgeIndex;
+  using GraphID = common::GraphID;
 
   DummyGraph();
   ~DummyGraph() = default;
@@ -39,6 +43,14 @@ class DummyGraph : public data_structures::Serializable {
 
   void SyncVertexData() {}
 
+  void MutateGraphEdge() {}
+
+  size_t GetOutDegree(VertexIndex i) { return 0; }
+
+  size_t GetOutEdge(VertexIndex i, VertexIndex j) { return 0; }
+
+  size_t GetOutOffset(VertexIndex i) { return 0; }
+
  private:
   std::string status_;
 };
@@ -47,6 +59,7 @@ class DummyGraph : public data_structures::Serializable {
 class SampleApp : public apis::PlanarAppBase<DummyGraph> {
   using VertexData = DummyGraph::VertexData;
   using EdgeData = DummyGraph::EdgeData;
+  using EdgeIndex = DummyGraph::EdgeIndex;
 
  public:
   explicit SampleApp(
@@ -61,12 +74,12 @@ class SampleApp : public apis::PlanarAppBase<DummyGraph> {
     LOG_INFO("test for init");
   }
 
-  void point_jump(common::VertexID src_id) {
-    // do something with vertex src
-    graph_->Write(src_id, 1);
+  void graft(common::VertexID src_id, common::VertexID dst_id) {
+    auto t = update_store_->Read(src_id);
+    graph_->Write(src_id, *t);
   }
 
-  void point_jump_inc(common::VertexID src_id) {
+  void contract(common::VertexID src_id, common::VertexID dst_id, EdgeIndex idx) {
     auto t = update_store_->Read(src_id);
     graph_->Write(src_id, *t);
   }
