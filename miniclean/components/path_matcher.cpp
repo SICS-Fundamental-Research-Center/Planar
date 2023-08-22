@@ -95,16 +95,17 @@ void PathMatcher::PathMatching(unsigned int parallelism) {
   ThreadPool thread_pool(parallelism);
   // Initialize the task package.
   TaskPackage task_package;
+  task_package.reserve(parallelism);
 
   std::list<std::vector<VertexID>> partial_result_pool;
 
-  // Package tasks.
+  // Collect tasks.
+  TaskPackage task_store;
   for (size_t i = 0; i < path_patterns_.size(); i++) {
     // Initialize candidates.
     VertexLabel start_label = path_patterns_[i][0];
     std::unordered_set<VertexID> candidates = candidates_[start_label - 1];
 
-    // Collect tasks.
     for (VertexID candidate : candidates) {
       std::unordered_set<VertexID> init_candidate = {candidate};
       // Initialize partial results.
@@ -113,8 +114,17 @@ void PathMatcher::PathMatching(unsigned int parallelism) {
       Task task = std::bind(&PathMatcher::PathMatchRecur, this,
                             path_patterns_[i], 0, init_candidate,
                             &partial_result_pool.back(), &matched_results_[i]);
-      task_package.push_back(task);
+      task_store.push_back(task);
     }
+  }
+  
+  for (unsigned int i = 0; i < parallelism; i++) {
+    Task task = std::bind([parallelism, i, &task_store] {
+      for (size_t j = i; j < task_store.size(); j += parallelism) {
+        task_store[j]();
+      }
+    });
+    task_package.push_back(task);
   }
 
   // Submit tasks.
