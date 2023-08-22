@@ -104,7 +104,6 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
           vid_map[edges_vec.at(j)] = local_vid;
         }
       }
-      return;
     });
     task_package.push_back(task);
   }
@@ -117,7 +116,6 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
         std::bind([i, parallelism, &buffer_edges, &edges_vec, &vid_map]() {
           for (VertexID j = i; j < edges_vec.size(); j += parallelism)
             buffer_edges[j] = vid_map[edges_vec.at(j)];
-          return;
         });
     task_package.push_back(task);
   }
@@ -192,7 +190,6 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
             WriteAdd(num_inedges_by_vid + dst, (VertexID)1);
             WriteAdd(num_outedges_by_vid + src, (VertexID)1);
           }
-          return;
         });
     task_package.push_back(task);
   }
