@@ -34,6 +34,7 @@ foreach (testfile ${testfiles})
             gtest_main
             ${FOLLY_LIBRARIES}
             yaml-cpp::yaml-cpp
+            gflags
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
     target_compile_definitions(${filename} PUBLIC TEST_DATA_DIR="${PROJECT_ROOT_DIR}/testfile")
