@@ -113,7 +113,7 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
     auto task =
         std::bind([i, parallelism, &buffer_edges, &edges_vec, &vid_map]() {
           for (VertexID j = i; j < edges_vec.size(); j += parallelism)
-            buffer_edges[j] = vid_map[edges_vec.at(j)];
+            // buffer_edges[j] = vid_map[edges_vec.at(j)];
           return;
         });
     task_package.push_back(task);
