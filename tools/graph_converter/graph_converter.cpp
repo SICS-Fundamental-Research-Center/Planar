@@ -53,12 +53,13 @@ DEFINE_bool(read_head, false, "whether to read header of csv.");
 // respectively, sep determines the separator for the csv file, read_head
 // indicates whether to read head.
 void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
-                     const std::string& output_path,
-                     const std::string& sep,
-                     bool read_head) {
+                                    const std::string& output_path,
+                                    const std::string& sep,
+                                    bool read_head) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
+  std::mutex mtx;
 
   if (!exists(output_path)) create_directory(output_path);
   std::ifstream in_file(input_path);
@@ -92,17 +93,18 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   memset(buffer_edges, 0, sizeof(VertexID) * edges_vec.size() * 2);
   auto vid_map = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
   for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind(
-        [i, parallelism, &bitmap, &edges_vec, &compressed_vid, &vid_map]() {
-          for (VertexID j = i; j < edges_vec.size(); j += parallelism) {
-            if (!bitmap.GetBit(edges_vec.at(j))) {
-              auto local_vid = __sync_fetch_and_add(&compressed_vid, 1);
-              bitmap.SetBit(edges_vec.at(j));
-              vid_map[edges_vec.at(j)] = local_vid;
-            }
-          }
-          return;
-        });
+    auto task = std::bind([i, parallelism, &bitmap, &edges_vec, &compressed_vid,
+                           &vid_map, &buffer_edges, &mtx]() {
+      for (VertexID j = i; j < edges_vec.size(); j += parallelism) {
+        buffer_edges[j] = edges_vec.at(j);
+        std::lock_guard<std::mutex> lck(mtx);
+        if (!bitmap.GetBit(edges_vec.at(j))) {
+          auto local_vid = compressed_vid++;
+          bitmap.SetBit(edges_vec.at(j));
+          vid_map[edges_vec.at(j)] = local_vid;
+        }
+      }
+    });
     task_package.push_back(task);
   }
   thread_pool.SubmitSync(task_package);
@@ -114,7 +116,6 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
         std::bind([i, parallelism, &buffer_edges, &edges_vec, &vid_map]() {
           for (VertexID j = i; j < edges_vec.size(); j += parallelism)
             buffer_edges[j] = vid_map[edges_vec.at(j)];
-          return;
         });
     task_package.push_back(task);
   }
@@ -166,8 +167,10 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
                              "edgelist.bin");
   in_file.read((char*)buffer_edges, sizeof(VertexID) * 2 * num_edges);
 
-  auto num_inedges_by_vid = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
-  auto num_outedges_by_vid = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  auto num_inedges_by_vid =
+      (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  auto num_outedges_by_vid =
+      (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
   memset(num_inedges_by_vid, 0, sizeof(VertexID) * aligned_max_vid);
   memset(num_outedges_by_vid, 0, sizeof(VertexID) * aligned_max_vid);
   auto visited = Bitmap(aligned_max_vid);
@@ -187,7 +190,6 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
             WriteAdd(num_inedges_by_vid + dst, (VertexID)1);
             WriteAdd(num_outedges_by_vid + src, (VertexID)1);
           }
-          return;
         });
     task_package.push_back(task);
   }
@@ -229,17 +231,16 @@ int main(int argc, char** argv) {
       "csr\n");
 
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-  if (FLAGS_i == "" || FLAGS_o == "") {
-    LOG_ERROR("Input (output) path is empty.");
-    return -1;
-  }
+  if (FLAGS_i == "" || FLAGS_o == "")
+    LOG_FATAL("Input (output) path is empty.");
+
   switch (ConvertMode2Enum(FLAGS_convert_mode)) {
     case kEdgelistCSV2EdgelistBin:
-      if (FLAGS_sep == "") {
-        LOG_ERROR("CSV separator is not empty. Use -sep [e.g. \",\"].");
-        return -1;
-      }
-      ConvertEdgelistCSV2EdgelistBin(FLAGS_i, FLAGS_o, FLAGS_sep, FLAGS_read_head);
+      if (FLAGS_sep == "")
+        LOG_FATAL("CSV separator is not empty. Use -sep [e.g. \",\"].");
+
+      ConvertEdgelistCSV2EdgelistBin(FLAGS_i, FLAGS_o, FLAGS_sep,
+                                     FLAGS_read_head);
       break;
     case kEdgelistCSV2CSRBin:
       // TODO(hsiaoko): to add edgelist csv 2 csr bin function.
@@ -249,8 +250,7 @@ int main(int argc, char** argv) {
                                 StoreStrategy2Enum(FLAGS_store_strategy));
       break;
     default:
-      LOG_INFO("Error convert mode.");
-      break;
+      LOG_FATAL("Error convert mode.");
   }
 
   gflags::ShutDownCommandLineFlags();
