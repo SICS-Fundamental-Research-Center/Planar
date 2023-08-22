@@ -1,8 +1,9 @@
-#include <iostream>
+#include "io/csr_reader.h"
 
 #include <gtest/gtest.h>
 
-#include "io/csr_reader.h"
+#include <iostream>
+
 #include "common/multithreading/thread_pool.h"
 #include "data_structures/graph/immutable_csr_graph.h"
 #include "util/logging.h"
@@ -41,7 +42,9 @@ TEST_F(CSRReaderTest, ReadShouldNotHaveFatalFalure) {
   read_message_0.response_serialized = serialized_csr_0.get();
   EXPECT_NO_FATAL_FAILURE(csr_reader.Read(&read_message_0, nullptr));
 
-  // There is a bug of Clion Debugger. std::move(std::list) should work fine.
+  // Note: In Clion debugger, the effect of
+  // `std::list::emplace_back(std::move())` is not visible. In fact, it works
+  // correctly.
 
   read_message_1.graph_id = 1;
   read_message_1.response_serialized = serialized_csr_1.get();

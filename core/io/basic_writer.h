@@ -13,7 +13,7 @@
 #include "data_structures/serialized.h"
 #include "yaml-cpp/yaml.h"
 
-// TODO: this should be delete
+// TODO: This implementation is deprecated. It will be removed later.
 
 namespace sics::graph::core::io {
 

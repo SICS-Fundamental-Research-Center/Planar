@@ -16,7 +16,7 @@
 
 #define CSR_GLOBLE_FILE_NAME "csr_global.yaml"
 
-// TODO: this should be delete
+// TODO: This implementation is deprecated. It will be removed later.
 
 namespace sics::graph::core::io {
 
