@@ -1,0 +1,19 @@
+GraphMetadata:
+  num_vertices: 0
+  num_edges: 200
+  max_vid: 57
+  min_vid: 0
+  num_subgraphs: 2
+  subgraphs:
+    - gid: 0
+      num_vertices: 29
+      num_incoming_edges: 50
+      num_outgoing_edges: 54
+      max_vid: 57
+      min_vid: 1
+    - gid: 1
+      num_vertices: 29
+      num_incoming_edges: 50
+      num_outgoing_edges: 46
+      max_vid: 56
+      min_vid: 0

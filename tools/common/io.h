@@ -49,7 +49,7 @@ class GraphFormatConverter {
   //  subgraph_vec: a vector of vertices to be written to disk.
   //  graph_metadata: metadata of the graph.
   //  store_strategy: store strategy to be used.
-  bool WriteSubgraph(
+  void WriteSubgraph(
       const std::vector<folly::ConcurrentHashMap<VertexID, Vertex>*>&
           subgraph_vec,
       const GraphMetadata& graph_metadata, StoreStrategy store_strategy);
@@ -62,7 +62,7 @@ class GraphFormatConverter {
   //  graph_metadata: metadata of the graph.
   //  edgelist_metadata_vec: metadata for each bucket.
   //  store_strategy: store strategy to be used.
-  bool WriteSubgraph(VertexID** edge_bucket,
+  void WriteSubgraph(VertexID** edge_bucket,
                      const GraphMetadata& graph_metadata,
                      const std::vector<EdgelistMetadata>& edgelist_metadata_vec,
                      StoreStrategy store_strategy);
