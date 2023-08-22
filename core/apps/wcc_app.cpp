@@ -7,23 +7,20 @@ WCCApp::WCCApp(
     common::TaskRunner* runner,
     update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
     data_structures::Serializable* graph)
-    : apis::PlanarAppBase<TestGraph>(runner, update_store, graph) {
-  if (!WCCApp::registered_) {
-    LOG_FATAL("SampleApp is not registered to the factory");
-  }
-}
+    : apis::PlanarAppBase<TestGraph>(runner, update_store, graph) {}
 
 void WCCApp::PEval() {
-  graph_->set_status("PEval");
   ParallelVertexDo(std::bind(&WCCApp::init, this, std::placeholders::_1));
+  graph_->set_status("PEval");
+}
 
+void WCCApp::IncEval() {
+  graph_->set_status("IncEval");
   ParallelEdgeDo(std::bind(&WCCApp::graft, this, std::placeholders::_1,
                            std::placeholders::_2));
   ParallelEdgeMutateDo(std::bind(&WCCApp::contract, this, std::placeholders::_1,
                                  std::placeholders::_2, std::placeholders::_3));
 }
-
-void WCCApp::IncEval() { graph_->set_status("IncEval"); }
 
 void WCCApp::Assemble() { graph_->set_status("Assemble"); }
 

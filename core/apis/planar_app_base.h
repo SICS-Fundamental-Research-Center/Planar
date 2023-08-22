@@ -52,17 +52,18 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelVertexDo is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
-    VertexIndex beginIdx = 0, endIdx;
-    for (; beginIdx < graph_->GetVertexNums();) {
-      endIdx += task_size;
-      if (endIdx > graph_->GetVertexNums()) endIdx = graph_->GetVertexNums();
-      auto task = std::bind([&, beginIdx, endIdx]() {
-        for (VertexIndex idx = beginIdx; idx < endIdx; idx++) {
+    VertexIndex begin_index = 0, end_index;
+    for (; begin_index < graph_->GetVertexNums();) {
+      end_index += task_size;
+      if (end_index > graph_->GetVertexNums())
+        end_index = graph_->GetVertexNums();
+      auto task = std::bind([&, begin_index, end_index]() {
+        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
           vertex_func(graph_->GetVertexIdByIndex(idx));
         }
       });
       tasks.push_back(task);
-      beginIdx = endIdx;
+      begin_index = end_index;
     }
     runner_->SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
@@ -76,12 +77,13 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelEdgeDo is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
-    VertexIndex begin_idx = 0, end_idx;
-    for (; begin_idx < graph_->GetVertexNums();) {
-      end_idx += task_size;
-      if (end_idx > graph_->GetVertexNums()) end_idx = graph_->GetVertexNums();
-      auto task = std::bind([&, begin_idx, end_idx]() {
-        for (VertexIndex i = begin_idx; i < end_idx;) {
+    VertexIndex begin_index = 0, end_index;
+    for (; begin_index < graph_->GetVertexNums();) {
+      end_index += task_size;
+      if (end_index > graph_->GetVertexNums())
+        end_index = graph_->GetVertexNums();
+      auto task = std::bind([&, begin_index, end_index]() {
+        for (VertexIndex i = begin_index; i < end_index; i++) {
           for (VertexIndex j = 0; j < graph_->GetOutDegree(i); j++) {
             edge_func(graph_->GetVertexIdByIndex(i),
                       graph_->GetVertexIdByIndex(graph_->GetOutEdge(i, j)));
@@ -89,7 +91,7 @@ class PlanarAppBase : public PIE {
         }
       });
       tasks.push_back(task);
-      begin_idx = end_idx;
+      begin_index = end_index;
     }
     runner_->SubmitSync(tasks);
     graph_->SyncVertexData();
@@ -102,12 +104,13 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelEdgeDelDo is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
-    VertexIndex begin_idx = 0, end_idx;
-    for (; begin_idx < graph_->GetVertexNums();) {
-      end_idx += task_size;
-      if (end_idx > graph_->GetVertexNums()) end_idx = graph_->GetVertexNums();
-      auto task = std::bind([&, begin_idx, end_idx]() {
-        for (VertexIndex i = begin_idx; i < end_idx;) {
+    VertexIndex begin_index = 0, end_index;
+    for (; begin_index < graph_->GetVertexNums();) {
+      end_index += task_size;
+      if (end_index > graph_->GetVertexNums())
+        end_index = graph_->GetVertexNums();
+      auto task = std::bind([&, begin_index, end_index]() {
+        for (VertexIndex i = begin_index; i < end_index; i++) {
           for (VertexIndex j = 0; j < graph_->GetOutDegree(i); j++) {
             edge_del_func(graph_->GetVertexIdByIndex(i),
                           graph_->GetVertexIdByIndex(graph_->GetOutEdge(i, j)),
@@ -116,15 +119,16 @@ class PlanarAppBase : public PIE {
         }
       });
       tasks.push_back(task);
-      begin_idx = end_idx;
+      begin_index = end_index;
     }
     runner_->SubmitSync(tasks);
     graph_->MutateGraphEdge();
     LOG_DEBUG("ParallelEdgedelDo is done");
   }
 
-  uint32_t GetTaskSize(VertexID max_vid) {
-    return max_vid / common::kDefaultMaxTaskPackage;
+  uint32_t GetTaskSize(VertexID max_vid) const {
+    uint32_t task_size = max_vid / common::kDefaultMaxTaskPackage;
+    return task_size < 2 ? 2 : task_size;
   }
 
  protected:

@@ -8,6 +8,7 @@
 
 namespace sics::graph::core::apps {
 
+// TODO: test for paralleldo functions
 // A dummy graph type for testing purposes. Do *NOT* use it in production.
 class DummyGraph : public data_structures::Serializable {
  public:

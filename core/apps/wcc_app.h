@@ -5,6 +5,7 @@
 
 namespace sics::graph::core::apps {
 
+// TODO: use real graph replace this
 // A dummy graph type for testing purposes. Do *NOT* use it in production.
 class TestGraph : public data_structures::Serializable {
  public:
@@ -34,19 +35,19 @@ class TestGraph : public data_structures::Serializable {
 
   VertexData* Read(common::VertexID id) { return nullptr; }
 
-  int GetVertexNums() { return 2; }
+  int GetVertexNums() { return 4; }
 
-  int GetVertexIdByIndex(int index) { return 0; }
+  int GetVertexIdByIndex(int index) { return index; }
 
   void SyncVertexData() {}
 
   void MutateGraphEdge() {}
 
-  size_t GetOutDegree(VertexIndex i) { return 0; }
+  size_t GetOutDegree(VertexIndex i) { return 2; }
 
-  size_t GetOutEdge(VertexIndex i, VertexIndex j) { return 0; }
+  size_t GetOutEdge(VertexIndex i, VertexIndex j) { return i % 2 == 0 ? 1 : 0; }
 
-  size_t GetOutOffset(VertexIndex i) { return 0; }
+  size_t GetOutOffset(VertexIndex i) { return 2 * (i - 1); }
 
  private:
   std::string status_;
@@ -76,18 +77,19 @@ class WCCApp : public apis::PlanarAppBase<TestGraph> {
   }
 
   void graft(common::VertexID src_id, common::VertexID dst_id) {
-    auto t = update_store_->Read(src_id);
-    graph_->Write(src_id, *t);
+    //    auto t = update_store_->Read(src_id);
+    //    graph_->Write(src_id, *t);
+    // TODO: graft for vertex
+    LOG_INFO("test for graft");
   }
 
   void contract(common::VertexID src_id, common::VertexID dst_id,
                 EdgeIndex idx) {
-    auto t = update_store_->Read(src_id);
-    graph_->Write(src_id, *t);
+    //    auto t = update_store_->Read(src_id);
+    //    graph_->Write(src_id, *t);
+    // TODO: contract for vertex
+    LOG_INFO("test for contract");
   }
-
- private:
-  static bool registered_;
 };
 
 }  // namespace sics::graph::core::apps
