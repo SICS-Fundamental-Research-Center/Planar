@@ -30,6 +30,11 @@ class PathMatcher {
   // It would be contained in `Graph Partitioner` or `Preprocessing` module.
   void BuildCandidateSet();
 
+  // Split the path matching tasks into `parallelism` parts.
+  void TaskScheduler(
+      unsigned int parallelism,
+      std::vector<std::vector<std::unordered_set<VertexID>>>* task_pool);
+
   // Match path patterns in the graph parallelly.
   void PathMatching(unsigned int parallelism);
 
@@ -51,8 +56,6 @@ class PathMatcher {
   std::vector<std::vector<std::vector<VertexID>>> matched_results_;
   std::vector<std::unordered_set<VertexID>> candidates_;
   VertexLabel num_label_ = 0;
-
-  std::mutex mtx_;
 };
 }  // namespace sics::graph::miniclean::components
 
