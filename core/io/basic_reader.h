@@ -16,6 +16,8 @@
 
 #define CSR_GLOBLE_FILE_NAME "csr_global.yaml"
 
+// TODO: this should be delete
+
 namespace sics::graph::core::io {
 
 // Class to read data from ssd to memory

@@ -41,6 +41,8 @@ TEST_F(CSRReaderTest, ReadShouldNotHaveFatalFalure) {
   read_message_0.response_serialized = serialized_csr_0.get();
   EXPECT_NO_FATAL_FAILURE(csr_reader.Read(&read_message_0, nullptr));
 
+  // There is a bug of Clion Debugger. std::move(std::list) should work fine.
+
   read_message_1.graph_id = 1;
   read_message_1.response_serialized = serialized_csr_1.get();
   EXPECT_NO_FATAL_FAILURE(csr_reader.Read(&read_message_1, nullptr));

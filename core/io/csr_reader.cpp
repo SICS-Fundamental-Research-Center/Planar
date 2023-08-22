@@ -13,9 +13,6 @@ void CSRReader::Read(scheduler::ReadMessage* message,
   size_t file_size = file.tellg();
   file.seekg(0, std::ios::beg);
 
-  // Allocate memory to store file data using smart pointers (unique_ptr).
-  std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(file_size);
-
   // Create list of owned buffer
   std::list<OwnedBuffer> file_buffers;
   file_buffers.emplace_back(file_size);

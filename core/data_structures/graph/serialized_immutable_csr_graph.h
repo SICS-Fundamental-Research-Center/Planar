@@ -2,8 +2,8 @@
 #define CORE_DATA_STRUCTURES_GRAPH_SERIALIZED_IMMUTABLE_CSR_GRAPH_H_
 
 #include <iostream>
-#include <utility>
 #include <list>
+#include <utility>
 
 #include "data_structures/serialized.h"
 
