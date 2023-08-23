@@ -5,6 +5,7 @@
 #include <list>
 #include <string>
 #include <utility>
+#include <memory>
 
 #include "data_structures/buffer.h"
 #include "data_structures/graph_metadata.h"
@@ -25,7 +26,7 @@ class CSRWriter : public Writer {
   void Write(WriteMessage* message,
              common::TaskRunner* runner = nullptr) override;
 
-  void WriteToBin(const std::string& path, Serialized* serialized_graph);
+  void WriteToBin(const std::string& path, const OwnedBUffer& buffer);
 
  private:
   const std::string root_path_;
