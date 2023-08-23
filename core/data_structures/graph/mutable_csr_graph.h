@@ -9,17 +9,21 @@
 
 namespace sics::graph::core::data_structures::graph {
 
-template <typename VertexData, typename EdgeData>
+// TV : type of vertexData; TE : type of EdgeData
+template <typename TV, typename TE>
 class MutableCSRGraph : public Serializable {
-  using VertexID = common::VertexID;
   using GraphID = common::GraphID;
+  using VertexID = common::VertexID;
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
   using VertexDegree = uint32_t;
   using VertexOffset = uint32_t;
 
  public:
-  explicit MutableCSRGraph(const SubgraphMetadata& metadata) : metadata_(metadata) {}
+  using VertexData = TV;
+  using EdgeData = TE;
+  explicit MutableCSRGraph(const SubgraphMetadata& metadata)
+      : metadata_(metadata) {}
 
   // Serializable interface override functions
   std::unique_ptr<Serialized> Serialize(
@@ -32,6 +36,11 @@ class MutableCSRGraph : public Serializable {
                    std::unique_ptr<Serialized>&& serialized) override {
     // TODO: transfer the serialized data to the MutableCSRgraph
   }
+
+  // methods for sync data
+  void SyncVertexData() {}
+
+  void MutateGraphEdge() {}
 
   // methods for vertex info
 
@@ -54,7 +63,15 @@ class MutableCSRGraph : public Serializable {
     return out_offset_base_[index] + out_offset;
   }
 
-  VertexID* GetOutEdges(VertexIndex index) { return out_offset_base_ + index; }
+  VertexID* GetOutEdges(VertexIndex index) const {
+    return out_offset_base_ + index;
+  }
+
+  VertexData* GetVertxDataByIndex(VertexIndex index) const {
+    return vertex_data_base_ + index;
+  }
+
+  void set_status(const std::string& new_status) { status_ = new_status; }
 
  private:
   SubgraphMetadata metadata_;
@@ -68,6 +85,8 @@ class MutableCSRGraph : public Serializable {
 
   VertexData* vertex_data_base_;
   common::Bitmap* vertex_src_or_dst_bitmap_;
+
+  std::string status_;
 };
 
 }  // namespace sics::graph::core::data_structures::graph

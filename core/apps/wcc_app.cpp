@@ -7,7 +7,7 @@ WCCApp::WCCApp(
     common::TaskRunner* runner,
     update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
     data_structures::Serializable* graph)
-    : apis::PlanarAppBase<TestGraph>(runner, update_store, graph) {}
+    : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {}
 
 void WCCApp::PEval() {
   ParallelVertexDo(std::bind(&WCCApp::init, this, std::placeholders::_1));
