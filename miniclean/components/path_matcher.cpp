@@ -70,6 +70,13 @@ void PathMatcher::LoadPatterns(const std::string& pattern_path) {
   }
 
   num_label_ = max_label_id;
+
+  // Initialize `vertex_label_to_pattern_id`.
+  vertex_label_to_pattern_id.resize(num_label_);
+  for (size_t i = 0; i < path_patterns_.size(); i++) {
+    VertexLabel start_label = path_patterns_[i][0];
+    vertex_label_to_pattern_id[start_label - 1].push_back(i);
+  }
 }
 
 void PathMatcher::BuildCandidateSet() {
@@ -83,82 +90,82 @@ void PathMatcher::BuildCandidateSet() {
   for (VertexID i = 0; i < miniclean_csr_graph_->get_num_vertices() * 2;
        i += 2) {
     for (VertexLabel j = 0; j < num_label_; j++) {
-      if (vertex_label[i + 1] == j + 1) candidates_[j].insert(vertex_label[i]);
+      if (vertex_label[i + 1] == j + 1)
+        candidates_[j].push_back(vertex_label[i]);
     }
   }
 }
 
-// TODO (bai-wenchao): This function has non-trivial overhead, optimize it.
-void PathMatcher::TaskScheduler(
-    unsigned int parallelism,
-    std::vector<std::vector<std::unordered_set<VertexID>>>* task_pool) {
-  size_t candidate_counter = 0;
-  for (size_t i = 0; i < path_patterns_.size(); i++) {
-    VertexLabel start_label = path_patterns_[i][0];
-    std::unordered_set<VertexID> candidates = candidates_[start_label - 1];
-    for (VertexID candidate : candidates) {
-      (*task_pool)[candidate_counter % parallelism][i].insert(candidate);
-      candidate_counter++;
-    }
+void PathMatcher::GroupTasks(
+    size_t num_tasks, std::vector<std::vector<VertexID>>* partial_result_pool,
+    std::vector<std::vector<std::vector<std::vector<VertexID>>>>*
+        matched_result_pool,
+    TaskPackage* task_package) {
+  // Compute the task size (i.e., the number of task unit)
+  VertexID vertex_number = miniclean_csr_graph_->get_num_vertices();
+  auto task_size = vertex_number / num_tasks + 1;
+
+  for (size_t i = 0; i < num_tasks; i++) {
+    Task task = [&, i, task_size, vertex_number, partial_result_pool,
+                 matched_result_pool]() {
+      // Group tasks from vertex `task_size * i`
+      // to vertex `task_size * (i + 1)`.
+      for (VertexID j = task_size * i; j < task_size * (i + 1); j++) {
+        if (j >= vertex_number) break;
+        VertexLabel label = miniclean_csr_graph_->get_vertex_label()[j * 2 + 1];
+        std::vector<size_t> patterns = vertex_label_to_pattern_id[label - 1];
+        for (size_t k = 0; k < patterns.size(); k++) {
+          std::vector<VertexID> init_candidate = {j};
+          PathMatchRecur(path_patterns_[patterns[k]], 0, init_candidate,
+                         &(*partial_result_pool)[i],
+                         &(*matched_result_pool)[i][patterns[k]]);
+          // Recover the partial results.
+          (*partial_result_pool)[i].clear();
+        }
+      }
+    };
+    task_package->push_back(task);
   }
 }
 
-void PathMatcher::PathMatching(unsigned int parallelism) {
-  LOG_INFO("Initialize auxiliary data structures.");
+void PathMatcher::PathMatching(unsigned int parallelism,
+                               unsigned int num_tasks) {
+  LOG_INFO("Initializing auxiliary data structures...");
   // Initialize matched results.
   matched_results_.reserve(path_patterns_.size());
 
   // Initialize thread pool.
   ThreadPool thread_pool(parallelism);
   // Initialize partial results pool.
-  std::vector<std::vector<VertexID>> partial_results_pool(parallelism);
+  std::vector<std::vector<VertexID>> partial_result_pool(num_tasks);
   // Initialize matched results pool.
   std::vector<std::vector<std::vector<std::vector<VertexID>>>>
-      matched_results_pool(parallelism);
-  for (auto& results : matched_results_pool) {
-    results.resize(path_patterns_.size());
+      matched_result_pool(num_tasks);
+  for (auto& result : matched_result_pool) {
+    result.resize(path_patterns_.size());
   }
-  // Initialize task pool.
-  std::vector<std::vector<std::unordered_set<VertexID>>> task_pool(parallelism);
-  for (auto& tasks : task_pool) {
-    tasks.resize(path_patterns_.size());
-  }
-  LOG_INFO("Split tasks.");
-  TaskScheduler(parallelism, &task_pool);
-
-  // Package tasks.
-  LOG_INFO("Package tasks.");
+  // Initialize task package.
   TaskPackage task_package;
-  task_package.reserve(parallelism);
-  for (size_t i = 0; i < parallelism; i++) {
-    Task task = [i, this, &task_pool, &partial_results_pool,
-                 &matched_results_pool] {
-      for (size_t j = 0; j < this->path_patterns_.size(); j++) {
-        if (task_pool[i][j].empty()) continue;
-        for (VertexID vid : task_pool[i][j]) {
-          std::unordered_set<VertexID> init_candidate = {vid};
-          PathMatchRecur(path_patterns_[j], 0, init_candidate,
-                         &partial_results_pool[i], &matched_results_pool[i][j]);
-          // Recover the partial results.
-          partial_results_pool[i].clear();
-        }
-      }
-    };
-    task_package.push_back(task);
-  }
+  task_package.reserve(num_tasks);
+
+  // Group tasks.
+  LOG_INFO("Grouping tasks...");
+  GroupTasks(num_tasks, &partial_result_pool, &matched_result_pool,
+             &task_package);
 
   // Submit tasks.
-  LOG_INFO("Submit tasks.");
+  LOG_INFO("Submitting tasks...");
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
   // Collect results.
+  LOG_INFO("Collecting results...");
   for (size_t i = 0; i < path_patterns_.size(); i++) {
     std::vector<std::vector<VertexID>> matched_results;
-    for (size_t j = 0; j < parallelism; j++) {
+    for (size_t j = 0; j < num_tasks; j++) {
       matched_results.insert(matched_results.end(),
-                             matched_results_pool[j][i].begin(),
-                             matched_results_pool[j][i].end());
+                             matched_result_pool[j][i].begin(),
+                             matched_result_pool[j][i].end());
     }
     LOG_INFO("Pattern: ", i, ", size: ", matched_results.size());
     matched_results_.push_back(matched_results);
@@ -167,7 +174,7 @@ void PathMatcher::PathMatching(unsigned int parallelism) {
 
 void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
                                  size_t match_position,
-                                 const std::unordered_set<VertexID>& candidates,
+                                 const std::vector<VertexID>& candidates,
                                  std::vector<VertexID>* partial_results,
                                  std::vector<std::vector<VertexID>>* results) {
   // Return condition.
@@ -182,7 +189,7 @@ void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
         miniclean_csr_graph_->GetOutDegreeBasePointer()[candidate];
     VertexID cand_out_offset =
         miniclean_csr_graph_->GetOutOffsetBasePointer()[candidate];
-    std::unordered_set<VertexID> next_candidates;
+    std::vector<VertexID> next_candidates;
 
     for (size_t i = 0; i < cand_out_degree; i++) {
       VertexID out_edge_id =
@@ -202,7 +209,7 @@ void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
       // Check whether the label matches.
       if (match_position + 1 < path_pattern.size() &&
           out_edge_label == path_pattern[match_position + 1]) {
-        next_candidates.insert(out_edge_id);
+        next_candidates.push_back(out_edge_id);
       }
     }
     partial_results->push_back(candidate);

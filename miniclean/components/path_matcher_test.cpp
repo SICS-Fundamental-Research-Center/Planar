@@ -48,7 +48,8 @@ TEST_F(PathMatcherTest, CheckMatches) {
       data_dir_ + "/input/small_graph_path_matching/path_patterns.txt");
   path_matcher.BuildCandidateSet();
 
-  path_matcher.PathMatching(std::thread::hardware_concurrency());
+  path_matcher.PathMatching(std::thread::hardware_concurrency(),
+                            2 * std::thread::hardware_concurrency());
 
   // Load matched result
   std::vector<std::vector<std::vector<VertexID>>> matched_results =
