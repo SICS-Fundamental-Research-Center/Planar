@@ -18,4 +18,9 @@ void CSRWriter::Write(WriteMessage* message, common::TaskRunner* runner) {
   }
 }
 
+void CSRWriter::WriteToBin(const std::string& path,
+                           Serialized* serialized_graph) {
+  // TODO: write one buffer
+}
+
 }  // namespace sics::graph::core::io

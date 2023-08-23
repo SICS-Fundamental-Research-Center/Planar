@@ -1,11 +1,8 @@
 #ifndef CORE_IO_CSR_READER_H_
 #define CORE_IO_CSR_READER_H_
 
-#include <yaml-cpp/yaml.h>
-
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <list>
 #include <memory>
 #include <string>

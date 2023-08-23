@@ -2,7 +2,6 @@
 #define CORE_IO_CSR_WRITER_H_
 
 #include <fstream>
-#include <iostream>
 #include <list>
 #include <string>
 #include <utility>
