@@ -1,6 +1,8 @@
 #ifndef CORE_IO_CSR_READER_H_
 #define CORE_IO_CSR_READER_H_
 
+#include <yaml-cpp/yaml.h>
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -8,8 +10,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-
-#include <yaml-cpp/yaml.h>
 
 #include "data_structures/buffer.h"
 #include "data_structures/graph_metadata.h"
@@ -35,6 +35,8 @@ class CSRReader : public Reader {
 
   void Read(ReadMessage* message,
             common::TaskRunner* runner = nullptr) override;
+
+  void ReadFromBin(const std::string& path, Serialized* serialized_graph);
 
  private:
   const std::string root_path_;
