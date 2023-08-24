@@ -2,6 +2,7 @@
 #define GRAPH_SYSTEMS_CORE_APPS_WCC_APP_H_
 
 #include "apis/planar_app_base.h"
+#include "data_structures/graph/mutable_csr_graph.h"
 
 namespace sics::graph::core::apps {
 
@@ -53,10 +54,18 @@ class TestGraph : public data_structures::Serializable {
   std::string status_;
 };
 
-class WCCApp : public apis::PlanarAppBase<TestGraph> {
-  using VertexData = TestGraph::VertexData;
-  using EdgeData = TestGraph::EdgeData;
-  using EdgeIndex = TestGraph::EdgeIndex;
+struct WccVertexData {
+  int p;
+  WccVertexData() = default;
+  WccVertexData(int p) : p(p) {}
+};
+
+using CSRGraph = data_structures::graph::MutableCSRGraph<int, int>;
+
+class WCCApp : public apis::PlanarAppBase<CSRGraph> {
+  using VertexData = typename CSRGraph::VertexData;
+  using EdgeData = typename CSRGraph::EdgeData;
+  using EdgeIndex = common::EdgeIndex;
 
  public:
   explicit WCCApp(
@@ -72,7 +81,9 @@ class WCCApp : public apis::PlanarAppBase<TestGraph> {
  private:
   void init(common::VertexID id) {
     // TODO: init for vertex
-    graph_->GetOutDegree(id);
+    graph_->GetOutDegreeByIndex(id);
+    auto a = graph_->GetVertxDataByIndex(id);
+
     LOG_INFO("test for init");
   }
 

@@ -2,9 +2,9 @@
 #define CORE_DATA_STRUCTURES_GRAPH_SERIALIZED_IMMUTABLE_CSR_GRAPH_H_
 
 #include <iostream>
+#include <list>
 #include <utility>
 #include <vector>
-#include <list>
 
 #include "data_structures/serialized.h"
 
@@ -12,9 +12,9 @@ namespace sics::graph::core::data_structures::graph {
 
 class SerializedImmutableCSRGraph : public Serialized {
  protected:
-  // TODO(bwc): Should we adopt list of list?
-  // `csr_buffer` stores the serialized data in CSR format. Each `csr_buffer` corresponds to a subgraph.
-  // Each item of `csr_buffer` is a list of buffers that correspond to a subgraph file.
+  // `csr_buffer` stores the serialized data in CSR format. Each `csr_buffer`
+  // corresponds to a subgraph. Each item of `csr_buffer` is a list of buffers
+  // that correspond to a subgraph file.
   std::list<std::vector<OwnedBuffer>> csr_buffer_;
 
   // Writer call this function to pop buffers from csr_buffer_ to Disk.

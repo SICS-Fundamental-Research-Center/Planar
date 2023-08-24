@@ -25,10 +25,10 @@ class PlanarAppBase : public PIE {
   static_assert(
       std::is_base_of<data_structures::Serializable, GraphType>::value,
       "GraphType must be a subclass of Serializable");
-
-  using GraphID = common::GraphID;
   using VertexData = typename GraphType::VertexData;
   using EdgeData = typename GraphType::EdgeData;
+
+  using GraphID = common::GraphID;
   using VertexID = common::VertexID;
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
@@ -59,7 +59,7 @@ class PlanarAppBase : public PIE {
         end_index = graph_->GetVertexNums();
       auto task = std::bind([&, begin_index, end_index]() {
         for (VertexIndex idx = begin_index; idx < end_index; idx++) {
-          vertex_func(graph_->GetVertexIdByIndex(idx));
+          vertex_func(graph_->GetVertexIDByIndex(idx));
         }
       });
       tasks.push_back(task);
@@ -84,9 +84,9 @@ class PlanarAppBase : public PIE {
         end_index = graph_->GetVertexNums();
       auto task = std::bind([&, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
-          for (VertexIndex j = 0; j < graph_->GetOutDegree(i); j++) {
-            edge_func(graph_->GetVertexIdByIndex(i),
-                      graph_->GetVertexIdByIndex(graph_->GetOutEdge(i, j)));
+          for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
+            edge_func(graph_->GetVertexIDByIndex(i),
+                      graph_->GetVertexIDByIndex(graph_->GetOneOutEdge(i, j)));
           }
         }
       });
@@ -111,10 +111,10 @@ class PlanarAppBase : public PIE {
         end_index = graph_->GetVertexNums();
       auto task = std::bind([&, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
-          for (VertexIndex j = 0; j < graph_->GetOutDegree(i); j++) {
-            edge_del_func(graph_->GetVertexIdByIndex(i),
-                          graph_->GetVertexIdByIndex(graph_->GetOutEdge(i, j)),
-                          graph_->GetOutOffset(i) + j);
+          for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
+            edge_del_func(graph_->GetVertexIDByIndex(i),
+                          graph_->GetVertexIDByIndex(graph_->GetOneOutEdge(i, j)),
+                          graph_->GetOutOffsetByIndex(i) + j);
           }
         }
       });
