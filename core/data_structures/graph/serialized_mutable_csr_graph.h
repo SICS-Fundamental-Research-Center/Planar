@@ -20,7 +20,6 @@ class SerializedMutableCSRGraph : public Serialized {
  protected:
   std::list<std::vector<OwnedBuffer>> csr_buffer_;
 
-  // TODO: test if unique_ptr is needed
   std::vector<OwnedBuffer> PopNextImpl() override {
     std::vector<OwnedBuffer> buffers = std::move(csr_buffer_.front());
     csr_buffer_.pop_front();

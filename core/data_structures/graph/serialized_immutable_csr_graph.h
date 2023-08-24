@@ -12,7 +12,6 @@ namespace sics::graph::core::data_structures::graph {
 
 class SerializedImmutableCSRGraph : public Serialized {
  protected:
-  // TODO(bwc): Should we adopt list of list?
   // `csr_buffer` stores the serialized data in CSR format. Each `csr_buffer`
   // corresponds to a subgraph. Each item of `csr_buffer` is a list of buffers
   // that correspond to a subgraph file.
