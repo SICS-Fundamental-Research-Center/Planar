@@ -13,16 +13,16 @@ class SerializedMutableCSRGraph : public Serialized {
   SerializedMutableCSRGraph() = default;
   bool HasNext() const override { return csr_buffer_.size() > 0; }
 
-  void ReceiveBuffers(std::list<OwnedBuffer>&& buffers) override {
+  void ReceiveBuffers(std::vector<OwnedBuffer>&& buffers) override {
     csr_buffer_.emplace_back(std::move(buffers));
   }
 
  protected:
-  std::list<std::list<OwnedBuffer>> csr_buffer_;
+  std::list<std::vector<OwnedBuffer>> csr_buffer_;
 
   // TODO: test if unique_ptr is needed
-  std::list<OwnedBuffer> PopNextImpl() override {
-    std::list<OwnedBuffer> buffers = std::move(csr_buffer_.front());
+  std::vector<OwnedBuffer> PopNextImpl() override {
+    std::vector<OwnedBuffer> buffers = std::move(csr_buffer_.front());
     csr_buffer_.pop_front();
     return buffers;
   }

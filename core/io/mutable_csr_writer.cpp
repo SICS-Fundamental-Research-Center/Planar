@@ -10,10 +10,8 @@ void CSRWriter::Write(WriteMessage* message, common::TaskRunner* runner) {
 
   if (message->serialized->HasNext()) {
     auto a = message->serialized->PopNext();
-    WriteToBin(file_path, a.front());
-    a.pop_front();
-    WriteToBin(label_path, a.front());
-    a.pop_front();
+    WriteToBin(file_path, a.at(0));
+    WriteToBin(label_path, a.at(1));
   }
 }
 

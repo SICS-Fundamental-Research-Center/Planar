@@ -32,7 +32,7 @@ void MutableCSRReader::ReadFromBin(const std::string& path,
   size_t file_size = file.tellg();
   file.seekg(0, std::ios::beg);
 
-  std::list<OwnedBuffer> buffers;
+  std::vector<OwnedBuffer> buffers;
   buffers.emplace_back(file_size);
 
   file.read(reinterpret_cast<char*>(buffers.back().Get()), file_size);
