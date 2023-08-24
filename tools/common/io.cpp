@@ -2,6 +2,7 @@
 
 namespace sics::graph::tools::common {
 
+using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
@@ -28,9 +29,14 @@ void GraphFormatConverter::WriteSubgraph(
     auto vertex_map = iter;
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
                                 std::to_string(gid) + ".bin");
+    std::ofstream bitmap_file(output_root_path_ + "bitmap/" +
+                              std::to_string(gid) + ".bin");
 
     auto num_vertices = vertex_map->size();
+    global_num_vertices += num_vertices;
     size_t count_in_edges = 0, count_out_edges = 0;
+    Bitmap bitmap(num_vertices);
+    bitmap.Clear();
 
     auto buffer_globalid = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
     auto buffer_indegree = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
@@ -114,25 +120,27 @@ void GraphFormatConverter::WriteSubgraph(
         (VertexID*)malloc(sizeof(VertexID) * count_out_edges);
     parallelism = 1;
     for (unsigned int i = 0; i < parallelism; i++) {
-      auto task = std::bind([i, parallelism, &num_vertices, &buffer_in_edges,
-                             &buffer_out_edges, &buffer_in_offset,
-                             &csr_vertex_buffer, &buffer_out_offset]() {
-        for (VertexID j = i; j < num_vertices; j += parallelism) {
-          memcpy(buffer_in_edges + buffer_in_offset[j],
-                 csr_vertex_buffer[j].incoming_edges,
-                 csr_vertex_buffer[j].indegree * sizeof(VertexID));
-          memcpy(buffer_out_edges + buffer_out_offset[j],
-                 csr_vertex_buffer[j].outgoing_edges,
-                 csr_vertex_buffer[j].outdegree * sizeof(VertexID));
-          std::sort(buffer_in_edges + buffer_in_offset[j],
-                    buffer_in_edges + buffer_in_offset[j] +
-                        csr_vertex_buffer[j].indegree);
-          std::sort(buffer_out_edges + buffer_out_offset[j],
-                    buffer_out_edges + buffer_out_offset[j] +
-                        csr_vertex_buffer[j].outdegree);
-        }
-        return;
-      });
+      auto task =
+          std::bind([i, parallelism, &num_vertices, &buffer_in_edges,
+                     &buffer_out_edges, &buffer_in_offset, &csr_vertex_buffer,
+                     &buffer_out_offset, &bitmap]() {
+            for (VertexID j = i; j < num_vertices; j += parallelism) {
+              if (csr_vertex_buffer[j].outdegree != 0) bitmap.SetBit(j);
+              memcpy(buffer_in_edges + buffer_in_offset[j],
+                     csr_vertex_buffer[j].incoming_edges,
+                     csr_vertex_buffer[j].indegree * sizeof(VertexID));
+              memcpy(buffer_out_edges + buffer_out_offset[j],
+                     csr_vertex_buffer[j].outgoing_edges,
+                     csr_vertex_buffer[j].outdegree * sizeof(VertexID));
+              std::sort(buffer_in_edges + buffer_in_offset[j],
+                        buffer_in_edges + buffer_in_offset[j] +
+                            csr_vertex_buffer[j].indegree);
+              std::sort(buffer_out_edges + buffer_out_offset[j],
+                        buffer_out_edges + buffer_out_offset[j] +
+                            csr_vertex_buffer[j].outdegree);
+            }
+            return;
+          });
       task_package.push_back(task);
     }
     thread_pool.SubmitSync(task_package);
@@ -140,6 +148,11 @@ void GraphFormatConverter::WriteSubgraph(
     delete buffer_in_offset;
     delete buffer_out_offset;
 
+    // Write bitmap that indicate whether a vertex has outgoing edges.
+    bitmap_file.write((char*)bitmap.GetDataBasePointer(),
+                      ((bitmap.size() >> 6) + 1) * sizeof(uint64_t));
+
+    // Write vertex buffers.
     // Write edges buffers.
     switch (store_strategy) {
       case kOutgoingOnly:
@@ -201,6 +214,7 @@ void GraphFormatConverter::WriteSubgraph(
     delete[] csr_vertex_buffer;
     out_data_file.close();
     out_label_file.close();
+    bitmap_file.close();
   }
 
   // Write Metadata
@@ -226,12 +240,6 @@ void GraphFormatConverter::WriteSubgraph(
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
 
-  if (!exists(output_root_path_)) create_directory(output_root_path_);
-  if (!exists(output_root_path_ + "graphs"))
-    create_directory(output_root_path_ + "graphs");
-  if (!exists(output_root_path_ + "label"))
-    create_directory(output_root_path_ + "label");
-
   VertexID n_subgraphs = graph_metadata.get_num_subgraphs();
 
   std::vector<SubgraphMetadata> subgraph_metadata_vec;
@@ -239,10 +247,21 @@ void GraphFormatConverter::WriteSubgraph(
   for (VertexID i = 0; i < n_subgraphs; i++) {
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
                                 std::to_string(i) + ".bin");
+    std::ofstream bitmap_file(output_root_path_ + "bitmap/" +
+                              std::to_string(i) + ".bin");
     ImmutableCSRGraph csr_graph(i);
     util::format_converter::Edgelist2CSR(
         edge_bucket[i], edgelist_metadata_vec[i], store_strategy, &csr_graph);
     delete edge_bucket[i];
+
+    Bitmap bitmap(csr_graph.get_num_vertices());
+    bitmap.Clear();
+    for(size_t i =0; i < csr_graph.get_num_vertices(); i++) {
+      if(csr_graph.GetOutDegreeByLocalID(i) > 0) bitmap.SetBit(i);
+    }
+    bitmap_file.write((char*) bitmap.GetDataBasePointer(),
+                      ((bitmap.size() >> 6) + 1) * sizeof(uint64_t));
+
 
     // Write topology of graph.
     out_data_file.write((char*) csr_graph.GetGloablIDBasePointer(),
@@ -307,12 +326,13 @@ void GraphFormatConverter::WriteSubgraph(
     auto buffer_label = (VertexLabel*)malloc(sizeof(VertexLabel) *
                                              csr_graph.get_num_vertices());
     memset(buffer_label, 0, sizeof(VertexLabel) * csr_graph.get_num_vertices());
-    out_label_file.write((char*)buffer_label,
+    out_label_file.write((char*) buffer_label,
                          sizeof(VertexLabel) * csr_graph.get_num_vertices());
     delete buffer_label;
 
     out_data_file.close();
     out_label_file.close();
+    bitmap_file.close();
   }
 
   // Write metadata

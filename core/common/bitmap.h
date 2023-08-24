@@ -100,11 +100,13 @@ class Bitmap {
 
   size_t size() const { return size_; }
 
+  uint64_t* GetDataBasePointer() { return data_; }
+
  private:
   size_t size_ = 0;
   uint64_t* data_ = nullptr;
 };
 
-}  // namespace sics::graph::core::util
+}  // namespace sics::graph::core::common
 
 #endif  // CORE_UTIL_BITMAP_H_
