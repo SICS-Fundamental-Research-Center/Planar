@@ -66,8 +66,11 @@ int main(int argc, char* argv[]) {
   parallelism = std::min(parallelism, std::thread::hardware_concurrency());
   // the number of tasks should equal or greater than parallelism.
   unsigned int num_tasks = FLAGS_t;
+  if (num_tasks <= 0) {
+    LOG_FATAL("The number of tasks should greater than 0.");
+  }
   if (num_tasks < parallelism) {
-    LOG_FATAL("The number of tasks should equal or greater than parallelism.");
+    LOG_WARN("The number of tasks should equal or greater than parallelism.");
   }
   path_matcher.PathMatching(parallelism, num_tasks);
   auto end = std::chrono::system_clock::now();

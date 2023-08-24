@@ -98,16 +98,16 @@ void PathMatcher::BuildCandidateSet() {
 
 void PathMatcher::GroupTasks(
     size_t num_tasks, std::vector<std::vector<VertexID>>* partial_result_pool,
-    std::vector<std::vector<std::vector<std::vector<VertexID>>>>*
-        matched_result_pool,
     TaskPackage* task_package) {
   // Compute the task size (i.e., the number of task unit)
   VertexID vertex_number = miniclean_csr_graph_->get_num_vertices();
   auto task_size = vertex_number / num_tasks + 1;
 
   for (size_t i = 0; i < num_tasks; i++) {
-    Task task = [&, i, task_size, vertex_number, partial_result_pool,
-                 matched_result_pool]() {
+    Task task = [&, this, i, task_size, vertex_number, partial_result_pool]() {
+      // Initialize result pool for current task.
+      std::vector<std::vector<std::vector<VertexID>>> local_matched_results;
+      local_matched_results.resize(path_patterns_.size());
       // Group tasks from vertex `task_size * i`
       // to vertex `task_size * (i + 1)`.
       for (VertexID j = task_size * i; j < task_size * (i + 1); j++) {
@@ -118,10 +118,18 @@ void PathMatcher::GroupTasks(
           std::vector<VertexID> init_candidate = {j};
           PathMatchRecur(path_patterns_[patterns[k]], 0, init_candidate,
                          &(*partial_result_pool)[i],
-                         &(*matched_result_pool)[i][patterns[k]]);
+                         &local_matched_results[patterns[k]]);
           // Recover the partial results.
           (*partial_result_pool)[i].clear();
         }
+      }
+      // Merge the local matched results to the global matched results.
+      std::lock_guard<std::mutex> lock(this->mtx_);
+      for (size_t j = 0; j < this->path_patterns_.size(); j++) {
+        this->matched_results_[j].insert(
+            this->matched_results_[j].end(),
+            local_matched_results[j].begin(),
+            local_matched_results[j].end());
       }
     };
     task_package->push_back(task);
@@ -132,7 +140,7 @@ void PathMatcher::PathMatching(unsigned int parallelism,
                                unsigned int num_tasks) {
   LOG_INFO("Initializing auxiliary data structures...");
   // Initialize matched results.
-  matched_results_.reserve(path_patterns_.size());
+  matched_results_.resize(path_patterns_.size());
 
   // Initialize thread pool.
   ThreadPool thread_pool(parallelism);
@@ -150,25 +158,16 @@ void PathMatcher::PathMatching(unsigned int parallelism,
 
   // Group tasks.
   LOG_INFO("Grouping tasks...");
-  GroupTasks(num_tasks, &partial_result_pool, &matched_result_pool,
-             &task_package);
+  GroupTasks(num_tasks, &partial_result_pool, &task_package);
 
   // Submit tasks.
   LOG_INFO("Submitting tasks...");
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  // Collect results.
-  LOG_INFO("Collecting results...");
-  for (size_t i = 0; i < path_patterns_.size(); i++) {
-    std::vector<std::vector<VertexID>> matched_results;
-    for (size_t j = 0; j < num_tasks; j++) {
-      matched_results.insert(matched_results.end(),
-                             matched_result_pool[j][i].begin(),
-                             matched_result_pool[j][i].end());
-    }
-    LOG_INFO("Pattern: ", i, ", size: ", matched_results.size());
-    matched_results_.push_back(matched_results);
+  // Print the length of matched results.
+  for (size_t i = 0; i < matched_results_.size(); i++) {
+    LOG_INFO("Pattern: ", i, ", Matched results: ", matched_results_[i].size());
   }
 }
 

@@ -35,8 +35,6 @@ class PathMatcher {
   // Split the path matching tasks into `parallelism` parts.
   void GroupTasks(size_t num_tasks,
                   std::vector<std::vector<VertexID>>* partial_result_pool,
-                  std::vector<std::vector<std::vector<std::vector<VertexID>>>>*
-                      matched_result_pool,
                   TaskPackage* task_package);
 
   // Match path patterns in the graph parallelly.
@@ -61,6 +59,8 @@ class PathMatcher {
   std::vector<std::vector<VertexID>> candidates_;
   std::vector<std::vector<size_t>> vertex_label_to_pattern_id;
   VertexLabel num_label_ = 0;
+
+  std::mutex mtx_;
 };
 }  // namespace sics::graph::miniclean::components
 
