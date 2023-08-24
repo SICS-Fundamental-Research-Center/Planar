@@ -139,7 +139,6 @@ void GraphFormatConverter::WriteSubgraph(
                         buffer_out_edges + buffer_out_offset[j] +
                             csr_vertex_buffer[j].outdegree);
             }
-            return;
           });
       task_package.push_back(task);
     }
