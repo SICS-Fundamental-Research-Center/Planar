@@ -40,9 +40,7 @@ class PathMatcher {
   // Match path patterns in the graph parallelly.
   void PathMatching(unsigned int parallelism, unsigned int num_tasks);
 
-  void PrintMatchedResults();
-
-  std::vector<std::vector<std::vector<VertexID>>> get_results() {
+  std::vector<std::list<std::vector<VertexID>>> get_results() {
     return matched_results_;
   }
 
@@ -51,16 +49,19 @@ class PathMatcher {
                       size_t match_position,
                       const std::vector<VertexID>& candidates,
                       std::vector<VertexID>* partial_results,
-                      std::vector<std::vector<VertexID>>* results);
+                      std::list<std::vector<VertexID>>* results);
 
   MiniCleanCSRGraph* miniclean_csr_graph_;
   std::vector<std::vector<VertexLabel>> path_patterns_;
-  std::vector<std::vector<std::vector<VertexID>>> matched_results_;
+  std::vector<std::list<std::vector<VertexID>>> matched_results_;
   std::vector<std::vector<VertexID>> candidates_;
   std::vector<std::vector<size_t>> vertex_label_to_pattern_id;
   VertexLabel num_label_ = 0;
 
+  double exe_t0 = 10000, write_back_t0 = 10000, exe_t1 = 0, write_back_t1 = 0;
+
   std::mutex mtx_;
+  std::mutex dur_mtx_;
 };
 }  // namespace sics::graph::miniclean::components
 

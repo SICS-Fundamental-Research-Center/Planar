@@ -70,8 +70,12 @@ int main(int argc, char* argv[]) {
     LOG_FATAL("The number of tasks should greater than 0.");
   }
   if (num_tasks < parallelism) {
-    LOG_WARN("The number of tasks should equal or greater than parallelism.");
+    LOGF_WARN(
+        "The number of tasks should equal or greater than parallelism. Set it "
+        "to {} instead",
+        parallelism);
   }
+  num_tasks = parallelism;
   path_matcher.PathMatching(parallelism, num_tasks);
   auto end = std::chrono::system_clock::now();
 
