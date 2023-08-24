@@ -56,7 +56,7 @@ void MiniCleanCSRReader::ReadBinFile(const std::string& path,
   file.seekg(0, std::ios::beg);
 
   // create list of owned buffer
-  std::list<OwnedBuffer> file_buffers;
+  std::vector<OwnedBuffer> file_buffers;
   file_buffers.emplace_back(fileSize);
 
   // Read the file data.
