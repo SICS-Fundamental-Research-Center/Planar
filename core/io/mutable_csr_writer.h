@@ -1,5 +1,5 @@
-#ifndef CORE_IO_CSR_WRITER_H_
-#define CORE_IO_CSR_WRITER_H_
+#ifndef CORE_IO_MUTABLE_CSR_WRITER_H_
+#define CORE_IO_MUTABLE_CSR_WRITER_H_
 
 #include <fstream>
 #include <list>
@@ -34,4 +34,4 @@ class CSRWriter : public Writer {
 
 }  // namespace sics::graph::core::io
 
-#endif  // CORE_IO_CSR_WRITER_H_
+#endif  // CORE_IO_MUTABLE_CSR_WRITER_H_

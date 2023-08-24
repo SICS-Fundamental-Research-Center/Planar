@@ -1,4 +1,4 @@
-#include "io/csr_writer.h"
+#include "io/mutable_csr_writer.h"
 
 #include <gtest/gtest.h>
 
