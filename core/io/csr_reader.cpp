@@ -17,7 +17,7 @@ void CSRReader::Read(scheduler::ReadMessage* message,
   std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(file_size);
 
   // Create list of owned buffer
-  std::list<OwnedBuffer> file_buffers;
+  std::vector<OwnedBuffer> file_buffers;
   file_buffers.emplace_back(file_size);
 
   // Read the file data.
