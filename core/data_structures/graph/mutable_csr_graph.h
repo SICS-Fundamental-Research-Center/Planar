@@ -3,9 +3,11 @@
 
 #include "common/bitmap.h"
 #include "common/types.h"
+#include "data_structures/graph/serialized_mutable_csr_graph.h"
 #include "data_structures/graph_metadata.h"
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
+#include "util/pointer_cast.h"
 
 namespace sics::graph::core::data_structures::graph {
 
@@ -29,12 +31,32 @@ class MutableCSRGraph : public Serializable {
   std::unique_ptr<Serialized> Serialize(
       const common::TaskRunner& runner) override {
     // TODO: transfer the data from MutableCSRgraph to Serialized structure for
+
     // write back
   }
 
   void Deserialize(const common::TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override {
-    // TODO: transfer the serialized data to the MutableCSRgraph
+    auto graph = serialized->PopNext();
+    serialized_graph_.reset(&graph);
+
+    graph_buf_base_ = serialized_graph_.get()->front().Get();
+
+    // set the pointer to base address
+    if (metadata_.num_incoming_edges == 0) {
+      size_t offset = 0;
+      vertex_id_by_local_index_ = (VertexID*)(graph_buf_base_ + offset);
+      offset += sizeof(VertexID) * metadata_.num_vertices;
+      out_degree_base_ = (VertexDegree*)(graph_buf_base_ + offset);
+      offset += sizeof(VertexDegree) * metadata_.num_vertices;
+      out_offset_base_ = (VertexOffset*)(graph_buf_base_ + offset);
+      offset += sizeof(VertexOffset) * metadata_.num_vertices;
+      assert(offset == serialized->PopNext().front().GetSize());
+    } else {
+      LOG_FATAL("Error in deserialize mutable csr graph");
+    }
+
+    out_edges_base_ = (VertexID*)(serialized_graph_.get()->front().Get());
   }
 
   // methods for sync data
@@ -74,9 +96,11 @@ class MutableCSRGraph : public Serializable {
   void set_status(const std::string& new_status) { status_ = new_status; }
 
  private:
-  SubgraphMetadata metadata_;
+  const SubgraphMetadata& metadata_;
 
-  // deserialized data in CSR format
+  std::unique_ptr<std::list<OwnedBuffer>> serialized_graph_;
+
+  // deserialized data pointer in CSR format
   uint8_t* graph_buf_base_;
   VertexID* vertex_id_by_local_index_;
   VertexDegree* out_degree_base_;
