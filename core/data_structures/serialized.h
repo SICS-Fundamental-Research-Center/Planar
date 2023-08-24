@@ -1,7 +1,7 @@
 #ifndef CORE_DATA_STRUCTURES_SERIALIZED_H_
 #define CORE_DATA_STRUCTURES_SERIALIZED_H_
 
-#include <list>
+#include <vector>
 
 #include "data_structures/buffer.h"
 
@@ -36,11 +36,11 @@ class Serialized {
   //    /* Read data from disk to file_buffers */
   //    dst->ReceiveBuffers(std::move(file_buffers));
   //  }
-  virtual void ReceiveBuffers(std::list<OwnedBuffer>&& buffers) = 0;
+  virtual void ReceiveBuffers(std::vector<OwnedBuffer>&& buffers) = 0;
 
   // `PopNext()` is called when `Writer` writes `Serialized` class back to disk.
   // It returns a list of `OwnedBuffer`s that are ready to be written to disk.
-  std::list<OwnedBuffer> PopNext() {
+  std::vector<OwnedBuffer> PopNext() {
     is_complete_ = false;
     return PopNextImpl();
   }
@@ -50,7 +50,7 @@ class Serialized {
   void SetComplete() { is_complete_ = true; }
 
  protected:
-  virtual std::list<OwnedBuffer> PopNextImpl() = 0;
+  virtual std::vector<OwnedBuffer> PopNextImpl() = 0;
 
  protected:
   bool is_complete_ = false;

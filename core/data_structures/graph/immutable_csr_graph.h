@@ -167,7 +167,7 @@ class ImmutableCSRGraph : public Serializable {
   }
 
  private:
-  void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
+  void ParseSubgraphCSR(const std::vector<OwnedBuffer>& buffer_list);
 
  protected:
   std::unique_ptr<SerializedImmutableCSRGraph> serialized_;

@@ -30,7 +30,7 @@ void ImmutableCSRGraph::Deserialize(const common::TaskRunner& runner,
 }
 
 void ImmutableCSRGraph::ParseSubgraphCSR(
-    const std::list<OwnedBuffer>& buffer_list) {
+    const std::vector<OwnedBuffer>& buffer_list) {
   // Fetch the OwnedBuffer object.
   buf_graph_base_pointer_ = buffer_list.front().Get();
 

@@ -5,8 +5,6 @@
 #include "common/multithreading/thread_pool.h"
 #include "common/types.h"
 #include "data_structures/graph/immutable_csr_graph_config.h"
-#include "io/basic_reader.h"
-#include "io/basic_writer.h"
 #include "data_structures/graph/serialized_immutable_csr_graph.h"
 
 using ImmutableCSRGraph =
