@@ -127,7 +127,7 @@ void PathMatcher::GroupTasks(
       auto t2 = std::chrono::system_clock::now();
       // Merge the local matched results to the global matched results.
       {
-        std::lock_guard<std::mutex> lock(this->mtx_);
+        std::lock_guard<std::mutex> lock(mtx_);
         for (size_t j = 0; j < path_patterns_.size(); j++) {
           matched_results_[j].splice(matched_results_[j].end(),
                                      local_matched_results[j]);
@@ -136,7 +136,7 @@ void PathMatcher::GroupTasks(
       auto t3 = std::chrono::system_clock::now();
       // Update the execution and write back time.
       {
-        std::lock_guard<std::mutex> lock(this->dur_mtx_);
+        std::lock_guard<std::mutex> lock(dur_mtx_);
         auto exe_time =
             std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1)
                 .count() /
