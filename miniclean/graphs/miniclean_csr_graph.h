@@ -36,13 +36,6 @@ class MiniCleanCSRGraph
   void Deserialize(const TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override;
 
-  GraphID get_gid() const { return gid_; }
-  VertexID get_num_vertices() const { return num_vertices_; }
-  VertexID get_num_incoming_edges() const { return num_incoming_edges_; }
-  VertexID get_num_outgoing_edges() const { return num_outgoing_edges_; }
-  VertexID get_max_vid() const { return max_vid_; }
-  VertexID get_min_vid() const { return min_vid_; }
-
   VertexLabel* get_vertex_label() const { return vertex_label_base_pointer_; }
   VertexLabel* get_in_edge_label() const { return in_edge_label_base_pointer_; }
   VertexLabel* get_out_edge_label() const {
