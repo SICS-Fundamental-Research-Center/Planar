@@ -22,6 +22,7 @@ using VertexLabel = sics::graph::core::common::VertexLabel;
 
 DEFINE_string(i, "", "input graph directory");
 DEFINE_uint64(p, 1, "number of threads for path matching");
+DEFINE_uint64(t, 1, "number of tasks for path matching");
 
 // @DESCRIPTION: Match path patterns in the graph.
 // @PARAMETER:
@@ -36,6 +37,8 @@ DEFINE_uint64(p, 1, "number of threads for path matching");
 //      User input that greater than the hardware concurrency would adopt the
 //      hardware concurrency.
 //      The hardware concurrency in sics::50.10 is 20.
+//   - num_tasks: the number of tasks for path matching.
+//      The default value is 1. It should equal or greater than the parallism.
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
@@ -61,7 +64,19 @@ int main(int argc, char* argv[]) {
     LOG_FATAL("The parallelism should greater than 0.");
   }
   parallelism = std::min(parallelism, std::thread::hardware_concurrency());
-  path_matcher.PathMatching(parallelism);
+  // the number of tasks should equal or greater than parallelism.
+  unsigned int num_tasks = FLAGS_t;
+  if (num_tasks <= 0) {
+    LOG_FATAL("The number of tasks should greater than 0.");
+  }
+  if (num_tasks < parallelism) {
+    LOGF_WARN(
+        "The number of tasks should equal or greater than parallelism. Set it "
+        "to {} instead",
+        parallelism);
+  }
+  num_tasks = parallelism;
+  path_matcher.PathMatching(parallelism, num_tasks);
   auto end = std::chrono::system_clock::now();
 
   auto duration =
