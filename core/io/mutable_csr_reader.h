@@ -18,7 +18,7 @@ namespace sics::graph::core::io {
 // @DESCRIPTION Class to read data from ssd to memory
 // @EXAMPLE
 //  ReadMessage read_message;
-//  auto serialized_csr = std::make_unique<SerializedImmutableCSRGraph>();
+//  auto serialized_csr = std::make_unique<SerializedMutableCSRGraph>();
 //  read_message.response_serialized = serialized_csr.get();
 //  read_message.graph_id = 0;
 //  csr_reader.Read(&read_message, nullptr);

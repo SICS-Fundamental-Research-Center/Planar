@@ -122,7 +122,7 @@ class PlanarAppBase : public PIE {
       begin_index = end_index;
     }
     runner_->SubmitSync(tasks);
-    graph_->MutateGraphEdge();
+    graph_->MutateGraphEdge(runner_);
     LOG_DEBUG("ParallelEdgedelDo is done");
   }
 
