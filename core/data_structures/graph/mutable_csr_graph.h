@@ -74,7 +74,7 @@ class MutableCSRGraph : public Serializable {
            sizeof(VertexData) * metadata_.num_vertices);
   }
 
-  void MutateGraphEdge(const common::TaskRunner& runner) {
+  void MutateGraphEdge(common::TaskRunner* runner) {
     // TODO: use taskrunner to delete unused egdes
   }
 
