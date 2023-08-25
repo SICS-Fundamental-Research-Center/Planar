@@ -17,7 +17,7 @@ class SerializedMutableCSRGraph : public Serialized {
     csr_buffer_.emplace_back(std::move(buffers));
   }
 
-  std::vector<OwnedBuffer>& GetCSRBuffer() { return csr_buffer_.front(); }
+  std::vector<OwnedBuffer>* GetCSRBuffer() { return &csr_buffer_.front(); }
 
  protected:
   std::list<std::vector<OwnedBuffer>> csr_buffer_;

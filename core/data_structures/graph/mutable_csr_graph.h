@@ -48,7 +48,7 @@ class MutableCSRGraph : public Serializable {
         std::move(util::pointer_upcast<Serialized, SerializedMutableCSRGraph>(
             std::move(serialized)));
 
-    graph_buf_base_ = graph_serialized_->GetCSRBuffer().at(0).Get();
+    graph_buf_base_ = graph_serialized_->GetCSRBuffer()->at(0).Get();
 
     // set the pointer to base address
     if (metadata_.num_incoming_edges == 0) {
@@ -65,7 +65,7 @@ class MutableCSRGraph : public Serializable {
     }
 
     out_edges_base_ =
-        (VertexID*)(graph_serialized_->GetCSRBuffer().at(1).Get());
+        (VertexID*)(graph_serialized_->GetCSRBuffer()->at(1).Get());
   }
 
   // methods for sync data
