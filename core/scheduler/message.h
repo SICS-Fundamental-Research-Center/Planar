@@ -19,7 +19,7 @@ struct ReadMessage {
   // TODO: add subgraph metadata fields.
 
   // Response fields.
-  data_structures::Serialized* response_serialized;
+  data_structures::Serialized* response_serialized; // initialized in scheduler
 
   // Termination flag.
   bool terminated = false;

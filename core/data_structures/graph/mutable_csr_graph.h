@@ -20,6 +20,8 @@ class MutableCSRGraph : public Serializable {
   using EdgeIndex = common::EdgeIndex;
   using VertexDegree = uint32_t;
   using VertexOffset = uint32_t;
+  using SerializedMutableCSRGraph =
+      data_structures::graph::SerializedMutableCSRGraph;
 
  public:
   using VertexData = TV;
@@ -37,10 +39,11 @@ class MutableCSRGraph : public Serializable {
 
   void Deserialize(const common::TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override {
-    auto graph = serialized->PopNext();
-    serialized_graph_.reset(&graph);
+    graph_serialized_ =
+        std::move(util::pointer_upcast<Serialized, SerializedMutableCSRGraph>(
+            std::move(serialized)));
 
-    graph_buf_base_ = serialized_graph_.get()->front().Get();
+    graph_buf_base_ = graph_serialized_->GetCSRBuffer().at(0).Get();
 
     // set the pointer to base address
     if (metadata_.num_incoming_edges == 0) {
@@ -56,7 +59,8 @@ class MutableCSRGraph : public Serializable {
       LOG_FATAL("Error in deserialize mutable csr graph");
     }
 
-    out_edges_base_ = (VertexID*)(serialized_graph_.get()->front().Get());
+    out_edges_base_ =
+        (VertexID*)(graph_serialized_->GetCSRBuffer().at(1).Get());
   }
 
   // methods for sync data
@@ -98,7 +102,8 @@ class MutableCSRGraph : public Serializable {
  private:
   const SubgraphMetadata& metadata_;
 
-  std::unique_ptr<std::list<OwnedBuffer>> serialized_graph_;
+  std::unique_ptr<data_structures::graph::SerializedMutableCSRGraph>
+      graph_serialized_;
 
   // deserialized data pointer in CSR format
   uint8_t* graph_buf_base_;

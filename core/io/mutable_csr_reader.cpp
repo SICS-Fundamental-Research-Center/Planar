@@ -15,10 +15,10 @@ void MutableCSRReader::Read(scheduler::ReadMessage* message,
   std::string label_path =
       root_path_ + "graphs/" + std::to_string(message->graph_id) + "label.bin";
 
-  auto graph_serialized = std::make_unique<SerializedMuatbleCSRGraph>();
+  auto graph_serialized = message->response_serialized;
 
-  ReadFromBin(file_path, graph_serialized.get());
-  ReadFromBin(label_path, graph_serialized.get());
+  ReadFromBin(file_path, graph_serialized);
+  ReadFromBin(label_path, graph_serialized);
 }
 
 void MutableCSRReader::ReadFromBin(const std::string& path,
