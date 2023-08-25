@@ -32,7 +32,6 @@ class MutableCSRGraph : public Serializable {
   // Serializable interface override functions
   std::unique_ptr<Serialized> Serialize(
       const common::TaskRunner& runner) override {
-    // TODO: transfer the data from MutableCSRgraph to Serialized structure for
     graph_buf_base_ = nullptr;
     vertex_id_by_local_index_ = nullptr;
     out_degree_base_ = nullptr;
@@ -70,9 +69,14 @@ class MutableCSRGraph : public Serializable {
   }
 
   // methods for sync data
-  void SyncVertexData() {}
+  void SyncVertexData() {
+    memcpy(vertex_data_base_, vertex_data_write_base_,
+           sizeof(VertexData) * metadata_.num_vertices);
+  }
 
-  void MutateGraphEdge() {}
+  void MutateGraphEdge(const common::TaskRunner& runner) {
+    // TODO: use taskrunner to delete unused egdes
+  }
 
   // methods for vertex info
 
@@ -112,6 +116,7 @@ class MutableCSRGraph : public Serializable {
       graph_serialized_;
 
   // deserialized data pointer in CSR format
+
   uint8_t* graph_buf_base_;
   VertexID* vertex_id_by_local_index_;
   VertexDegree* out_degree_base_;
@@ -120,6 +125,12 @@ class MutableCSRGraph : public Serializable {
 
   VertexData* vertex_data_base_;
   common::Bitmap* vertex_src_or_dst_bitmap_;
+
+  // used for mutable algorithm only;
+  VertexDegree* out_degree_base_new_;
+  VertexOffset* out_offset_base_new_;
+  VertexID* out_edges_base_new_;
+  VertexData* vertex_data_write_base_;
 
   std::string status_;
 };
