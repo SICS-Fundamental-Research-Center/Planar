@@ -33,8 +33,14 @@ class MutableCSRGraph : public Serializable {
   std::unique_ptr<Serialized> Serialize(
       const common::TaskRunner& runner) override {
     // TODO: transfer the data from MutableCSRgraph to Serialized structure for
-
+    graph_buf_base_ = nullptr;
+    vertex_id_by_local_index_ = nullptr;
+    out_degree_base_ = nullptr;
+    out_offset_base_ = nullptr;
+    out_edges_base_ = nullptr;
     // write back
+    return util::pointer_downcast<Serialized, SerializedMutableCSRGraph>(
+        std::move(graph_serialized_));
   }
 
   void Deserialize(const common::TaskRunner& runner,
