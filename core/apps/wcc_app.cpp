@@ -24,18 +24,4 @@ void WCCApp::IncEval() {
 
 void WCCApp::Assemble() { graph_->set_status("Assemble"); }
 
-TestGraph::TestGraph() : status_("initialized") {}
-
-std::unique_ptr<data_structures::Serialized> TestGraph::Serialize(
-    const common::TaskRunner& runner) {
-  status_ = "serialized";
-  return nullptr;
-}
-
-void TestGraph::Deserialize(
-    const common::TaskRunner& runner,
-    std::unique_ptr<data_structures::Serialized>&& serialized) {
-  status_ = "deserialized";
-}
-
 }  // namespace sics::graph::core::apps

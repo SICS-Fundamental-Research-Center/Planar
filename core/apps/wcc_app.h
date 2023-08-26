@@ -6,54 +6,6 @@
 
 namespace sics::graph::core::apps {
 
-// TODO: use real graph replace this
-// A dummy graph type for testing purposes. Do *NOT* use it in production.
-class TestGraph : public data_structures::Serializable {
- public:
-  using VertexData = int;
-  using EdgeData = int;
-  using VertexID = common::VertexID;
-  using VertexIndex = common::VertexIndex;
-  using EdgeIndex = common::EdgeIndex;
-  using GraphID = common::GraphID;
-
-  TestGraph();
-  ~TestGraph() = default;
-
-  std::unique_ptr<data_structures::Serialized> Serialize(
-      const common::TaskRunner& runner) final;
-
-  // Deserialize the `Serializable` object from a `Serialized` object.
-  // This function will submit the deserialization task to the given TaskRunner
-  void Deserialize(
-      const common::TaskRunner& runner,
-      std::unique_ptr<data_structures::Serialized>&& serialized) final;
-
-  std::string get_status() const { return status_; }
-  void set_status(const std::string& new_status) { status_ = new_status; }
-
-  bool Write(common::VertexID id, VertexData data) { return true; }
-
-  VertexData* Read(common::VertexID id) { return nullptr; }
-
-  int GetVertexNums() { return 4; }
-
-  int GetVertexIdByIndex(int index) { return index; }
-
-  void SyncVertexData() {}
-
-  void MutateGraphEdge() {}
-
-  size_t GetOutDegree(VertexIndex i) { return 2; }
-
-  size_t GetOutEdge(VertexIndex i, VertexIndex j) { return i % 2 == 0 ? 1 : 0; }
-
-  size_t GetOutOffset(VertexIndex i) { return 2 * (i - 1); }
-
- private:
-  std::string status_;
-};
-
 struct WccVertexData {
   int p;
   WccVertexData() = default;
