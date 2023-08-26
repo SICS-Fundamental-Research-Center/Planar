@@ -27,7 +27,8 @@ endif ()
 #######################
 file(GLOB GRAPH_MINICLEAN_SOURCES
         "*.cpp"
-        "graphs/*.cpp"
+        "data_structures/*.cpp"
+        "data_structures/graphs/*.cpp"
         "components/*.cpp"
         "io/*.cpp"
         )
@@ -36,7 +37,8 @@ list(FILTER GRAPH_MINICLEAN_SOURCES EXCLUDE REGEX ".*_test\\.cpp$")
 
 file(GLOB GRAPH_MINICLEAN_HEADERS
         "*.h"
-        "graphs/*.h"
+        "data_structures/*.h"
+        "data_structures/graphs/*.h"
         "components/*.h"
         "io/*.h"
         )

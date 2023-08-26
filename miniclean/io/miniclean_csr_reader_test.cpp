@@ -11,11 +11,11 @@
 #include "core/data_structures/graph_metadata.h"
 #include "core/util/logging.h"
 #include "core/scheduler/message.h"
-#include "miniclean/graphs/miniclean_csr_graph.h"
+#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 using GraphID = sics::graph::core::common::GraphID;
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
-using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
+using MiniCleanCSRGraph = sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
 using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;

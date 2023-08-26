@@ -1,6 +1,6 @@
-#include "miniclean/graphs/miniclean_csr_graph.h"
+#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace sics::graph::miniclean::graphs {
+namespace sics::graph::miniclean::data_structures::graphs {
 using Serialized = sics::graph::core::data_structures::Serialized;
 
 std::unique_ptr<Serialized> MiniCleanCSRGraph::Serialize(

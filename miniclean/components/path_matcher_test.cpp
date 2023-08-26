@@ -9,12 +9,12 @@
 #include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/data_structures/graph_metadata.h"
-#include "miniclean/graphs/miniclean_csr_graph.h"
+#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 namespace sics::graph::miniclean::components {
 
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
-using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
+using MiniCleanCSRGraph = sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
 using PathMatcher = sics::graph::miniclean::components::PathMatcher;
 using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
 using VertexID = sics::graph::core::common::VertexID;

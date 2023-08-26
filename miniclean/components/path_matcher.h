@@ -6,13 +6,13 @@
 
 #include "core/common/multithreading/task.h"
 #include "core/common/types.h"
-#include "miniclean/graphs/miniclean_csr_graph.h"
+#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 namespace sics::graph::miniclean::components {
 
 class PathMatcher {
  private:
-  using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
+  using MiniCleanCSRGraph = sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
   using GraphID = sics::graph::core::common::GraphID;
   using TaskPackage = sics::graph::core::common::TaskPackage;
   using VertexID = sics::graph::core::common::VertexID;

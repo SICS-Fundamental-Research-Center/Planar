@@ -10,7 +10,7 @@
 #include "core/data_structures/serialized.h"
 #include "core/util/logging.h"
 
-namespace sics::graph::miniclean::graphs {
+namespace sics::graph::miniclean::data_structures::graphs {
 // TODO (bai-wenchao): implement MiniCleanCSRVertex with label and attributes.
 class MiniCleanCSRGraph
     : public sics::graph::core::data_structures::graph::ImmutableCSRGraph {
