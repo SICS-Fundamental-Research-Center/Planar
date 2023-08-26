@@ -5,7 +5,7 @@
 
 #include "miniclean/common/types.h"
 
-namespace sics::miniclean::data_structures::graph_cleaning_rules {
+namespace sics::graph::miniclean::data_structures::graph_cleaning_rules {
 
 typedef enum {
   kVariablePredicate = 1,
@@ -77,6 +77,6 @@ class ConstantPredicate : public GCRPredicate {
   VertexAttributeID rhs_aid_;
   ConstantType c_;
 };
-}  // namespace sics::miniclean::data_structures::graph_cleaning_rules
+}  // namespace sics::graph::miniclean::data_structures::graph_cleaning_rules
 
 #endif  // MINICLEAN_DATA_STRUCTURES_GRAPH_CLEANING_RULES_PREDICATE_H_

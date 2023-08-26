@@ -9,13 +9,13 @@
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/graph_cleaning_rules/predicate.h"
 
-namespace sics::miniclean::data_structures::graph_cleaning_rules {
+namespace sics::graph::miniclean::data_structures::graph_cleaning_rules {
 
 class GCR : public sics::graph::core::data_structures::Serializable {
  private:
   using DualPattern = sics::graph::miniclean::common::DualPattern;
   using GCRPredicate =
-      sics::miniclean::data_structures::graph_cleaning_rules::GCRPredicate;
+      sics::graph::miniclean::data_structures::graph_cleaning_rules::GCRPredicate;
   using Serialized = sics::graph::core::data_structures::Serialized;
   using TaskRunner = sics::graph::core::common::TaskRunner;
   using VertexID = sics::graph::miniclean::common::VertexID;
@@ -57,6 +57,6 @@ class GCR : public sics::graph::core::data_structures::Serializable {
   std::vector<VertexID> activated_right_centers;
 };
 
-}  // namespace sics::miniclean::data_structures::graph_cleaning_rules
+}  // namespace sics::graph::miniclean::data_structures::graph_cleaning_rules
 
 #endif  // MINICLEAN_DATA_STRUCTURES_GRAPH_CLEANING_RULES_GCR_H_
