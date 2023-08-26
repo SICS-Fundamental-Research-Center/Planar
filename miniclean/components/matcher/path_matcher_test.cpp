@@ -1,4 +1,4 @@
-#include "miniclean/components/path_matcher.h"
+#include "miniclean/components/matcher/path_matcher.h"
 
 #include <fstream>
 #include <sstream>
@@ -11,11 +11,12 @@
 #include "core/data_structures/graph_metadata.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace sics::graph::miniclean::components {
+namespace sics::graph::miniclean::components::matcher {
 
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
-using MiniCleanCSRGraph = sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-using PathMatcher = sics::graph::miniclean::components::PathMatcher;
+using MiniCleanCSRGraph =
+    sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+using PathMatcher = sics::graph::miniclean::components::matcher::PathMatcher;
 using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
 using VertexID = sics::graph::core::common::VertexID;
 using VertexLabel = sics::graph::core::common::VertexLabel;
@@ -125,4 +126,4 @@ TEST_F(PathMatcherTest, CheckMatches) {
   }
 }
 
-}  // namespace sics::graph::miniclean::components
+}  // namespace sics::graph::miniclean::components::matcher

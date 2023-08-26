@@ -8,11 +8,12 @@
 #include "core/common/types.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace sics::graph::miniclean::components {
+namespace sics::graph::miniclean::components::matcher {
 
 class PathMatcher {
  private:
-  using MiniCleanCSRGraph = sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+  using MiniCleanCSRGraph =
+      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
   using GraphID = sics::graph::core::common::GraphID;
   using TaskPackage = sics::graph::core::common::TaskPackage;
   using VertexID = sics::graph::core::common::VertexID;
@@ -63,6 +64,6 @@ class PathMatcher {
   std::mutex mtx_;
   std::mutex dur_mtx_;
 };
-}  // namespace sics::graph::miniclean::components
+}  // namespace sics::graph::miniclean::components::matcher
 
 #endif  // MINICLEAN_COMPONENTS_PATH_MATCHER_H_

@@ -1,4 +1,4 @@
-#include "miniclean/components/path_matcher.h"
+#include "miniclean/components/matcher/path_matcher.h"
 
 #include <fstream>
 #include <memory>
@@ -12,7 +12,7 @@
 #include "core/scheduler/message.h"
 #include "miniclean/io/miniclean_csr_reader.h"
 
-namespace sics::graph::miniclean::components {
+namespace sics::graph::miniclean::components::matcher {
 
 using MiniCleanCSRReader = sics::graph::miniclean::io::MiniCleanCSRReader;
 using ReadMessage = sics::graph::core::scheduler::ReadMessage;
@@ -241,4 +241,4 @@ void PathMatcher::PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
   }
 }
 
-}  // namespace sics::graph::miniclean::components
+}  // namespace sics::graph::miniclean::components::matcher

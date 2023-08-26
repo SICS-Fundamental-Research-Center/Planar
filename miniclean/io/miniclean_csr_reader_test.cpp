@@ -15,7 +15,8 @@
 
 using GraphID = sics::graph::core::common::GraphID;
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
-using MiniCleanCSRGraph = sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+using MiniCleanCSRGraph =
+    sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
 using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;

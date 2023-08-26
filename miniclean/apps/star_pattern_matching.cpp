@@ -8,12 +8,13 @@
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/data_structures/graph_metadata.h"
 #include "core/util/logging.h"
-#include "miniclean/components/path_matcher.h"
+#include "miniclean/components/matcher/path_matcher.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
-using MiniCleanCSRGraph = sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-using PathMatcher = sics::graph::miniclean::components::PathMatcher;
+using MiniCleanCSRGraph =
+    sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+using PathMatcher = sics::graph::miniclean::components::matcher::PathMatcher;
 using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using ThreadPool = sics::graph::core::common::ThreadPool;

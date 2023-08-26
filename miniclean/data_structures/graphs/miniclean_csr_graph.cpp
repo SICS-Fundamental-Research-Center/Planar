@@ -100,4 +100,4 @@ void MiniCleanCSRGraph::ParseOutedgeLabel(
       reinterpret_cast<VertexID*>(buffer_list.front().Get());
 }
 
-}  // namespace sics::graph::miniclean::graphs
+}  // namespace sics::graph::miniclean::data_structures::graphs

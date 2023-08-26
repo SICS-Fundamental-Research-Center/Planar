@@ -58,6 +58,6 @@ class MiniCleanCSRGraph
   VertexLabel* out_edge_label_base_pointer_;
   // TODO (bai-wenchao): design and add vertex attribute base pointer
 };
-}  // namespace sics::graph::miniclean::graphs
+}  // namespace sics::graph::miniclean::data_structures::graphs
 
 #endif  // MINICLEAN_GRAPHS_MINICLEAN_CSR_GRAPH_H_
