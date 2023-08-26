@@ -8,8 +8,8 @@
 #include "core/common/multithreading/task.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
-#include "core/util/logging.h"
 #include "core/scheduler/message.h"
+#include "core/util/logging.h"
 #include "miniclean/io/miniclean_csr_reader.h"
 
 namespace sics::graph::miniclean::components::matcher {

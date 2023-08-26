@@ -33,8 +33,8 @@ namespace sics::graph::miniclean::io {
 class MiniCleanCSRReader : public sics::graph::core::io::Reader {
  private:
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
-  using Serialized = sics::graph::core::data_structures::Serialized;
   using ReadMessage = sics::graph::core::scheduler::ReadMessage;
+  using Serialized = sics::graph::core::data_structures::Serialized;
   using TaskRunner = sics::graph::core::common::TaskRunner;
 
  public:

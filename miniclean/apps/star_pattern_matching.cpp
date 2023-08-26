@@ -1,9 +1,9 @@
 #include "core/common/multithreading/thread_pool.h"
 
+#include <gflags/gflags.h>
+
 #include <memory>
 #include <vector>
-
-#include <gflags/gflags.h>
 
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/data_structures/graph_metadata.h"

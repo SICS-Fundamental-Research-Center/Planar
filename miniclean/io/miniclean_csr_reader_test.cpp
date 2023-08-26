@@ -1,19 +1,19 @@
 #include "miniclean/io/miniclean_csr_reader.h"
 
-#include <memory>
-
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
 
-#include "core/common/types.h"
+#include <memory>
+
 #include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/data_structures/graph_metadata.h"
-#include "core/util/logging.h"
 #include "core/scheduler/message.h"
+#include "core/util/logging.h"
+#include "miniclean/common/types.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-using GraphID = sics::graph::core::common::GraphID;
+using GraphID = sics::graph::miniclean::common::GraphID;
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph =
     sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
