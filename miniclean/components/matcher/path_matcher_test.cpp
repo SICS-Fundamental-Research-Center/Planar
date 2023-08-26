@@ -1,14 +1,15 @@
 #include "miniclean/components/matcher/path_matcher.h"
 
-#include <fstream>
-#include <sstream>
-
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
+
+#include <fstream>
+#include <sstream>
 
 #include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/data_structures/graph_metadata.h"
+#include "miniclean/common/types.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 namespace sics::graph::miniclean::components::matcher {
@@ -18,8 +19,8 @@ using MiniCleanCSRGraph =
     sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
 using PathMatcher = sics::graph::miniclean::components::matcher::PathMatcher;
 using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
-using VertexID = sics::graph::core::common::VertexID;
-using VertexLabel = sics::graph::core::common::VertexLabel;
+using VertexID = sics::graph::miniclean::common::VertexID;
+using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
 class PathMatcherTest : public ::testing::Test {
  protected:

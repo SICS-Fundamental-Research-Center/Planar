@@ -9,23 +9,24 @@
 #include "core/data_structures/serializable.h"
 #include "core/data_structures/serialized.h"
 #include "core/util/logging.h"
+#include "miniclean/common/types.h"
 
 namespace sics::graph::miniclean::data_structures::graphs {
 // TODO (bai-wenchao): implement MiniCleanCSRVertex with label and attributes.
 class MiniCleanCSRGraph
     : public sics::graph::core::data_structures::graph::ImmutableCSRGraph {
  private:
+  using GraphID = sics::graph::miniclean::common::GraphID;
   using ImmutableCSRGraph =
       sics::graph::core::data_structures::graph::ImmutableCSRGraph;
-  using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
-  using GraphID = sics::graph::core::common::GraphID;
-  using VertexID = sics::graph::core::common::VertexID;
-  using VertexLabel = sics::graph::core::common::VertexLabel;
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
   using Serialized = sics::graph::core::data_structures::Serialized;
-  using TaskRunner = sics::graph::core::common::TaskRunner;
   using SerializedImmutableCSRGraph =
       sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+  using TaskRunner = sics::graph::core::common::TaskRunner;
+  using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
+  using VertexID = sics::graph::miniclean::common::VertexID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
   explicit MiniCleanCSRGraph(SubgraphMetadata metadata)
