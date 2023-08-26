@@ -31,6 +31,7 @@ file(GLOB GRAPH_MINICLEAN_SOURCES
         "data_structures/graphs/*.cpp"
         "components/*.cpp"
         "components/matcher/*.cpp"
+        "components/rule_discovery/*.cpp"
         "io/*.cpp"
         )
 message(STATUS "CORE source files: ${GRAPH_MINICLEAN_SOURCES}")
@@ -42,6 +43,7 @@ file(GLOB GRAPH_MINICLEAN_HEADERS
         "data_structures/graphs/*.h"
         "components/*.h"
         "components/matcher/*.h"
+        "components/rule_discovery/*.h"
         "io/*.h"
         )
 message(STATUS "CORE header files: ${GRAPH_MINICLEAN_HEADERS}")
