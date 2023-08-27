@@ -2,6 +2,7 @@
 #define MINICLEAN_COMMON_TYPES_H_
 
 #include <cstdint>
+#include <list>
 #include <vector>
 
 namespace sics::graph::miniclean::common {
@@ -22,12 +23,18 @@ typedef std::tuple<uint8_t, uint8_t> PatternVertexID;  // uint8_t: 0 ~ 255
 //   The vertex attribute ID specifies the number of bucket of the attribute.
 typedef uint8_t VertexAttributeID;
 
-typedef std::tuple<VertexID, EdgeLabel, VertexID> EdgeInstance;
+// Since EdgeLabel is checked, VertexID is enough to represent an edge instance.
+typedef std::tuple<VertexID, VertexID> EdgeInstance;
 typedef std::vector<EdgeInstance> PathInstance;
+// Assuming all matched paths will be loaded into memory, the path instance ID
+// is the index of the path instance in the loaded instance list.
+typedef uint32_t PathInstanceID;
 
 typedef std::tuple<VertexLabel, EdgeLabel, VertexLabel> EdgePattern;
 typedef std::vector<EdgePattern> PathPattern;
-typedef std::tuple<VertexLabel, std::vector<PathPattern>> StarPattern;
+// Star pattern is a vector of path patterns.
+//   The first vertex label of each path pattern is the star center.
+typedef std::list<PathPattern> StarPattern;
 typedef std::tuple<StarPattern, StarPattern> DualPattern;
 
 }  // namespace sics::graph::miniclean::common
