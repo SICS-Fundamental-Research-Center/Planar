@@ -1,11 +1,11 @@
-#ifndef MINICLEAN_DATA_STRUCTURES_GRAPH_CLEANING_RULES_PREDICATE_H_
-#define MINICLEAN_DATA_STRUCTURES_GRAPH_CLEANING_RULES_PREDICATE_H_
+#ifndef MINICLEAN_DATA_STRUCTURES_GCR_PREDICATE_H_
+#define MINICLEAN_DATA_STRUCTURES_GCR_PREDICATE_H_
 
 #include <memory>
 
 #include "miniclean/common/types.h"
 
-namespace sics::graph::miniclean::data_structures::graph_cleaning_rules {
+namespace sics::graph::miniclean::data_structures::gcr {
 
 typedef enum {
   kVariablePredicate = 1,
@@ -77,6 +77,6 @@ class ConstantPredicate : public GCRPredicate {
   VertexAttributeID rhs_aid_;
   ConstantType c_;
 };
-}  // namespace sics::graph::miniclean::data_structures::graph_cleaning_rules
+}  // namespace sics::graph::miniclean::data_structures::gcr
 
-#endif  // MINICLEAN_DATA_STRUCTURES_GRAPH_CLEANING_RULES_PREDICATE_H_
+#endif  // MINICLEAN_DATA_STRUCTURES_GCR_PREDICATE_H_

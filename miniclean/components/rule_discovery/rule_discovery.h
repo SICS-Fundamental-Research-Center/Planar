@@ -4,7 +4,7 @@
 #include <string>
 
 #include "miniclean/common/types.h"
-#include "miniclean/data_structures/graph_cleaning_rules/gcr.h"
+#include "miniclean/data_structures/gcr/gcr.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 namespace sics::graph::miniclean::components::rule_discovery {
@@ -12,7 +12,7 @@ namespace sics::graph::miniclean::components::rule_discovery {
 // TODO (bai-wenchao): Implement out-of-core version.
 class RuleMiner {
  private:
-  using GCR = sics::graph::miniclean::data_structures::graph_cleaning_rules::GCR;
+  using GCR = sics::graph::miniclean::data_structures::gcr::GCR;
   using MiniCleanCSRGraph =
       sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
   using PathInstance = sics::graph::miniclean::common::PathInstance;
