@@ -21,13 +21,13 @@ class RuleMiner {
  public:
   RuleMiner() = default;
 
-  void LoadMiniCleanCSRGraph(std::string graph_path);
+  void LoadMiniCleanCSRGraph(const std::string& graph_path);
 
-  void LoadPathPatterns(std::string path_patterns_path);
+  void LoadPathPatterns(const std::string& path_patterns_path);
 
-  void LoadPathInstances(std::string path_instances_path);
+  void LoadPathInstances(const std::string& path_instances_path);
 
-  void LoadPredicates(std::string predicates_path);
+  void LoadPredicates(const std::string& predicates_path);
 
   void InitGCRs();
 
