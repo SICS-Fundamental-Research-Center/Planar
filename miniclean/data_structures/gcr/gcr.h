@@ -4,27 +4,21 @@
 #include <memory>
 #include <vector>
 
-#include "core/data_structures/serializable.h"
-#include "core/data_structures/serialized.h"
+#include "core/common/multithreading/task_runner.h"
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/gcr/predicate.h"
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
-class GCR : public sics::graph::core::data_structures::Serializable {
+class GCR {
  private:
   using DualPattern = sics::graph::miniclean::common::DualPattern;
   using GCRPredicate =
       sics::graph::miniclean::data_structures::gcr::GCRPredicate;
-  using Serialized = sics::graph::core::data_structures::Serialized;
   using TaskRunner = sics::graph::core::common::TaskRunner;
   using VertexID = sics::graph::miniclean::common::VertexID;
 
  public:
-  std::unique_ptr<Serialized> Serialize(const TaskRunner& runner) override;
-  void Deserialize(const TaskRunner& runner,
-                   std::unique_ptr<Serialized>&& serialized) override;
-
   // Two GCRs are joinable if
   //   (1) Their labels of star centers are the same.
   //   (2) The composed dual pattern would not carry more than `n` predicates.
