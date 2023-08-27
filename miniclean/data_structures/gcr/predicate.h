@@ -29,10 +29,12 @@ class GCRPredicate {
   using PatternVertexID = sics::graph::miniclean::common::PatternVertexID;
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
 
- public:
+ protected:
   GCRPredicate(PredicateType predicate_type) : predicate_type(predicate_type) {}
 
  public:
+  PredicateType get_type() const { return predicate_type; }
+
   PredicateType predicate_type;
 };
 
@@ -48,11 +50,20 @@ class VariablePredicate : public GCRPredicate {
         lhs_aid_(lhs_aid),
         rhs_vid_(rhs_vid),
         rhs_aid_(rhs_aid) {}
+  
+  OperatorType get_operator_type() const { return operator_type_; }
 
- public:
-  OperatorType operator_type_;
+  std::pair<PatternVertexID, VertexAttributeID> get_lhs() const {
+    return std::make_pair(lhs_vid_, lhs_aid_);
+  }
+
+  std::pair<PatternVertexID, VertexAttributeID> get_rhs() const {
+    return std::make_pair(rhs_vid_, rhs_aid_);
+  }
 
  private:
+  OperatorType operator_type_;
+
   PatternVertexID lhs_vid_, rhs_vid_;
   VertexAttributeID lhs_aid_, rhs_aid_;
 };
@@ -69,10 +80,17 @@ class ConstantPredicate : public GCRPredicate {
         rhs_aid_(rhs_aid),
         c_(c) {}
 
- public:
-  OperatorType operator_type_;
+  OperatorType get_operator_type() const { return operator_type_; }
+
+  std::pair<PatternVertexID, VertexAttributeID> get_lhs() const {
+    return std::make_pair(lhs_vid_, rhs_aid_);
+  }
+
+  ConstantType get_rhs() const { return c_; }
 
  private:
+  OperatorType operator_type_;
+
   PatternVertexID lhs_vid_;
   VertexAttributeID rhs_aid_;
   ConstantType c_;
