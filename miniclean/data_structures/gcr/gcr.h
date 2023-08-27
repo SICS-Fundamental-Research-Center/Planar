@@ -58,7 +58,6 @@ class GCR {
   // Each star instance is a list of path instances.
   std::list<std::list<PathInstanceID>> left_star_instances_;
   std::list<std::list<PathInstanceID>> right_star_instances_;
-
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

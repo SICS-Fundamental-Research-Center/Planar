@@ -50,7 +50,7 @@ class VariablePredicate : public GCRPredicate {
         lhs_aid_(lhs_aid),
         rhs_vid_(rhs_vid),
         rhs_aid_(rhs_aid) {}
-  
+
   OperatorType get_operator_type() const { return operator_type_; }
 
   std::pair<PatternVertexID, VertexAttributeID> get_lhs() const {
