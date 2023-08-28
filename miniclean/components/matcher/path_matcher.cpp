@@ -256,4 +256,10 @@ void PathMatcher::PathMatchRecur(const PathPattern& path_pattern,
   }
 }
 
+void PathMatcher::WriteResultBack(const std::string& result_path) {
+  for (size_t i = 0; i < matched_results_.size(); i++) {
+    std::ofstream result_file(result_path + std::to_string(i));
+  }
+}
+
 }  // namespace sics::graph::miniclean::components::matcher

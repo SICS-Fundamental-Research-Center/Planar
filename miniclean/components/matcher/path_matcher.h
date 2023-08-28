@@ -43,6 +43,9 @@ class PathMatcher {
   // Match path patterns in the graph parallelly.
   void PathMatching(unsigned int parallelism, unsigned int num_tasks);
 
+  // Write matched patterns back to disk.
+  void WriteResultBack(const std::string& result_path);
+
   std::vector<std::list<std::vector<VertexID>>> get_results() {
     return matched_results_;
   }
