@@ -109,11 +109,11 @@ class MutableCSRGraph : public Serializable {
 
   bool IsInGraph(VertexID id) const { return true; }
 
-  const VertexData* Read(VertexIndex index) const {
+  const VertexData* ReadLocalVertexData(VertexIndex index) const {
     return vertex_data_read_base_ + index;
   }
 
-  bool Write(VertexIndex index, VertexData data_new) {
+  bool WriteLocalVertexData(VertexIndex index, VertexData data_new) {
     vertex_data_write_base_[index] = data_new;
     // TODO: bool maybe used for mark the vertex as aactive
     return true;
