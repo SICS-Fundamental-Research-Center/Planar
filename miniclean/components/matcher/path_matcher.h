@@ -1,22 +1,23 @@
-#ifndef MINICLEAN_COMPONENTS_PATH_MATCHER_H_
-#define MINICLEAN_COMPONENTS_PATH_MATCHER_H_
+#ifndef MINICLEAN_COMPONENTS_MATCHER_PATH_MATCHER_H_
+#define MINICLEAN_COMPONENTS_MATCHER_PATH_MATCHER_H_
 
 #include <unordered_set>
 #include <vector>
 
 #include "core/common/multithreading/task.h"
-#include "core/common/types.h"
-#include "miniclean/graphs/miniclean_csr_graph.h"
+#include "miniclean/common/types.h"
+#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace sics::graph::miniclean::components {
+namespace sics::graph::miniclean::components::matcher {
 
 class PathMatcher {
  private:
-  using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
-  using GraphID = sics::graph::core::common::GraphID;
+  using GraphID = sics::graph::miniclean::common::GraphID;
+  using MiniCleanCSRGraph =
+      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
   using TaskPackage = sics::graph::core::common::TaskPackage;
-  using VertexID = sics::graph::core::common::VertexID;
-  using VertexLabel = sics::graph::core::common::VertexLabel;
+  using VertexID = sics::graph::miniclean::common::VertexID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
   PathMatcher(MiniCleanCSRGraph* miniclean_csr_graph)
@@ -63,6 +64,6 @@ class PathMatcher {
   std::mutex mtx_;
   std::mutex dur_mtx_;
 };
-}  // namespace sics::graph::miniclean::components
+}  // namespace sics::graph::miniclean::components::matcher
 
 #endif  // MINICLEAN_COMPONENTS_PATH_MATCHER_H_
