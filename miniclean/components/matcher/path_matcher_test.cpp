@@ -14,6 +14,7 @@
 
 namespace sics::graph::miniclean::components::matcher {
 
+using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph =
     sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
