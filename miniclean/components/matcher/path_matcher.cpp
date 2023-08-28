@@ -80,6 +80,8 @@ void PathMatcher::LoadPatterns(const std::string& pattern_path) {
     path_patterns_.push_back(pattern);
   }
 
+  pattern_file.close();
+
   num_label_ = max_label_id;
 
   // Initialize `vertex_label_to_pattern_id`.
