@@ -107,7 +107,7 @@ class MutableCSRGraph : public Serializable {
     return vertex_data_read_base_ + index;
   }
 
-  bool IsInGraph(VertexID id) { return true; }
+  bool IsInGraph(VertexID id) const { return true; }
 
   const VertexData* Read(VertexIndex index) const {
     return vertex_data_read_base_ + index;
