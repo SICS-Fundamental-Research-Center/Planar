@@ -30,14 +30,19 @@ using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
 using sics::graph::core::util::atomic::WriteAdd;
 using sics::graph::core::util::atomic::WriteMax;
 using sics::graph::core::util::atomic::WriteMin;
+using sics::graph::tools::common::EdgelistMetadata;
+using sics::graph::tools::common::GraphFormatConverter;
+using sics::graph::tools::common::kIncomingOnly;
+using sics::graph::tools::common::kOutgoingOnly;
+using sics::graph::tools::common::kUnconstrained;
+using sics::graph::tools::common::StoreStrategy;
+using sics::graph::tools::common::StoreStrategy2Enum;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
-using namespace sics::graph::tools::common;
 
-VertexID static GetBucketID(VertexID vid, VertexID n_bucket,
-                            size_t num_vertices = 0) {
+VertexID GetBucketID(VertexID vid, VertexID n_bucket, size_t num_vertices = 0) {
   if (num_vertices != 0)
-    return vid / ceil((double)num_vertices / (double)n_bucket);
+    return vid / ceil((double) num_vertices / (double) n_bucket);
   else
     return fnv64_append_byte(vid, 3) % n_bucket;
 }
@@ -49,7 +54,7 @@ enum Partitioner {
   kUndefinedPartitioner
 };
 
-static Partitioner Partitioner2Enum(const std::string& s) {
+Partitioner Partitioner2Enum(const std::string& s) {
   if (s == "edgecut")
     return kEdgeCut;
   else if (s == "vertexcut")
@@ -86,11 +91,11 @@ DEFINE_string(store_strategy, "unconstrained",
 // partitioner: The partitioner to use.
 // n_partitions: The number of partitions to use.
 // store_strategy: The strategy to use to store edges.
-static void EdgeCut(const std::string& input_path,
-                    const std::string& output_path,
-                    const Partitioner partitioner,
-                    const VertexID n_partitions,
-                    StoreStrategy store_strategy) {
+void EdgeCut(const std::string& input_path,
+             const std::string& output_path,
+             Partitioner partitioner,
+             VertexID n_partitions,
+             StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -268,11 +273,11 @@ static void EdgeCut(const std::string& input_path,
 // store_strategy: StoreStrategy to use [incoming_only, outgoing_only,
 // unconstrained], corresponding to store incoming edges only, outgoing edges
 // only, and both two respectively.
-static void VertexCut(const std::string& input_path,
-                      const std::string& output_path,
-                      const Partitioner partitioner,
-                      const size_t n_partitions,
-                      StoreStrategy store_strategy) {
+void VertexCut(const std::string& input_path,
+               const std::string& output_path,
+               Partitioner partitioner,
+               size_t n_partitions,
+               StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -428,10 +433,8 @@ int main(int argc, char** argv) {
       "\n");
 
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-  if (FLAGS_i == "" || FLAGS_o == "") {
-    LOG_ERROR("Input (output) path is empty.");
-    return -1;
-  }
+  if (FLAGS_i == "" || FLAGS_o == "")
+    LOG_FATAL("Input (output) path is empty.");
 
   switch (Partitioner2Enum(FLAGS_partitioner)) {
     case kVertexCut:
@@ -446,8 +449,7 @@ int main(int argc, char** argv) {
       // TODO (hsaioko): Add HyrbidCut partitioner.
       break;
     default:
-      LOG_INFO("Error graph partitioner.");
-      break;
+      LOG_FATAL("Error graph partitioner.");
   }
 
   gflags::ShutDownCommandLineFlags();
