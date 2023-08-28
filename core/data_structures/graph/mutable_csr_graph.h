@@ -149,6 +149,7 @@ class MutableCSRGraph : public Serializable {
 
   VertexData* vertex_data_read_base_;
   common::Bitmap vertex_src_or_dst_bitmap_;
+  common::Bitmap is_in_graph_bitmap_;
 
   // used for mutable algorithm only;
   VertexDegree* out_degree_base_new_;
