@@ -16,8 +16,8 @@ class WccAppTest : public ::testing::Test {
 };
 
 TEST_F(WccAppTest, ParallelVertexOperatorTest) {
-  // TODO: mock a graph to test paralleldo
-//  TestGraph graph;
+  // TODO: test later when logic of wcc is finished
+//  TestGraph grph;
 //  update_stores::BspUpdateStore<TestGraph::VertexData, TestGraph::EdgeData>
 //      update_store;
 //  common::ThreadPool pool(1);

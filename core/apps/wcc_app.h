@@ -7,17 +7,19 @@
 namespace sics::graph::core::apps {
 
 struct WccVertexData {
-  int p;
+  common::VertexID p;
   WccVertexData() = default;
-  WccVertexData(int p) : p(p) {}
+  WccVertexData(common::VertexID p) : p(p) {}
 };
 
-using CSRGraph = data_structures::graph::MutableCSRGraph<int, int>;
+using CSRGraph = data_structures::graph::MutableCSRGraph<WccVertexData, int>;
 
 class WCCApp : public apis::PlanarAppBase<CSRGraph> {
   using VertexData = typename CSRGraph::VertexData;
   using EdgeData = typename CSRGraph::EdgeData;
+
   using EdgeIndex = common::EdgeIndex;
+  using VertexID = common::VertexID;
 
  public:
   explicit WCCApp(
@@ -31,28 +33,53 @@ class WCCApp : public apis::PlanarAppBase<CSRGraph> {
   void Assemble() final;
 
  private:
-  void init(common::VertexID id) {
-    // TODO: init for vertex
-    graph_->GetOutDegreeByIndex(id);
-    auto a = graph_->GetVertxDataByIndex(id);
+  void init(VertexID id) { graph_->Write(id, WccVertexData(id)); }
 
-    LOG_INFO("test for init");
+  void graft(VertexID src_id, VertexID dst_id) {
+    VertexID src_parent_id = graph_->Read(src_id)->p;
+    VertexID dst_parent_id = graph_->Read(dst_id)->p;
+    if (src_parent_id != dst_parent_id) {
+      if (src_parent_id < dst_parent_id) {
+        graph_->Write(dst_parent_id,
+                      WccVertexData(graph_->Read(src_parent_id)->p));
+      } else {
+        graph_->Write(src_parent_id,
+                      WccVertexData(graph_->Read(dst_parent_id)->p));
+      }
+    }
+    // TODO: add UpdateStore info logic
   }
 
-  void graft(common::VertexID src_id, common::VertexID dst_id) {
-    //    auto t = update_store_->Read(src_id);
-    //    graph_->Write(src_id, *t);
-    // TODO: graft for vertex
-    LOG_INFO("test for graft");
+  void point_jump(VertexID src_id) {
+    VertexData parent;
+    parent.p = graph_->Read(src_id)->p;
+    if (parent.p != graph_->Read(parent.p)->p) {
+      while (parent.p != graph_->Read(parent.p)->p) {
+        parent.p = graph_->Read(parent.p)->p;
+      }
+      graph_->Write(src_id, parent);
+    }
+    // TODO: update vertex global data in update_store
   }
 
-  void contract(common::VertexID src_id, common::VertexID dst_id,
-                EdgeIndex idx) {
-    //    auto t = update_store_->Read(src_id);
-    //    graph_->Write(src_id, *t);
-    // TODO: contract for vertex
-    LOG_INFO("test for contract");
+  void contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
+    if (graph_->Read(src_id)->p == graph_->Read(dst_id)->p) {
+      graph_->DeleteEdge(idx);
+    }
   }
+
+  // TODO: judge if teh vertex is active, this can be done in parallelDo
+  void message_passing(VertexID id) {
+    if (update_store_->Read(id)->p < graph_->Read(id)->p) {
+      if () {
+
+      } else {
+
+      }
+    }
+  }
+
+  void point_jump_inc(VertexID id) {}
 };
 
 }  // namespace sics::graph::core::apps

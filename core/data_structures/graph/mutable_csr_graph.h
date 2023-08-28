@@ -70,7 +70,7 @@ class MutableCSRGraph : public Serializable {
 
   // methods for sync data
   void SyncVertexData() {
-    memcpy(vertex_data_base_, vertex_data_write_base_,
+    memcpy(vertex_data_read_base_, vertex_data_write_base_,
            sizeof(VertexData) * metadata_.num_vertices);
   }
 
@@ -104,10 +104,34 @@ class MutableCSRGraph : public Serializable {
   }
 
   VertexData* GetVertxDataByIndex(VertexIndex index) const {
-    return vertex_data_base_ + index;
+    return vertex_data_read_base_ + index;
+  }
+
+  bool IsInGraph(VertexID id) { return true; }
+
+  const VertexData* Read(VertexIndex index) const {
+    return vertex_data_read_base_ + index;
+  }
+
+  bool Write(VertexIndex index, VertexData data_new) {
+    vertex_data_write_base_[index] = data_new;
+    // TODO: bool maybe used for mark the vertex as aactive
+    return true;
+  }
+
+  void DeleteEdge(EdgeIndex edge_index) {
+    edge_delete_bitmap_.SetBit(edge_index);
   }
 
   void set_status(const std::string& new_status) { status_ = new_status; }
+
+ private:
+  // use binary search to find the index of id
+  VertexIndex GetIndexByID(VertexID id) {
+    // TODO: binary search
+    return 0;
+  }
+
 
  private:
   const SubgraphMetadata& metadata_;
@@ -123,14 +147,15 @@ class MutableCSRGraph : public Serializable {
   VertexOffset* out_offset_base_;
   VertexID* out_edges_base_;
 
-  VertexData* vertex_data_base_;
-  common::Bitmap* vertex_src_or_dst_bitmap_;
+  VertexData* vertex_data_read_base_;
+  common::Bitmap vertex_src_or_dst_bitmap_;
 
   // used for mutable algorithm only;
   VertexDegree* out_degree_base_new_;
   VertexOffset* out_offset_base_new_;
   VertexID* out_edges_base_new_;
   VertexData* vertex_data_write_base_;
+  common::Bitmap edge_delete_bitmap_;
 
   std::string status_;
 };
