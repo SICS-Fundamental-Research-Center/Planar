@@ -1,6 +1,8 @@
 #ifndef GRAPH_SYSTEMS_CORE_APPS_WCC_APP_H_
 #define GRAPH_SYSTEMS_CORE_APPS_WCC_APP_H_
 
+#include <unordered_map>
+
 #include "apis/planar_app_base.h"
 #include "data_structures/graph/mutable_csr_graph.h"
 
@@ -68,18 +70,25 @@ class WCCApp : public apis::PlanarAppBase<CSRGraph> {
     }
   }
 
-  // TODO: judge if teh vertex is active, this can be done in parallelDo
+  // TODO: judge if the vertex is active, this can be done in parallelDo
   void message_passing(VertexID id) {
     if (update_store_->Read(id)->p < graph_->Read(id)->p) {
-      if () {
-
+      if (!graph_->IsInGraph(graph_->Read(id)->p)) {
+        mtx.lock();
+        id_to_p[graph_->Read(id)->p] = update_store_->Read(id)->p;
+        mtx.unlock();
       } else {
 
+        // TODO: active vertex update global info
       }
     }
   }
 
   void point_jump_inc(VertexID id) {}
+
+ private:
+  std::unordered_map<VertexID, VertexID> id_to_p;
+  std::mutex mtx;
 };
 
 }  // namespace sics::graph::core::apps
