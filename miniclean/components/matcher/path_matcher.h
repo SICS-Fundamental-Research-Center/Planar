@@ -51,7 +51,8 @@ class PathMatcher {
   }
 
  private:
-  void PathMatchRecur(const PathPattern& path_pattern, size_t match_position,
+  void PathMatchRecur(const PathPattern& path_pattern, 
+                      size_t match_position,
                       const std::vector<VertexID>& candidates,
                       std::vector<VertexID>* partial_results,
                       std::list<std::vector<VertexID>>* results);

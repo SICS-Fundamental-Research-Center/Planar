@@ -47,11 +47,11 @@ class MiniCleanCSRGraph
 
   SubgraphMetadata get_metadata() const { return metadata_; }
 
-  VertexLabel GetVertexLabelByLocalID(VertexID i) {
+  VertexLabel GetVertexLabelByLocalID(VertexID i) const {
     return vertex_label_base_pointer_[i * 2 + 1];
   }
 
-  EdgeLabel* GetOutgoingEdgeLabelsByLocalID(VertexID i) {
+  EdgeLabel* GetOutgoingEdgeLabelsByLocalID(VertexID i) const {
     return out_edge_label_base_pointer_ + out_offset_base_pointer_[i];
   }
 
