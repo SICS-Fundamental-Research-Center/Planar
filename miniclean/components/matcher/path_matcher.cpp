@@ -260,7 +260,27 @@ void PathMatcher::PathMatchRecur(const PathPattern& path_pattern,
 
 void PathMatcher::WriteResultBack(const std::string& result_path) {
   for (size_t i = 0; i < matched_results_.size(); i++) {
-    std::ofstream result_file(result_path + std::to_string(i));
+    // Open the result file.
+    std::string result_file_path = result_path + "/" + std::to_string(i) + ".bin";
+    std::ofstream result_file(result_file_path, std::ios::binary);
+    if (!result_file) {
+      LOG_FATAL("Error opening result file: ", result_file_path.c_str());
+    }
+
+    // Sort the matched results.
+    matched_results_[i].sort();
+
+    // Write the matched results to the result file.
+    for (auto& result : matched_results_[i]) {
+      result_file.write(reinterpret_cast<char*>(result.data()),
+                        result.size() * sizeof(VertexID));
+    }
+
+    LOG_INFO("Size of pattern: ", i, ": ",
+             (path_patterns_[i].size() + 1) * matched_results_[i].size() *
+                 sizeof(VertexID), " bytes.");
+
+    result_file.close();
   }
 }
 
