@@ -12,9 +12,11 @@ namespace sics::graph::miniclean::components::matcher {
 
 class PathMatcher {
  private:
+  using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
   using GraphID = sics::graph::miniclean::common::GraphID;
   using MiniCleanCSRGraph =
       sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+  using PathPattern = sics::graph::miniclean::common::PathPattern;
   using TaskPackage = sics::graph::core::common::TaskPackage;
   using VertexID = sics::graph::miniclean::common::VertexID;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
@@ -46,14 +48,13 @@ class PathMatcher {
   }
 
  private:
-  void PathMatchRecur(const std::vector<VertexLabel>& path_pattern,
-                      size_t match_position,
+  void PathMatchRecur(const PathPattern& path_pattern, size_t match_position,
                       const std::vector<VertexID>& candidates,
                       std::vector<VertexID>* partial_results,
                       std::list<std::vector<VertexID>>* results);
 
   MiniCleanCSRGraph* miniclean_csr_graph_;
-  std::vector<std::vector<VertexLabel>> path_patterns_;
+  std::vector<PathPattern> path_patterns_;
   std::vector<std::list<std::vector<VertexID>>> matched_results_;
   std::vector<std::vector<VertexID>> candidates_;
   std::vector<std::vector<size_t>> vertex_label_to_pattern_id;
