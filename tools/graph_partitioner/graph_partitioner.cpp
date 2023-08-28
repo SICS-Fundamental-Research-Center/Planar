@@ -413,8 +413,10 @@ void VertexCut(const std::string& input_path,
   graph_metadata.set_max_vid(max_vid);
   graph_metadata.set_min_vid(min_vid);
 
-  graph_format_converter.WriteSubgraph(edge_bucket, graph_metadata,
-                                       edgelist_metadata_vec, store_strategy);
+  graph_format_converter.WriteSubgraph(edge_bucket,
+                                       graph_metadata,
+                                       edgelist_metadata_vec,
+                                       store_strategy);
 
   input_stream.close();
   LOG_INFO("Finished writing the subgraphs to disk");
