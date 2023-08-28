@@ -127,6 +127,8 @@ void PathMatcher::GroupTasks(
         VertexLabel label = miniclean_csr_graph_->GetVertexLabelByLocalID(j);
         std::vector<size_t> patterns = vertex_label_to_pattern_id[label - 1];
         for (size_t k = 0; k < patterns.size(); k++) {
+          (*partial_result_pool)[i].reserve(path_patterns_[patterns[k]].size() +
+                                            1);
           std::vector<VertexID> init_candidate = {j};
           PathMatchRecur(path_patterns_[patterns[k]], 0, init_candidate,
                          &(*partial_result_pool)[i],
