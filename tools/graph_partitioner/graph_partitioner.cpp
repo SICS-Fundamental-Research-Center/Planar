@@ -34,6 +34,14 @@ using std::filesystem::create_directory;
 using std::filesystem::exists;
 using namespace sics::graph::tools::common;
 
+VertexID static GetBucketID(VertexID vid, VertexID n_bucket,
+                            size_t num_vertices = 0) {
+  if (num_vertices != 0)
+    return vid / ceil((double)num_vertices / (double)n_bucket);
+  else
+    return fnv64_append_byte(vid, 3) % n_bucket;
+}
+
 enum Partitioner {
   kEdgeCut,  // default
   kVertexCut,
@@ -41,7 +49,7 @@ enum Partitioner {
   kUndefinedPartitioner
 };
 
-inline Partitioner Partitioner2Enum(const std::string& s) {
+static Partitioner Partitioner2Enum(const std::string& s) {
   if (s == "edgecut")
     return kEdgeCut;
   else if (s == "vertexcut")
@@ -78,9 +86,11 @@ DEFINE_string(store_strategy, "unconstrained",
 // partitioner: The partitioner to use.
 // n_partitions: The number of partitions to use.
 // store_strategy: The strategy to use to store edges.
-bool EdgeCut(const std::string& input_path, const std::string& output_path,
-             const Partitioner partitioner, const VertexID n_partitions,
-             StoreStrategy store_strategy) {
+static void EdgeCut(const std::string& input_path,
+                    const std::string& output_path,
+                    const Partitioner partitioner,
+                    const VertexID n_partitions,
+                    StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -96,10 +106,8 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   auto buffer_edges =
       (VertexID*)malloc(sizeof(VertexID) * edgelist_metadata.num_edges * 2);
   std::ifstream input_stream(input_path + "edgelist.bin", std::ios::binary);
-  if (!input_stream.is_open()) {
-    LOG_ERROR("Cannot open edgelist.bin");
-    return -1;
-  }
+  if (!input_stream.is_open()) LOG_FATAL("Cannot open edgelist.bin");
+
   input_stream.read(reinterpret_cast<char*>(buffer_edges),
                     sizeof(VertexID) * edgelist_metadata.num_edges * 2);
 
@@ -210,8 +218,8 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
                    &subgraph_vec, &n_partitions]() {
           for (VertexID j = i; j < edgelist_metadata.num_vertices;
                j += parallelism) {
-            auto gid =
-                fnv64_append_byte(buffer_csr_vertices[j].vid, 1) % n_partitions;
+            auto gid = GetBucketID(buffer_csr_vertices[j].vid, n_partitions,
+                                   edgelist_metadata.num_vertices);
             subgraph_vec.at(gid)->insert(std::make_pair(
                 buffer_csr_vertices[j].vid, buffer_csr_vertices[j]));
           }
@@ -221,7 +229,6 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   }
   thread_pool.SubmitSync(task_package);
   task_package.clear();
-
   delete buffer_csr_vertices;
 
   // Write the subgraphs to disk
@@ -233,12 +240,10 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
   graph_metadata.set_max_vid(max_vid);
   graph_metadata.set_min_vid(min_vid);
 
-  graph_format_converter.WriteSubgraph(subgraph_vec,
-                                       graph_metadata,
+  graph_format_converter.WriteSubgraph(subgraph_vec, graph_metadata,
                                        store_strategy);
   input_stream.close();
   LOG_INFO("Finished writing the subgraphs to disk");
-  return 0;
 }
 
 // @DESCRIPTION A vertex-cut partitioning divides edges of a graph into equal
@@ -263,9 +268,11 @@ bool EdgeCut(const std::string& input_path, const std::string& output_path,
 // store_strategy: StoreStrategy to use [incoming_only, outgoing_only,
 // unconstrained], corresponding to store incoming edges only, outgoing edges
 // only, and both two respectively.
-bool VertexCut(const std::string& input_path, const std::string& output_path,
-               const Partitioner partitioner, const size_t n_partitions,
-               StoreStrategy store_strategy) {
+static void VertexCut(const std::string& input_path,
+                      const std::string& output_path,
+                      const Partitioner partitioner,
+                      const size_t n_partitions,
+                      StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -281,10 +288,7 @@ bool VertexCut(const std::string& input_path, const std::string& output_path,
   auto buffer_edges =
       (VertexID*)malloc(sizeof(VertexID) * edgelist_metadata.num_edges * 2);
   std::ifstream input_stream(input_path + "edgelist.bin", std::ios::binary);
-  if (!input_stream.is_open()) {
-    LOG_ERROR("Cannot open edgelist.bin");
-    return -1;
-  }
+  if (!input_stream.is_open()) LOG_FATAL("Cannot open edgelist.bin");
   input_stream.read(reinterpret_cast<char*>(buffer_edges),
                     sizeof(VertexID) * edgelist_metadata.num_edges * 2);
 
@@ -309,17 +313,16 @@ bool VertexCut(const std::string& input_path, const std::string& output_path,
         VertexID bid;
         switch (store_strategy) {
           case kOutgoingOnly:
-            bid = fnv64_append_byte(src, 3) % n_partitions;
+            bid = GetBucketID(src, n_partitions);
             break;
           case kIncomingOnly:
-            bid = fnv64_append_byte(dst, 3) % n_partitions;
+            bid = GetBucketID(dst, n_partitions);
             break;
           case kUnconstrained:
-            bid = fnv64_append_byte(src, 3) % n_partitions;
+            bid = GetBucketID(src, n_partitions);
             break;
           default:
-            bid = fnv64_append_byte(src, 3) % n_partitions;
-            break;
+            LOG_FATAL("Undefined store strategy.");
         }
         WriteAdd(size_per_bucket + bid, (VertexID)1);
         WriteMax(max_vid_per_bucket + bid, src);
@@ -362,17 +365,16 @@ bool VertexCut(const std::string& input_path, const std::string& output_path,
         VertexID bid;
         switch (store_strategy) {
           case kOutgoingOnly:
-            bid = fnv64_append_byte(src, 3) % n_partitions;
+            bid = GetBucketID(src, n_partitions);
             break;
           case kIncomingOnly:
-            bid = fnv64_append_byte(dst, 3) % n_partitions;
+            bid = GetBucketID(dst, n_partitions);
             break;
           case kUnconstrained:
-            bid = fnv64_append_byte(src, 3) % n_partitions;
+            bid = GetBucketID(src, n_partitions);
             break;
           default:
-            bid = fnv64_append_byte(src, 3) % n_partitions;
-            break;
+            LOG_FATAL("Undefined store strategy.");
         }
         auto offset = __sync_fetch_and_add(buckets_offset + bid, 1);
         edge_bucket[bid][offset * 2] = src;
@@ -405,14 +407,11 @@ bool VertexCut(const std::string& input_path, const std::string& output_path,
   graph_metadata.set_max_vid(max_vid);
   graph_metadata.set_min_vid(min_vid);
 
-  graph_format_converter.WriteSubgraph(edge_bucket,
-                                       graph_metadata,
-                                       edgelist_metadata_vec,
-                                       store_strategy);
+  graph_format_converter.WriteSubgraph(edge_bucket, graph_metadata,
+                                       edgelist_metadata_vec, store_strategy);
 
   input_stream.close();
   LOG_INFO("Finished writing the subgraphs to disk");
-  return 0;
 }
 
 int main(int argc, char** argv) {
