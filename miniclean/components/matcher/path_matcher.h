@@ -23,7 +23,7 @@ class PathMatcher {
 
  public:
   PathMatcher(MiniCleanCSRGraph* miniclean_csr_graph)
-      : miniclean_csr_graph_(miniclean_csr_graph){};
+      : miniclean_csr_graph_(miniclean_csr_graph){}
   ~PathMatcher() {}
   // For temporary usage.
   // It would be removed when `Graph Loader` API is available.
