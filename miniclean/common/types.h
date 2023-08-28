@@ -24,7 +24,7 @@ typedef std::tuple<uint8_t, uint8_t> PatternVertexID;  // uint8_t: 0 ~ 255
 typedef uint8_t VertexAttributeID;
 
 // Since EdgeLabel is checked, VertexID is enough to represent an edge instance.
-typedef std::tuple<VertexID, VertexID> EdgeInstance;
+typedef std::pair<VertexID, VertexID> EdgeInstance;
 typedef std::vector<EdgeInstance> PathInstance;
 // Assuming all matched paths will be loaded into memory, the path instance ID
 // is the index of the path instance in the loaded instance list.

@@ -24,7 +24,7 @@ class GCR {
   //   (1) Their labels of star centers are the same.
   //   (2) The composed dual pattern would not carry more than `n` predicates.
   //       (n is the maximum number of predicates allowed in a GCR.)
-  void IsJoinableWith(const GCR& gcr) const;
+  bool IsJoinableWith(const GCR& gcr) const;
 
   // Compose two GCRs into a new GCR.
   // To compose:
@@ -36,15 +36,16 @@ class GCR {
   //    GCR4[x0, y0]({X1, X2} -> p2)
   GCR ComposeWith(const GCR& gcr) const;
 
-  // Compute and update the local support (Match) and local match (Verify).
-  // If the local support is lower than the threshold, the GCR is pruned.
+  // Determine whether this GCR should expand to next level by verifying its
+  // local support and local match. If the local support is lower than the
+  // threshold, the GCR is pruned. 
   // In this function:
   //   (1) We first match instances that satisfy the dual pattern and
   //       preconditions and update the local support. If the local support is
   //       lower than the threshold, the GCR is pruned, and `false` is returned.
   //   (2) Then we verify whether the instances satisfy the conquences and
   //       update the local match. Finally `true` is returned.
-  bool MatchAndVerify();
+  bool ShouldExpandByVerification();
 
  public:
   DualPattern dual_pattern;
