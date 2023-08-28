@@ -19,7 +19,7 @@ class RuleMiner {
   using PathPattern = sics::graph::miniclean::common::PathPattern;
 
  public:
-  RuleMiner() = default;
+  RuleMiner(MiniCleanCSRGraph* graph) : graph_(graph) {}
 
   void LoadMiniCleanCSRGraph(const std::string& graph_path);
 
@@ -34,7 +34,7 @@ class RuleMiner {
   void RuleDiscovery();
 
  private:
-  MiniCleanCSRGraph graph_;
+  MiniCleanCSRGraph* graph_;
   std::vector<GCR> gcrs_;
   std::vector<PathPattern> path_patterns_;
   std::vector<std::vector<PathInstance>> path_instances_;
