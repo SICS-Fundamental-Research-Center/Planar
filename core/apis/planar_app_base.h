@@ -34,6 +34,7 @@ class PlanarAppBase : public PIE {
   using EdgeIndex = common::EdgeIndex;
 
  public:
+  PlanarAppBase() {}
   // TODO: add UpdateStore as a parameter, so that PEval, IncEval and Assemble
   //  can access global messages in it.
   PlanarAppBase(
@@ -112,9 +113,10 @@ class PlanarAppBase : public PIE {
       auto task = std::bind([&, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
           for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
-            edge_del_func(graph_->GetVertexIDByIndex(i),
-                          graph_->GetVertexIDByIndex(graph_->GetOneOutEdge(i, j)),
-                          graph_->GetOutOffsetByIndex(i) + j);
+            edge_del_func(
+                graph_->GetVertexIDByIndex(i),
+                graph_->GetVertexIDByIndex(graph_->GetOneOutEdge(i, j)),
+                graph_->GetOutOffsetByIndex(i) + j);
           }
         }
       });

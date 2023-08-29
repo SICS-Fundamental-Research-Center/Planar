@@ -17,6 +17,7 @@ class WCCApp : public apis::PlanarAppBase<CSRGraph> {
  public:
   using VertexData = typename CSRGraph::VertexData;
   using EdgeData = typename CSRGraph::EdgeData;
+  WCCApp() = default;
   explicit WCCApp(
       common::TaskRunner* runner,
       update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,

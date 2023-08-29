@@ -21,11 +21,14 @@ class Planar {
   using EdgeData = typename AppType::EdgeData;
 
  public:
-  Planar() {
+  Planar() = default;
+  Planar(const std::string& root_path) : graph_metadata_(root_path) {
     scheduler_ = std::make_unique<scheduler::Scheduler>();
 
     update_store_ =
-        std::make_unique<update_stores::BspUpdateStore<VertexData, EdgeData>>();
+        std::make_unique<update_stores::BspUpdateStore<VertexData, EdgeData>>(
+
+        );
 
     app_ = std::make_unique<AppType>();
 
@@ -47,6 +50,8 @@ class Planar {
 
  private:
   // TODO: dose this need unique_ptr
+  data_structures::GraphMetadata graph_metadata_;
+
   std::unique_ptr<scheduler::Scheduler> scheduler_;
   std::unique_ptr<update_stores::BspUpdateStore<VertexData, EdgeData>>
       update_store_;

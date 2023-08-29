@@ -2,18 +2,6 @@
 
 namespace sics::graph::core::scheduler {
 
-void Scheduler::ReadAndParseGraphMetadata(
-    const std::string& graph_metadata_path) {
-  YAML::Node graph_metadata_node;
-  try {
-    graph_metadata_node = YAML::LoadFile(graph_metadata_path);
-    graph_metadata_info_ = graph_metadata_node["GraphMetadata"]
-                               .as<data_structures::GraphMetadata>();
-  } catch (YAML::BadFile& e) {
-    LOG_FATAL("meta.yaml file read failed! ", e.msg);
-  }
-}
-
 void Scheduler::Start() {
   thread_ = std::make_unique<std::thread>([this]() {
     bool running = true;
@@ -183,7 +171,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
 }
 
 common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
-  for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+  for (int gid = 0; gid < graph_metadata_info_->get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
             GraphState::StorageStateType::OnDisk) {
@@ -194,7 +182,7 @@ common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
 }
 
 common::GraphID Scheduler::GetNextExecuteGraph() const {
-  for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+  for (int gid = 0; gid < graph_metadata_info_->get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
             GraphState::StorageStateType::Deserialized) {
@@ -205,7 +193,7 @@ common::GraphID Scheduler::GetNextExecuteGraph() const {
 }
 
 common::GraphID Scheduler::GetNextReadGraphInNextRound() const {
-  for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+  for (int gid = 0; gid < graph_metadata_info_->get_num_subgraphs(); gid++) {
     if (graph_state_.next_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
             GraphState::StorageStateType::OnDisk) {

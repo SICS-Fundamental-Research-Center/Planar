@@ -4,6 +4,7 @@
 #include "common/bitmap.h"
 #include "common/types.h"
 #include "update_stores/update_store_base.h"
+#include "util/atomic.h"
 #include "util/logging.h"
 
 namespace sics::graph::core::update_stores {
@@ -11,7 +12,9 @@ namespace sics::graph::core::update_stores {
 template <typename VertexData, typename EdgeData>
 class BspUpdateStore : public UpdateStoreBase {
  public:
-  BspUpdateStore(common::VertexCount vertex_num) : message_count_(vertex_num) {
+  BspUpdateStore() = default;
+  explicit BspUpdateStore(common::VertexCount vertex_num)
+      : message_count_(vertex_num), active_vertex_bitmap_(vertex_num) {
     read_data_ = new VertexData[message_count_];
     write_data_ = new VertexData[message_count_];
   }
@@ -29,11 +32,11 @@ class BspUpdateStore : public UpdateStoreBase {
     return read_data_[gid];
   }
 
-  bool Write(common::GraphID gid, const VertexData& vdata_new) {
+  bool Write(common::GraphID gid, VertexData vdata_new) {
     if (gid >= message_count_) {
       return false;
     }
-    write_data_[gid] = vdata_new;
+    util::atomic::WriteMin(write_data_ + gid, vdata_new);
     return true;
   }
 

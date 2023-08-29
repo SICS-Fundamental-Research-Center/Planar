@@ -6,6 +6,7 @@ project(planar_apps)
 #########################
 include_directories(
         ${PROJECT_ROOT_DIR}
+        ${PROJECT_ROOT_DIR}/core
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/planar)

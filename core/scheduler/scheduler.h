@@ -12,14 +12,12 @@ namespace sics::graph::core::scheduler {
 class Scheduler {
  public:
   Scheduler() = default;
+  Scheduler(data_structures::GraphMetadata* graph_metadata)
+      : graph_metadata_info_(graph_metadata), current_round_(0) {}
 
   virtual ~Scheduler() = default;
 
   int GetCurrentRound() const { return current_round_; }
-
-  // read graph metadata from meta.yaml file
-  // meta file path should be passed by gflags
-  void ReadAndParseGraphMetadata(const std::string& graph_metadata_path);
 
   // global message store
 
@@ -60,23 +58,15 @@ class Scheduler {
            (GetNextReadGraphInNextRound() == INVALID_GRAPH_ID);
   }
 
-  update_stores::UpdateStoreBase* GetUpdateStore() {
-    return global_update_store_;
-  }
-
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
-  data_structures::GraphMetadata graph_metadata_info_;
+  data_structures::GraphMetadata* graph_metadata_info_;
   GraphState graph_state_;
 
   int current_round_ = 0;
 
   // message hub
   MessageHub message_hub_;
-
-  // only keep a reference to global message store
-  // TODO: pass this ptr to execute message
-  update_stores::UpdateStoreBase* global_update_store_ = nullptr;
 
   std::unique_ptr<std::thread> thread_;
 };
