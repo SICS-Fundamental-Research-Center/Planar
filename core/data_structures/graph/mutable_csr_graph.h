@@ -7,6 +7,7 @@
 #include "data_structures/graph_metadata.h"
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
+#include "util/atomic.h"
 #include "util/pointer_cast.h"
 
 namespace sics::graph::core::data_structures::graph {
@@ -109,14 +110,33 @@ class MutableCSRGraph : public Serializable {
 
   bool IsInGraph(VertexID id) const { return true; }
 
+  bool IsBorderVertex(VertexID id) const { return true; }
+
   const VertexData* ReadLocalVertexData(VertexIndex index) const {
     return vertex_data_read_base_ + index;
   }
 
-  bool WriteLocalVertexData(VertexIndex index, VertexData data_new) {
-    vertex_data_write_base_[index] = data_new;
-    // TODO: bool maybe used for mark the vertex as aactive
-    return true;
+  // this will be used when VertexData is basic num type
+  VertexData ReadLocalVertexDataByID(VertexID id) const {
+    return vertex_data_read_base_[GetIndexByID(id)];
+  }
+
+  // used for basic VertexData type
+  bool WriteLocalVertexData(VertexID id, VertexData data_new) {
+    // TODO: need a check for unsigned type?
+    auto index = GetIndexByID(id);
+    if (vertex_src_or_dst_bitmap_.GetBit(index)) {
+      if (util::atomic::WriteMin(&vertex_data_write_base_[index], data_new))
+        return true;
+      else
+        return false;
+    }
+    // true means the VertexData should be update in global message
+    return false;
+  }
+
+  VertexData* Write(VertexID id) {
+    return vertex_data_write_base_ + GetIndexByID(id);
   }
 
   void DeleteEdge(EdgeIndex edge_index) {
@@ -127,11 +147,10 @@ class MutableCSRGraph : public Serializable {
 
  private:
   // use binary search to find the index of id
-  VertexIndex GetIndexByID(VertexID id) {
+  VertexIndex GetIndexByID(VertexID id) const {
     // TODO: binary search
     return 0;
   }
-
 
  private:
   const SubgraphMetadata& metadata_;

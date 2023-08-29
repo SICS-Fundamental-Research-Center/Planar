@@ -4,6 +4,7 @@
 #include "common/bitmap.h"
 #include "common/types.h"
 #include "update_stores/update_store_base.h"
+#include "util/logging.h"
 
 namespace sics::graph::core::update_stores {
 
@@ -21,11 +22,13 @@ class BspUpdateStore : public UpdateStoreBase {
     delete[] write_data_;
   }
 
+  // used for basic unsigned type
   VertexData Read(common::GraphID gid) {
     if (gid >= message_count_) {
-      return nullptr;
+      LOG_FATAL("Read out of bound");
+      return VertexData();
     }
-    return read_data_ + gid;
+    return read_data_[gid];
   }
 
   bool Write(common::GraphID gid, const VertexData& vdata_new) {

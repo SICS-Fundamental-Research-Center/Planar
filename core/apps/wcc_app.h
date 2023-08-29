@@ -8,13 +8,7 @@
 
 namespace sics::graph::core::apps {
 
-struct WccVertexData {
-  common::VertexID p;
-  WccVertexData() = default;
-  WccVertexData(common::VertexID p) : p(p) {}
-};
-
-using CSRGraph = data_structures::graph::MutableCSRGraph<WccVertexData, int>;
+using CSRGraph = data_structures::graph::MutableCSRGraph<common::VertexID, int>;
 
 class WCCApp : public apis::PlanarAppBase<CSRGraph> {
   using VertexData = typename CSRGraph::VertexData;
