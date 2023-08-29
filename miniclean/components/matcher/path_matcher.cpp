@@ -260,7 +260,7 @@ void PathMatcher::PathMatchRecur(const PathPattern& path_pattern,
   }
 }
 
-void PathMatcher::WriteResultBack(const std::string& result_path) {
+void PathMatcher::WriteResultsToPath(const std::string& result_path) {
   for (size_t i = 0; i < matched_results_.size(); i++) {
     // Open the result file.
     std::string result_file_path = result_path + "/" + std::to_string(i) + ".bin";
