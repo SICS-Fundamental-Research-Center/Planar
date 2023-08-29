@@ -22,12 +22,7 @@ class PartitionerBase {
   // This function will submit the partitioning task.
   virtual void RunPartitioner() = 0;
 
-
- std::string GetInputPath() const { return input_path_; }
- std::string GetOutputPath() const { return output_path_; }
- StoreStrategy GetStoreStrategy() const { return store_strategy_; }
-
- private:
+ protected:
   const std::string input_path_;
   const std::string output_path_;
   const StoreStrategy store_strategy_;
