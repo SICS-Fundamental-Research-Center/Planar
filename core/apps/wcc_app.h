@@ -11,13 +11,12 @@ namespace sics::graph::core::apps {
 using CSRGraph = data_structures::graph::MutableCSRGraph<common::VertexID, int>;
 
 class WCCApp : public apis::PlanarAppBase<CSRGraph> {
-  using VertexData = typename CSRGraph::VertexData;
-  using EdgeData = typename CSRGraph::EdgeData;
-
   using EdgeIndex = common::EdgeIndex;
   using VertexID = common::VertexID;
 
  public:
+  using VertexData = typename CSRGraph::VertexData;
+  using EdgeData = typename CSRGraph::EdgeData;
   explicit WCCApp(
       common::TaskRunner* runner,
       update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,

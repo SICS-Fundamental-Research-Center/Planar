@@ -37,17 +37,17 @@ void WCCApp::IncEval() {
 
 void WCCApp::Assemble() { graph_->set_status("Assemble"); }
 
-void WCCApp::init(VertexID id) { graph_->WriteLocalVertexData(id, id); }
+void WCCApp::init(VertexID id) { graph_->WriteLocalVertexDataByID(id, id); }
 
 void WCCApp::graft(VertexID src_id, VertexID dst_id) {
   VertexID src_parent_id = graph_->ReadLocalVertexDataByID(src_id);
   VertexID dst_parent_id = graph_->ReadLocalVertexDataByID(dst_id);
   if (src_parent_id != dst_parent_id) {
     if (src_parent_id < dst_parent_id) {
-      graph_->WriteLocalVertexData(
+      graph_->WriteLocalVertexDataByID(
           dst_parent_id, graph_->ReadLocalVertexDataByID(src_parent_id));
     } else {
-      graph_->WriteLocalVertexData(
+      graph_->WriteLocalVertexDataByID(
           src_parent_id, graph_->ReadLocalVertexDataByID(dst_parent_id));
     }
   }
@@ -60,7 +60,7 @@ void WCCApp::point_jump(VertexID src_id) {
     while (parent_id != graph_->ReadLocalVertexDataByID(parent_id)) {
       parent_id = graph_->ReadLocalVertexDataByID(parent_id);
     }
-    graph_->WriteLocalVertexData(src_id, parent_id);
+    graph_->WriteLocalVertexDataByID(src_id, parent_id);
   }
   // TODO: update vertex global data in update_store
 }
@@ -80,8 +80,8 @@ void WCCApp::message_passing(VertexID id) {
       mtx.unlock();
     } else {
       // TODO: active vertex update global info
-      graph_->WriteLocalVertexData(graph_->ReadLocalVertexDataByID(id),
-                                   update_store_->Read(id));
+      graph_->WriteLocalVertexDataByID(graph_->ReadLocalVertexDataByID(id),
+                                       update_store_->Read(id));
     }
   }
 }
@@ -94,7 +94,7 @@ void WCCApp::point_jump_inc(VertexID id) {
         graph_->ReadLocalVertexDataByID(id);
     mtx.unlock();
   } else {
-    bool flag = graph_->WriteLocalVertexData(
+    bool flag = graph_->WriteLocalVertexDataByID(
         id,
         graph_->ReadLocalVertexDataByID(graph_->ReadLocalVertexDataByID(id)));
     if (flag) {

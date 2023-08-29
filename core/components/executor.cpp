@@ -1,7 +1,7 @@
-#include "components/executer.h"
+#include "components/executor.h"
 
 namespace sics::graph::core::components {
-void Executer::Start() {
+void Executor::Start() {
   thread_ = std::make_unique<std::thread>([this]() {
     while (true) {
       scheduler::ExecuteMessage message = execute_q_->PopOrWait();

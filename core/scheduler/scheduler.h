@@ -12,6 +12,7 @@ namespace sics::graph::core::scheduler {
 class Scheduler {
  public:
   Scheduler() = default;
+
   virtual ~Scheduler() = default;
 
   int GetCurrentRound() const { return current_round_; }
@@ -24,6 +25,8 @@ class Scheduler {
 
   // schedule subgraph execute and its IO(read and write)
   void Start();
+
+  MessageHub* GetMessageHub() { return &message_hub_; }
 
  protected:
   virtual bool ReadMessageResponseAndExecute(const ReadMessage& read_resp);
