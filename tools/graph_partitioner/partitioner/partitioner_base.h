@@ -6,7 +6,7 @@
 namespace sics::graph::tools::partitioner {
 
 // This class defines the Partitioner interface, which is used to partition a
-// graph into several subgraphs. serialize and.
+// graph into several subgraphs.
 class PartitionerBase {
  private:
   using StoreStrategy = sics::graph::tools::common::StoreStrategy;
