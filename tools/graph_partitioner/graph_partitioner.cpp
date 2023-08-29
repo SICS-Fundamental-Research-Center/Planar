@@ -41,7 +41,6 @@ enum Partitioner {
   kUndefinedPartitioner
 };
 
-// TODO: partitioner bfs vertex cut
 inline Partitioner Partitioner2Enum(const std::string& s) {
   if (s == "edgecut")
     return kEdgeCut;
