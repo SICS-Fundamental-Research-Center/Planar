@@ -1,6 +1,6 @@
-#include "miniclean/graphs/miniclean_csr_graph.h"
+#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace sics::graph::miniclean::graphs {
+namespace sics::graph::miniclean::data_structures::graphs {
 using Serialized = sics::graph::core::data_structures::Serialized;
 
 std::unique_ptr<Serialized> MiniCleanCSRGraph::Serialize(
@@ -87,17 +87,17 @@ void MiniCleanCSRGraph::ParseSubgraphCSR(
 void MiniCleanCSRGraph::ParseVertexLabel(
     const std::vector<OwnedBuffer>& buffer_list) {
   vertex_label_base_pointer_ =
-      reinterpret_cast<VertexID*>(buffer_list.front().Get());
+      reinterpret_cast<VertexLabel*>(buffer_list.front().Get());
 }
 void MiniCleanCSRGraph::ParseInedgeLabel(
     const std::vector<OwnedBuffer>& buffer_list) {
   in_edge_label_base_pointer_ =
-      reinterpret_cast<VertexID*>(buffer_list.front().Get());
+      reinterpret_cast<VertexLabel*>(buffer_list.front().Get());
 }
 void MiniCleanCSRGraph::ParseOutedgeLabel(
     const std::vector<OwnedBuffer>& buffer_list) {
   out_edge_label_base_pointer_ =
-      reinterpret_cast<VertexID*>(buffer_list.front().Get());
+      reinterpret_cast<EdgeLabel*>(buffer_list.front().Get());
 }
 
-}  // namespace sics::graph::miniclean::graphs
+}  // namespace sics::graph::miniclean::data_structures::graphs

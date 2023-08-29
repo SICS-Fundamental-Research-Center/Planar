@@ -1,24 +1,25 @@
-#include "core/common/multithreading/thread_pool.h"
+#include <gflags/gflags.h>
 
 #include <memory>
 #include <vector>
 
-#include <gflags/gflags.h>
-
+#include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/data_structures/graph_metadata.h"
 #include "core/util/logging.h"
-#include "miniclean/components/path_matcher.h"
-#include "miniclean/graphs/miniclean_csr_graph.h"
+#include "miniclean/common/types.h"
+#include "miniclean/components/matcher/path_matcher.h"
+#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
-using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
-using PathMatcher = sics::graph::miniclean::components::PathMatcher;
+using MiniCleanCSRGraph =
+    sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+using PathMatcher = sics::graph::miniclean::components::matcher::PathMatcher;
 using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using ThreadPool = sics::graph::core::common::ThreadPool;
-using VertexID = sics::graph::core::common::VertexID;
-using VertexLabel = sics::graph::core::common::VertexLabel;
+using VertexID = sics::graph::miniclean::common::VertexID;
+using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
 DEFINE_string(i, "", "input graph directory");
 DEFINE_uint64(p, 1, "number of threads for path matching");
@@ -85,6 +86,11 @@ int main(int argc, char* argv[]) {
       (double)CLOCKS_PER_SEC;
 
   LOG_INFO("Path matching time: ", duration, " seconds.");
+
+  // Write matched patterns back to disk.
+  LOG_INFO("Write matched patterns back to disk.");
+  path_matcher.WriteResultsToPath(FLAGS_i + "/matched_path_patterns");
+  LOG_INFO("Write matched patterns back to disk done.");
 
   gflags::ShutDownCommandLineFlags();
   return 0;

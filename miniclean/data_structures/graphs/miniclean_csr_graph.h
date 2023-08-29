@@ -1,5 +1,5 @@
-#ifndef MINICLEAN_GRAPHS_MINICLEAN_CSR_GRAPH_H_
-#define MINICLEAN_GRAPHS_MINICLEAN_CSR_GRAPH_H_
+#ifndef MINICLEAN_DATA_STRUCTURES_GRAPHS_MINICLEAN_CSR_GRAPH_H_
+#define MINICLEAN_DATA_STRUCTURES_GRAPHS_MINICLEAN_CSR_GRAPH_H_
 
 #include <memory>
 
@@ -9,23 +9,25 @@
 #include "core/data_structures/serializable.h"
 #include "core/data_structures/serialized.h"
 #include "core/util/logging.h"
+#include "miniclean/common/types.h"
 
-namespace sics::graph::miniclean::graphs {
+namespace sics::graph::miniclean::data_structures::graphs {
 // TODO (bai-wenchao): implement MiniCleanCSRVertex with label and attributes.
 class MiniCleanCSRGraph
     : public sics::graph::core::data_structures::graph::ImmutableCSRGraph {
  private:
+  using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
+  using GraphID = sics::graph::miniclean::common::GraphID;
   using ImmutableCSRGraph =
       sics::graph::core::data_structures::graph::ImmutableCSRGraph;
-  using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
-  using GraphID = sics::graph::core::common::GraphID;
-  using VertexID = sics::graph::core::common::VertexID;
-  using VertexLabel = sics::graph::core::common::VertexLabel;
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
   using Serialized = sics::graph::core::data_structures::Serialized;
-  using TaskRunner = sics::graph::core::common::TaskRunner;
   using SerializedImmutableCSRGraph =
       sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+  using TaskRunner = sics::graph::core::common::TaskRunner;
+  using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
+  using VertexID = sics::graph::miniclean::common::VertexID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
   explicit MiniCleanCSRGraph(SubgraphMetadata metadata)
@@ -36,13 +38,22 @@ class MiniCleanCSRGraph
   void Deserialize(const TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override;
 
-  VertexLabel* get_vertex_label() const { return vertex_label_base_pointer_; }
-  VertexLabel* get_in_edge_label() const { return in_edge_label_base_pointer_; }
-  VertexLabel* get_out_edge_label() const {
+  VertexLabel* GetVertexLabelBasePointer() const {
+    return vertex_label_base_pointer_;
+  }
+  EdgeLabel* GetOutEdgeLabelBasePointer() const {
     return out_edge_label_base_pointer_;
   }
 
   SubgraphMetadata get_metadata() const { return metadata_; }
+
+  VertexLabel GetVertexLabelByLocalID(VertexID i) const {
+    return vertex_label_base_pointer_[i * 2 + 1];
+  }
+
+  EdgeLabel* GetOutgoingEdgeLabelsByLocalID(VertexID i) const {
+    return out_edge_label_base_pointer_ + out_offset_base_pointer_[i];
+  }
 
  private:
   void ParseSubgraphCSR(const std::vector<OwnedBuffer>& buffer_list);
@@ -53,11 +64,15 @@ class MiniCleanCSRGraph
  private:
   // Vertex labels
   VertexLabel* vertex_label_base_pointer_;
-  // Edge labels
+  // Out edge labels
+  EdgeLabel* out_edge_label_base_pointer_;
+  // In edge labels
+  // TODO (bai-wenchao): in edge label is not used in current version.
+  //                     Delete it if we do not need it in the future,
+  //                     or implement it if we need it.
   VertexLabel* in_edge_label_base_pointer_;
-  VertexLabel* out_edge_label_base_pointer_;
   // TODO (bai-wenchao): design and add vertex attribute base pointer
 };
-}  // namespace sics::graph::miniclean::graphs
+}  // namespace sics::graph::miniclean::data_structures::graphs
 
 #endif  // MINICLEAN_GRAPHS_MINICLEAN_CSR_GRAPH_H_
