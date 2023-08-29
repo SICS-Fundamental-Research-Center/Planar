@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
 
   // Write matched patterns back to disk.
   LOG_INFO("Write matched patterns back to disk.");
-  path_matcher.WriteResultBack(FLAGS_i + "/matched_path_patterns");
+  path_matcher.WriteResultsToPath(FLAGS_i + "/matched_path_patterns");
   LOG_INFO("Write matched patterns back to disk done.");
 
   gflags::ShutDownCommandLineFlags();
