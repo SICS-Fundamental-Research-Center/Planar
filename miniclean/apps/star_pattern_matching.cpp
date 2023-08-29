@@ -1,10 +1,9 @@
-#include "core/common/multithreading/thread_pool.h"
-
 #include <gflags/gflags.h>
 
 #include <memory>
 #include <vector>
 
+#include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/data_structures/graph_metadata.h"
 #include "core/util/logging.h"
@@ -87,6 +86,11 @@ int main(int argc, char* argv[]) {
       (double)CLOCKS_PER_SEC;
 
   LOG_INFO("Path matching time: ", duration, " seconds.");
+
+  // Write matched patterns back to disk.
+  LOG_INFO("Write matched patterns back to disk.");
+  path_matcher.WriteResultBack(FLAGS_i + "/matched_path_patterns");
+  LOG_INFO("Write matched patterns back to disk done.");
 
   gflags::ShutDownCommandLineFlags();
   return 0;

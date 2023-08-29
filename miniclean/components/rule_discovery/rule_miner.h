@@ -17,11 +17,10 @@ class RuleMiner {
       sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
   using PathInstance = sics::graph::miniclean::common::PathInstance;
   using PathPattern = sics::graph::miniclean::common::PathPattern;
+  using VertexID = sics::graph::miniclean::common::VertexID;
 
  public:
-  RuleMiner() = default;
-
-  void LoadMiniCleanCSRGraph(const std::string& graph_path);
+  RuleMiner(MiniCleanCSRGraph* graph) : graph_(graph) {}
 
   void LoadPathPatterns(const std::string& path_patterns_path);
 
@@ -34,10 +33,10 @@ class RuleMiner {
   void RuleDiscovery();
 
  private:
-  MiniCleanCSRGraph graph_;
+  MiniCleanCSRGraph* graph_;
   std::vector<GCR> gcrs_;
   std::vector<PathPattern> path_patterns_;
-  std::vector<std::vector<PathInstance>> path_instances_;
+  std::vector<std::vector<std::vector<VertexID>>> path_instances_;
   // TODO (bai-wenchao): design data structure to store loaded predicates.
 };
 

@@ -80,6 +80,8 @@ void PathMatcher::LoadPatterns(const std::string& pattern_path) {
     path_patterns_.push_back(pattern);
   }
 
+  pattern_file.close();
+
   num_label_ = max_label_id;
 
   // Initialize `vertex_label_to_pattern_id`.
@@ -255,6 +257,32 @@ void PathMatcher::PathMatchRecur(const PathPattern& path_pattern,
     PathMatchRecur(path_pattern, match_position + 1, next_candidates,
                    partial_results, results);
     partial_results->pop_back();
+  }
+}
+
+void PathMatcher::WriteResultsToPath(const std::string& result_path) {
+  for (size_t i = 0; i < matched_results_.size(); i++) {
+    // Open the result file.
+    std::string result_file_path = result_path + "/" + std::to_string(i) + ".bin";
+    std::ofstream result_file(result_file_path, std::ios::binary);
+    if (!result_file) {
+      LOG_FATAL("Error opening result file: ", result_file_path.c_str());
+    }
+
+    // Sort the matched results.
+    matched_results_[i].sort();
+
+    // Write the matched results to the result file.
+    for (auto& result : matched_results_[i]) {
+      result_file.write(reinterpret_cast<char*>(result.data()),
+                        result.size() * sizeof(VertexID));
+    }
+
+    LOG_INFO("Size of pattern: ", i, ": ",
+             (path_patterns_[i].size() + 1) * matched_results_[i].size() *
+                 sizeof(VertexID), " bytes.");
+
+    result_file.close();
   }
 }
 

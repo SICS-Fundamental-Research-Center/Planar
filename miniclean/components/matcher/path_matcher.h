@@ -23,7 +23,7 @@ class PathMatcher {
 
  public:
   PathMatcher(MiniCleanCSRGraph* miniclean_csr_graph)
-      : miniclean_csr_graph_(miniclean_csr_graph){};
+      : miniclean_csr_graph_(miniclean_csr_graph){}
   ~PathMatcher() {}
   // For temporary usage.
   // It would be removed when `Graph Loader` API is available.
@@ -42,6 +42,9 @@ class PathMatcher {
 
   // Match path patterns in the graph parallelly.
   void PathMatching(unsigned int parallelism, unsigned int num_tasks);
+
+  // Write matched patterns back to disk.
+  void WriteResultsToPath(const std::string& result_path);
 
   std::vector<std::list<std::vector<VertexID>>> get_results() {
     return matched_results_;
