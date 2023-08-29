@@ -10,15 +10,15 @@ WCCApp::WCCApp(
     : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {}
 
 void WCCApp::PEval() {
-  ParallelVertexDo(std::bind(&WCCApp::init, this, std::placeholders::_1));
+  ParallelVertexDo(std::bind(&WCCApp::Init, this, std::placeholders::_1));
   while (graph_->GetOutEdgeNums() != 0) {
-    ParallelEdgeDo(std::bind(&WCCApp::graft, this, std::placeholders::_1,
+    ParallelEdgeDo(std::bind(&WCCApp::Graft, this, std::placeholders::_1,
                              std::placeholders::_2));
 
     ParallelVertexDo(
-        std::bind(&WCCApp::point_jump, this, std::placeholders::_1));
+        std::bind(&WCCApp::PointJump, this, std::placeholders::_1));
 
-    ParallelEdgeMutateDo(std::bind(&WCCApp::contract, this,
+    ParallelEdgeMutateDo(std::bind(&WCCApp::Contract, this,
                                    std::placeholders::_1, std::placeholders::_2,
                                    std::placeholders::_3));
   }
@@ -27,19 +27,19 @@ void WCCApp::PEval() {
 
 void WCCApp::IncEval() {
   ParallelVertexDo(
-      std::bind(&WCCApp::message_passing, this, std::placeholders::_1));
+      std::bind(&WCCApp::MessagePassing, this, std::placeholders::_1));
 
   ParallelVertexDo(
-      std::bind(&WCCApp::point_jump_inc, this, std::placeholders::_1));
+      std::bind(&WCCApp::PointJumpIncEval, this, std::placeholders::_1));
 
   graph_->set_status("IncEval");
 }
 
 void WCCApp::Assemble() { graph_->set_status("Assemble"); }
 
-void WCCApp::init(VertexID id) { graph_->WriteLocalVertexDataByID(id, id); }
+void WCCApp::Init(VertexID id) { graph_->WriteLocalVertexDataByID(id, id); }
 
-void WCCApp::graft(VertexID src_id, VertexID dst_id) {
+void WCCApp::Graft(VertexID src_id, VertexID dst_id) {
   VertexID src_parent_id = graph_->ReadLocalVertexDataByID(src_id);
   VertexID dst_parent_id = graph_->ReadLocalVertexDataByID(dst_id);
   if (src_parent_id != dst_parent_id) {
@@ -54,7 +54,7 @@ void WCCApp::graft(VertexID src_id, VertexID dst_id) {
   // TODO: add UpdateStore info logic
 }
 
-void WCCApp::point_jump(VertexID src_id) {
+void WCCApp::PointJump(VertexID src_id) {
   VertexData parent_id = graph_->ReadLocalVertexDataByID(src_id);
   if (parent_id != graph_->ReadLocalVertexDataByID(parent_id)) {
     while (parent_id != graph_->ReadLocalVertexDataByID(parent_id)) {
@@ -65,14 +65,14 @@ void WCCApp::point_jump(VertexID src_id) {
   // TODO: update vertex global data in update_store
 }
 
-void WCCApp::contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
+void WCCApp::Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
   if (graph_->ReadLocalVertexDataByID(src_id) ==
       graph_->ReadLocalVertexDataByID(dst_id)) {
     graph_->DeleteEdge(idx);
   }
 }
 
-void WCCApp::message_passing(VertexID id) {
+void WCCApp::MessagePassing(VertexID id) {
   if (update_store_->Read(id) < graph_->ReadLocalVertexDataByID(id)) {
     if (!graph_->IsInGraph(graph_->ReadLocalVertexDataByID(id))) {
       mtx.lock();
@@ -86,7 +86,7 @@ void WCCApp::message_passing(VertexID id) {
   }
 }
 
-void WCCApp::point_jump_inc(VertexID id) {
+void WCCApp::PointJumpIncEval(VertexID id) {
   // is not in graph
   if (!graph_->IsInGraph(graph_->ReadLocalVertexDataByID(id))) {
     mtx.lock();

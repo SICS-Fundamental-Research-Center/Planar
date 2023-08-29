@@ -11,7 +11,6 @@ namespace sics::graph::core::update_stores {
 template <typename VertexData, typename EdgeData>
 class BspUpdateStore : public UpdateStoreBase {
  public:
-  // TODO: use malloc or new?
   BspUpdateStore(common::VertexCount vertex_num) : message_count_(vertex_num) {
     read_data_ = new VertexData[message_count_];
     write_data_ = new VertexData[message_count_];
@@ -26,7 +25,6 @@ class BspUpdateStore : public UpdateStoreBase {
   VertexData Read(common::GraphID gid) {
     if (gid >= message_count_) {
       LOG_FATAL("Read out of bound");
-      return VertexData();
     }
     return read_data_[gid];
   }

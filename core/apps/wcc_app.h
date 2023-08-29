@@ -28,18 +28,18 @@ class WCCApp : public apis::PlanarAppBase<CSRGraph> {
   void Assemble() final;
 
  private:
-  void init(VertexID id);
+  void Init(VertexID id);
 
-  void graft(VertexID src_id, VertexID dst_id);
+  void Graft(VertexID src_id, VertexID dst_id);
 
-  void point_jump(VertexID src_id);
+  void PointJump(VertexID src_id);
 
-  void contract(VertexID src_id, VertexID dst_id, EdgeIndex idx);
+  void Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx);
 
   // TODO: judge if the vertex is active, this can be done in parallelDo
-  void message_passing(VertexID id);
+  void MessagePassing(VertexID id);
 
-  void point_jump_inc(VertexID id);
+  void PointJumpIncEval(VertexID id);
 
  private:
   std::unordered_map<VertexID, VertexID> id_to_p;
