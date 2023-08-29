@@ -32,7 +32,8 @@ class EdgeCutPartitioner : public PartitionerBase {
  public:
   EdgeCutPartitioner(const std::string& input_path,
                      const std::string& output_path,
-                     StoreStrategy store_strategy, VertexID n_partitions)
+                     StoreStrategy store_strategy,
+                     VertexID n_partitions)
       : PartitionerBase(input_path, output_path, store_strategy),
         n_partitions_(n_partitions) {}
 
