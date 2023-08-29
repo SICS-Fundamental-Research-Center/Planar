@@ -1,4 +1,4 @@
-#include "miniclean/components/rule_discovery/rule_discovery.h"
+#include "miniclean/components/rule_discovery/rule_miner.h"
 
 #include <gflags/gflags.h>
 
