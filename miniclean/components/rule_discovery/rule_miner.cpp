@@ -1,5 +1,7 @@
 #include "miniclean/components/rule_discovery/rule_miner.h"
 
+#include <yaml-cpp/yaml.h>
+
 #include <fstream>
 
 #include "core/data_structures/buffer.h"
@@ -11,6 +13,10 @@ using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 using VertexID = sics::graph::miniclean::common::VertexID;
 using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
 using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
+using VariablePredicate =
+    sics::graph::miniclean::data_structures::gcr::VariablePredicate;
+using ConstantPredicate =
+    sics::graph::miniclean::data_structures::gcr::ConstantPredicate;
 
 void RuleMiner::LoadPathPatterns(const std::string& path_patterns_path) {
   std::ifstream pattern_file(path_patterns_path);
@@ -96,6 +102,40 @@ void RuleMiner::LoadPathInstances(const std::string& path_instances_path) {
 
     // Close the file.
     instance_file.close();
+  }
+}
+
+void RuleMiner::LoadPredicates(const std::string& predicates_path) {
+  YAML::Node predicate_nodes;
+  try {
+    predicate_nodes = YAML::LoadFile(predicates_path);
+  } catch (const YAML::BadFile& e) {
+    LOG_FATAL("Failed to open predicates file: ", predicates_path.c_str());
+  }
+
+  auto variable_predicate_nodes = predicate_nodes["VariablePredicates"];
+  auto constant_predicate_nodes = predicate_nodes["ConstantPredicates"];
+
+  for (auto variable_predicate_node : variable_predicate_nodes) {
+    VertexLabel lhs_label = static_cast<uint8_t>(
+        std::stoi(variable_predicate_node.first.as<std::string>()));
+    for (auto node : variable_predicate_node.second) {
+      VertexLabel rhs_label =
+          static_cast<uint8_t>(std::stoi(node.first.as<std::string>()));
+      // `variable_predicates_[lhs_label][rhs_label]` is a vector of predicates
+      // with lhs vertex label `lhs_label` and rhs vertex label `rhs_label`.
+      variable_predicates_[lhs_label][rhs_label] =
+          node.second.as<std::vector<VariablePredicate>>();
+    }
+  }
+
+  for (auto constant_predicate_node : constant_predicate_nodes) {
+    VertexLabel lhs_label = static_cast<uint8_t>(
+        std::stoi(constant_predicate_node.first.as<std::string>()));
+    // `constant_predicates_[lhs_label]` is a vector of predicates with lhs
+    // vertex label `lhs_label`.
+    constant_predicates_[lhs_label] =
+        constant_predicate_node.second.as<std::vector<ConstantPredicate>>();
   }
 }
 
