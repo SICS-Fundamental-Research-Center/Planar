@@ -171,7 +171,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
 }
 
 common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
-  for (int gid = 0; gid < graph_metadata_info_->get_num_subgraphs(); gid++) {
+  for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
             GraphState::StorageStateType::OnDisk) {
@@ -182,7 +182,7 @@ common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
 }
 
 common::GraphID Scheduler::GetNextExecuteGraph() const {
-  for (int gid = 0; gid < graph_metadata_info_->get_num_subgraphs(); gid++) {
+  for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
             GraphState::StorageStateType::Deserialized) {
@@ -193,7 +193,7 @@ common::GraphID Scheduler::GetNextExecuteGraph() const {
 }
 
 common::GraphID Scheduler::GetNextReadGraphInNextRound() const {
-  for (int gid = 0; gid < graph_metadata_info_->get_num_subgraphs(); gid++) {
+  for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.next_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
             GraphState::StorageStateType::OnDisk) {

@@ -24,9 +24,9 @@ class Bitmap {
 
   // TODO move constructor and assignment copy
 
-  Bitmap(Bitmap&& other) {}
+  Bitmap(Bitmap&& other) = default;
 
-  Bitmap& operator=(Bitmap&& other) { return *this; }
+  Bitmap& operator=(Bitmap&& other) = default;
 
   ~Bitmap() {
     delete data_;

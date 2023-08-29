@@ -22,14 +22,11 @@ class Planar {
 
  public:
   Planar() = default;
-  Planar(const std::string& root_path) : graph_metadata_(root_path) {
-    scheduler_ = std::make_unique<scheduler::Scheduler>();
-
-    update_store_ =
-        std::make_unique<update_stores::BspUpdateStore<VertexData, EdgeData>>(
-
-        );
-
+  // TODO: add init info
+  Planar(const std::string& root_path)
+      : scheduler_(std::make_unique<
+                   update_stores::BspUpdateStore<VertexData, EdgeData>>(
+            root_path)) {
     app_ = std::make_unique<AppType>();
 
     // components for reader, writer and executor

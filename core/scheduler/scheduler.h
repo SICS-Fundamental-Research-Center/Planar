@@ -12,8 +12,8 @@ namespace sics::graph::core::scheduler {
 class Scheduler {
  public:
   Scheduler() = default;
-  Scheduler(data_structures::GraphMetadata* graph_metadata)
-      : graph_metadata_info_(graph_metadata), current_round_(0) {}
+  Scheduler(const std::string& root_path)
+      : graph_metadata_info_(root_path), current_round_(0) {}
 
   virtual ~Scheduler() = default;
 
@@ -60,7 +60,7 @@ class Scheduler {
 
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
-  data_structures::GraphMetadata* graph_metadata_info_;
+  data_structures::GraphMetadata graph_metadata_info_;
   GraphState graph_state_;
 
   int current_round_ = 0;

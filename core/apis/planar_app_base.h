@@ -34,7 +34,7 @@ class PlanarAppBase : public PIE {
   using EdgeIndex = common::EdgeIndex;
 
  public:
-  PlanarAppBase() {}
+  PlanarAppBase() = default;
   // TODO: add UpdateStore as a parameter, so that PEval, IncEval and Assemble
   //  can access global messages in it.
   PlanarAppBase(
