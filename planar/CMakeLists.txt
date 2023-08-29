@@ -5,14 +5,11 @@ project(planar_apps)
 # Libraries
 #########################
 include_directories(
+        ${PROJECT_ROOT_DIR}
         ${PROJECT_ROOT_DIR}/core
 )
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/planar_apps)
-
-
-# find gflag
-find_package(gflags REQUIRED)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/planar)
 
 #########################
 # Artifacts
@@ -27,5 +24,5 @@ foreach (PLANAR_APP_SOURCE ${PLANAR_APP_SOURCES})
             yaml-cpp
             gflags
             ${FOLLY_LIBRARIES}
-    )
+            )
 endforeach ()

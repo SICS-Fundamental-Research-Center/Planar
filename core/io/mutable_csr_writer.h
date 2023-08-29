@@ -15,13 +15,13 @@
 
 namespace sics::graph::core::io {
 
-class CSRWriter : public Writer {
+class MutableCSRWriter : public Writer {
  private:
   using OwnedBUffer = data_structures::OwnedBuffer;
   using Serialized = data_structures::Serialized;
 
  public:
-  CSRWriter(const std::string& root_path) : root_path_(root_path) {}
+  MutableCSRWriter(const std::string& root_path) : root_path_(root_path) {}
 
   void Write(WriteMessage* message,
              common::TaskRunner* runner = nullptr) override;

@@ -14,7 +14,7 @@ namespace sics::graph::core::components {
 
 // An adapter class that adapts a ReaderInterface to Loader that works
 // against a MessageHub.
-template<typename ReaderType>
+template <typename ReaderType>
 class Loader : public Component {
  protected:
   static_assert(std::is_base_of<io::Reader, ReaderType>::value,
@@ -37,7 +37,7 @@ class Loader : public Component {
         }
 
         LOGF_INFO("Loader starts reading subgraph {}", message.graph_id);
-        reader_->Read(&message);
+        reader_.Read(&message);
         LOGF_INFO("Loader completes reading subgraph {}", message.graph_id);
         response_q_->Push(scheduler::Message(message));
       }

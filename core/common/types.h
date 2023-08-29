@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <string>
 
 namespace sics::graph::core::common {
 
@@ -19,7 +20,10 @@ typedef uint64_t EdgeIndex;
 #define INVALID_GRAPH_ID \
   std::numeric_limits<sics::graph::core::common::GraphID>::max()
 
+// used for global flags == gflags
 static int kDefaultMaxTaskPackage = 4000;
+static int kdefaultParallelism = 1;
+static std::string kPartitionType = "VertexCut";
 
 }  // namespace sics::graph::core::common
 

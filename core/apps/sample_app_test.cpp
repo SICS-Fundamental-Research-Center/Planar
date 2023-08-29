@@ -21,7 +21,7 @@ TEST_F(SampleAppTest, SampleAppShouldBeInitiatedByFactory) {
   apis::PlanarAppFactory<DummyGraph> factory(nullptr);
   DummyGraph graph;
   update_stores::BspUpdateStore<DummyGraph::VertexData, DummyGraph::EdgeData>
-      update_store;
+      update_store(10);
   auto app = util::pointer_upcast<apis::PlanarAppBase<DummyGraph>, SampleApp>(
       factory.Create("SampleApp", &update_store, &graph));
   EXPECT_NE(app, nullptr);
@@ -38,7 +38,7 @@ TEST_F(SampleAppTest, FactoryCreationShouldFailIfAppIsNotRegistered) {
   apis::PlanarAppFactory<DummyGraph> factory(nullptr);
   DummyGraph graph;
   update_stores::BspUpdateStore<DummyGraph::VertexData, DummyGraph::EdgeData>
-      update_store;
+      update_store(10);
   EXPECT_EQ(nullptr, factory.Create("NotRegisteredApp", nullptr, nullptr));
   auto app = factory.Create("SampleApp", &update_store, &graph);
   EXPECT_NE(app, nullptr);

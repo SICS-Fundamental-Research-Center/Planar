@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "components/discharger.h"
-#include "components/executer.h"
+#include "components/executor.h"
 #include "components/loader.h"
 
 namespace sics::graph::core::scheduler {

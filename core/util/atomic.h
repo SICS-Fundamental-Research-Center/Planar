@@ -31,7 +31,7 @@ inline bool CAS(ET* ptr, ET oldv, ET newv)  {
 }
 
 template <class ET>
-inline bool WriteMin(ET* a, ET b)  {
+inline bool WriteMin(ET* a, ET b) {
   ET c;
   bool r = 0;
   do c = *a;
@@ -40,7 +40,7 @@ inline bool WriteMin(ET* a, ET b)  {
 }
 
 template <class ET>
-inline bool WriteMax(ET* a, ET b)  {
+inline bool WriteMax(ET* a, ET b) {
   ET c;
   bool r = 0;
   do c = *a;

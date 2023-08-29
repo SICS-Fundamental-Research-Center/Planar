@@ -12,12 +12,12 @@
 
 namespace sics::graph::core::components {
 
-class Executer : public Component {
+class Executor : public Component {
  public:
-  Executer(scheduler::MessageHub* hub)
+  Executor(scheduler::MessageHub* hub)
       : execute_q_(hub->get_executor_queue()),
         response_q_(hub->get_response_queue()) {}
-  ~Executer() final = default;
+  ~Executor() final = default;
 
   void Start() override;
 
