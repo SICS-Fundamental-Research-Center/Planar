@@ -1,6 +1,8 @@
 #ifndef GRAPH_SYSTEMS_CORE_MESSAGE_STORES_BSP_UPDATE_STORE_H_
 #define GRAPH_SYSTEMS_CORE_MESSAGE_STORES_BSP_UPDATE_STORE_H_
 
+#include <fstream>
+
 #include "common/bitmap.h"
 #include "common/types.h"
 #include "update_stores/update_store_base.h"
@@ -13,6 +15,12 @@ template <typename VertexData, typename EdgeData>
 class BspUpdateStore : public UpdateStoreBase {
  public:
   BspUpdateStore() = default;
+  explicit BspUpdateStore(const std::string& root_path,
+                          common::VertexCount vertex_num)
+      : message_count_(vertex_num), active_vertex_bitmap_(vertex_num) {
+    read_data_ = new VertexData[message_count_];
+    write_data_ = new VertexData[message_count_];
+  }
   explicit BspUpdateStore(common::VertexCount vertex_num)
       : message_count_(vertex_num), active_vertex_bitmap_(vertex_num) {
     read_data_ = new VertexData[message_count_];
@@ -42,6 +50,22 @@ class BspUpdateStore : public UpdateStoreBase {
 
   // TODO
   void Clear() override {}
+
+ private:
+  void ReadActiveVertexBitmap(const std::string& root_path) {
+    std::ifstream file(root_path + "bitmap/global_is_border_vertices.bin",
+                       std::ios::binary);
+    if (!file.is_open()) {
+      LOG_FATAL("Cannot open file: %s",
+                (root_path + "bitmap/global_is_border_vertices.bin").c_str());
+    }
+
+    file.seekg(0, std::ios::end);
+    size_t file_size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    //TODO: bitmap assignment
+  }
 
  private:
   VertexData* read_data_;
