@@ -57,6 +57,11 @@ class MiniCleanCSRGraph
     return out_edge_label_base_pointer_ + out_offset_base_pointer_[i];
   }
 
+  VertexAttributeValue* GetVertexAttributeValuesByLocalID(VertexID i) const {
+    return vertex_attribute_value_base_pointer_ +
+           vertex_attribute_offset_base_pointer_[i];
+  }
+
  private:
   void ParseSubgraphCSR(const std::vector<OwnedBuffer>& buffer_list);
   void ParseOutedgeLabel(const std::vector<OwnedBuffer>& buffer_list);
@@ -74,7 +79,8 @@ class MiniCleanCSRGraph
   //                     or implement it if we need it.
   // VertexLabel* in_edge_label_base_pointer_;
   // TODO (bai-wenchao): design and add vertex attribute base pointer
-  VertexID* vertex_attribute_base_pointer_;
+  VertexID* vertex_attribute_offset_base_pointer_;
+  VertexAttributeValue* vertex_attribute_value_base_pointer_;
 };
 }  // namespace sics::graph::miniclean::data_structures::graphs
 

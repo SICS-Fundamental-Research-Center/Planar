@@ -89,75 +89,22 @@ void MiniCleanCSRGraph::ParseOutedgeLabel(
   out_edge_label_base_pointer_ =
       reinterpret_cast<EdgeLabel*>(buffer_list.front().Get());
 }
+
 void MiniCleanCSRGraph::ParseVertexLabel(
     const std::vector<OwnedBuffer>& buffer_list) {
   vertex_label_base_pointer_ =
       reinterpret_cast<VertexLabel*>(buffer_list.front().Get());
 }
+
 void MiniCleanCSRGraph::ParseVertexAttribute(
     const std::vector<OwnedBuffer>& buffer_list) {
-  vertex_attribute_base_pointer_ =
+  vertex_attribute_offset_base_pointer_ =
       reinterpret_cast<VertexID*>(buffer_list.front().Get());
 
-  auto ptr = vertex_attribute_base_pointer_;
+  size_t offset_size = sizeof(VertexID) * num_vertices_;
 
-  std::vector<VertexID> vertex_attr_offset(num_vertices_);
-  std::vector<VertexAttributeValue> vertex_attr_value;
-  
-  VertexID crt_offset = 0;
-
-  for (size_t i = 0; i < num_vertices_; i++) {
-    vertex_attr_offset[i] = crt_offset;
-    // Check vertex id.
-    if (i != *ptr) {
-      LOG_ERROR("Vertex id does not match.");
-    }
-
-    // Retrieve vertex label
-    VertexLabel label = GetVertexLabelByLocalID(i);
-
-    // Retrieve attr count.
-    ptr++;
-    auto attr_count = *ptr;
-
-    // Check attr count.
-    if (attr_count > 0 && label != 1) {
-      LOG_WARN("Attr count: ", attr_count, ", label: ", label);
-    }
-    if (attr_count > 2 && label == 1) {
-      LOG_WARN("Attr count: ", attr_count, ", label: ", label);
-    }
-
-    // Initialize vertex attr value.
-    if (label == 1) {
-      vertex_attr_value.push_back(2);
-      vertex_attr_value.push_back(MAX_VERTEX_ATTRIBUTE_VALUE);
-      vertex_attr_value.push_back(MAX_VERTEX_ATTRIBUTE_VALUE);
-      crt_offset += 3;
-    } else {
-      vertex_attr_value.push_back(0);
-      crt_offset += 1;
-    }
-
-    // Check vertex attr and value.
-    for (size_t j = 0; j < attr_count; j++) {
-      ptr++;
-      auto attr_id = *ptr;
-      ptr++;
-      auto attr_val = *ptr;
-      vertex_attr_value[crt_offset - 3 + attr_id] = attr_val;
-      if (attr_id > 2) {
-        LOG_WARN("Vertex attr id is larger than 2.");
-      }
-      if (attr_val == MAX_VERTEX_ATTRIBUTE_VALUE) {
-        LOG_WARN("Vertex attr value is MAX_VERTEX_ATTRIBUTE_VALUE.");
-      }
-    }
-    // Move to next vertex.
-    ptr++;
-  }
-
-  int a = 0;
+  vertex_attribute_value_base_pointer_ =
+      reinterpret_cast<VertexAttributeValue*>(buffer_list.front().Get() +
+                                              offset_size);
 }
-
 }  // namespace sics::graph::miniclean::data_structures::graphs
