@@ -17,8 +17,7 @@ class Executor : public Component {
  public:
   Executor(scheduler::MessageHub* hub)
       : execute_q_(hub->get_executor_queue()),
-        response_q_(hub->get_response_queue()),
-        task_runner_(common::kDefaultParallelism) {}
+        response_q_(hub->get_response_queue()) {}
   ~Executor() final = default;
 
   void Start() override;
@@ -28,18 +27,14 @@ class Executor : public Component {
     message.terminated = true;
     execute_q_->Push(message);
     // first stop the task_runner, then stop the Executor thread
-    task_runner_.StopAndJoin();
     thread_->join();
   }
-
-  common::ThreadPool* get_task_runner() { return &task_runner_; }
 
  private:
   scheduler::ExecutorQueue* execute_q_;
   scheduler::ResponseQueue* response_q_;
 
   std::unique_ptr<std::thread> thread_;
-  common::ThreadPool task_runner_;
 };
 
 }  // namespace sics::graph::core::components

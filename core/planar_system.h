@@ -38,14 +38,26 @@ class Planar {
         std::make_unique<components::Executor>(scheduler_->GetMessageHub());
 
     // set scheduler info
-    scheduler_->Init(update_store_.get(), executer_->get_task_runner(), &app_);
+    scheduler_->Init(update_store_.get(), &app_);
   };
 
   ~Planar() = default;
 
-  void Start() {}
+  void Start() {
+    loader_->Start();
+    discharger_->Start();
+    executer_->Start();
+    scheduler_->Start();
 
-  void Stop() {}
+    scheduler_->Stop();
+    Stop();
+  }
+
+  void Stop() {
+    loader_->StopAndJoin();
+    discharger_->StopAndJoin();
+    executer_->StopAndJoin();
+  }
 
  private:
   std::unique_ptr<scheduler::Scheduler> scheduler_;
