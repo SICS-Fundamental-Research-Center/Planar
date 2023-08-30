@@ -4,10 +4,10 @@
 #include "core/common/types.h"
 #include "core/planar_system.h"
 
-namespace sics::graph::planar {
-
 DEFINE_string(i, "/testfile", "graph files root path");
 DEFINE_uint32(p, 1, "parallelism");
+
+using namespace sics::graph;
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -20,5 +20,3 @@ int main(int argc, char** argv) {
   system.Start();
   return 0;
 }
-
-}  // namespace sics::graph::planar
