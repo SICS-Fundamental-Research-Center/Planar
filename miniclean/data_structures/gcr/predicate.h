@@ -28,14 +28,14 @@ typedef enum {
 } OperatorType;
 
 class GCRPredicate {
- public:
+ protected:
   using PatternVertexID = sics::graph::miniclean::common::PatternVertexID;
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
   using VertexAttributeValue =
       sics::graph::miniclean::common::VertexAttributeValue;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
- protected:
+ public:
   GCRPredicate() = default;
   GCRPredicate(uint8_t predicate_type, uint8_t operator_type)
       : predicate_type_(static_cast<PredicateType>(predicate_type)),
@@ -58,8 +58,6 @@ class GCRPredicate {
         return lhs > rhs;
       case kGreaterThanOrEqual:
         return lhs >= rhs;
-      default:
-        return false;
     }
   }
 
