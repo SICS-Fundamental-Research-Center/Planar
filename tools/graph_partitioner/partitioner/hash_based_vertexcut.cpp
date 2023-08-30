@@ -38,7 +38,7 @@ using std::filesystem::create_directory;
 using std::filesystem::exists;
 
 VertexID HashBasedVertexCutPartitioner::GetBucketID(VertexID vid,
-                                           VertexID n_bucket) const {
+                                                    VertexID n_bucket) const {
   return fnv64_append_byte(vid, 3) % n_bucket;
 }
 

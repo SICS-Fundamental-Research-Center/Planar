@@ -35,9 +35,9 @@ class HashBasedEdgeCutPartitioner : public PartitionerBase {
 
  public:
   HashBasedEdgeCutPartitioner(const std::string& input_path,
-                     const std::string& output_path,
-                     StoreStrategy store_strategy,
-                     VertexID n_partitions)
+                              const std::string& output_path,
+                              StoreStrategy store_strategy,
+                              VertexID n_partitions)
       : PartitionerBase(input_path, output_path, store_strategy),
         n_partitions_(n_partitions) {}
 
@@ -46,8 +46,9 @@ class HashBasedEdgeCutPartitioner : public PartitionerBase {
  private:
   VertexID n_partitions_;
 
-  VertexID GetBucketID(VertexID vid, VertexID n_bucket,
-                             size_t n_vertices) const;
+  VertexID GetBucketID(VertexID vid,
+                       VertexID n_bucket,
+                       size_t n_vertices) const;
 };
 
 }  // namespace sics::graph::tools::partitioner

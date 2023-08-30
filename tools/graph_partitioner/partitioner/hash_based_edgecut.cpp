@@ -1,9 +1,10 @@
 #include "tools/graph_partitioner/partitioner/hash_based_edgecut.h"
 
-#include <folly/concurrency/ConcurrentHashMap.h>
-#include <folly/hash/Hash.h>
 #include <filesystem>
 #include <string>
+
+#include <folly/concurrency/ConcurrentHashMap.h>
+#include <folly/hash/Hash.h>
 
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"
@@ -36,10 +37,11 @@ using sics::graph::tools::common::StoreStrategy2Enum;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
 
-VertexID HashBasedEdgeCutPartitioner::GetBucketID(VertexID vid, VertexID n_bucket,
-                                         size_t n_vertices = 0) const {
+VertexID HashBasedEdgeCutPartitioner::GetBucketID(VertexID vid,
+                                                  VertexID n_bucket,
+                                                  size_t n_vertices = 0) const {
   if (n_vertices != 0)
-    return vid / ceil((double)n_vertices / (double)n_bucket);
+    return vid / ceil((double) n_vertices / (double) n_bucket);
   else
     return fnv64_append_byte(vid, 3) % n_bucket;
 }
@@ -66,7 +68,7 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
 
   // Generate vertices.
   auto num_inedges_by_vid = new VertexID[aligned_max_vid]();
-  auto num_outedges_by_vid = new VertexID[aligned_max_vid]();
+  auto num_outedges_by_vid = new VertexID[aligned_max_vid];
 
   auto visited = Bitmap(aligned_max_vid);
   visited.Clear();
