@@ -26,6 +26,8 @@ class MiniCleanCSRGraph
       sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
   using TaskRunner = sics::graph::core::common::TaskRunner;
   using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
+  using VertexAttributeValue =
+      sics::graph::miniclean::common::VertexAttributeValue;
   using VertexID = sics::graph::miniclean::common::VertexID;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
