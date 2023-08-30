@@ -68,7 +68,7 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
 
   // Generate vertices.
   auto num_inedges_by_vid = new VertexID[aligned_max_vid]();
-  auto num_outedges_by_vid = new VertexID[aligned_max_vid];
+  auto num_outedges_by_vid = new VertexID[aligned_max_vid]();
 
   auto visited = Bitmap(aligned_max_vid);
   visited.Clear();
