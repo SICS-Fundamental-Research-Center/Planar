@@ -6,6 +6,7 @@
 #include <type_traits>
 
 #include "apis/pie.h"
+#include "common/multithreading/thread_pool.h"
 #include "components/component.h"
 #include "scheduler/message_hub.h"
 #include "util/logging.h"
@@ -25,6 +26,7 @@ class Executor : public Component {
     scheduler::ExecuteMessage message;
     message.terminated = true;
     execute_q_->Push(message);
+    // first stop the task_runner, then stop the Executor thread
     thread_->join();
   }
 

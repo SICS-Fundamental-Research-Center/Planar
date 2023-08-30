@@ -1,6 +1,7 @@
 #ifndef GRAPH_SYSTEMS_SCHEDULER_H
 #define GRAPH_SYSTEMS_SCHEDULER_H
 
+#include "common/multithreading/thread_pool.h"
 #include "common/types.h"
 #include "data_structures/graph_metadata.h"
 #include "scheduler/graph_state.h"
@@ -11,20 +12,30 @@ namespace sics::graph::core::scheduler {
 
 class Scheduler {
  public:
-  Scheduler() = default;
   Scheduler(const std::string& root_path)
-      : graph_metadata_info_(root_path), current_round_(0) {}
+      : graph_metadata_info_(root_path),
+        current_round_(0),
+        task_runner_(common::kDefaultParallelism) {}
 
   virtual ~Scheduler() = default;
 
-  int GetCurrentRound() const { return current_round_; }
+  void Init(update_stores::UpdateStoreBase* update_store, apis::PIE* app) {
+    update_store_ = update_store;
+    app_ = app;
+  }
 
-  // global message store
+  int GetCurrentRound() const { return current_round_; }
 
   // schedule subgraph execute and its IO(read and write)
   void Start();
 
+  void Stop() { thread_->join(); }
+
   MessageHub* GetMessageHub() { return &message_hub_; }
+
+  size_t GetVertexNumber() const {
+    return graph_metadata_info_.get_num_vertices();
+  }
 
  protected:
   virtual bool ReadMessageResponseAndExecute(const ReadMessage& read_resp);
@@ -67,6 +78,11 @@ class Scheduler {
 
   // message hub
   MessageHub message_hub_;
+
+  // ExecuteMessage info, used for setting APP context
+  update_stores::UpdateStoreBase* update_store_;
+  common::ThreadPool task_runner_;
+  apis::PIE* app_;
 
   std::unique_ptr<std::thread> thread_;
 };

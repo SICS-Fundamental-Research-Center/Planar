@@ -20,10 +20,10 @@ void Executor::Start() {
           break;
         }
         case scheduler::ExecuteType::kPEval:
-          message.api->PEval();
+          message.app->PEval();
           break;
         case scheduler::ExecuteType::kIncEval:
-          message.api->IncEval();
+          message.app->IncEval();
           break;
         case scheduler::ExecuteType::kSerialize:
           //            message.graph->Deserialize();
