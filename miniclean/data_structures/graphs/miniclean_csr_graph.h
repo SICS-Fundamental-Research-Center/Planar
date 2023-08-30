@@ -73,13 +73,16 @@ class MiniCleanCSRGraph
   VertexLabel* vertex_label_base_pointer_;
   // Out edge labels
   EdgeLabel* out_edge_label_base_pointer_;
-  // In edge labels
-  // TODO (bai-wenchao): in edge label is not used in current version.
-  //                     Delete it if we do not need it in the future,
-  //                     or implement it if we need it.
-  // VertexLabel* in_edge_label_base_pointer_;
-  // TODO (bai-wenchao): design and add vertex attribute base pointer
+  // Vertex attribute offsets
   VertexID* vertex_attribute_offset_base_pointer_;
+  // Vertex attribute values
+  //   Using vertex attribute offsets, we can locate the vertex attribute
+  //   values. 
+  //   Here is an example:
+  //   - value_ptr[offser_ptr[i]][0]: number of all possible attributes
+  //     corresponding to the label of #i vertex. 
+  //   - value_ptr[offser_ptr[i]][1]: value of #0 attribute. 
+  //   - value_ptr[offser_ptr[i]][2]: value of #1 attribute.
   VertexAttributeValue* vertex_attribute_value_base_pointer_;
 };
 }  // namespace sics::graph::miniclean::data_structures::graphs
