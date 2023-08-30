@@ -64,7 +64,6 @@ void GraphFormatConverter::WriteSubgraph(
           WriteAdd(&count_out_edges, (size_t)u.outdegree);
           WriteAdd(&count_in_edges, (size_t)u.indegree);
         }
-        return;
       });
       task_package.push_back(task);
     }
@@ -138,6 +137,8 @@ void GraphFormatConverter::WriteSubgraph(
               std::sort(buffer_out_edges + buffer_out_offset[j],
                         buffer_out_edges + buffer_out_offset[j] +
                             csr_vertex_buffer[j].outdegree);
+              delete csr_vertex_buffer[j].incoming_edges;
+              delete csr_vertex_buffer[j].outgoing_edges;
             }
           });
       task_package.push_back(task);
@@ -148,7 +149,7 @@ void GraphFormatConverter::WriteSubgraph(
     delete buffer_out_offset;
 
     // Write bitmap that indicate whether a vertex has outgoing edges.
-    bitmap_file.write((char*) bitmap.GetDataBasePointer(),
+    bitmap_file.write((char*)bitmap.GetDataBasePointer(),
                       ((bitmap.size() >> 6) + 1) * sizeof(uint64_t));
 
     // Write vertex buffers.
