@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include "core/data_structures/buffer.h"
+#include "core/util/logging.h"
 
 namespace sics::graph::miniclean::components::rule_discovery {
 
@@ -115,13 +116,28 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
 
   auto variable_predicate_nodes = predicate_nodes["VariablePredicates"];
   auto constant_predicate_nodes = predicate_nodes["ConstantPredicates"];
-
+  
+  // Reserve space for `variable_predicates_`.
+  variable_predicates_.reserve(variable_predicate_nodes.size());
   for (auto variable_predicate_node : variable_predicate_nodes) {
     VertexLabel lhs_label = static_cast<uint8_t>(
         std::stoi(variable_predicate_node.first.as<std::string>()));
+    // Check if `lhs_label` is already in `variable_predicates_` and reserve space for
+    // `variable_predicates_[lhs_label]`.
+    if (variable_predicates_.find(lhs_label) != variable_predicates_.end()) {
+      LOG_WARN("Duplicate variable predicate lhs vertex label: ", lhs_label);
+    } else {
+      variable_predicates_[lhs_label].reserve(
+          variable_predicate_node.second.size());
+    }
     for (auto node : variable_predicate_node.second) {
       VertexLabel rhs_label =
           static_cast<uint8_t>(std::stoi(node.first.as<std::string>()));
+      // Check if `rhs_label` is already in `variable_predicates_[lhs_label]`.
+      if (variable_predicates_[lhs_label].find(rhs_label) !=
+          variable_predicates_[lhs_label].end()) {
+        LOG_WARN("Duplicate variable predicate rhs vertex label: ", rhs_label);
+      }
       // `variable_predicates_[lhs_label][rhs_label]` is a vector of predicates
       // with lhs vertex label `lhs_label` and rhs vertex label `rhs_label`.
       variable_predicates_[lhs_label][rhs_label] =
@@ -129,9 +145,15 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
     }
   }
 
+  // Reserve space for `constant_predicates_`.
+  constant_predicates_.reserve(constant_predicate_nodes.size());
   for (auto constant_predicate_node : constant_predicate_nodes) {
     VertexLabel lhs_label = static_cast<uint8_t>(
         std::stoi(constant_predicate_node.first.as<std::string>()));
+    // Check if `lhs_label` is already in `constant_predicates_`.
+    if (constant_predicates_.find(lhs_label) != constant_predicates_.end()) {
+      LOG_WARN("Duplicate constant predicate lhs vertex label: ", lhs_label);
+    }
     // `constant_predicates_[lhs_label]` is a vector of predicates with lhs
     // vertex label `lhs_label`.
     constant_predicates_[lhs_label] =
