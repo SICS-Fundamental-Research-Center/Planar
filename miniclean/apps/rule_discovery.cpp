@@ -1,7 +1,5 @@
 #include <gflags/gflags.h>
 
-#include <unordered_map>
-
 #include "core/data_structures/graph_metadata.h"
 #include "core/util/logging.h"
 #include "miniclean/common/types.h"
