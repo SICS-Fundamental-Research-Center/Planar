@@ -21,8 +21,9 @@ class Discharger : public Component {
                 "WriterType must be a subclass of Writer");
 
  public:
-  Discharger(scheduler::MessageHub* hub)
-      : writer_q_(hub->get_writer_queue()),
+  Discharger(const std::string& root_path, scheduler::MessageHub* hub)
+      : writer_(root_path),
+        writer_q_(hub->get_writer_queue()),
         response_q_(hub->get_response_queue()) {}
 
   ~Discharger() final = default;

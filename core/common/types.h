@@ -22,8 +22,9 @@ typedef uint64_t EdgeIndex;
 
 // used for global flags == gflags
 static int kDefaultMaxTaskPackage = 4000;
-static int kdefaultParallelism = 1;
+static int kDefaultParallelism = 1;
 static std::string kPartitionType = "VertexCut";
+static std::string kDefaultRootPath = "/testfile";
 
 }  // namespace sics::graph::core::common
 
