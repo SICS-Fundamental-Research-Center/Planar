@@ -59,12 +59,14 @@ class BspUpdateStore : public UpdateStoreBase {
       LOG_FATAL("Cannot open file: %s",
                 (root_path + "bitmap/global_is_border_vertices.bin").c_str());
     }
-
     file.seekg(0, std::ios::end);
     size_t file_size = file.tellg();
+    size_t size = file_size / sizeof(uint64_t);
     file.seekg(0, std::ios::beg);
-
-    //TODO: bitmap assignment
+    uint64_t* buffer = new uint64_t[size];
+    // TODO: bitmap assignment
+    active_vertex_bitmap_.Init(size, buffer);
+    file.close();
   }
 
  private:
