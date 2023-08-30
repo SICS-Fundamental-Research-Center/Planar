@@ -4,16 +4,21 @@
 #include "core/common/types.h"
 #include "core/planar_system.h"
 
-using namespace sics::graph::core;
+namespace sics::graph::planar {
+
+DEFINE_string(i, "/testfile", "graph files root path");
+DEFINE_uint32(p, 1, "parallelism");
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-  // TODO: flags setting to static variables in types.h
+  core::common::kDefaultRootPath = FLAGS_i;
+  core::common::kDefaultParallelism = FLAGS_p;
+  // TODO: configure other flags
 
-  // TODO: planar system code
-  planar_system::Planar<apps::WCCApp> system(common::kDefaultRootPath);
-
-  // run
+  core::planar_system::Planar<core::apps::WCCApp> system(
+      core::common::kDefaultRootPath);
   system.Start();
   return 0;
 }
+
+}  // namespace sics::graph::planar
