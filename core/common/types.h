@@ -16,6 +16,21 @@ typedef uint32_t VertexLabel;
 typedef uint32_t VertexCount;
 typedef uint64_t EdgeIndex;
 
+// TODO: struct configuration
+struct configuration {
+  configuration() {
+    max_task_package = 4000;
+    parallelism = 1;
+    partition_type = "VertexCut";
+    root_path = "/testfile";
+  }
+
+  int max_task_package;
+  int parallelism;
+  std::string partition_type;
+  std::string root_path;
+};
+
 #define MAX_VERTEX_ID std::numeric_limits<VertexID>::max()
 #define INVALID_GRAPH_ID \
   std::numeric_limits<sics::graph::core::common::GraphID>::max()

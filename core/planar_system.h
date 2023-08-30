@@ -43,9 +43,21 @@ class Planar {
 
   ~Planar() = default;
 
-  void Start() {}
+  void Start() {
+    loader_->Start();
+    discharger_->Start();
+    executer_->Start();
+    scheduler_->Start();
 
-  void Stop() {}
+    scheduler_->Stop();
+    Stop();
+  }
+
+  void Stop() {
+    loader_->StopAndJoin();
+    discharger_->StopAndJoin();
+    executer_->StopAndJoin();
+  }
 
  private:
   std::unique_ptr<scheduler::Scheduler> scheduler_;
