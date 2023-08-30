@@ -28,6 +28,8 @@ class RuleMiner {
  public:
   RuleMiner(MiniCleanCSRGraph* graph) : graph_(graph) {}
 
+  void LoadGraph(const std::string& graph_path);
+
   void LoadPathPatterns(const std::string& path_patterns_path);
 
   void LoadPathInstances(const std::string& path_instances_path);

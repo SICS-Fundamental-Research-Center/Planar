@@ -25,16 +25,16 @@ void MiniCleanCSRGraph::Deserialize(const TaskRunner& runner,
     ParseSubgraphCSR(*iter++);
   }
   if (iter != csr_buffer.end()) {
-    // Parse in edge label
-    ParseInedgeLabel(*iter++);
-  }
-  if (iter != csr_buffer.end()) {
     // Parse out edge label
     ParseOutedgeLabel(*iter++);
   }
   if (iter != csr_buffer.end()) {
     // Parse vertex label
     ParseVertexLabel(*iter++);
+  }
+  if (iter != csr_buffer.end()) {
+    // Parse vertex attribute
+    ParseVertexAttribute(*iter++);
   }
 }
 
@@ -84,20 +84,44 @@ void MiniCleanCSRGraph::ParseSubgraphCSR(
                                                      start_outgoing_edges));
 }
 
+void MiniCleanCSRGraph::ParseOutedgeLabel(
+    const std::vector<OwnedBuffer>& buffer_list) {
+  out_edge_label_base_pointer_ =
+      reinterpret_cast<EdgeLabel*>(buffer_list.front().Get());
+}
 void MiniCleanCSRGraph::ParseVertexLabel(
     const std::vector<OwnedBuffer>& buffer_list) {
   vertex_label_base_pointer_ =
       reinterpret_cast<VertexLabel*>(buffer_list.front().Get());
 }
-void MiniCleanCSRGraph::ParseInedgeLabel(
+void MiniCleanCSRGraph::ParseVertexAttribute(
     const std::vector<OwnedBuffer>& buffer_list) {
-  in_edge_label_base_pointer_ =
-      reinterpret_cast<VertexLabel*>(buffer_list.front().Get());
-}
-void MiniCleanCSRGraph::ParseOutedgeLabel(
-    const std::vector<OwnedBuffer>& buffer_list) {
-  out_edge_label_base_pointer_ =
-      reinterpret_cast<EdgeLabel*>(buffer_list.front().Get());
+  vertex_attribute_base_pointer_ =
+      reinterpret_cast<VertexID*>(buffer_list.front().Get());
+
+  auto ptr = vertex_attribute_base_pointer_;
+
+  for (size_t i = 0; i < num_vertices_; i++) {
+    // Check vertex id.
+    if (i != *ptr) {
+      LOG_ERROR("Vertex id does not match.");
+    }
+    // Retrieve attr count.
+    ptr++;
+    auto attr_count = *ptr;
+    if (attr_count > 2) {
+      LOG_WARN("Attr count: ", attr_count);
+    }
+    // Check vertex attr and value.
+    for (size_t j = 0; j < attr_count; j++) {
+      ptr++;
+      auto attr_id = *ptr;
+      ptr++;
+      auto attr_val = *ptr;
+    }
+    // Move to next vertex.
+    ptr++;
+  }
 }
 
 }  // namespace sics::graph::miniclean::data_structures::graphs

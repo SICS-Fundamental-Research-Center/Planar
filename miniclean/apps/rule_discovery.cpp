@@ -31,6 +31,10 @@ int main(int argc, char* argv[]) {
 
   RuleMiner rule_miner(&graph);
 
+  LOG_INFO("Loading graph...");
+  rule_miner.LoadGraph(FLAGS_i);
+  LOG_INFO("Loading graph done.");
+
   LOG_INFO("Loading path patterns...");
   rule_miner.LoadPathPatterns(FLAGS_i + "/path_patterns.txt");
   LOG_INFO("Loading path patterns done.");

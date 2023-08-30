@@ -57,9 +57,9 @@ class MiniCleanCSRGraph
 
  private:
   void ParseSubgraphCSR(const std::vector<OwnedBuffer>& buffer_list);
-  void ParseVertexLabel(const std::vector<OwnedBuffer>& buffer_list);
-  void ParseInedgeLabel(const std::vector<OwnedBuffer>& buffer_list);
   void ParseOutedgeLabel(const std::vector<OwnedBuffer>& buffer_list);
+  void ParseVertexLabel(const std::vector<OwnedBuffer>& buffer_list);
+  void ParseVertexAttribute(const std::vector<OwnedBuffer>& buffer_list);
 
  private:
   // Vertex labels
@@ -70,8 +70,9 @@ class MiniCleanCSRGraph
   // TODO (bai-wenchao): in edge label is not used in current version.
   //                     Delete it if we do not need it in the future,
   //                     or implement it if we need it.
-  VertexLabel* in_edge_label_base_pointer_;
+  // VertexLabel* in_edge_label_base_pointer_;
   // TODO (bai-wenchao): design and add vertex attribute base pointer
+  VertexID* vertex_attribute_base_pointer_;
 };
 }  // namespace sics::graph::miniclean::data_structures::graphs
 
