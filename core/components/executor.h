@@ -32,7 +32,7 @@ class Executor : public Component {
     thread_->join();
   }
 
-  common::ThreadPool* get_thread_pool() { return &task_runner_; }
+  common::ThreadPool* get_task_runner() { return &task_runner_; }
 
  private:
   scheduler::ExecutorQueue* execute_q_;

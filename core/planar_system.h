@@ -30,6 +30,10 @@ class Planar {
         app_(app) {
     //    app_ = std::make_unique<AppType>();
 
+    update_store_ =
+        std::make_unique<update_stores::BspUpdateStore<VertexData, EdgeData>>(
+            scheduler_->GetVertexNumber());
+
     // components for reader, writer and executor
     loader_ = std::make_unique<components::Loader<io::MutableCSRReader>>(
         scheduler_->GetMessageHub());
@@ -38,6 +42,10 @@ class Planar {
             scheduler_->GetMessageHub());
     executer_ =
         std::make_unique<components::Executor>(scheduler_->GetMessageHub());
+
+    // set scheduler info
+    scheduler_->Init(update_store_.get(), executer_->get_task_runner(),
+                     app_->get());
   };
 
   ~Planar() = default;
