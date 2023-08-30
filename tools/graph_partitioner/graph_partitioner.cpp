@@ -7,8 +7,8 @@
 #include "core/common/multithreading/thread_pool.h"
 #include "core/util/logging.h"
 #include "tools/common/yaml_config.h"
-#include "tools/graph_partitioner/partitioner/edgecut.h"
-#include "tools/graph_partitioner/partitioner/vertexcut.h"
+#include "tools/graph_partitioner/partitioner/random_edgecut.h"
+#include "tools/graph_partitioner/partitioner/random_vertexcut.h"
 
 using sics::graph::tools::common::StoreStrategy2Enum;
 using sics::graph::tools::partitioner::EdgeCutPartitioner;
