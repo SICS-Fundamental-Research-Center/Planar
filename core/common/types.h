@@ -17,18 +17,11 @@ typedef uint32_t VertexCount;
 typedef uint64_t EdgeIndex;
 
 // TODO: struct configuration
-struct configuration {
-  configuration() {
-    max_task_package = 4000;
-    parallelism = 1;
-    partition_type = "VertexCut";
-    root_path = "/testfile";
-  }
-
-  int max_task_package;
-  int parallelism;
-  std::string partition_type;
-  std::string root_path;
+struct Configurations {
+  int max_task_package = 4000;
+  int parallelism = 1;
+  std::string partition_type = "VertexCut";
+  std::string root_path = "/testfile";
 };
 
 #define MAX_VERTEX_ID std::numeric_limits<VertexID>::max()
@@ -40,6 +33,8 @@ static int kDefaultMaxTaskPackage = 4000;
 static int kDefaultParallelism = 1;
 static std::string kPartitionType = "VertexCut";
 static std::string kDefaultRootPath = "/testfile";
+
+static Configurations configs;
 
 }  // namespace sics::graph::core::common
 
