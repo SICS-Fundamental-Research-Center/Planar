@@ -22,21 +22,23 @@ class Planar {
 
  public:
   Planar() = default;
-  // TODO: add init info
   Planar(const std::string& root_path)
-      : scheduler_(std::make_unique<
-                   update_stores::BspUpdateStore<VertexData, EdgeData>>(
-            root_path)) {
-    app_ = std::make_unique<AppType>();
+      : scheduler_(std::make_unique<scheduler::Scheduler>(root_path)) {
+    update_store_ =
+        std::make_unique<update_stores::BspUpdateStore<VertexData, EdgeData>>(
+            scheduler_->GetVertexNumber());
 
     // components for reader, writer and executor
     loader_ = std::make_unique<components::Loader<io::MutableCSRReader>>(
-        scheduler_->GetMessageHub());
+        root_path, scheduler_->GetMessageHub());
     discharger_ =
         std::make_unique<components::Discharger<io::MutableCSRWriter>>(
-            scheduler_->GetMessageHub());
+            root_path, scheduler_->GetMessageHub());
     executer_ =
         std::make_unique<components::Executor>(scheduler_->GetMessageHub());
+
+    // set scheduler info
+    scheduler_->Init(update_store_.get(), executer_->get_task_runner(), &app_);
   };
 
   ~Planar() = default;
@@ -46,14 +48,11 @@ class Planar {
   void Stop() {}
 
  private:
-  // TODO: dose this need unique_ptr
-  data_structures::GraphMetadata graph_metadata_;
-
   std::unique_ptr<scheduler::Scheduler> scheduler_;
   std::unique_ptr<update_stores::BspUpdateStore<VertexData, EdgeData>>
       update_store_;
 
-  std::unique_ptr<AppType> app_;
+  AppType app_;
 
   std::unique_ptr<components::Loader<io::MutableCSRReader>> loader_;
   std::unique_ptr<components::Discharger<io::MutableCSRWriter>> discharger_;

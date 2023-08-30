@@ -21,8 +21,9 @@ class Loader : public Component {
                 "ReaderType must be a subclass of Reader");
 
  public:
-  Loader(scheduler::MessageHub* hub)
-      : reader_q_(hub->get_reader_queue()),
+  Loader(const std::string& root_path, scheduler::MessageHub* hub)
+      : reader_(root_path),
+        reader_q_(hub->get_reader_queue()),
         response_q_(hub->get_response_queue()) {}
 
   ~Loader() final = default;

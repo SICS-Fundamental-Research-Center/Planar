@@ -17,14 +17,23 @@ class Scheduler {
 
   virtual ~Scheduler() = default;
 
-  int GetCurrentRound() const { return current_round_; }
+  void Init(update_stores::UpdateStoreBase* update_store,
+            common::TaskRunner* task_runner, apis::PIE* app) {
+    update_store_ = update_store;
+    task_runner_ = task_runner;
+    app_ = app;
+  }
 
-  // global message store
+  int GetCurrentRound() const { return current_round_; }
 
   // schedule subgraph execute and its IO(read and write)
   void Start();
 
   MessageHub* GetMessageHub() { return &message_hub_; }
+
+  size_t GetVertexNumber() const {
+    return graph_metadata_info_.get_num_vertices();
+  }
 
  protected:
   virtual bool ReadMessageResponseAndExecute(const ReadMessage& read_resp);
@@ -67,6 +76,11 @@ class Scheduler {
 
   // message hub
   MessageHub message_hub_;
+
+  // ExecuteMessage info, used for setting APP context
+  update_stores::UpdateStoreBase* update_store_;
+  common::TaskRunner* task_runner_;
+  apis::PIE* app_;
 
   std::unique_ptr<std::thread> thread_;
 };
