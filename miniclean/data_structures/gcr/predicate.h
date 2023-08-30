@@ -28,7 +28,7 @@ typedef enum {
 } OperatorType;
 
 class GCRPredicate {
- protected:
+ public:
   using PatternVertexID = sics::graph::miniclean::common::PatternVertexID;
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
   using VertexAttributeValue =
@@ -36,17 +36,13 @@ class GCRPredicate {
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  protected:
-  GCRPredicate(){};
+  GCRPredicate() = default;
   GCRPredicate(uint8_t predicate_type, uint8_t operator_type)
       : predicate_type_(static_cast<PredicateType>(predicate_type)),
         operator_type_(static_cast<OperatorType>(operator_type)) {}
 
-  PredicateType predicate_type_;
-  OperatorType operator_type_;
-
  public:
   // Compare attributes.
-  //   We assume that the attributes are represented by their ids.
   bool Compare(const VertexAttributeValue& lhs,
                const VertexAttributeValue& rhs) {
     switch (operator_type_) {
@@ -69,12 +65,17 @@ class GCRPredicate {
 
   PredicateType get_predicate_type() const { return predicate_type_; }
   OperatorType get_operator_type() const { return operator_type_; }
+
+ protected:   
+  PredicateType predicate_type_;
+  OperatorType operator_type_;
+
 };
 
 /* Variable predicate: x.A [op] y.B */
 class VariablePredicate : public GCRPredicate {
  public:
-  VariablePredicate() {}
+  VariablePredicate() = default;
   VariablePredicate(uint8_t operator_type, VertexLabel lhs_vlabel,
                     VertexAttributeID lhs_aid, VertexLabel rhs_vlabel,
                     VertexAttributeID rhs_aid)
@@ -91,14 +92,16 @@ class VariablePredicate : public GCRPredicate {
   VertexAttributeID get_rhs_aid() const { return rhs_aid_; }
 
  private:
-  VertexAttributeID lhs_aid_, rhs_aid_;
-  VertexLabel lhs_vlabel_, rhs_vlabel_;
+  VertexAttributeID lhs_aid_;
+  VertexAttributeID rhs_aid_;
+  VertexLabel lhs_vlabel_;
+  VertexLabel rhs_vlabel_;
 };
 
 /* Constant predicate: x.A [op] c */
 class ConstantPredicate : public GCRPredicate {
  public:
-  ConstantPredicate() {}
+  ConstantPredicate() = default;
   ConstantPredicate(uint8_t operator_type, VertexLabel lhs_vlabel,
                     VertexAttributeID lhs_aid, VertexAttributeValue c)
       : GCRPredicate(2, operator_type),
