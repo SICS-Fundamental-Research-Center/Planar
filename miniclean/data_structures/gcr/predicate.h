@@ -121,9 +121,6 @@ class ConstantPredicate : public GCRPredicate {
 }  // namespace sics::graph::miniclean::data_structures::gcr
 
 namespace YAML {
-struct convert<sics::graph::miniclean::data_structures::gcr::ConstantPredicate>;
-struct convert<sics::graph::miniclean::data_structures::gcr::VariablePredicate>;
-
 template <>
 struct convert<
     sics::graph::miniclean::data_structures::gcr::VariablePredicate> {
