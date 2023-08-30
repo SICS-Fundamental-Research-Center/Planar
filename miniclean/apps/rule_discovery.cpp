@@ -1,15 +1,21 @@
-#include "miniclean/components/rule_discovery/rule_miner.h"
-
 #include <gflags/gflags.h>
 
 #include "core/data_structures/graph_metadata.h"
 #include "core/util/logging.h"
+#include "miniclean/common/types.h"
+#include "miniclean/components/rule_discovery/rule_miner.h"
+#include "miniclean/data_structures/gcr/predicate.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
+using ConstantPredicate =
+    sics::graph::miniclean::data_structures::gcr::ConstantPredicate;
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
-using RuleMiner = sics::graph::miniclean::components::rule_discovery::RuleMiner;
 using MiniCleanCSRGraph =
     sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+using RuleMiner = sics::graph::miniclean::components::rule_discovery::RuleMiner;
+using VariablePredicate =
+    sics::graph::miniclean::data_structures::gcr::VariablePredicate;
+using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
 DEFINE_string(i, "", "data directory");
 
@@ -32,6 +38,10 @@ int main(int argc, char* argv[]) {
   LOG_INFO("Loading path instances...");
   rule_miner.LoadPathInstances(FLAGS_i + "/matched_path_patterns");
   LOG_INFO("Loading path instances done.");
+
+  LOG_INFO("Loading predicates...");
+  rule_miner.LoadPredicates(FLAGS_i + "/predicates.yaml");
+  LOG_INFO("Loading predicates done.");
 
   return 0;
 }
