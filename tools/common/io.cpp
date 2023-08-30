@@ -149,7 +149,7 @@ void GraphFormatConverter::WriteSubgraph(
     delete buffer_out_offset;
 
     // Write bitmap that indicate whether a vertex has outgoing edges.
-    bitmap_file.write((char*)bitmap.GetDataBasePointer(),
+    bitmap_file.write((char*) bitmap.GetDataBasePointer(),
                       ((bitmap.size() >> 6) + 1) * sizeof(uint64_t));
 
     // Write vertex buffers.
