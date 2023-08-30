@@ -9,9 +9,8 @@ int main(int argc, char** argv) {
   // TODO: flags setting to static variables in types.h
 
   // TODO: planar system code
-  sics::graph::core::apps::WCCApp app;
   sics::graph::core::planar_system::Planar<sics::graph::core::apps::WCCApp>
-      system;
+      system("/testfile");
 
   // run
   return 0;

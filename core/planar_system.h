@@ -23,11 +23,12 @@ class Planar {
  public:
   Planar() = default;
   // TODO: add init info
-  Planar(const std::string& root_path)
+  Planar(const std::string& root_path, AppType&& app)
       : scheduler_(std::make_unique<
                    update_stores::BspUpdateStore<VertexData, EdgeData>>(
-            root_path)) {
-    app_ = std::make_unique<AppType>();
+            root_path)),
+        app_(app) {
+    //    app_ = std::make_unique<AppType>();
 
     // components for reader, writer and executor
     loader_ = std::make_unique<components::Loader<io::MutableCSRReader>>(
@@ -53,7 +54,7 @@ class Planar {
   std::unique_ptr<update_stores::BspUpdateStore<VertexData, EdgeData>>
       update_store_;
 
-  std::unique_ptr<AppType> app_;
+  AppType* app_;
 
   std::unique_ptr<components::Loader<io::MutableCSRReader>> loader_;
   std::unique_ptr<components::Discharger<io::MutableCSRWriter>> discharger_;
