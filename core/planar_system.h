@@ -26,7 +26,7 @@ class Planar {
       : scheduler_(std::make_unique<scheduler::Scheduler>(root_path)) {
     update_store_ =
         std::make_unique<update_stores::BspUpdateStore<VertexData, EdgeData>>(
-            scheduler_->GetVertexNumber());
+            root_path, scheduler_->GetVertexNumber());
 
     // components for reader, writer and executor
     loader_ = std::make_unique<components::Loader<io::MutableCSRReader>>(
