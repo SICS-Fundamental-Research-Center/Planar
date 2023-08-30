@@ -77,11 +77,11 @@ class MiniCleanCSRGraph
   VertexID* vertex_attribute_offset_base_pointer_;
   // Vertex attribute values
   //   Using vertex attribute offsets, we can locate the vertex attribute
-  //   values. 
+  //   values.
   //   Here is an example:
   //   - value_ptr[offser_ptr[i]][0]: number of all possible attributes
-  //     corresponding to the label of #i vertex. 
-  //   - value_ptr[offser_ptr[i]][1]: value of #0 attribute. 
+  //     corresponding to the label of #i vertex.
+  //   - value_ptr[offser_ptr[i]][1]: value of #0 attribute.
   //   - value_ptr[offser_ptr[i]][2]: value of #1 attribute.
   VertexAttributeValue* vertex_attribute_value_base_pointer_;
 };

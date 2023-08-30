@@ -39,8 +39,8 @@ typedef std::vector<EdgePattern> PathPattern;
 typedef std::list<PathPattern> StarPattern;
 typedef std::tuple<StarPattern, StarPattern> DualPattern;
 
-
-#define MAX_VERTEX_ATTRIBUTE_VALUE std::numeric_limits<VertexAttributeValue>::max()
+#define MAX_VERTEX_ATTRIBUTE_VALUE \
+  std::numeric_limits<VertexAttributeValue>::max()
 
 }  // namespace sics::graph::miniclean::common
 
