@@ -3,9 +3,14 @@
 #include <yaml-cpp/yaml.h>
 
 #include <fstream>
+#include <memory>
 
+#include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/buffer.h"
+#include "core/data_structures/graph/serialized_immutable_csr_graph.h"
+#include "core/scheduler/message.h"
 #include "core/util/logging.h"
+#include "miniclean/io/miniclean_csr_reader.h"
 
 namespace sics::graph::miniclean::components::rule_discovery {
 
@@ -18,6 +23,32 @@ using VariablePredicate =
     sics::graph::miniclean::data_structures::gcr::VariablePredicate;
 using ConstantPredicate =
     sics::graph::miniclean::data_structures::gcr::ConstantPredicate;
+using MiniCleanCSRReader = sics::graph::miniclean::io::MiniCleanCSRReader;
+using SerializedImmutableCSRGraph =
+    sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+using ReadMessage = sics::graph::core::scheduler::ReadMessage;
+using ThreadPool = sics::graph::core::common::ThreadPool;
+
+void RuleMiner::LoadGraph(const std::string& graph_path) {
+  // Prepare reader.
+  MiniCleanCSRReader reader(graph_path);
+
+  // Initialize Serialized object.
+  std::unique_ptr<SerializedImmutableCSRGraph> serialized_graph =
+      std::make_unique<SerializedImmutableCSRGraph>();
+
+  // Initialize ReadMessage object.
+  ReadMessage read_message;
+  read_message.graph_id = graph_->get_metadata().gid;
+  read_message.response_serialized = serialized_graph.get();
+
+  // Read a subgraph.
+  reader.Read(&read_message, nullptr);
+
+  // Deserialize the subgraph.
+  ThreadPool thread_pool(1);
+  graph_->Deserialize(thread_pool, std::move(serialized_graph));
+}
 
 void RuleMiner::LoadPathPatterns(const std::string& path_patterns_path) {
   std::ifstream pattern_file(path_patterns_path);
@@ -116,14 +147,14 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
 
   auto variable_predicate_nodes = predicate_nodes["VariablePredicates"];
   auto constant_predicate_nodes = predicate_nodes["ConstantPredicates"];
-  
+
   // Reserve space for `variable_predicates_`.
   variable_predicates_.reserve(variable_predicate_nodes.size());
   for (auto variable_predicate_node : variable_predicate_nodes) {
     VertexLabel lhs_label = static_cast<uint8_t>(
         std::stoi(variable_predicate_node.first.as<std::string>()));
-    // Check if `lhs_label` is already in `variable_predicates_` and reserve space for
-    // `variable_predicates_[lhs_label]`.
+    // Check if `lhs_label` is already in `variable_predicates_` and reserve
+    // space for `variable_predicates_[lhs_label]`.
     if (variable_predicates_.find(lhs_label) != variable_predicates_.end()) {
       LOG_WARN("Duplicate variable predicate lhs vertex label: ", lhs_label);
     } else {
