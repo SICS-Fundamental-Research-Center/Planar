@@ -28,6 +28,8 @@ using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 using ThreadPool = sics::graph::core::common::ThreadPool;
+using DualPattern = sics::graph::miniclean::common::DualPattern;
+using StarPattern = sics::graph::miniclean::common::StarPattern;
 
 void RuleMiner::LoadGraph(const std::string& graph_path) {
   // Prepare reader.
@@ -189,6 +191,17 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
     // vertex label `lhs_label`.
     constant_predicates_[lhs_label] =
         constant_predicate_node.second.as<std::vector<ConstantPredicate>>();
+  }
+}
+
+void RuleMiner::InitGCRs() {
+  for (size_t i = 0; i < path_patterns_.size() - 1; i++) {
+    for (size_t j = i + 1; j < path_patterns_.size(); j++) {
+      StarPattern left_star, right_star;
+      left_star.emplace_back(i);
+      right_star.emplace_back(j);
+      DualPattern dual_pattern = std::make_tuple(left_star, right_star);
+    }
   }
 }
 

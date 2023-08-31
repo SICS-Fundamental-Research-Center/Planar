@@ -2,6 +2,8 @@
 #define MINICLEAN_COMPONENTS_RULE_DISCOVERY_RULE_DISCOVERY_H_
 
 #include <string>
+#include <list>
+#include <vector>
 #include <unordered_map>
 
 #include "miniclean/common/types.h"
@@ -42,7 +44,7 @@ class RuleMiner {
 
  private:
   MiniCleanCSRGraph* graph_;
-  std::vector<GCR> gcrs_;
+  std::list<GCR> gcrs_;
   std::vector<PathPattern> path_patterns_;
   std::vector<std::vector<std::vector<VertexID>>> path_instances_;
 
