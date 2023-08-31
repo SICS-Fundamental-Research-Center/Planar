@@ -38,7 +38,7 @@ class Planar {
         std::make_unique<components::Executor>(scheduler_->GetMessageHub());
 
     // set scheduler info
-    scheduler_->Init(update_store_.get(), &app_);
+    scheduler_->Init(update_store_.get(), executer_->GetTaskRunner(), &app_);
   };
 
   ~Planar() = default;

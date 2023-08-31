@@ -15,13 +15,14 @@ class Scheduler {
   Scheduler(const std::string& root_path)
       : graph_metadata_info_(root_path),
         current_round_(0),
-        task_runner_(common::kDefaultParallelism),
         graph_state_(graph_metadata_info_.get_num_subgraphs()) {}
 
   virtual ~Scheduler() = default;
 
-  void Init(update_stores::UpdateStoreBase* update_store, apis::PIE* app) {
+  void Init(update_stores::UpdateStoreBase* update_store,
+            common::TaskRunner* task_runner, apis::PIE* app) {
     update_store_ = update_store;
+    executor_task_runner_ = task_runner;
     app_ = app;
   }
 
@@ -82,7 +83,7 @@ class Scheduler {
 
   // ExecuteMessage info, used for setting APP context
   update_stores::UpdateStoreBase* update_store_;
-  common::ThreadPool task_runner_;
+  common::TaskRunner* executor_task_runner_;
   apis::PIE* app_;
 
   std::unique_ptr<std::thread> thread_;
