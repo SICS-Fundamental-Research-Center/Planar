@@ -17,13 +17,13 @@ using VariablePredicate =
     sics::graph::miniclean::data_structures::gcr::VariablePredicate;
 using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
-DEFINE_string(i, "", "data directory");
+DEFINE_string(data_directory, "", "data directory");
 
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   // Load metadata.
-  YAML::Node metadata = YAML::LoadFile(FLAGS_i + "/meta.yaml");
+  YAML::Node metadata = YAML::LoadFile(FLAGS_data_directory + "/meta.yaml");
   GraphMetadata graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
 
   // Initialize graph.
@@ -32,19 +32,19 @@ int main(int argc, char* argv[]) {
   RuleMiner rule_miner(&graph);
 
   LOG_INFO("Loading graph...");
-  rule_miner.LoadGraph(FLAGS_i);
+  rule_miner.LoadGraph(FLAGS_data_directory);
   LOG_INFO("Loading graph done.");
 
   LOG_INFO("Loading path patterns...");
-  rule_miner.LoadPathPatterns(FLAGS_i + "/path_patterns.txt");
+  rule_miner.LoadPathPatterns(FLAGS_data_directory + "/path_patterns.txt");
   LOG_INFO("Loading path patterns done.");
 
   LOG_INFO("Loading path instances...");
-  rule_miner.LoadPathInstances(FLAGS_i + "/matched_path_patterns");
+  rule_miner.LoadPathInstances(FLAGS_data_directory + "/matched_path_patterns");
   LOG_INFO("Loading path instances done.");
 
   LOG_INFO("Loading predicates...");
-  rule_miner.LoadPredicates(FLAGS_i + "/predicates.yaml");
+  rule_miner.LoadPredicates(FLAGS_data_directory + "/predicates.yaml");
   LOG_INFO("Loading predicates done.");
 
   return 0;
