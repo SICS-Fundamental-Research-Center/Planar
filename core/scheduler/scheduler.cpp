@@ -61,11 +61,13 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
     ExecuteMessage execute_message;
     execute_message.graph_id = read_resp.graph_id;
     execute_message.serialized = read_resp.response_serialized;
+    // use factory to create subgraph
+    graph_state_.SetSubGraph(read_resp.graph_id,
+                             std::unique_ptr<data_structures::Serializable>());
+    execute_message.graph = graph_state_.GetSubgraph(read_resp.graph_id);
     execute_message.execute_type = ExecuteType::kDeserialize;
     message_hub_.get_executor_queue()->Push(execute_message);
   } else {
-    //      graph_state_.SetSubgraphSerialized(read_response.graph_id,
-    //                                         read_response.response_serialized);
     graph_state_.SetSubgraphSerialized(
         read_resp.graph_id, std::unique_ptr<data_structures::Serialized>(
                                 read_resp.response_serialized));
