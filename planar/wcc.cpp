@@ -11,12 +11,12 @@ using namespace sics::graph;
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-  core::common::kDefaultRootPath = FLAGS_i;
-  core::common::kDefaultParallelism = FLAGS_p;
+  core::common::configs.root_path = FLAGS_i;
+  core::common::configs.parallelism = FLAGS_p;
   // TODO: configure other flags
 
   core::planar_system::Planar<core::apps::WCCApp> system(
-      core::common::kDefaultRootPath);
+      core::common::configs.root_path);
   system.Start();
   return 0;
 }

@@ -8,7 +8,7 @@ void Scheduler::Start() {
     // init round 0 loaded graph
     ReadMessage first_read_message;
     first_read_message.graph_id = GetNextReadGraphInCurrentRound();
-    graph_state_.subgraph_limits_--;
+    common::configs.subgraph_limits--;
     message_hub_.get_reader_queue()->Push(first_read_message);
 
     while (running) {
@@ -145,7 +145,7 @@ bool Scheduler::WriteMessageResponseAndCheckTerminate(
 
 // private methods:
 bool Scheduler::TryReadNextGraph(bool sync) {
-  if (graph_state_.subgraph_limits_ > 0) {
+  if (common::configs.subgraph_limits > 0) {
     auto next_graph_id = GetNextReadGraphInCurrentRound();
     ReadMessage read_message;
     if (next_graph_id != INVALID_GRAPH_ID) {

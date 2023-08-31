@@ -15,7 +15,8 @@ class Scheduler {
   Scheduler(const std::string& root_path)
       : graph_metadata_info_(root_path),
         current_round_(0),
-        task_runner_(common::kDefaultParallelism) {}
+        task_runner_(common::kDefaultParallelism),
+        graph_state_(graph_metadata_info_.get_num_subgraphs()) {}
 
   virtual ~Scheduler() = default;
 
