@@ -8,7 +8,7 @@ using SerializedMuatbleCSRGraph =
     data_structures::graph::SerializedMutableCSRGraph;
 
 void MutableCSRReader::Read(scheduler::ReadMessage* message,
-                            common::TaskRunner* /* runner */) {
+                            common::TaskRunner* runner) {
   // Init path.
   std::string file_path =
       root_path_ + "graphs/" + std::to_string(message->graph_id) + ".bin";
