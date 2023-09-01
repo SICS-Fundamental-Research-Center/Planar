@@ -40,6 +40,13 @@ class GraphFormatConverter {
       std::filesystem::create_directory(output_root_path + "/label");
     if (!std::filesystem::exists(output_root_path + "/graphs"))
       std::filesystem::create_directory(output_root_path + "/graphs");
+    if (!std::filesystem::exists(output_root_path + "/bitmap"))
+      std::filesystem::create_directory(output_root_path + "/bitmap");
+    if (!std::filesystem::exists(output_root_path + "/bitmap/src_map"))
+      std::filesystem::create_directory(output_root_path + "/bitmap/src_map");
+    if (!std::filesystem::exists(output_root_path + "/bitmap/is_in_graph"))
+      std::filesystem::create_directory(output_root_path +
+                                        "/bitmap/is_in_graph");
   }
 
   // @DESCRIPTION Write a set of vertices to disk. It first merges vertices to

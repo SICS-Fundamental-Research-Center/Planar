@@ -22,6 +22,11 @@ class Bitmap {
     return;
   }
 
+  Bitmap(size_t size, uint64_t* init_value) {
+    size_ = size;
+    data_ = init_value;
+  }
+
   ~Bitmap() {
     delete data_;
     size_ = 0;
@@ -29,7 +34,7 @@ class Bitmap {
 
   void Init(size_t size) {
     size_ = size;
-    data_ = new uint64_t[WORD_OFFSET(size) + 1];
+    data_ = new uint64_t[WORD_OFFSET(size) + 1]();
     return;
   }
 
