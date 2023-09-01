@@ -28,6 +28,8 @@ using SerializedImmutableCSRGraph =
     sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 using ThreadPool = sics::graph::core::common::ThreadPool;
+using DualPattern = sics::graph::miniclean::common::DualPattern;
+using StarPattern = sics::graph::miniclean::common::StarPattern;
 
 void RuleMiner::LoadGraph(const std::string& graph_path) {
   // Prepare reader.
@@ -79,6 +81,9 @@ void RuleMiner::LoadPathPatterns(const std::string& path_patterns_path) {
       pattern.emplace_back(src_label, edge_label, dst_label);
     }
 
+    // Added a dummy edge for the simplicity of path traversal.
+    pattern.emplace_back(static_cast<VertexLabel>(label_vec.back()), 0, 0);
+
     path_patterns_.push_back(pattern);
   }
 
@@ -118,7 +123,7 @@ void RuleMiner::LoadPathInstances(const std::string& path_instances_path) {
     }
 
     // Parse the buffer.
-    size_t pattern_length = path_patterns_[i].size() + 1;
+    size_t pattern_length = path_patterns_[i].size();
     size_t num_instances = fileSize / (pattern_length * sizeof(VertexID));
     VertexID* instance_buffer = reinterpret_cast<VertexID*>(buffer.Get());
     path_instances_[i].reserve(num_instances);
@@ -192,4 +197,117 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
   }
 }
 
+void RuleMiner::InitGCRs() {
+  // Each pair of path patterns will generate a group of GCR.
+  predicate_pool_.resize(
+      path_patterns_.size() * (path_patterns_.size() - 1) / 2);
+
+  size_t current_pair_id = 0;
+  for (size_t i = 0; i < path_patterns_.size() - 1; i++) {
+    for (size_t j = i + 1; j < path_patterns_.size(); j++) {
+      StarPattern left_star, right_star;
+      left_star.emplace_back(i);
+      right_star.emplace_back(j);
+      DualPattern dual_pattern = std::make_tuple(left_star, right_star);
+
+      // Initialize predicate pool.
+      size_t predicate_pool_size = 0;
+      for (size_t k = 0; k < path_patterns_[i].size(); k++) {
+        predicate_pool_size +=
+            constant_predicates_[std::get<0>(path_patterns_[i][k])].size();
+      }
+      for (size_t k = 0; k < path_patterns_[j].size(); k++) {
+        predicate_pool_size +=
+            constant_predicates_[std::get<0>(path_patterns_[j][k])].size();
+      }
+      for (size_t k = 0; k < path_patterns_[i].size(); k++) {
+        for (size_t l = 0; l < path_patterns_[j].size(); l++) {
+          predicate_pool_size +=
+              variable_predicates_[std::get<0>(path_patterns_[i][k])]
+                                  [std::get<0>(path_patterns_[j][l])]
+                                      .size();
+        }
+      }
+
+      predicate_pool_[current_pair_id].reserve(predicate_pool_size);
+
+      // Constant predicate enumeration for left path.
+      for (size_t k = 0; k < path_patterns_[i].size(); k++) {
+        for (auto constant_predicate :
+             constant_predicates_[std::get<0>(path_patterns_[i][k])]) {
+          ConstantPredicate* new_constant_predicate =
+              new ConstantPredicate(constant_predicate);
+          new_constant_predicate->set_lhs_ppid(i);
+          new_constant_predicate->set_lhs_edge_id(k);
+          predicate_pool_[current_pair_id].push_back(new_constant_predicate);
+        }
+      }
+
+      // Constant predicate enumeration for right path.
+      for (size_t k = 0; k < path_patterns_[j].size(); k++) {
+        for (auto constant_predicate :
+             constant_predicates_[std::get<0>(path_patterns_[j][k])]) {
+          ConstantPredicate* new_constant_predicate =
+              new ConstantPredicate(constant_predicate);
+          new_constant_predicate->set_lhs_ppid(j);
+          new_constant_predicate->set_lhs_edge_id(k);
+          predicate_pool_[current_pair_id].push_back(new_constant_predicate);
+        }
+      }
+
+      // Variable predicate enumeration for <lvertex, rvertex> pair.
+      for (size_t k = 0; k < path_patterns_[i].size(); k++) {
+        for (size_t l = 0; l < path_patterns_[j].size(); l++) {
+          for (auto variable_predicate : variable_predicates_[std::get<0>(
+                   path_patterns_[i][k])][std::get<0>(path_patterns_[j][l])]) {
+            VariablePredicate* new_variable_predicate =
+                new VariablePredicate(variable_predicate);
+            new_variable_predicate->set_lhs_ppid(i);
+            new_variable_predicate->set_lhs_edge_id(k);
+            new_variable_predicate->set_rhs_ppid(j);
+            new_variable_predicate->set_rhs_edge_id(l);
+            predicate_pool_[current_pair_id].push_back(new_variable_predicate);
+          }
+        }
+      }
+
+      // Initialize GCRs.
+      GCR gcr = GCR(dual_pattern);
+      for (size_t k = 0; k <= predicate_restriction; k++) {
+        gcr.set_consequence(predicate_pool_[current_pair_id][k]);
+        // TODO (bai-wenchao): Check support of this GCR.
+        gcrs_.push_back(gcr);
+        InitGCRsRecur(gcr, 1, {}, k, predicate_pool_[current_pair_id]);
+      }
+      current_pair_id++;
+    }
+  }
+}
+
+void RuleMiner::InitGCRsRecur(GCR gcr, size_t depth,
+                              std::vector<size_t> precondition_ids,
+                              size_t consequence_id,
+                              std::vector<GCRPredicate*>& predicate_pool) {
+  if (depth == predicate_restriction) {
+    return;
+  }
+
+  for (size_t i = 0; i < predicate_pool.size(); i++) {
+    // Duplication check.
+    if (std::find(precondition_ids.begin(), precondition_ids.end(), i) !=
+            precondition_ids.end() ||
+        i == consequence_id) {
+      continue;
+    }
+
+    gcr.AddPreconditionToBack(predicate_pool[i]);
+    // TODO (bai-wenchao): Check support of this GCR.
+    gcrs_.push_back(gcr);
+    precondition_ids.push_back(i);
+    InitGCRsRecur(gcr, depth + 1, precondition_ids, consequence_id,
+                  predicate_pool);
+    precondition_ids.pop_back();
+    gcr.RemoveLastPrecondition();
+  }
+}
 }  // namespace sics::graph::miniclean::components::rule_discovery

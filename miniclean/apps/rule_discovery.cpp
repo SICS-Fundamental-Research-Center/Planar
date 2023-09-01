@@ -47,5 +47,9 @@ int main(int argc, char* argv[]) {
   rule_miner.LoadPredicates(FLAGS_data_directory + "/predicates.yaml");
   LOG_INFO("Loading predicates done.");
 
+  LOG_INFO("Init GCRs...");
+  rule_miner.InitGCRs();
+  LOG_INFO("Init GCRs done.");
+
   return 0;
 }
