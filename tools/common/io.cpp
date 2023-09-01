@@ -27,7 +27,6 @@ void GraphFormatConverter::WriteSubgraph(
   std::ofstream border_vertices_file(output_root_path_ +
                                      "bitmap/border_vertices.bin");
   Bitmap border_vertices(graph_metadata.get_max_vid());
-  border_vertices.Clear();
 
   for (auto iter : subgraph_vec) {
     auto vertex_map = iter;
@@ -41,8 +40,6 @@ void GraphFormatConverter::WriteSubgraph(
     auto num_vertices = vertex_map->size();
     size_t count_in_edges = 0, count_out_edges = 0;
     Bitmap src_map(num_vertices), is_in_graph(graph_metadata.get_max_vid());
-    src_map.Clear();
-    is_in_graph.Clear();
 
     auto buffer_globalid = new VertexID[num_vertices]();
     auto buffer_indegree = new VertexID[num_vertices]();
@@ -301,7 +298,6 @@ void GraphFormatConverter::WriteSubgraph(
   std::ofstream border_vertices_file(output_root_path_ +
                                      "bitmap/border_vertices.bin");
   Bitmap border_vertices(graph_metadata.get_max_vid());
-  border_vertices.Clear();
   auto frequency_of_vertices = new int[graph_metadata.get_max_vid()]();
 
   for (VertexID i = 0; i < n_subgraphs; i++) {
@@ -318,9 +314,7 @@ void GraphFormatConverter::WriteSubgraph(
     delete edge_bucket[i];
 
     Bitmap src_map(csr_graph.get_num_vertices());
-    src_map.Clear();
     Bitmap is_in_graph(csr_graph.get_num_vertices());
-    is_in_graph.Clear();
 
     for (unsigned int i = 0; i < parallelism; i++) {
       auto task = std::bind([i, parallelism, &csr_graph, &src_map, &is_in_graph,
