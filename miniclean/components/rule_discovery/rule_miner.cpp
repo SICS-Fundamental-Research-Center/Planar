@@ -199,8 +199,8 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
 
 void RuleMiner::InitGCRs() {
   // Each pair of path patterns will generate a group of GCR.
-  predicate_pool_.resize(path_patterns_.size() * (path_patterns_.size() - 1) /
-                         2);
+  predicate_pool_.resize(
+      path_patterns_.size() * (path_patterns_.size() - 1) / 2);
 
   size_t current_pair_id = 0;
   for (size_t i = 0; i < path_patterns_.size() - 1; i++) {
