@@ -29,18 +29,16 @@ class MutableCSRGraph : public Serializable {
   using EdgeData = TE;
   MutableCSRGraph() = default;
   explicit MutableCSRGraph(const SubgraphMetadata& metadata)
-      : metadata_(metadata) {
-    graph_buf_base_ = nullptr;
-    vertex_id_by_local_index_ = nullptr;
-    out_degree_base_ = nullptr;
-    out_offset_base_ = nullptr;
-    out_edges_base_ = nullptr;
-  }
+      : metadata_(metadata),
+        graph_buf_base_(nullptr),
+        vertex_id_by_local_index_(nullptr),
+        out_degree_base_(nullptr),
+        out_offset_base_(nullptr),
+        out_edges_base_(nullptr) {}
 
   ~MutableCSRGraph() override {
-    if (graph_buf_base_ != nullptr) {
-      delete[] graph_buf_base_;
-    }
+    // TODO: delete pointer malloc in deserialize
+    delete[] graph_buf_base_;
   }
 
   // Serializable interface override functions

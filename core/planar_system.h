@@ -22,7 +22,7 @@ class Planar {
   Planar() = default;
   Planar(const std::string& root_path)
       : scheduler_(std::make_unique<scheduler::Scheduler>(root_path)) {
-    if (common::configs.vertex_type == common::VertexDataType::TUint32) {
+    if (common::configs.vertex_type == common::VertexDataType::kVertexDataTypeUInt32) {
       update_store_ =
           std::make_unique<update_stores::BspUpdateStore<uint32_t, uint16_t>>(
               root_path, scheduler_->GetVertexNumber());

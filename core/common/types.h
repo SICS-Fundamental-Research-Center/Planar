@@ -17,8 +17,8 @@ typedef uint32_t VertexCount;
 typedef uint64_t EdgeIndex;
 
 enum VertexDataType {
-  TUint32 = 1,
-  TUint16,
+  kVertexDataTypeUInt32 = 1,
+  kVertexDataTypeUInt16,
 };
 
 // TODO: struct configuration
@@ -27,7 +27,7 @@ struct Configurations {
   int parallelism = 1;
   std::string partition_type = "VertexCut";
   std::string root_path = "/testfile";
-  VertexDataType vertex_type = TUint32;
+  VertexDataType vertex_type = kVertexDataTypeUInt32;
 };
 
 #define MAX_VERTEX_ID std::numeric_limits<VertexID>::max()
