@@ -3,7 +3,9 @@
 
 #include "common/multithreading/thread_pool.h"
 #include "common/types.h"
+#include "data_structures/graph/mutable_csr_graph.h"
 #include "data_structures/graph_metadata.h"
+#include "data_structures/serializable.h"
 #include "scheduler/graph_state.h"
 #include "scheduler/message_hub.h"
 #include "update_stores/update_store_base.h"
@@ -54,9 +56,11 @@ class Scheduler {
   // in current round or next round
   bool TryReadNextGraph(bool sync = false);
 
+  std::unique_ptr<data_structures::Serializable> CreateSerializableGraph(
+      common::GraphID graph_id);
+
   common::GraphID GetNextReadGraphInCurrentRound() const;
 
-  // get next execute graph in current round
   common::GraphID GetNextExecuteGraph() const;
 
   common::GraphID GetNextReadGraphInNextRound() const;

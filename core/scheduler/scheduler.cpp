@@ -1,5 +1,7 @@
 #include "scheduler.h"
 
+#include "data_structures/graph/mutable_csr_graph.h"
+
 namespace sics::graph::core::scheduler {
 
 void Scheduler::Start() {
@@ -61,9 +63,8 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
     ExecuteMessage execute_message;
     execute_message.graph_id = read_resp.graph_id;
     execute_message.serialized = read_resp.response_serialized;
-    // use factory to create subgraph
-    graph_state_.SetSubGraph(read_resp.graph_id,
-                             std::unique_ptr<data_structures::Serializable>());
+    auto serializable_graph = CreateSerializableGraph(read_resp.graph_id);
+    graph_state_.SetSubGraph(read_resp.graph_id, std::move(serializable_graph));
     execute_message.graph = graph_state_.GetSubgraph(read_resp.graph_id);
     execute_message.execute_type = ExecuteType::kDeserialize;
     message_hub_.get_executor_queue()->Push(execute_message);
@@ -72,7 +73,6 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
         read_resp.graph_id, std::unique_ptr<data_structures::Serialized>(
                                 read_resp.response_serialized));
   }
-
   TryReadNextGraph();
   return true;
 }
@@ -170,6 +170,18 @@ bool Scheduler::TryReadNextGraph(bool sync) {
     }
   }
   return true;
+}
+
+std::unique_ptr<data_structures::Serializable>
+Scheduler::CreateSerializableGraph(common::GraphID graph_id) {
+  if (common::configs.vertex_type == common::VertexDataType::TUint32) {
+    return std::make_unique<data_structures::graph::MutableCSRGraphUInt32>(
+        graph_metadata_info_.GetSubgraphMetadataRef(graph_id));
+
+  } else {
+    return std::make_unique<data_structures::graph::MutableCSRGraphUInt16>(
+        graph_metadata_info_.GetSubgraphMetadataRef(graph_id));
+  }
 }
 
 common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
