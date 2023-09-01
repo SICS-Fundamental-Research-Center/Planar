@@ -58,6 +58,8 @@ class ImmutableCSRGraph : public Serializable {
  private:
   using GraphID = sics::graph::core::common::GraphID;
   using VertexID = sics::graph::core::common::VertexID;
+  using VertexLabel = sics::graph::core::common::VertexLabel;
+
 
  public:
   explicit ImmutableCSRGraph(SubgraphMetadata metadata)
@@ -119,6 +121,9 @@ class ImmutableCSRGraph : public Serializable {
   }
   void SetOutgoingEdgesBuffer(VertexID* buffer) {
     outgoing_edges_base_pointer_ = buffer;
+  }
+  void SetVertexLabelBuffer(VertexLabel * buffer) {
+    vertex_label_base_pointer_ = buffer;
   }
 
   uint8_t* GetGraphBuffer() { return buf_graph_base_pointer_; }
@@ -198,6 +203,7 @@ class ImmutableCSRGraph : public Serializable {
   VertexID* outdegree_base_pointer_;
   VertexID* in_offset_base_pointer_;
   VertexID* out_offset_base_pointer_;
+  VertexLabel * vertex_label_base_pointer_;
 };
 
 }  // namespace sics::graph::core::data_structures::graph
