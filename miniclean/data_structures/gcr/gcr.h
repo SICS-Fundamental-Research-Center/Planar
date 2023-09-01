@@ -22,16 +22,15 @@ class GCR {
  public:
   GCR() = default;
   GCR(const DualPattern& dual_pattern) : dual_pattern_(dual_pattern) {}
-  GCR(const GCR& other_gcr) {
-    dual_pattern_ = other_gcr.get_dual_pattern();
-    preconditions_ = other_gcr.get_preconditions();
-    consequence_ = other_gcr.get_consequence();
-    local_support = other_gcr.get_local_support();
-    local_match = other_gcr.get_local_match();
-    left_star_instances_ = other_gcr.get_left_star_instances();
-    right_star_instances_ = other_gcr.get_right_star_instances();
-  }
-  GCR& operator=(const GCR& other_gcr) { return *this = GCR(other_gcr); }
+  GCR(const GCR& other_gcr)
+      : dual_pattern_(other_gcr.get_dual_pattern()),
+        preconditions_(other_gcr.get_preconditions()),
+        consequence_(other_gcr.get_consequence()),
+        local_support(other_gcr.get_local_support()),
+        local_match(other_gcr.get_local_match()),
+        left_star_instances_(other_gcr.get_left_star_instances()),
+        right_star_instances_(other_gcr.get_right_star_instances()) {}
+
   // Two GCRs are joinable if
   //   (1) Their labels of star centers are the same.
   //   (2) The composed dual pattern would not carry more than `n` predicates.
