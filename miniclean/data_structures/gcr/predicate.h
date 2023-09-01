@@ -34,17 +34,22 @@ class GCRPredicate {
   using VertexAttributeValue =
       sics::graph::miniclean::common::VertexAttributeValue;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+  using PathPatternID = sics::graph::miniclean::common::PathPatternID;
 
  public:
   GCRPredicate() = default;
   GCRPredicate(uint8_t predicate_type, uint8_t operator_type)
       : predicate_type_(static_cast<PredicateType>(predicate_type)),
         operator_type_(static_cast<OperatorType>(operator_type)) {}
+  GCRPredicate(const GCRPredicate& other_gcr_predicate) {
+    predicate_type_ = other_gcr_predicate.get_predicate_type();
+    operator_type_ = other_gcr_predicate.get_operator_type();
+  }
 
  public:
   // Compare attributes.
-  bool Compare(const VertexAttributeValue& lhs,
-               const VertexAttributeValue& rhs) {
+  virtual bool Compare(const VertexAttributeValue& lhs,
+                       const VertexAttributeValue& rhs) {
     switch (operator_type_) {
       case kEqual:
         return lhs == rhs;
@@ -64,10 +69,9 @@ class GCRPredicate {
   PredicateType get_predicate_type() const { return predicate_type_; }
   OperatorType get_operator_type() const { return operator_type_; }
 
- protected:   
+ protected:
   PredicateType predicate_type_;
   OperatorType operator_type_;
-
 };
 
 /* Variable predicate: x.A [op] y.B */
@@ -82,6 +86,14 @@ class VariablePredicate : public GCRPredicate {
         rhs_aid_(rhs_aid),
         lhs_vlabel_(lhs_vlabel),
         rhs_vlabel_(rhs_vlabel) {}
+  VariablePredicate(const VariablePredicate& other_variable_predicate) {
+    predicate_type_ = other_variable_predicate.get_predicate_type();
+    operator_type_ = other_variable_predicate.get_operator_type();
+    lhs_aid_ = other_variable_predicate.get_lhs_aid();
+    rhs_aid_ = other_variable_predicate.get_rhs_aid();
+    lhs_vlabel_ = other_variable_predicate.get_lhs_vlabel();
+    rhs_vlabel_ = other_variable_predicate.get_rhs_vlabel();
+  }
 
   VertexLabel get_lhs_vlabel() const { return lhs_vlabel_; }
   VertexLabel get_rhs_vlabel() const { return rhs_vlabel_; }
@@ -89,11 +101,28 @@ class VariablePredicate : public GCRPredicate {
   VertexAttributeID get_lhs_aid() const { return lhs_aid_; }
   VertexAttributeID get_rhs_aid() const { return rhs_aid_; }
 
+  PathPatternID get_lhs_ppid() const { return lhs_ppid_; }
+  PathPatternID get_rhs_ppid() const { return rhs_ppid_; }
+
+  size_t get_lhs_edge_id() const { return lhs_edge_id_; }
+  size_t get_rhs_edge_id() const { return rhs_edge_id_; }
+
+  void set_lhs_ppid(PathPatternID lhs_ppid) { lhs_ppid_ = lhs_ppid; }
+  void set_rhs_ppid(PathPatternID rhs_ppid) { rhs_ppid_ = rhs_ppid; }
+
+  void set_lhs_edge_id(size_t lhs_edge_id) { lhs_edge_id_ = lhs_edge_id; }
+  void set_rhs_edge_id(size_t rhs_edge_id) { rhs_edge_id_ = rhs_edge_id; }
+
  private:
   VertexAttributeID lhs_aid_;
   VertexAttributeID rhs_aid_;
   VertexLabel lhs_vlabel_;
   VertexLabel rhs_vlabel_;
+
+  PathPatternID lhs_ppid_;
+  PathPatternID rhs_ppid_;
+  size_t lhs_edge_id_;
+  size_t rhs_edge_id_;
 };
 
 /* Constant predicate: x.A [op] c */
@@ -106,16 +135,34 @@ class ConstantPredicate : public GCRPredicate {
         lhs_vlabel_(lhs_vlabel),
         lhs_aid_(lhs_aid),
         c_(c) {}
+  ConstantPredicate(const ConstantPredicate& other_constant_predicate) {
+    predicate_type_ = other_constant_predicate.get_predicate_type();
+    operator_type_ = other_constant_predicate.get_operator_type();
+    lhs_vlabel_ = other_constant_predicate.get_lhs_vlabel();
+    lhs_aid_ = other_constant_predicate.get_lhs_aid();
+    c_ = other_constant_predicate.get_rhs_value();
+  }
 
   VertexAttributeID get_lhs_vlabel() const { return lhs_vlabel_; }
   VertexAttributeID get_lhs_aid() const { return lhs_aid_; }
 
   VertexAttributeID get_rhs_value() const { return c_; }
 
+  PathPatternID get_lhs_ppid() const { return lhs_ppid_; }
+
+  size_t get_lhs_edge_id() const { return lhs_edge_id_; }
+
+  void set_lhs_ppid(PathPatternID lhs_ppid) { lhs_ppid_ = lhs_ppid; }
+
+  void set_lhs_edge_id(size_t lhs_edge_id) { lhs_edge_id_ = lhs_edge_id; }
+
  private:
   VertexLabel lhs_vlabel_;
   VertexAttributeID lhs_aid_;
   VertexAttributeValue c_;
+
+  PathPatternID lhs_ppid_;
+  size_t lhs_edge_id_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr
