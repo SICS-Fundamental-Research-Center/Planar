@@ -185,8 +185,6 @@ void GraphFormatConverter::WriteSubgraph(
             case kUndefinedStrategy:
               LOG_FATAL("Store_strategy is undefined");
           }
-          delete csr_vertex_buffer[j].incoming_edges;
-          delete csr_vertex_buffer[j].outgoing_edges;
         }
       });
       task_package.push_back(task);
