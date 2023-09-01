@@ -16,12 +16,19 @@
 
 namespace sics::graph::core::data_structures::graph {
 
-struct ImmutableCSRVertex {
+class ImmutableCSRVertex {
  private:
   using VertexID = sics::graph::core::common::VertexID;
   using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
 
  public:
+  ImmutableCSRVertex() = default;
+
+  ~ImmutableCSRVertex() {
+    delete incoming_edges;
+    delete outgoing_edges;
+  }
+
   std::string VertexLog() {
     std::stringstream ss;
     ss << "  ===vid: " << vid << ", indegree: " << indegree
@@ -167,7 +174,7 @@ class ImmutableCSRGraph : public Serializable {
   }
 
  private:
-  void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
+  void ParseSubgraphCSR(const std::vector<OwnedBuffer>& buffer_list);
 
  protected:
   std::unique_ptr<SerializedImmutableCSRGraph> serialized_;
