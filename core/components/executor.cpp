@@ -14,9 +14,11 @@ void Executor::Start() {
       // TODO: execute api logic
       switch (message.execute_type) {
         case scheduler::ExecuteType::kDeserialize: {
-          //            data_structures::Serializable* graph;
-          //            graph->Deserialize()
-          //            message.response_serializable = graph;
+          data_structures::Serializable* graph = message.graph;
+          graph->Deserialize(
+              task_runner_,
+              std::unique_ptr<data_structures::Serialized>(message.serialized));
+          message.response_serializable = graph;
           break;
         }
         case scheduler::ExecuteType::kPEval:

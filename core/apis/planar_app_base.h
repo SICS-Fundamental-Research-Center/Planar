@@ -129,7 +129,7 @@ class PlanarAppBase : public PIE {
   }
 
   uint32_t GetTaskSize(VertexID max_vid) const {
-    uint32_t task_size = max_vid / common::kDefaultMaxTaskPackage;
+    uint32_t task_size = max_vid / common::configs.max_task_package;
     return task_size < 2 ? 2 : task_size;
   }
 

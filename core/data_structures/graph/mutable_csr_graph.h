@@ -27,8 +27,19 @@ class MutableCSRGraph : public Serializable {
  public:
   using VertexData = TV;
   using EdgeData = TE;
+  MutableCSRGraph() = default;
   explicit MutableCSRGraph(const SubgraphMetadata& metadata)
-      : metadata_(metadata) {}
+      : metadata_(metadata),
+        graph_buf_base_(nullptr),
+        vertex_id_by_local_index_(nullptr),
+        out_degree_base_(nullptr),
+        out_offset_base_(nullptr),
+        out_edges_base_(nullptr) {}
+
+  ~MutableCSRGraph() override {
+    // TODO: delete pointer malloc in deserialize
+    delete[] graph_buf_base_;
+  }
 
   // Serializable interface override functions
   std::unique_ptr<Serialized> Serialize(
@@ -169,6 +180,9 @@ class MutableCSRGraph : public Serializable {
 
   std::string status_;
 };
+
+typedef MutableCSRGraph<uint32_t, uint8_t> MutableCSRGraphUInt32;
+typedef MutableCSRGraph<uint16_t, uint8_t> MutableCSRGraphUInt16;
 
 }  // namespace sics::graph::core::data_structures::graph
 

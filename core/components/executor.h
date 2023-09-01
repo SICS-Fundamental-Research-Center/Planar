@@ -17,7 +17,8 @@ class Executor : public Component {
  public:
   Executor(scheduler::MessageHub* hub)
       : execute_q_(hub->get_executor_queue()),
-        response_q_(hub->get_response_queue()) {}
+        response_q_(hub->get_response_queue()),
+        task_runner_(common::configs.parallelism) {}
   ~Executor() final = default;
 
   void Start() override;
@@ -30,11 +31,14 @@ class Executor : public Component {
     thread_->join();
   }
 
+  common::TaskRunner* GetTaskRunner() { return &task_runner_; }
+
  private:
   scheduler::ExecutorQueue* execute_q_;
   scheduler::ResponseQueue* response_q_;
 
   std::unique_ptr<std::thread> thread_;
+  common::ThreadPool task_runner_;
 };
 
 }  // namespace sics::graph::core::components

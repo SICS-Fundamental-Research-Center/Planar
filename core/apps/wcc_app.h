@@ -8,7 +8,7 @@
 
 namespace sics::graph::core::apps {
 
-using CSRGraph = data_structures::graph::MutableCSRGraph<common::VertexID, int>;
+using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 
 class WCCApp : public apis::PlanarAppBase<CSRGraph> {
   using EdgeIndex = common::EdgeIndex;
