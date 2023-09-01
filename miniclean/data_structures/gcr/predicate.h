@@ -41,10 +41,9 @@ class GCRPredicate {
   GCRPredicate(uint8_t predicate_type, uint8_t operator_type)
       : predicate_type_(static_cast<PredicateType>(predicate_type)),
         operator_type_(static_cast<OperatorType>(operator_type)) {}
-  GCRPredicate(const GCRPredicate& other_gcr_predicate) {
-    predicate_type_ = other_gcr_predicate.get_predicate_type();
-    operator_type_ = other_gcr_predicate.get_operator_type();
-  }
+  GCRPredicate(const GCRPredicate& other_gcr_predicate)
+      : predicate_type_(other_gcr_predicate.get_predicate_type()),
+        operator_type_(other_gcr_predicate.get_operator_type()) {}
 
  public:
   // Compare attributes.
@@ -86,14 +85,13 @@ class VariablePredicate : public GCRPredicate {
         rhs_aid_(rhs_aid),
         lhs_vlabel_(lhs_vlabel),
         rhs_vlabel_(rhs_vlabel) {}
-  VariablePredicate(const VariablePredicate& other_variable_predicate) {
-    predicate_type_ = other_variable_predicate.get_predicate_type();
-    operator_type_ = other_variable_predicate.get_operator_type();
-    lhs_aid_ = other_variable_predicate.get_lhs_aid();
-    rhs_aid_ = other_variable_predicate.get_rhs_aid();
-    lhs_vlabel_ = other_variable_predicate.get_lhs_vlabel();
-    rhs_vlabel_ = other_variable_predicate.get_rhs_vlabel();
-  }
+  VariablePredicate(const VariablePredicate& other_variable_predicate)
+      : GCRPredicate(other_variable_predicate.get_predicate_type(),
+                     other_variable_predicate.get_operator_type()),
+        lhs_aid_(other_variable_predicate.get_lhs_aid()),
+        rhs_aid_(other_variable_predicate.get_rhs_aid()),
+        lhs_vlabel_(other_variable_predicate.get_lhs_vlabel()),
+        rhs_vlabel_(other_variable_predicate.get_rhs_vlabel()) {}
 
   VertexLabel get_lhs_vlabel() const { return lhs_vlabel_; }
   VertexLabel get_rhs_vlabel() const { return rhs_vlabel_; }
@@ -135,13 +133,12 @@ class ConstantPredicate : public GCRPredicate {
         lhs_vlabel_(lhs_vlabel),
         lhs_aid_(lhs_aid),
         c_(c) {}
-  ConstantPredicate(const ConstantPredicate& other_constant_predicate) {
-    predicate_type_ = other_constant_predicate.get_predicate_type();
-    operator_type_ = other_constant_predicate.get_operator_type();
-    lhs_vlabel_ = other_constant_predicate.get_lhs_vlabel();
-    lhs_aid_ = other_constant_predicate.get_lhs_aid();
-    c_ = other_constant_predicate.get_rhs_value();
-  }
+  ConstantPredicate(const ConstantPredicate& other_constant_predicate)
+      : GCRPredicate(other_constant_predicate.get_predicate_type(),
+                     other_constant_predicate.get_operator_type()),
+        lhs_vlabel_(other_constant_predicate.get_lhs_vlabel()),
+        lhs_aid_(other_constant_predicate.get_lhs_aid()),
+        c_(other_constant_predicate.get_rhs_value()) {}
 
   VertexAttributeID get_lhs_vlabel() const { return lhs_vlabel_; }
   VertexAttributeID get_lhs_aid() const { return lhs_aid_; }
