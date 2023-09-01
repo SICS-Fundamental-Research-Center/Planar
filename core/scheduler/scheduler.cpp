@@ -10,7 +10,7 @@ void Scheduler::Start() {
     // init round 0 loaded graph
     ReadMessage first_read_message;
     first_read_message.graph_id = GetNextReadGraphInCurrentRound();
-    common::configs.subgraph_limits--;
+    common::subgraph_limits--;
     message_hub_.get_reader_queue()->Push(first_read_message);
 
     while (running) {
@@ -63,7 +63,8 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
     ExecuteMessage execute_message;
     execute_message.graph_id = read_resp.graph_id;
     execute_message.serialized = read_resp.response_serialized;
-    auto serializable_graph = CreateSerializableGraph(read_resp.graph_id);
+    std::unique_ptr<data_structures::Serializable> serializable_graph =
+        CreateSerializableGraph(read_resp.graph_id);
     graph_state_.SetSubGraph(read_resp.graph_id, std::move(serializable_graph));
     execute_message.graph = graph_state_.GetSubgraph(read_resp.graph_id);
     execute_message.execute_type = ExecuteType::kDeserialize;
@@ -147,7 +148,7 @@ bool Scheduler::WriteMessageResponseAndCheckTerminate(
 
 // private methods:
 bool Scheduler::TryReadNextGraph(bool sync) {
-  if (common::configs.subgraph_limits > 0) {
+  if (common::subgraph_limits > 0) {
     auto next_graph_id = GetNextReadGraphInCurrentRound();
     ReadMessage read_message;
     if (next_graph_id != INVALID_GRAPH_ID) {

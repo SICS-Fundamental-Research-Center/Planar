@@ -27,7 +27,6 @@ struct Configurations {
   int parallelism = 1;
   std::string partition_type = "VertexCut";
   std::string root_path = "/testfile";
-  int subgraph_limits = 1;
   VertexDataType vertex_type = TUint32;
 };
 

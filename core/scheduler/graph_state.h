@@ -64,7 +64,7 @@ struct GraphState {
   }
 
   void SetSubGraph(common::GraphID gid,
-                std::unique_ptr<data_structures::Serializable> subgraph) {
+                   std::unique_ptr<data_structures::Serializable> subgraph) {
     graphs_.at(gid).swap(subgraph);
   }
 
