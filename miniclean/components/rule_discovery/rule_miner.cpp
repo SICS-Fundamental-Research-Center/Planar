@@ -300,14 +300,14 @@ void RuleMiner::InitGCRsRecur(GCR gcr, size_t depth,
       continue;
     }
 
-    gcr.set_precondition(predicate_pool[i]);
+    gcr.AddPreconditionToBack(predicate_pool[i]);
     // TODO (bai-wenchao): Check support of this GCR.
     gcrs_.push_back(gcr);
     precondition_ids.push_back(i);
     InitGCRsRecur(gcr, depth + 1, precondition_ids, consequence_id,
                   predicate_pool);
     precondition_ids.pop_back();
-    gcr.pop_precondition();
+    gcr.RemoveLastPrecondition();
   }
 }
 }  // namespace sics::graph::miniclean::components::rule_discovery

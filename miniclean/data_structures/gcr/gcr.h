@@ -77,15 +77,9 @@ class GCR {
     dual_pattern_ = dual_pattern;
   }
 
-  void set_precondition(GCRPredicate* precondition) {
-    preconditions_.push_back(precondition);
-  }
-
   void set_preconditions(const std::list<GCRPredicate*>& preconditions) {
     preconditions_ = preconditions;
   }
-
-  void pop_precondition() { preconditions_.pop_back(); }
 
   void set_consequence(GCRPredicate* consequence) {
     consequence_ = consequence;
@@ -97,12 +91,18 @@ class GCR {
 
   void set_local_match(size_t local_match) { local_match = local_match; }
 
-  void set_left_star_instances(
+  void AddPreconditionToBack(GCRPredicate* precondition) {
+    preconditions_.push_back(precondition);
+  }
+
+  void RemoveLastPrecondition() { preconditions_.pop_back(); }
+
+  void AddLeftStarInstanceToBack(
       const std::list<PathInstanceID>& left_star_instance) {
     left_star_instances_.push_back(left_star_instance);
   }
 
-  void set_right_star_instances(
+  void AddRightStarInstanceToBack(
       const std::list<PathInstanceID>& right_star_instance) {
     right_star_instances_.push_back(right_star_instance);
   }
