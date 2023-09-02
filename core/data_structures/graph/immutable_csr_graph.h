@@ -203,7 +203,7 @@ class ImmutableCSRGraph : public Serializable {
   VertexID* outdegree_base_pointer_;
   VertexID* in_offset_base_pointer_;
   VertexID* out_offset_base_pointer_;
-  VertexLabel * vertex_label_base_pointer_;
+  VertexLabel* vertex_label_base_pointer_;
 };
 
 }  // namespace sics::graph::core::data_structures::graph
