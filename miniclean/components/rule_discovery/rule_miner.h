@@ -48,6 +48,9 @@ class RuleMiner {
 
   void LoadPredicates(const std::string& predicates_path);
 
+  // TODO (bai-wenchao): move this to pre-processing stage.
+  void BuildVertexToPatternIndex();
+
   void InitGCRs();
 
   void RuleDiscovery();

@@ -65,11 +65,11 @@ class GCR {
   size_t get_local_support() const { return local_support; }
   size_t get_local_match() const { return local_match; }
 
-  std::list<std::list<PathInstanceID>> get_left_star_instances() const {
+  std::list<std::list<std::list<PathInstanceID>>> get_left_star_instances() const {
     return left_star_instances_;
   }
 
-  std::list<std::list<PathInstanceID>> get_right_star_instances() const {
+  std::list<std::list<std::list<PathInstanceID>>> get_right_star_instances() const {
     return right_star_instances_;
   }
 
@@ -99,12 +99,12 @@ class GCR {
 
   void AddLeftStarInstanceToBack(
       const std::list<PathInstanceID>& left_star_instance) {
-    left_star_instances_.push_back(left_star_instance);
+    left_star_instances_.back().push_back(left_star_instance);
   }
 
   void AddRightStarInstanceToBack(
       const std::list<PathInstanceID>& right_star_instance) {
-    right_star_instances_.push_back(right_star_instance);
+    right_star_instances_.back().push_back(right_star_instance);
   }
 
  private:
@@ -117,8 +117,8 @@ class GCR {
 
   // Each GCR maintains a list of left star instances and right star instances.
   // Each star instance is a list of path instances.
-  std::list<std::list<PathInstanceID>> left_star_instances_;
-  std::list<std::list<PathInstanceID>> right_star_instances_;
+  std::list<std::list<std::list<PathInstanceID>>> left_star_instances_;
+  std::list<std::list<std::list<PathInstanceID>>> right_star_instances_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr
