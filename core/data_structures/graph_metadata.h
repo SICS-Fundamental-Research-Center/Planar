@@ -1,14 +1,14 @@
 #ifndef GRAPH_SYSTEMS_GRAPH_METADATA_H
 #define GRAPH_SYSTEMS_GRAPH_METADATA_H
 
+#include <yaml-cpp/yaml.h>
+
 #include <cstdio>
 #include <string>
 #include <vector>
 
 #include "common/types.h"
 #include "util/logging.h"
-
-#include <yaml-cpp/yaml.h>
 
 namespace sics::graph::core::data_structures {
 
@@ -54,6 +54,10 @@ class GraphMetadata {
   }
 
   SubgraphMetadata GetSubgraphMetadata(common::GraphID gid) const {
+    return subgraph_metadata_vec_.at(gid);
+  }
+
+  const SubgraphMetadata& GetSubgraphMetadataRef(common::GraphID gid) const {
     return subgraph_metadata_vec_.at(gid);
   }
 

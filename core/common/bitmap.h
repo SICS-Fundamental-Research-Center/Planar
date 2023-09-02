@@ -17,12 +17,12 @@ namespace sics::graph::core::common {
 // is zero.
 class Bitmap {
  public:
+  Bitmap() = default;
   Bitmap(size_t size) {
     Init(size);
-    return;
   }
 
-  // TODO move constructor and assignment copy
+  // TODO: move constructor and assignment copy
 
   Bitmap(Bitmap&& other) = default;
 
@@ -36,7 +36,11 @@ class Bitmap {
   void Init(size_t size) {
     size_ = size;
     data_ = new uint64_t[WORD_OFFSET(size) + 1];
-    return;
+  }
+
+  void Init(size_t size, uint64_t* data) {
+    size_ = size;
+    data_ = data;
   }
 
   void Clear() {

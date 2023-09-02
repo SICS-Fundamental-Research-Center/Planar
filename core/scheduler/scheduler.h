@@ -3,7 +3,9 @@
 
 #include "common/multithreading/thread_pool.h"
 #include "common/types.h"
+#include "data_structures/graph/mutable_csr_graph.h"
 #include "data_structures/graph_metadata.h"
+#include "data_structures/serializable.h"
 #include "scheduler/graph_state.h"
 #include "scheduler/message_hub.h"
 #include "update_stores/update_store_base.h"
@@ -15,12 +17,14 @@ class Scheduler {
   Scheduler(const std::string& root_path)
       : graph_metadata_info_(root_path),
         current_round_(0),
-        task_runner_(common::kDefaultParallelism) {}
+        graph_state_(graph_metadata_info_.get_num_subgraphs()) {}
 
   virtual ~Scheduler() = default;
 
-  void Init(update_stores::UpdateStoreBase* update_store, apis::PIE* app) {
+  void Init(update_stores::UpdateStoreBase* update_store,
+            common::TaskRunner* task_runner, apis::PIE* app) {
     update_store_ = update_store;
+    executor_task_runner_ = task_runner;
     app_ = app;
   }
 
@@ -52,9 +56,11 @@ class Scheduler {
   // in current round or next round
   bool TryReadNextGraph(bool sync = false);
 
+  std::unique_ptr<data_structures::Serializable> CreateSerializableGraph(
+      common::GraphID graph_id);
+
   common::GraphID GetNextReadGraphInCurrentRound() const;
 
-  // get next execute graph in current round
   common::GraphID GetNextExecuteGraph() const;
 
   common::GraphID GetNextReadGraphInNextRound() const;
@@ -81,7 +87,7 @@ class Scheduler {
 
   // ExecuteMessage info, used for setting APP context
   update_stores::UpdateStoreBase* update_store_;
-  common::ThreadPool task_runner_;
+  common::TaskRunner* executor_task_runner_;
   apis::PIE* app_;
 
   std::unique_ptr<std::thread> thread_;
