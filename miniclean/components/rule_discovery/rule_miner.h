@@ -66,7 +66,8 @@ class RuleMiner {
   MiniCleanCSRGraph* graph_;
   std::list<GCR> gcrs_;
   std::vector<PathPattern> path_patterns_;
-  std::vector<std::vector<std::vector<VertexID>>> path_instances_;
+  std::vector<std::unordered_map<VertexID, std::list<std::vector<VertexID>>>>
+      path_instances_;
 
   std::vector<std::vector<GCRPredicate*>> predicate_pool_;
 

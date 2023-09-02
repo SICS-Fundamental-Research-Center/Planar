@@ -126,7 +126,18 @@ void RuleMiner::LoadPathInstances(const std::string& path_instances_path) {
     size_t pattern_length = path_patterns_[i].size();
     size_t num_instances = fileSize / (pattern_length * sizeof(VertexID));
     VertexID* instance_buffer = reinterpret_cast<VertexID*>(buffer.Get());
-    path_instances_[i].reserve(num_instances);
+
+    // Group instances of pattern `i` with their src vertex.
+    size_t num_src_vertices = 1;
+    VertexID last_src_vertex = instance_buffer[0];
+    for (size_t j = 0; j < num_instances; j++) {
+      VertexID src_vertex = instance_buffer[j * pattern_length];
+      if (src_vertex != last_src_vertex) {
+        num_src_vertices++;
+        last_src_vertex = src_vertex;
+      }
+    }
+    path_instances_[i].reserve(num_src_vertices);
 
     for (size_t j = 0; j < num_instances; j++) {
       std::vector<VertexID> instance(pattern_length);
@@ -134,7 +145,11 @@ void RuleMiner::LoadPathInstances(const std::string& path_instances_path) {
         instance[k] = instance_buffer[j * pattern_length + k];
       }
 
-      path_instances_[i].push_back(instance);
+      if (path_instances_[i].find(instance[0]) == path_instances_[i].end()) {
+        path_instances_[i][instance[0]] = {instance};
+      } else {
+        path_instances_[i][instance[0]].push_back(instance);
+      }
     }
 
     // Close the file.
