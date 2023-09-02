@@ -122,7 +122,7 @@ class ImmutableCSRGraph : public Serializable {
   void SetOutgoingEdgesBuffer(VertexID* buffer) {
     outgoing_edges_base_pointer_ = buffer;
   }
-  void SetVertexLabelBuffer(VertexLabel * buffer) {
+  void SetVertexLabelBuffer(VertexLabel* buffer) {
     vertex_label_base_pointer_ = buffer;
   }
 
