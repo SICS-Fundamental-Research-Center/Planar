@@ -17,9 +17,13 @@ struct Edge {
  public:
   Edge(VertexID src, VertexID dst) : src(src), dst(dst) {}
 
-  bool operator<(const Edge& e) const { return src < e.src; }
-  bool operator>(const Edge& e) const { return src > e.src; }
-  bool operator-(const Edge& e) const { return src - e.src; }
+  bool operator<(const Edge& e) const {
+    if (src != e.src) {
+      return src < e.src;
+    } else {
+      return dst < e.dst;
+    }
+  }
 
  public:
   VertexID src;
