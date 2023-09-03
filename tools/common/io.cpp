@@ -23,29 +23,30 @@ void GraphFormatConverter::WriteSubgraph(
 
   GraphID gid = 0;
   std::vector<SubgraphMetadata> subgraph_metadata_vec;
-  size_t global_num_vertices = 0, global_num_edges = 0;
-  VertexID global_max_vid = 0, global_min_vid = MAX_VERTEX_ID;
+
+  std::ofstream border_vertices_file(output_root_path_ +
+                                     "bitmap/border_vertices.bin");
+  Bitmap border_vertices(graph_metadata.get_max_vid());
+
   for (auto iter : subgraph_vec) {
     auto vertex_map = iter;
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
                                 std::to_string(gid) + ".bin");
-    std::ofstream bitmap_file(output_root_path_ + "bitmap/" +
-                              std::to_string(gid) + ".bin");
+    std::ofstream src_map_file(output_root_path_ + "bitmap/src_map/" +
+                               std::to_string(gid) + ".bin");
+    std::ofstream is_in_graph_file(output_root_path_ + "bitmap/is_in_graph/" +
+                                   std::to_string(gid) + ".bin");
 
     auto num_vertices = vertex_map->size();
-    global_num_vertices += num_vertices;
     size_t count_in_edges = 0, count_out_edges = 0;
-    Bitmap bitmap(num_vertices);
-    bitmap.Clear();
+    Bitmap src_map(num_vertices), is_in_graph(graph_metadata.get_max_vid());
 
-    auto buffer_globalid = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
-    auto buffer_indegree = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
-    auto buffer_outdegree = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
+    auto buffer_globalid = new VertexID[num_vertices]();
+    auto buffer_indegree = new VertexID[num_vertices]();
+    auto buffer_outdegree = new VertexID[num_vertices]();
 
     // Serialize subgraph
-    auto csr_vertex_buffer =
-        (Vertex*)malloc(sizeof(Vertex) * vertex_map->size());
-
+    auto csr_vertex_buffer = new Vertex[num_vertices]();
     size_t count = 0;
     for (auto it = vertex_map->begin(); it != vertex_map->end(); ++it) {
       csr_vertex_buffer[count++] = it->second;
@@ -74,10 +75,8 @@ void GraphFormatConverter::WriteSubgraph(
                         sizeof(VertexID) * num_vertices);
     delete buffer_globalid;
 
-    auto buffer_in_offset = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
-    auto buffer_out_offset = (VertexID*)malloc(sizeof(VertexID) * num_vertices);
-    memset(buffer_in_offset, 0, sizeof(VertexID) * num_vertices);
-    memset(buffer_out_offset, 0, sizeof(VertexID) * num_vertices);
+    auto buffer_in_offset = new VertexID[num_vertices]();
+    auto buffer_out_offset = new VertexID[num_vertices]();
 
     // Compute offset for each vertex.
     for (VertexID i = 1; i < num_vertices; i++) {
@@ -85,27 +84,28 @@ void GraphFormatConverter::WriteSubgraph(
       buffer_out_offset[i] = buffer_out_offset[i - 1] + buffer_outdegree[i - 1];
     }
 
+    // Save degree buffer and offset buffer.
     switch (store_strategy) {
       case kOutgoingOnly:
-        out_data_file.write((char*) buffer_outdegree,
+        out_data_file.write(reinterpret_cast<char*>(buffer_outdegree),
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*) buffer_out_offset,
+        out_data_file.write(reinterpret_cast<char*>(buffer_out_offset),
                             sizeof(VertexID) * num_vertices);
         break;
       case kIncomingOnly:
-        out_data_file.write((char*) buffer_indegree,
+        out_data_file.write(reinterpret_cast<char*>(buffer_indegree),
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*) buffer_in_offset,
+        out_data_file.write(reinterpret_cast<char*>(buffer_in_offset),
                             sizeof(VertexID) * num_vertices);
         break;
       case kUnconstrained:
-        out_data_file.write((char*) buffer_indegree,
+        out_data_file.write(reinterpret_cast<char*>(buffer_indegree),
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*) buffer_outdegree,
+        out_data_file.write(reinterpret_cast<char*>(buffer_outdegree),
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*) buffer_in_offset,
+        out_data_file.write(reinterpret_cast<char*>(buffer_in_offset),
                             sizeof(VertexID) * num_vertices);
-        out_data_file.write((char*) buffer_out_offset,
+        out_data_file.write(reinterpret_cast<char*>(buffer_out_offset),
                             sizeof(VertexID) * num_vertices);
         break;
       case kUndefinedStrategy:
@@ -114,17 +114,18 @@ void GraphFormatConverter::WriteSubgraph(
     delete buffer_indegree;
     delete buffer_outdegree;
 
-    auto buffer_in_edges = (VertexID*)malloc(sizeof(VertexID) * count_in_edges);
-    auto buffer_out_edges =
-        (VertexID*)malloc(sizeof(VertexID) * count_out_edges);
-    parallelism = 1;
+    auto buffer_in_edges = new VertexID[count_in_edges]();
+    auto buffer_out_edges = new VertexID[count_out_edges]();
+
     for (unsigned int i = 0; i < parallelism; i++) {
       auto task =
           std::bind([i, parallelism, &num_vertices, &buffer_in_edges,
                      &buffer_out_edges, &buffer_in_offset, &csr_vertex_buffer,
-                     &buffer_out_offset, &bitmap]() {
+                     &buffer_out_offset, &src_map, &is_in_graph]() {
             for (VertexID j = i; j < num_vertices; j += parallelism) {
-              if (csr_vertex_buffer[j].outdegree != 0) bitmap.SetBit(j);
+              if (csr_vertex_buffer[j].outdegree != 0) src_map.SetBit(j);
+              is_in_graph.SetBit(csr_vertex_buffer[j].vid);
+
               memcpy(buffer_in_edges + buffer_in_offset[j],
                      csr_vertex_buffer[j].incoming_edges,
                      csr_vertex_buffer[j].indegree * sizeof(VertexID));
@@ -137,8 +138,6 @@ void GraphFormatConverter::WriteSubgraph(
               std::sort(buffer_out_edges + buffer_out_offset[j],
                         buffer_out_edges + buffer_out_offset[j] +
                             csr_vertex_buffer[j].outdegree);
-              delete csr_vertex_buffer[j].incoming_edges;
-              delete csr_vertex_buffer[j].outgoing_edges;
             }
           });
       task_package.push_back(task);
@@ -148,26 +147,79 @@ void GraphFormatConverter::WriteSubgraph(
     delete buffer_in_offset;
     delete buffer_out_offset;
 
-    // Write bitmap that indicate whether a vertex has outgoing edges.
-    bitmap_file.write((char*) bitmap.GetDataBasePointer(),
-                      ((bitmap.size() >> 6) + 1) * sizeof(uint64_t));
+    for (unsigned int i = 0; i < parallelism; i++) {
+      auto task = std::bind([i, parallelism, store_strategy, &csr_vertex_buffer,
+                             &num_vertices, &is_in_graph, &border_vertices]() {
+        for (VertexID j = i; j < num_vertices; j += parallelism) {
+          switch (store_strategy) {
+            case kOutgoingOnly:
+              for (VertexID nbr_i = 0; nbr_i < csr_vertex_buffer[j].outdegree;
+                   nbr_i++) {
+                if (!is_in_graph.GetBit(
+                        csr_vertex_buffer[j].outgoing_edges[nbr_i])) {
+                  border_vertices.SetBit(csr_vertex_buffer[j].vid);
+                  break;
+                }
+              }
+              break;
+            case kIncomingOnly:
+              for (VertexID nbr_i = 0; nbr_i < csr_vertex_buffer[j].indegree;
+                   nbr_i++) {
+                if (!is_in_graph.GetBit(
+                        csr_vertex_buffer[j].incoming_edges[nbr_i])) {
+                  border_vertices.SetBit(csr_vertex_buffer[j].vid);
+                  break;
+                }
+              }
+              break;
+            case kUnconstrained:
+              for (VertexID nbr_i = 0; nbr_i < csr_vertex_buffer[j].outdegree;
+                   nbr_i++) {
+                if (!is_in_graph.GetBit(
+                        csr_vertex_buffer[j].outgoing_edges[nbr_i])) {
+                  border_vertices.SetBit(csr_vertex_buffer[j].vid);
+                  break;
+                }
+              }
+              break;
+            case kUndefinedStrategy:
+              LOG_FATAL("Store_strategy is undefined");
+          }
+        }
+      });
+      task_package.push_back(task);
+    }
+    thread_pool.SubmitSync(task_package);
+    task_package.clear();
 
-    // Write vertex buffers.
-    // Write edges buffers.
+    auto min_vid = csr_vertex_buffer[0].vid;
+    auto max_vid = csr_vertex_buffer[num_vertices - 1].vid;
+
+    // Write bitmap that indicate whether a vertex has outgoing edges.
+    src_map_file.write(reinterpret_cast<char*>(src_map.GetDataBasePointer()),
+                       ((src_map.size() >> 6) + 1) * sizeof(uint64_t));
+    src_map_file.close();
+    is_in_graph_file.write(
+        reinterpret_cast<char*>(is_in_graph.GetDataBasePointer()),
+        ((is_in_graph.size() >> 6) + 1) * sizeof(uint64_t));
+    is_in_graph_file.close();
+
     switch (store_strategy) {
       case kOutgoingOnly:
-        out_data_file.write((char*) buffer_out_edges,
+        out_data_file.write(reinterpret_cast<char*>(buffer_out_edges),
                             sizeof(VertexID) * count_out_edges);
         break;
       case kIncomingOnly:
-        out_data_file.write((char*) buffer_in_edges,
+        out_data_file.write(reinterpret_cast<char*>(buffer_in_edges),
                             sizeof(VertexID) * count_in_edges);
         break;
       case kUnconstrained:
-        out_data_file.write((char*) buffer_in_edges,
+        out_data_file.write(reinterpret_cast<char*>(buffer_in_edges),
                             sizeof(VertexID) * count_in_edges);
-        out_data_file.write((char*) buffer_out_edges,
-                            sizeof(VertexID) * count_out_edges);
+        out_data_file.write(
+
+            reinterpret_cast<char*>(buffer_out_edges),
+            sizeof(VertexID) * count_out_edges);
         break;
       case kUndefinedStrategy:
         LOG_FATAL("Store_strategy is undefined");
@@ -176,24 +228,16 @@ void GraphFormatConverter::WriteSubgraph(
     delete buffer_in_edges;
     delete buffer_out_edges;
 
-    auto min_vid = csr_vertex_buffer[0].vid;
-    auto max_vid = csr_vertex_buffer[num_vertices - 1].vid;
-    WriteMax(&global_max_vid, max_vid);
-    WriteMin(&global_min_vid, min_vid);
-
     switch (store_strategy) {
       case kOutgoingOnly:
-        WriteAdd(&global_num_edges, count_out_edges);
         subgraph_metadata_vec.push_back(
             {gid, num_vertices, 0, count_out_edges, max_vid, min_vid});
         break;
       case kIncomingOnly:
-        WriteAdd(&global_num_edges, count_in_edges);
         subgraph_metadata_vec.push_back(
             {gid, num_vertices, count_in_edges, 0, max_vid, min_vid});
         break;
       case kUnconstrained:
-        WriteAdd(&global_num_edges, count_out_edges + count_in_edges);
         subgraph_metadata_vec.push_back({gid, num_vertices, count_in_edges,
                                          count_out_edges, max_vid, min_vid});
         break;
@@ -203,32 +247,37 @@ void GraphFormatConverter::WriteSubgraph(
     // Write label data with all 0.
     std::ofstream out_label_file(output_root_path_ + "label/" +
                                  std::to_string(gid) + ".bin");
-    auto buffer_label =
-        (VertexLabel*)malloc(sizeof(VertexLabel) * num_vertices);
-    memset(buffer_label, 0, sizeof(VertexLabel) * num_vertices);
-    out_label_file.write((char*) buffer_label,
+    auto buffer_label = new VertexLabel[num_vertices]();
+    out_label_file.write(reinterpret_cast<char*>(buffer_label),
                          sizeof(VertexLabel) * num_vertices);
-    delete buffer_label;
 
-    gid++;
+    delete buffer_label;
     delete[] csr_vertex_buffer;
     out_data_file.close();
     out_label_file.close();
-    bitmap_file.close();
+    src_map_file.close();
+    is_in_graph_file.close();
+    gid++;
   }
+
+  // Write border vertices bitmap.
+  border_vertices_file.write(
+      (char*)border_vertices.GetDataBasePointer(),
+      ((border_vertices.size() >> 6) + 1) * sizeof(uint64_t));
 
   // Write Metadata
   std::ofstream out_meta_file(output_root_path_ + "meta.yaml");
   YAML::Node out_node;
-  out_node["GraphMetadata"]["num_vertices"] = global_num_vertices;
-  out_node["GraphMetadata"]["num_edges"] = global_num_edges;
-  out_node["GraphMetadata"]["max_vid"] = global_max_vid;
-  out_node["GraphMetadata"]["min_vid"] = global_min_vid;
+  out_node["GraphMetadata"]["num_vertices"] = graph_metadata.get_num_vertices();
+  out_node["GraphMetadata"]["num_edges"] = graph_metadata.get_num_edges();
+  out_node["GraphMetadata"]["max_vid"] = graph_metadata.get_max_vid();
+  out_node["GraphMetadata"]["min_vid"] = graph_metadata.get_min_vid();
   out_node["GraphMetadata"]["num_subgraphs"] = subgraph_vec.size();
   out_node["GraphMetadata"]["subgraphs"] = subgraph_metadata_vec;
 
   out_meta_file << out_node << std::endl;
   out_meta_file.close();
+  border_vertices_file.close();
 }
 
 // For vertex cut.
@@ -244,28 +293,47 @@ void GraphFormatConverter::WriteSubgraph(
 
   std::vector<SubgraphMetadata> subgraph_metadata_vec;
   std::ofstream out_meta_file(output_root_path_ + "meta.yaml");
+  std::ofstream border_vertices_file(output_root_path_ +
+                                     "bitmap/border_vertices.bin");
+  Bitmap border_vertices(graph_metadata.get_max_vid());
+  auto frequency_of_vertices = new int[graph_metadata.get_max_vid()]();
+
   for (VertexID i = 0; i < n_subgraphs; i++) {
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
                                 std::to_string(i) + ".bin");
-    std::ofstream bitmap_file(output_root_path_ + "bitmap/" +
-                              std::to_string(i) + ".bin");
+    std::ofstream src_map_file(output_root_path_ + "bitmap/src_map/" +
+                               std::to_string(i) + ".bin");
+    std::ofstream is_in_graph_file(output_root_path_ + "bitmap/is_in_graph/" +
+                                   std::to_string(i) + ".bin");
+
     ImmutableCSRGraph csr_graph(i);
     util::format_converter::Edgelist2CSR(
         edge_bucket[i], edgelist_metadata_vec[i], store_strategy, &csr_graph);
     delete edge_bucket[i];
 
-    Bitmap bitmap(csr_graph.get_num_vertices());
-    bitmap.Clear();
-    for(size_t i =0; i < csr_graph.get_num_vertices(); i++) {
-      if(csr_graph.GetOutDegreeByLocalID(i) > 0) bitmap.SetBit(i);
-    }
-    bitmap_file.write((char*) bitmap.GetDataBasePointer(),
-                      ((bitmap.size() >> 6) + 1) * sizeof(uint64_t));
+    Bitmap src_map(csr_graph.get_num_vertices());
+    Bitmap is_in_graph(csr_graph.get_num_vertices());
 
+    for (unsigned int i = 0; i < parallelism; i++) {
+      auto task = std::bind([i, parallelism, &csr_graph, &src_map, &is_in_graph,
+                             &frequency_of_vertices]() {
+        for (VertexID j = i; j < csr_graph.get_num_vertices();
+             j += parallelism) {
+          if (csr_graph.GetOutDegreeByLocalID(j) > 0) src_map.SetBit(j);
+          is_in_graph.SetBit(csr_graph.GetGlobalIDByLocalID(j));
+          WriteAdd(frequency_of_vertices + csr_graph.GetGlobalIDByLocalID(j),
+                   1);
+        }
+      });
+      task_package.push_back(task);
+    }
+    thread_pool.SubmitSync(task_package);
+    task_package.clear();
 
     // Write topology of graph.
-    out_data_file.write((char*) csr_graph.GetGloablIDBasePointer(),
-                        sizeof(VertexID) * csr_graph.get_num_vertices());
+    out_data_file.write(
+        reinterpret_cast<char*>(csr_graph.GetGloablIDBasePointer()),
+        sizeof(VertexID) * csr_graph.get_num_vertices());
 
     // Write subgraph metadata.
     switch (store_strategy) {
@@ -274,12 +342,14 @@ void GraphFormatConverter::WriteSubgraph(
             {csr_graph.get_gid(), csr_graph.get_num_vertices(), 0,
              csr_graph.get_num_outgoing_edges(), csr_graph.get_max_vid(),
              csr_graph.get_min_vid()});
-        out_data_file.write((char*) csr_graph.GetOutDegreeBasePointer(),
-                            sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*) csr_graph.GetOutOffsetBasePointer(),
-                            sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
-            (char*) csr_graph.GetOutgoingEdgesBasePointer(),
+            reinterpret_cast<char*>(csr_graph.GetOutDegreeBasePointer()),
+            sizeof(VertexID) * csr_graph.get_num_vertices());
+        out_data_file.write(
+            reinterpret_cast<char*>(csr_graph.GetOutOffsetBasePointer()),
+            sizeof(VertexID) * csr_graph.get_num_vertices());
+        out_data_file.write(
+            reinterpret_cast<char*>(csr_graph.GetOutgoingEdgesBasePointer()),
             sizeof(VertexID) * csr_graph.get_num_outgoing_edges());
         break;
       case kIncomingOnly:
@@ -287,28 +357,34 @@ void GraphFormatConverter::WriteSubgraph(
             {csr_graph.get_gid(), csr_graph.get_num_vertices(),
              csr_graph.get_num_incoming_edges(), 0, csr_graph.get_max_vid(),
              csr_graph.get_min_vid()});
-        out_data_file.write((char*) csr_graph.GetInDegreeBasePointer(),
-                            sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*) csr_graph.GetInOffsetBasePointer(),
-                            sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
-            (char*) csr_graph.GetIncomingEdgesBasePointer(),
+            reinterpret_cast<char*>(csr_graph.GetInDegreeBasePointer()),
+            sizeof(VertexID) * csr_graph.get_num_vertices());
+        out_data_file.write(
+            reinterpret_cast<char*>(csr_graph.GetInOffsetBasePointer()),
+            sizeof(VertexID) * csr_graph.get_num_vertices());
+        out_data_file.write(
+            reinterpret_cast<char*>(csr_graph.GetIncomingEdgesBasePointer()),
             sizeof(VertexID) * csr_graph.get_num_incoming_edges());
         break;
       case kUnconstrained:
-        out_data_file.write((char*) csr_graph.GetInDegreeBasePointer(),
-                            sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*) csr_graph.GetOutDegreeBasePointer(),
-                            sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*) csr_graph.GetInOffsetBasePointer(),
-                            sizeof(VertexID) * csr_graph.get_num_vertices());
-        out_data_file.write((char*) csr_graph.GetOutOffsetBasePointer(),
-                            sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
-            (char*) csr_graph.GetIncomingEdgesBasePointer(),
+            reinterpret_cast<char*>(csr_graph.GetInDegreeBasePointer()),
+            sizeof(VertexID) * csr_graph.get_num_vertices());
+        out_data_file.write(
+            reinterpret_cast<char*>(csr_graph.GetOutDegreeBasePointer()),
+            sizeof(VertexID) * csr_graph.get_num_vertices());
+        out_data_file.write(
+            reinterpret_cast<char*>(csr_graph.GetInOffsetBasePointer()),
+            sizeof(VertexID) * csr_graph.get_num_vertices());
+        out_data_file.write(
+            reinterpret_cast<char*>(csr_graph.GetOutOffsetBasePointer()),
+            sizeof(VertexID) * csr_graph.get_num_vertices());
+        out_data_file.write(
+            reinterpret_cast<char*>(csr_graph.GetIncomingEdgesBasePointer()),
             sizeof(VertexID) * csr_graph.get_num_outgoing_edges());
         out_data_file.write(
-            (char*) csr_graph.GetOutgoingEdgesBasePointer(),
+            reinterpret_cast<char*>(csr_graph.GetOutgoingEdgesBasePointer()),
             sizeof(VertexID) * csr_graph.get_num_outgoing_edges());
         subgraph_metadata_vec.push_back(
             {csr_graph.get_gid(), csr_graph.get_num_vertices(),
@@ -323,17 +399,44 @@ void GraphFormatConverter::WriteSubgraph(
     // Write label data with all 0.
     std::ofstream out_label_file(output_root_path_ + "label/" +
                                  std::to_string(csr_graph.get_gid()) + ".bin");
-    auto buffer_label = (VertexLabel*)malloc(sizeof(VertexLabel) *
-                                             csr_graph.get_num_vertices());
-    memset(buffer_label, 0, sizeof(VertexLabel) * csr_graph.get_num_vertices());
-    out_label_file.write((char*) buffer_label,
+    auto buffer_label = new VertexLabel[csr_graph.get_num_vertices()]();
+    out_label_file.write(reinterpret_cast<char*>(buffer_label),
                          sizeof(VertexLabel) * csr_graph.get_num_vertices());
     delete buffer_label;
 
+    // Write Bitmaps that might potentially benefit a number of graph
+    // applications.
+    src_map_file.write(reinterpret_cast<char*>(src_map.GetDataBasePointer()),
+                       ((src_map.size() >> 6) + 1) * sizeof(uint64_t));
+    is_in_graph_file.write(
+        reinterpret_cast<char*>(is_in_graph.GetDataBasePointer()),
+        ((is_in_graph.size() >> 6) + 1) * sizeof(uint64_t));
+
     out_data_file.close();
     out_label_file.close();
-    bitmap_file.close();
+    src_map_file.close();
+    is_in_graph_file.close();
   }
+
+  // Write border_vertices bitmap
+  for (unsigned int i = 0; i < parallelism; i++) {
+    auto task = std::bind([i, parallelism, &graph_metadata,
+                           &frequency_of_vertices, &border_vertices]() {
+      for (VertexID j = i; j < graph_metadata.get_max_vid(); j += parallelism) {
+        if (frequency_of_vertices[j] > 1) border_vertices.SetBit(j);
+      }
+    });
+    task_package.push_back(task);
+  }
+  thread_pool.SubmitSync(task_package);
+  task_package.clear();
+  delete frequency_of_vertices;
+
+  // Write border vertices bitmap.
+  border_vertices_file.write(
+      reinterpret_cast<char*>(border_vertices.GetDataBasePointer()),
+      ((border_vertices.size() >> 6) + 1) * sizeof(uint64_t));
+  border_vertices_file.close();
 
   // Write metadata
   YAML::Node out_node;
