@@ -63,8 +63,8 @@ struct GraphState {
     serialized_.at(gid).swap(serialized);
   }
 
-  void SetGraph(common::GraphID gid,
-                std::unique_ptr<data_structures::Serializable> subgraph) {
+  void SetSubGraph(common::GraphID gid,
+                   std::unique_ptr<data_structures::Serializable> subgraph) {
     graphs_.at(gid).swap(subgraph);
   }
 
@@ -81,7 +81,6 @@ struct GraphState {
   // memory size and graph size
   // TODO: memory size should be set by gflags
   const size_t memory_size_;
-  std::atomic_int subgraph_limits_ = 1;
 
  private:
   std::vector<std::unique_ptr<data_structures::Serialized>> serialized_;

@@ -14,15 +14,16 @@ namespace sics::graph::core::components {
 
 // An adapter class that adapts a ReaderInterface to Loader that works
 // against a MessageHub.
-template<typename ReaderType>
+template <typename ReaderType>
 class Loader : public Component {
  protected:
   static_assert(std::is_base_of<io::Reader, ReaderType>::value,
                 "ReaderType must be a subclass of Reader");
 
  public:
-  Loader(scheduler::MessageHub* hub)
-      : reader_q_(hub->get_reader_queue()),
+  Loader(const std::string& root_path, scheduler::MessageHub* hub)
+      : reader_(root_path),
+        reader_q_(hub->get_reader_queue()),
         response_q_(hub->get_response_queue()) {}
 
   ~Loader() final = default;
@@ -37,7 +38,7 @@ class Loader : public Component {
         }
 
         LOGF_INFO("Loader starts reading subgraph {}", message.graph_id);
-        reader_->Read(&message);
+        reader_.Read(&message);
         LOGF_INFO("Loader completes reading subgraph {}", message.graph_id);
         response_q_->Push(scheduler::Message(message));
       }

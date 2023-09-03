@@ -17,15 +17,21 @@ namespace sics::graph::core::common {
 // is zero.
 class Bitmap {
  public:
+  Bitmap() = default;
   Bitmap(size_t size) {
     Init(size);
-    return;
   }
 
   Bitmap(size_t size, uint64_t* init_value) {
     size_ = size;
     data_ = init_value;
   }
+
+  // TODO: move constructor and assignment copy
+  Bitmap(Bitmap&& other) = default;
+
+  Bitmap& operator=(Bitmap&& other) = default;
+
 
   ~Bitmap() {
     delete data_;
@@ -35,13 +41,16 @@ class Bitmap {
   void Init(size_t size) {
     size_ = size;
     data_ = new uint64_t[WORD_OFFSET(size) + 1]();
-    return;
+  }
+
+  void Init(size_t size, uint64_t* data) {
+    size_ = size;
+    data_ = data;
   }
 
   void Clear() {
     size_t bm_size = WORD_OFFSET(size_);
     for (size_t i = 0; i <= bm_size; i++) data_[i] = 0;
-    return;
   }
 
   bool IsEmpty() const {
@@ -68,7 +77,6 @@ class Bitmap {
     for (size_t i = (bm_size << 6); i < size_; i++) {
       data_[bm_size] |= 1ul << BIT_OFFSET(i);
     }
-    return;
   }
 
   bool GetBit(size_t i) const {
@@ -79,13 +87,11 @@ class Bitmap {
   void SetBit(size_t i) {
     if (i > size_) return;
     __sync_fetch_and_or(data_ + WORD_OFFSET(i), 1ul << BIT_OFFSET(i));
-    return;
   }
 
   void ClearBit(const size_t i) {
     if (i > size_) return;
     __sync_fetch_and_and(data_ + WORD_OFFSET(i), ~(1ul << BIT_OFFSET(i)));
-    return;
   }
 
   size_t Count() const {

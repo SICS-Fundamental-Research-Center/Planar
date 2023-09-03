@@ -1,10 +1,11 @@
-#ifndef CORE_IO_LABELED_CSR_READER_H_
-#define CORE_IO_LABELED_CSR_READER_H_
+#ifndef MINICLEAN_IO_MIINCLEAN_CSR_READER_H_
+#define MINICLEAN_IO_MINICLEAN_CSR_READER_H_
 
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <list>
+#include <vector>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -32,8 +33,8 @@ namespace sics::graph::miniclean::io {
 class MiniCleanCSRReader : public sics::graph::core::io::Reader {
  private:
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
-  using Serialized = sics::graph::core::data_structures::Serialized;
   using ReadMessage = sics::graph::core::scheduler::ReadMessage;
+  using Serialized = sics::graph::core::data_structures::Serialized;
   using TaskRunner = sics::graph::core::common::TaskRunner;
 
  public:

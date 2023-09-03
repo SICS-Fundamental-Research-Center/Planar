@@ -26,18 +26,21 @@ void MiniCleanCSRReader::Read(ReadMessage* message, TaskRunner* /* runner */) {
 
 void MiniCleanCSRReader::ReadLabel(const std::string& subgraph_folder_path,
                                    Serialized* dst_object) {
-  const std::string inedge_data_file_path =
-      subgraph_folder_path + "_inedge_label.bin";
+  // const std::string inedge_data_file_path =
+  //     subgraph_folder_path + "_inedge_label.bin";
   const std::string outedge_data_file_path =
       subgraph_folder_path + "_outedge_label.bin";
   const std::string vertex_data_file_path =
       subgraph_folder_path + "_vertex_label.bin";
+  const std::string vertex_attribute_file_path =
+      subgraph_folder_path + "_vertex_attr.bin";
 
   // read files
   try {
-    ReadBinFile(inedge_data_file_path, dst_object);
+    // ReadBinFile(inedge_data_file_path, dst_object);
     ReadBinFile(outedge_data_file_path, dst_object);
     ReadBinFile(vertex_data_file_path, dst_object);
+    ReadBinFile(vertex_attribute_file_path, dst_object);
   } catch (const std::exception& e) {
     LOG_FATAL(e.what());
   }
@@ -56,7 +59,7 @@ void MiniCleanCSRReader::ReadBinFile(const std::string& path,
   file.seekg(0, std::ios::beg);
 
   // create list of owned buffer
-  std::list<OwnedBuffer> file_buffers;
+  std::vector<OwnedBuffer> file_buffers;
   file_buffers.emplace_back(fileSize);
 
   // Read the file data.

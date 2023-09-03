@@ -19,7 +19,7 @@ struct ReadMessage {
   // TODO: add subgraph metadata fields.
 
   // Response fields.
-  data_structures::Serialized* response_serialized;
+  data_structures::Serialized* response_serialized; // initialized in loader
 
   // Termination flag.
   bool terminated = false;
@@ -39,7 +39,7 @@ struct ExecuteMessage {
   ExecuteType execute_type = kPEval;
   // TODO: add subgraph metadata fields and API program objects.
   data_structures::Serializable* graph;
-  apis::PIE* api;
+  apis::PIE* app;
 
   // Response fields.
   data_structures::Serializable* response_serializable;

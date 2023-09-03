@@ -1,6 +1,6 @@
-#include "miniclean/graphs/miniclean_csr_graph.h"
+#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace sics::graph::miniclean::graphs {
+namespace sics::graph::miniclean::data_structures::graphs {
 using Serialized = sics::graph::core::data_structures::Serialized;
 
 std::unique_ptr<Serialized> MiniCleanCSRGraph::Serialize(
@@ -25,10 +25,6 @@ void MiniCleanCSRGraph::Deserialize(const TaskRunner& runner,
     ParseSubgraphCSR(*iter++);
   }
   if (iter != csr_buffer.end()) {
-    // Parse in edge label
-    ParseInedgeLabel(*iter++);
-  }
-  if (iter != csr_buffer.end()) {
     // Parse out edge label
     ParseOutedgeLabel(*iter++);
   }
@@ -36,10 +32,14 @@ void MiniCleanCSRGraph::Deserialize(const TaskRunner& runner,
     // Parse vertex label
     ParseVertexLabel(*iter++);
   }
+  if (iter != csr_buffer.end()) {
+    // Parse vertex attribute
+    ParseVertexAttribute(*iter++);
+  }
 }
 
 void MiniCleanCSRGraph::ParseSubgraphCSR(
-    const std::list<OwnedBuffer>& buffer_list) {
+    const std::vector<OwnedBuffer>& buffer_list) {
   // Fetch the OwnedBuffer object.
   uint8_t* buf_graph_base_pointer = buffer_list.front().Get();
   SetGraphBuffer(buf_graph_base_pointer);
@@ -84,20 +84,27 @@ void MiniCleanCSRGraph::ParseSubgraphCSR(
                                                      start_outgoing_edges));
 }
 
-void MiniCleanCSRGraph::ParseVertexLabel(
-    const std::list<OwnedBuffer>& buffer_list) {
-  vertex_label_base_pointer_ =
-      reinterpret_cast<VertexID*>(buffer_list.front().Get());
-}
-void MiniCleanCSRGraph::ParseInedgeLabel(
-    const std::list<OwnedBuffer>& buffer_list) {
-  in_edge_label_base_pointer_ =
-      reinterpret_cast<VertexID*>(buffer_list.front().Get());
-}
 void MiniCleanCSRGraph::ParseOutedgeLabel(
-    const std::list<OwnedBuffer>& buffer_list) {
+    const std::vector<OwnedBuffer>& buffer_list) {
   out_edge_label_base_pointer_ =
-      reinterpret_cast<VertexID*>(buffer_list.front().Get());
+      reinterpret_cast<EdgeLabel*>(buffer_list.front().Get());
 }
 
-}  // namespace sics::graph::miniclean::graphs
+void MiniCleanCSRGraph::ParseVertexLabel(
+    const std::vector<OwnedBuffer>& buffer_list) {
+  vertex_label_base_pointer_ =
+      reinterpret_cast<VertexLabel*>(buffer_list.front().Get());
+}
+
+void MiniCleanCSRGraph::ParseVertexAttribute(
+    const std::vector<OwnedBuffer>& buffer_list) {
+  vertex_attribute_offset_base_pointer_ =
+      reinterpret_cast<VertexID*>(buffer_list.front().Get());
+
+  size_t offset_size = sizeof(VertexID) * num_vertices_;
+
+  vertex_attribute_value_base_pointer_ =
+      reinterpret_cast<VertexAttributeValue*>(buffer_list.front().Get() +
+                                              offset_size);
+}
+}  // namespace sics::graph::miniclean::data_structures::graphs
