@@ -1,6 +1,7 @@
 #ifndef MINICLEAN_COMPONENTS_MATCHER_PATH_MATCHER_H_
 #define MINICLEAN_COMPONENTS_MATCHER_PATH_MATCHER_H_
 
+#include <mutex>
 #include <unordered_set>
 #include <vector>
 
