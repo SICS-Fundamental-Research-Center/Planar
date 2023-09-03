@@ -6,6 +6,7 @@
 
 #include "apis/planar_app_base.h"
 #include "data_structures/serializable.h"
+#include "update_stores/bsp_update_store.h"
 #include "util/logging.h"
 
 namespace sics::graph::core::apis {
@@ -17,10 +18,15 @@ class PlanarAppFactory {
       std::is_base_of<data_structures::Serializable, GraphType>::value,
       "GraphType must be a subclass of Serializable");
 
+  using VertexData = typename GraphType::VertexData;
+  using EdgeData = typename GraphType::EdgeData;
+
  public:
   // TODO: add UpdateStore as a parameter.
   using CreationMethod = std::unique_ptr<PlanarAppBase<GraphType>> (*)(
-      common::TaskRunner* runner, data_structures::Serializable* graph);
+      common::TaskRunner* runner,
+      update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
+      data_structures::Serializable* graph);
 
  public:
   // TODO: add UpdateStore as a parameter.
@@ -35,13 +41,16 @@ class PlanarAppFactory {
   }
 
   std::unique_ptr<PlanarAppBase<GraphType>> Create(
-      const std::string& name, data_structures::Serializable* graph) {
+      const std::string& name,
+      update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
+      data_structures::Serializable* graph) {
     if (PlanarAppFactory<GraphType>::factories_.find(name) ==
         PlanarAppFactory<GraphType>::factories_.end()) {
       LOGF_ERROR("PlanarAppFactory: app {} is not registered", name);
       return nullptr;
     }
-    return PlanarAppFactory<GraphType>::factories_[name](runner_, graph);
+    return PlanarAppFactory<GraphType>::factories_[name](
+        runner_, update_store, graph);
   }
 
  private:
@@ -53,9 +62,7 @@ class PlanarAppFactory {
 };
 
 template <typename GraphType>
-std::map<std::string,
-         std::unique_ptr<PlanarAppBase<GraphType>> (*)(
-             common::TaskRunner* runner, data_structures::Serializable* graph)>
+std::map<std::string, typename PlanarAppFactory<GraphType>::CreationMethod>
     PlanarAppFactory<GraphType>::factories_ = {};
 
 }  // namespace sics::graph::core::apis

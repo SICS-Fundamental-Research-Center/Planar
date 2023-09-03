@@ -57,6 +57,10 @@ class GraphMetadata {
     return subgraph_metadata_vec_.at(gid);
   }
 
+  const SubgraphMetadata& GetSubgraphMetadataRef(common::GraphID gid) const {
+    return subgraph_metadata_vec_.at(gid);
+  }
+
  private:
   VertexID num_vertices_;
   size_t num_edges_;
@@ -73,8 +77,8 @@ class GraphMetadata {
 // used for read meta.yaml when serialized(encode) and deserialize(decode)
 namespace YAML {
 
-using sics::graph::core::common::GraphID;
-using sics::graph::core::common::VertexID;
+using GraphID = sics::graph::core::common::GraphID;
+using VertexID = sics::graph::core::common::VertexID;
 // template is needed for this function
 template <>
 struct convert<sics::graph::core::data_structures::SubgraphMetadata> {

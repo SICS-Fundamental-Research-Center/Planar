@@ -17,6 +17,7 @@ class GraphMetadataTest : public ::testing::Test {
 
   std::string data_dir = TEST_DATA_DIR;
   std::string meta_yaml_path = data_dir + "/meta.yaml";
+  std::string meta_write_yaml_path = data_dir + "/meta_write.yaml";
 };
 
 // Tests reading the metadata from a YAML file.
@@ -57,7 +58,7 @@ TEST_F(GraphMetadataTest, NodeStructureWrite) {
   }
   auto graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
 
-  std::ofstream fout("../../testfile/meta_write.yaml");
+  std::ofstream fout(meta_write_yaml_path);
   YAML::Node out;
   out["GraphMetadata"] = graph_metadata;
   auto res1 = out["subgraphs"];

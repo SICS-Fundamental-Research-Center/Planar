@@ -122,7 +122,7 @@ class ImmutableCSRGraph : public Serializable {
   void SetOutgoingEdgesBuffer(VertexID* buffer) {
     outgoing_edges_base_pointer_ = buffer;
   }
-  void SetVertexLabelBuffer(VertexLabel * buffer) {
+  void SetVertexLabelBuffer(VertexLabel* buffer) {
     vertex_label_base_pointer_ = buffer;
   }
 
@@ -179,7 +179,7 @@ class ImmutableCSRGraph : public Serializable {
   }
 
  private:
-  void ParseSubgraphCSR(const std::list<OwnedBuffer>& buffer_list);
+  void ParseSubgraphCSR(const std::vector<OwnedBuffer>& buffer_list);
 
  protected:
   std::unique_ptr<SerializedImmutableCSRGraph> serialized_;
@@ -203,7 +203,7 @@ class ImmutableCSRGraph : public Serializable {
   VertexID* outdegree_base_pointer_;
   VertexID* in_offset_base_pointer_;
   VertexID* out_offset_base_pointer_;
-  VertexLabel * vertex_label_base_pointer_;
+  VertexLabel* vertex_label_base_pointer_;
 };
 
 }  // namespace sics::graph::core::data_structures::graph

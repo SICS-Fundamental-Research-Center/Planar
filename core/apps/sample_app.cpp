@@ -9,9 +9,12 @@ bool SampleApp::registered_ = apis::PlanarAppFactory<DummyGraph>::Register(
     GetAppName(), &SampleApp::Create);
 
 // Note: check whether the app is registered.
-SampleApp::SampleApp(common::TaskRunner* runner,
-                     data_structures::Serializable* graph)
-    : apis::PlanarAppBase<DummyGraph>(runner, graph) {
+SampleApp::SampleApp(
+    common::TaskRunner* runner,
+    update_stores::BspUpdateStore<DummyGraph::VertexData, DummyGraph::EdgeData>*
+        update_store,
+    data_structures::Serializable* graph)
+    : apis::PlanarAppBase<DummyGraph>(runner, update_store, graph) {
   if (!SampleApp::registered_) {
     LOG_FATAL("SampleApp is not registered to the factory");
   }

@@ -6,19 +6,20 @@
 #include <type_traits>
 
 #include "apis/pie.h"
+#include "common/multithreading/thread_pool.h"
 #include "components/component.h"
-#include "io/reader_writer.h"
 #include "scheduler/message_hub.h"
 #include "util/logging.h"
 
 namespace sics::graph::core::components {
 
-class Executer : public Component {
+class Executor : public Component {
  public:
-  Executer(scheduler::MessageHub* hub)
+  Executor(scheduler::MessageHub* hub)
       : execute_q_(hub->get_executor_queue()),
-        response_q_(hub->get_response_queue()) {}
-  ~Executer() final = default;
+        response_q_(hub->get_response_queue()),
+        task_runner_(common::configs.parallelism) {}
+  ~Executor() final = default;
 
   void Start() override;
 
@@ -26,14 +27,18 @@ class Executer : public Component {
     scheduler::ExecuteMessage message;
     message.terminated = true;
     execute_q_->Push(message);
+    // first stop the task_runner, then stop the Executor thread
     thread_->join();
   }
+
+  common::TaskRunner* GetTaskRunner() { return &task_runner_; }
 
  private:
   scheduler::ExecutorQueue* execute_q_;
   scheduler::ResponseQueue* response_q_;
 
   std::unique_ptr<std::thread> thread_;
+  common::ThreadPool task_runner_;
 };
 
 }  // namespace sics::graph::core::components

@@ -14,15 +14,16 @@ namespace sics::graph::core::components {
 
 // An adapter class that adapts a WriterInterface to Discharger that works
 // against a MessageHub.
-template<typename WriterType>
+template <typename WriterType>
 class Discharger : public Component {
  protected:
   static_assert(std::is_base_of<io::Writer, WriterType>::value,
                 "WriterType must be a subclass of Writer");
 
  public:
-  Discharger(scheduler::MessageHub* hub)
-      : writer_q_(hub->get_writer_queue()),
+  Discharger(const std::string& root_path, scheduler::MessageHub* hub)
+      : writer_(root_path),
+        writer_q_(hub->get_writer_queue()),
         response_q_(hub->get_response_queue()) {}
 
   ~Discharger() final = default;
@@ -37,7 +38,7 @@ class Discharger : public Component {
         }
 
         LOGF_INFO("Discharger starts reading subgraph {}", message.graph_id);
-        writer_->Write(&message);
+        writer_.Write(&message);
         LOGF_INFO("Discharger completes reading subgraph {}", message.graph_id);
         response_q_->Push(scheduler::Message(message));
       }

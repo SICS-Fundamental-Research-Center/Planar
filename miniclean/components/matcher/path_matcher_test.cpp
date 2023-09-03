@@ -1,24 +1,27 @@
-#include "miniclean/components/path_matcher.h"
-
-#include <fstream>
-#include <sstream>
+#include "miniclean/components/matcher/path_matcher.h"
 
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
 
+#include <fstream>
+#include <sstream>
+
 #include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
 #include "core/data_structures/graph_metadata.h"
-#include "miniclean/graphs/miniclean_csr_graph.h"
+#include "miniclean/common/types.h"
+#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace sics::graph::miniclean::components {
+namespace sics::graph::miniclean::components::matcher {
 
+using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
-using MiniCleanCSRGraph = sics::graph::miniclean::graphs::MiniCleanCSRGraph;
-using PathMatcher = sics::graph::miniclean::components::PathMatcher;
+using MiniCleanCSRGraph =
+    sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+using PathMatcher = sics::graph::miniclean::components::matcher::PathMatcher;
 using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
-using VertexID = sics::graph::core::common::VertexID;
-using VertexLabel = sics::graph::core::common::VertexLabel;
+using VertexID = sics::graph::miniclean::common::VertexID;
+using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
 class PathMatcherTest : public ::testing::Test {
  protected:
@@ -48,11 +51,24 @@ TEST_F(PathMatcherTest, CheckMatches) {
       data_dir_ + "/input/small_graph_path_matching/path_patterns.txt");
   path_matcher.BuildCandidateSet();
 
-  path_matcher.PathMatching(std::thread::hardware_concurrency());
+  path_matcher.PathMatching(std::thread::hardware_concurrency(),
+                            2 * std::thread::hardware_concurrency());
 
   // Load matched result
-  std::vector<std::vector<std::vector<VertexID>>> matched_results =
+  std::vector<std::list<std::vector<VertexID>>> matched_results_tmp =
       path_matcher.get_results();
+
+  // Convert list to vector.
+  std::vector<std::vector<std::vector<VertexID>>> matched_results;
+  for (std::list<std::vector<VertexID>>& single_matched_result :
+       matched_results_tmp) {
+    std::vector<std::vector<VertexID>> single_matched_result_vec;
+    for (std::vector<VertexID>& single_matched_result_inst :
+         single_matched_result) {
+      single_matched_result_vec.push_back(single_matched_result_inst);
+    }
+    matched_results.push_back(single_matched_result_vec);
+  }
 
   // Sort matched result
   for (std::vector<std::vector<VertexID>>& single_matched_result :
@@ -112,4 +128,4 @@ TEST_F(PathMatcherTest, CheckMatches) {
   }
 }
 
-}  // namespace sics::graph::miniclean::components
+}  // namespace sics::graph::miniclean::components::matcher

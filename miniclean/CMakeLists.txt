@@ -27,8 +27,12 @@ endif ()
 #######################
 file(GLOB GRAPH_MINICLEAN_SOURCES
         "*.cpp"
-        "graphs/*.cpp"
+        "data_structures/*.cpp"
+        "data_structures/graphs/*.cpp"
+        "data_structures/gcr/*.cpp"
         "components/*.cpp"
+        "components/matcher/*.cpp"
+        "components/rule_discovery/*.cpp"
         "io/*.cpp"
         )
 message(STATUS "CORE source files: ${GRAPH_MINICLEAN_SOURCES}")
@@ -36,8 +40,12 @@ list(FILTER GRAPH_MINICLEAN_SOURCES EXCLUDE REGEX ".*_test\\.cpp$")
 
 file(GLOB GRAPH_MINICLEAN_HEADERS
         "*.h"
-        "graphs/*.h"
+        "data_structures/*.h"
+        "data_structures/graphs/*.h"
+        "data_structures/gcr/*.h"
         "components/*.h"
+        "components/matcher/*.h"
+        "components/rule_discovery/*.h"
         "io/*.h"
         )
 message(STATUS "CORE header files: ${GRAPH_MINICLEAN_HEADERS}")

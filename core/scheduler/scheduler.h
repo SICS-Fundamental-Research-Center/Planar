@@ -1,7 +1,11 @@
 #ifndef GRAPH_SYSTEMS_SCHEDULER_H
 #define GRAPH_SYSTEMS_SCHEDULER_H
 
+#include "common/multithreading/thread_pool.h"
+#include "common/types.h"
+#include "data_structures/graph/mutable_csr_graph.h"
 #include "data_structures/graph_metadata.h"
+#include "data_structures/serializable.h"
 #include "scheduler/graph_state.h"
 #include "scheduler/message_hub.h"
 #include "update_stores/update_store_base.h"
@@ -10,19 +14,32 @@ namespace sics::graph::core::scheduler {
 
 class Scheduler {
  public:
-  Scheduler() = default;
+  Scheduler(const std::string& root_path)
+      : graph_metadata_info_(root_path),
+        current_round_(0),
+        graph_state_(graph_metadata_info_.get_num_subgraphs()) {}
+
   virtual ~Scheduler() = default;
+
+  void Init(update_stores::UpdateStoreBase* update_store,
+            common::TaskRunner* task_runner, apis::PIE* app) {
+    update_store_ = update_store;
+    executor_task_runner_ = task_runner;
+    app_ = app;
+  }
 
   int GetCurrentRound() const { return current_round_; }
 
-  // read graph metadata from meta.yaml file
-  // meta file path should be passed by gflags
-  void ReadAndParseGraphMetadata(const std::string& graph_metadata_path);
-
-  // global message store
-
   // schedule subgraph execute and its IO(read and write)
   void Start();
+
+  void Stop() { thread_->join(); }
+
+  MessageHub* GetMessageHub() { return &message_hub_; }
+
+  size_t GetVertexNumber() const {
+    return graph_metadata_info_.get_num_vertices();
+  }
 
  protected:
   virtual bool ReadMessageResponseAndExecute(const ReadMessage& read_resp);
@@ -39,9 +56,11 @@ class Scheduler {
   // in current round or next round
   bool TryReadNextGraph(bool sync = false);
 
+  std::unique_ptr<data_structures::Serializable> CreateSerializableGraph(
+      common::GraphID graph_id);
+
   common::GraphID GetNextReadGraphInCurrentRound() const;
 
-  // get next execute graph in current round
   common::GraphID GetNextExecuteGraph() const;
 
   common::GraphID GetNextReadGraphInNextRound() const;
@@ -56,10 +75,6 @@ class Scheduler {
            (GetNextReadGraphInNextRound() == INVALID_GRAPH_ID);
   }
 
-  update_stores::UpdateStoreBase* GetUpdateStore() {
-    return global_update_store_;
-  }
-
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
   data_structures::GraphMetadata graph_metadata_info_;
@@ -70,9 +85,10 @@ class Scheduler {
   // message hub
   MessageHub message_hub_;
 
-  // only keep a reference to global message store
-  // TODO: pass this ptr to execute message
-  update_stores::UpdateStoreBase* global_update_store_ = nullptr;
+  // ExecuteMessage info, used for setting APP context
+  update_stores::UpdateStoreBase* update_store_;
+  common::TaskRunner* executor_task_runner_;
+  apis::PIE* app_;
 
   std::unique_ptr<std::thread> thread_;
 };
