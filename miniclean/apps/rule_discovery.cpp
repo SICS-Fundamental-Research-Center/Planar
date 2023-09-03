@@ -51,7 +51,5 @@ int main(int argc, char* argv[]) {
   rule_miner.InitGCRs();
   LOG_INFO("Init GCRs done.");
 
-  int a = 0;
-
   return 0;
 }

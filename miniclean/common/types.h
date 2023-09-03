@@ -32,6 +32,9 @@ typedef std::vector<EdgeInstance> PathInstance;
 // is the index of the path instance in the loaded instance list.
 typedef uint32_t PathInstanceID;
 
+typedef std::pair<std::list<PathInstanceID>, std::list<PathInstanceID>>
+    GCRInstance;
+
 typedef std::tuple<VertexLabel, EdgeLabel, VertexLabel> EdgePattern;
 typedef std::vector<EdgePattern> PathPattern;
 typedef uint8_t PathPatternID;

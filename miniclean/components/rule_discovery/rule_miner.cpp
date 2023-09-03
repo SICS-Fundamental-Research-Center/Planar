@@ -214,7 +214,6 @@ void RuleMiner::InitGCRs() {
   // Each pair of path patterns will generate a group of GCR.
   predicate_pool_.resize(path_patterns_.size() * (path_patterns_.size() + 1) /
                          2);
-
   size_t current_pair_id = 0;
   for (size_t i = 0; i < path_patterns_.size() - 1; i++) {
     for (size_t j = i; j < path_patterns_.size(); j++) {
@@ -291,7 +290,7 @@ void RuleMiner::InitGCRs() {
       for (size_t k = 0; k <= predicate_restriction; k++) {
         gcr.set_consequence(predicate_pool_[current_pair_id][k]);
         // TODO (bai-wenchao): Initialize GCR after improving its efficiency.
-        // gcr.Init(graph_, path_instances_);
+        gcr.Init(graph_, path_instances_);
         gcrs_.push_back(gcr);
         InitGCRsRecur(gcr, 1, {}, k, predicate_pool_[current_pair_id]);
       }
@@ -318,7 +317,7 @@ void RuleMiner::InitGCRsRecur(GCR gcr, size_t depth,
 
     gcr.AddPreconditionToBack(predicate_pool[i]);
     // TODO (bai-wenchao): Initialize GCR after improving its efficiency.
-    // gcr.Init(graph_, path_instances_);
+    gcr.Init(graph_, path_instances_);
     // if (gcr.get_local_support() < 50) {
     //   return;
     // }
