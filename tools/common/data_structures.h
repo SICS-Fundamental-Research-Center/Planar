@@ -45,6 +45,6 @@ struct EdgelistMetadata {
   VertexID max_vid;
 };
 
-}  // namespace sics::graph::tools
+}  // namespace sics::graph::tools::common
 
 #endif  // TOOLS_COMMON_TYPES_H_
