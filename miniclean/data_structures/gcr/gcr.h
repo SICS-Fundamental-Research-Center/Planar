@@ -3,10 +3,13 @@
 
 #include <list>
 #include <memory>
+#include <unordered_map>
+#include <vector>
 
 #include "core/common/multithreading/task_runner.h"
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/gcr/predicate.h"
+#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
@@ -18,6 +21,8 @@ class GCR {
   using TaskRunner = sics::graph::core::common::TaskRunner;
   using VertexID = sics::graph::miniclean::common::VertexID;
   using PathInstanceID = sics::graph::miniclean::common::PathInstanceID;
+  using MiniCleanCSRGraph =
+      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
 
  public:
   GCR() = default;
@@ -28,8 +33,13 @@ class GCR {
         consequence_(other_gcr.get_consequence()),
         local_support(other_gcr.get_local_support()),
         local_match(other_gcr.get_local_match()),
-        left_star_instances_(other_gcr.get_left_star_instances()),
-        right_star_instances_(other_gcr.get_right_star_instances()) {}
+        gcr_instances_(other_gcr.get_gcr_instances()) {}
+
+  // Initialize the GCR by
+  //   (1) collecting all the instances that satisfy the dual pattern and
+  //   predicates; (2) computing the local support and match.
+  void Init(MiniCleanCSRGraph* graph,
+            std::vector<std::vector<std::vector<VertexID>>> path_instances);
 
   // Two GCRs are joinable if
   //   (1) Their labels of star centers are the same.
@@ -65,12 +75,9 @@ class GCR {
   size_t get_local_support() const { return local_support; }
   size_t get_local_match() const { return local_match; }
 
-  std::list<std::list<std::list<PathInstanceID>>> get_left_star_instances() const {
-    return left_star_instances_;
-  }
-
-  std::list<std::list<std::list<PathInstanceID>>> get_right_star_instances() const {
-    return right_star_instances_;
+  std::list<std::pair<std::list<PathInstanceID>, std::list<PathInstanceID>>>
+  get_gcr_instances() const {
+    return gcr_instances_;
   }
 
   void set_dual_pattern(const DualPattern& dual_pattern) {
@@ -91,21 +98,17 @@ class GCR {
 
   void set_local_match(size_t local_match) { local_match = local_match; }
 
+  void AddGCRInstanceToBack(
+      std::pair<std::list<PathInstanceID>, std::list<PathInstanceID>>
+          gcr_instance) {
+    gcr_instances_.push_back(gcr_instance);
+  }
+
   void AddPreconditionToBack(GCRPredicate* precondition) {
     preconditions_.push_back(precondition);
   }
 
   void RemoveLastPrecondition() { preconditions_.pop_back(); }
-
-  void AddLeftStarInstanceToBack(
-      const std::list<PathInstanceID>& left_star_instance) {
-    left_star_instances_.back().push_back(left_star_instance);
-  }
-
-  void AddRightStarInstanceToBack(
-      const std::list<PathInstanceID>& right_star_instance) {
-    right_star_instances_.back().push_back(right_star_instance);
-  }
 
  private:
   DualPattern dual_pattern_;
@@ -115,10 +118,8 @@ class GCR {
   size_t local_support;
   size_t local_match;
 
-  // Each GCR maintains a list of left star instances and right star instances.
-  // Each star instance is a list of path instances.
-  std::list<std::list<std::list<PathInstanceID>>> left_star_instances_;
-  std::list<std::list<std::list<PathInstanceID>>> right_star_instances_;
+  std::list<std::pair<std::list<PathInstanceID>, std::list<PathInstanceID>>>
+      gcr_instances_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

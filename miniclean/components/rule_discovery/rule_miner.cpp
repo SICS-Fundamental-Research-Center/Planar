@@ -127,29 +127,14 @@ void RuleMiner::LoadPathInstances(const std::string& path_instances_path) {
     size_t num_instances = fileSize / (pattern_length * sizeof(VertexID));
     VertexID* instance_buffer = reinterpret_cast<VertexID*>(buffer.Get());
 
-    // Group instances of pattern `i` with their src vertex.
-    size_t num_src_vertices = 1;
-    VertexID last_src_vertex = instance_buffer[0];
-    for (size_t j = 0; j < num_instances; j++) {
-      VertexID src_vertex = instance_buffer[j * pattern_length];
-      if (src_vertex != last_src_vertex) {
-        num_src_vertices++;
-        last_src_vertex = src_vertex;
-      }
-    }
-    path_instances_[i].reserve(num_src_vertices);
+    path_instances_[i].reserve(num_instances);
 
     for (size_t j = 0; j < num_instances; j++) {
       std::vector<VertexID> instance(pattern_length);
       for (size_t k = 0; k < pattern_length; k++) {
         instance[k] = instance_buffer[j * pattern_length + k];
       }
-
-      if (path_instances_[i].find(instance[0]) == path_instances_[i].end()) {
-        path_instances_[i][instance[0]] = {instance};
-      } else {
-        path_instances_[i][instance[0]].push_back(instance);
-      }
+      path_instances_[i].push_back(instance);
     }
 
     // Close the file.
@@ -212,10 +197,23 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
   }
 }
 
+void RuleMiner::BuildPathInstanceTree() {
+  // The path instance tree groups path instances by path pattern, vertex id,
+  // and attribute values:
+  //   Instances:
+  //     |- Pattern ID
+  //          |- Src Vertex ID
+  //               |- Attribute 0
+  //                    |- Attribute 1
+  //                         |- ...
+  // The order of the attributes depends on the number of its values.
+  // TODO (bai-wenchao): Implement it.
+}
+
 void RuleMiner::InitGCRs() {
   // Each pair of path patterns will generate a group of GCR.
-  predicate_pool_.resize(
-      path_patterns_.size() * (path_patterns_.size() + 1) / 2);
+  predicate_pool_.resize(path_patterns_.size() * (path_patterns_.size() + 1) /
+                         2);
 
   size_t current_pair_id = 0;
   for (size_t i = 0; i < path_patterns_.size() - 1; i++) {
@@ -223,7 +221,7 @@ void RuleMiner::InitGCRs() {
       StarPattern left_star, right_star;
       left_star.emplace_back(i);
       right_star.emplace_back(j);
-      DualPattern dual_pattern = std::make_tuple(left_star, right_star);
+      DualPattern dual_pattern = std::make_pair(left_star, right_star);
 
       // Initialize predicate pool.
       size_t predicate_pool_size = 0;
@@ -253,7 +251,8 @@ void RuleMiner::InitGCRs() {
           ConstantPredicate* new_constant_predicate =
               new ConstantPredicate(constant_predicate);
           new_constant_predicate->set_lhs_ppid(i);
-          new_constant_predicate->set_lhs_edge_id(k);
+          new_constant_predicate->set_lhs_vertex_id(k);
+          new_constant_predicate->set_is_in_lhs_pattern(true);
           predicate_pool_[current_pair_id].push_back(new_constant_predicate);
         }
       }
@@ -265,7 +264,8 @@ void RuleMiner::InitGCRs() {
           ConstantPredicate* new_constant_predicate =
               new ConstantPredicate(constant_predicate);
           new_constant_predicate->set_lhs_ppid(j);
-          new_constant_predicate->set_lhs_edge_id(k);
+          new_constant_predicate->set_lhs_vertex_id(k);
+          new_constant_predicate->set_is_in_lhs_pattern(false);
           predicate_pool_[current_pair_id].push_back(new_constant_predicate);
         }
       }
@@ -278,9 +278,9 @@ void RuleMiner::InitGCRs() {
             VariablePredicate* new_variable_predicate =
                 new VariablePredicate(variable_predicate);
             new_variable_predicate->set_lhs_ppid(i);
-            new_variable_predicate->set_lhs_edge_id(k);
+            new_variable_predicate->set_lhs_vertex_id(k);
             new_variable_predicate->set_rhs_ppid(j);
-            new_variable_predicate->set_rhs_edge_id(l);
+            new_variable_predicate->set_rhs_vertex_id(l);
             predicate_pool_[current_pair_id].push_back(new_variable_predicate);
           }
         }
@@ -290,7 +290,8 @@ void RuleMiner::InitGCRs() {
       GCR gcr = GCR(dual_pattern);
       for (size_t k = 0; k <= predicate_restriction; k++) {
         gcr.set_consequence(predicate_pool_[current_pair_id][k]);
-        // TODO (bai-wenchao): Check support of this GCR.
+        // TODO (bai-wenchao): Initialize GCR after improving its efficiency.
+        // gcr.Init(graph_, path_instances_);
         gcrs_.push_back(gcr);
         InitGCRsRecur(gcr, 1, {}, k, predicate_pool_[current_pair_id]);
       }
@@ -316,7 +317,11 @@ void RuleMiner::InitGCRsRecur(GCR gcr, size_t depth,
     }
 
     gcr.AddPreconditionToBack(predicate_pool[i]);
-    // TODO (bai-wenchao): Check support of this GCR.
+    // TODO (bai-wenchao): Initialize GCR after improving its efficiency.
+    // gcr.Init(graph_, path_instances_);
+    // if (gcr.get_local_support() < 50) {
+    //   return;
+    // }
     gcrs_.push_back(gcr);
     precondition_ids.push_back(i);
     InitGCRsRecur(gcr, depth + 1, precondition_ids, consequence_id,
