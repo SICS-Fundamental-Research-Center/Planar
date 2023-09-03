@@ -91,6 +91,10 @@ class Edges {
   Edges(size_t n_edges, Edge* edges_ptr)
       : n_edges_(n_edges), edges_ptr_(edges_ptr) {}
 
+  ~Edges() {
+    delete edges_ptr_;
+  }
+
   Iterator begin() { return Iterator(&edges_ptr_[0]); }
   Iterator end() { return Iterator(&edges_ptr_[n_edges_ - 1]); }
 
