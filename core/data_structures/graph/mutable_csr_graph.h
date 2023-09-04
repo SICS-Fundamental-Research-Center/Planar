@@ -50,9 +50,9 @@ class MutableCSRGraph : public Serializable {
     out_degree_base_ = nullptr;
     out_offset_base_ = nullptr;
     out_edges_base_ = nullptr;
-    // write back
-
+    vertex_data_read_base_ = nullptr;
     delete vertex_data_write_base_;
+    vertex_data_write_base_ = nullptr;
 
     return util::pointer_downcast<Serialized, SerializedMutableCSRGraph>(
         std::move(graph_serialized_));

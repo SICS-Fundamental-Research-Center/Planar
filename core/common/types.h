@@ -28,6 +28,7 @@ struct Configurations {
   std::string partition_type = "VertexCut";
   std::string root_path = "/testfile";
   VertexDataType vertex_type = kVertexDataTypeUInt32;
+  bool edge_mutate = false;
 };
 
 #define MAX_VERTEX_ID std::numeric_limits<VertexID>::max()

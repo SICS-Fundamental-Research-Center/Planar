@@ -102,18 +102,29 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
     }
     case ExecuteType::kPEval:
     case ExecuteType::kIncEval: {
+      ExecuteMessage execute_message(execute_resp);
+      execute_message.graph_id = execute_resp.graph_id;
+      execute_message.execute_type = ExecuteType::kSerialize;
+      message_hub_.get_executor_queue()->Push(execute_message);
+      break;
+    }
+    case ExecuteType::kSerialize: {
       // check if current round finish
       if (IsCurrentRoundFinish()) {
         if (IsSystemStop()) {
           // read graph in next round
 
           // release all memory graph, write back to disk
-
+          WriteMessage write_message;
+          write_message.graph_id = execute_resp.graph_id;
+          write_message.serialized = execute_resp.serialized;
+          message_hub_.get_writer_queue()->Push(write_message);
           return false;
         } else {
-          ExecuteMessage execute_message(execute_resp);
-          execute_message.execute_type = ExecuteType::kSerialize;
-          message_hub_.get_executor_queue()->Push(execute_resp);
+          WriteMessage write_message;
+          write_message.graph_id = execute_resp.graph_id;
+          write_message.serialized = execute_resp.serialized;
+          message_hub_.get_writer_queue()->Push(write_message);
         }
       } else {
         // write back to disk or save in memory
@@ -122,23 +133,15 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
           // stay in memory with StorageStateType::Deserialized
         } else {
           // write back to disk
-          ExecuteMessage execute_message(execute_resp);
-          execute_message.execute_type = ExecuteType::kSerialize;
-          message_hub_.get_executor_queue()->Push(execute_resp);
+          WriteMessage write_message;
+          write_message.graph_id = execute_resp.graph_id;
+          write_message.serialized = execute_resp.serialized;
+          message_hub_.get_writer_queue()->Push(write_message);
         }
       }
       // check border vertex and dependency matrix, mark active subgraph in
       // next round
       // TODO: check border vertex and dependency matrix
-      break;
-    }
-    case ExecuteType::kSerialize: {
-      WriteMessage write_message;
-      write_message.graph_id = execute_resp.graph_id;
-      write_message.serialized = execute_resp.serialized;
-      message_hub_.get_writer_queue()->Push(write_message);
-
-      TryReadNextGraph();
       break;
     }
     default:

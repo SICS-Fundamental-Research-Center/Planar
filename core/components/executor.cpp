@@ -23,13 +23,14 @@ void Executor::Start() {
           break;
         }
         case scheduler::ExecuteType::kPEval:
-//          message.app->PEval();
+          //          message.app->PEval();
           break;
         case scheduler::ExecuteType::kIncEval:
           message.app->IncEval();
           break;
         case scheduler::ExecuteType::kSerialize:
-          //                      message.graph->Deserialize();
+          auto serialized = message.graph->Serialize(task_runner_);
+          message.serialized = serialized.release();
           break;
       }
       LOGF_INFO("Executor completes executing subgraph {}", message.graph_id);
