@@ -12,8 +12,8 @@ $ graph-partitioner --partitioner=[options] -i [input path] -o [output path] -n_
 ```
 
 General options of partitioner:
-* edgecut: - Using edge cut partitioner
-* vertexcut: - Using vertex cut partitioner
+* edgecut: - Using hash-based edgecut partitioner
+* vertexcut: - Using hash-based vertexcut partitioner
 
 General options of store strategy:
 * incoming_only - store incoming edges for each vertex.
