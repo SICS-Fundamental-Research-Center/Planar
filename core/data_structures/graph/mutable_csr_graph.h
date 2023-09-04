@@ -79,6 +79,8 @@ class MutableCSRGraph : public Serializable {
     // vertex data buf
     vertex_data_read_base_ =
         (VertexData*)(graph_serialized_->GetCSRBuffer()->at(2).Get());
+    memcpy(vertex_data_write_base_, vertex_data_read_base_,
+           sizeof(VertexData) * metadata_.num_vertices);
   }
 
   // methods for sync data

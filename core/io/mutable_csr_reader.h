@@ -35,10 +35,10 @@ class MutableCSRReader : public Reader {
 
   void ReadMetaInfoFromBin(const std::string& path,
                            common::VertexCount num_vertices,
-                           Serialized* serialized_graph);
+                           std::vector<OwnedBuffer>* buffers);
 
   void ReadLabelInfoFromBin(const std::string& path,
-                            Serialized* serialized_graph);
+                            std::vector<OwnedBuffer>* buffers);
 
  private:
   const std::string root_path_;

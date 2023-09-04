@@ -16,16 +16,18 @@ void MutableCSRReader::Read(scheduler::ReadMessage* message,
       root_path_ + "label/" + std::to_string(message->graph_id) + ".bin";
 
   Serialized* graph_serialized = new SerializedMuatbleCSRGraph();
+  std::vector<OwnedBuffer> buffers;
+  ReadMetaInfoFromBin(file_path, message->num_vertices, &buffers);
+  ReadLabelInfoFromBin(label_path, &buffers);
 
-  ReadMetaInfoFromBin(file_path, message->num_vertices, graph_serialized);
-  ReadLabelInfoFromBin(label_path, graph_serialized);
+  graph_serialized->ReceiveBuffers(std::move(buffers));
 
   message->response_serialized = graph_serialized;
 }
 
 void MutableCSRReader::ReadMetaInfoFromBin(const std::string& path,
                                            common::VertexCount num_vertices,
-                                           Serialized* serialized_graph) {
+                                           std::vector<OwnedBuffer>* buffers) {
   std::ifstream file(path, std::ios::binary);
   if (!file) {
     LOG_FATAL("Error opening bin file: ", path.c_str());
@@ -38,23 +40,21 @@ void MutableCSRReader::ReadMetaInfoFromBin(const std::string& path,
   size_t edge_size = file_size - meta_size;
 
   // split the buffer into two parts
-  std::vector<OwnedBuffer> buffers;
-  buffers.emplace_back(meta_size);
-  buffers.emplace_back(edge_size);
+  buffers->emplace_back(meta_size);
+  buffers->emplace_back(edge_size);
 
-  file.read((char*)(buffers.at(0).Get()), meta_size);
+  file.read((char*)(buffers->at(0).Get()), meta_size);
   if (!file) {
     LOG_FATAL("Error reading file meta info: ", path.c_str());
   }
-  file.read((char*)(buffers.at(1).Get()), edge_size);
+  file.read((char*)(buffers->at(1).Get()), edge_size);
   if (!file) {
     LOG_FATAL("Error reading file edge info: ", path.c_str());
   }
-  serialized_graph->ReceiveBuffers(std::move(buffers));
 }
 
 void MutableCSRReader::ReadLabelInfoFromBin(const std::string& path,
-                                            Serialized* serialized_graph) {
+                                            std::vector<OwnedBuffer>* buffers) {
   std::ifstream file(path, std::ios::binary);
   if (!file) {
     LOG_FATAL("Error opening bin file: ", path.c_str());
@@ -64,15 +64,12 @@ void MutableCSRReader::ReadLabelInfoFromBin(const std::string& path,
   size_t file_size = file.tellg();
   file.seekg(0, std::ios::beg);
 
-  std::vector<OwnedBuffer> buffers;
-  buffers.emplace_back(file_size);
+  buffers->emplace_back(file_size);
 
-  file.read(reinterpret_cast<char*>(buffers.back().Get()), file_size);
+  file.read(reinterpret_cast<char*>(buffers->at(2).Get()), file_size);
   if (!file) {
     LOG_FATAL("Error reading file: ", path.c_str());
   }
-
-  serialized_graph->ReceiveBuffers(std::move(buffers));
 }
 
 }  // namespace sics::graph::core::io
