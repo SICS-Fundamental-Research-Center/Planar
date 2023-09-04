@@ -28,7 +28,7 @@ void GraphFormatConverter::WriteSubgraph(
                                      "bitmap/border_vertices.bin");
   Bitmap border_vertices(graph_metadata.get_max_vid());
 
-  for (auto iter : subgraph_vec) {
+for (auto iter : subgraph_vec) {
     auto vertex_map = iter;
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
                                 std::to_string(gid) + ".bin");
@@ -58,12 +58,11 @@ void GraphFormatConverter::WriteSubgraph(
                              &buffer_outdegree, &vertex_map, &count_in_edges,
                              &count_out_edges, &csr_vertex_buffer]() {
         for (VertexID j = i; j < num_vertices; j += parallelism) {
-          auto u = csr_vertex_buffer[j];
-          buffer_globalid[j] = u.vid;
-          buffer_indegree[j] = u.indegree;
-          buffer_outdegree[j] = u.outdegree;
-          WriteAdd(&count_out_edges, (size_t)u.outdegree);
-          WriteAdd(&count_in_edges, (size_t)u.indegree);
+          buffer_globalid[j] = csr_vertex_buffer[j].vid;
+          buffer_indegree[j] = csr_vertex_buffer[j].indegree;
+          buffer_outdegree[j] = csr_vertex_buffer[j].outdegree;
+          WriteAdd(&count_out_edges, (size_t) csr_vertex_buffer[j].outdegree);
+          WriteAdd(&count_in_edges, (size_t) csr_vertex_buffer[j].indegree);
         }
       });
       task_package.push_back(task);
@@ -252,7 +251,6 @@ void GraphFormatConverter::WriteSubgraph(
                          sizeof(VertexLabel) * num_vertices);
 
     delete buffer_label;
-    delete[] csr_vertex_buffer;
     out_data_file.close();
     out_label_file.close();
     src_map_file.close();
@@ -309,7 +307,6 @@ void GraphFormatConverter::WriteSubgraph(
     ImmutableCSRGraph csr_graph(i);
     util::format_converter::Edgelist2CSR(
         edge_bucket[i], edgelist_metadata_vec[i], store_strategy, &csr_graph);
-    delete edge_bucket[i];
 
     Bitmap src_map(csr_graph.get_num_vertices());
     Bitmap is_in_graph(csr_graph.get_num_vertices());
