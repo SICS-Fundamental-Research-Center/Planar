@@ -10,6 +10,9 @@ void Scheduler::Start() {
     // init round 0 loaded graph
     ReadMessage first_read_message;
     first_read_message.graph_id = GetNextReadGraphInCurrentRound();
+    first_read_message.num_vertices =
+        graph_metadata_info_.GetSubgraphNumVertices(
+            first_read_message.graph_id);
     common::subgraph_limits--;
     message_hub_.get_reader_queue()->Push(first_read_message);
 
@@ -153,6 +156,8 @@ bool Scheduler::TryReadNextGraph(bool sync) {
     ReadMessage read_message;
     if (next_graph_id != INVALID_GRAPH_ID) {
       read_message.graph_id = next_graph_id;
+      read_message.num_vertices =
+          graph_metadata_info_.GetSubgraphNumVertices(read_message.graph_id);
       message_hub_.get_reader_queue()->Push(read_message);
     } else {
       // check next round graph which can be read, if not just skip
@@ -163,6 +168,8 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       auto next_gid_next_round = GetNextReadGraphInNextRound();
       if (next_gid_next_round != INVALID_GRAPH_ID) {
         read_message.graph_id = next_gid_next_round;
+        read_message.num_vertices =
+            graph_metadata_info_.GetSubgraphNumVertices(read_message.graph_id);
         message_hub_.get_reader_queue()->Push(read_message);
       } else {
         // no graph can be read, terminate system
@@ -175,7 +182,8 @@ bool Scheduler::TryReadNextGraph(bool sync) {
 
 std::unique_ptr<data_structures::Serializable>
 Scheduler::CreateSerializableGraph(common::GraphID graph_id) {
-  if (common::configs.vertex_type == common::VertexDataType::kVertexDataTypeUInt32) {
+  if (common::configs.vertex_type ==
+      common::VertexDataType::kVertexDataTypeUInt32) {
     return std::make_unique<data_structures::graph::MutableCSRGraphUInt32>(
         graph_metadata_info_.GetSubgraphMetadataRef(graph_id));
 

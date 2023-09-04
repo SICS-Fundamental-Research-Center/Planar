@@ -70,14 +70,15 @@ class MutableCSRGraph : public Serializable {
       out_degree_base_ = (VertexDegree*)(graph_buf_base_ + offset);
       offset += sizeof(VertexDegree) * metadata_.num_vertices;
       out_offset_base_ = (VertexOffset*)(graph_buf_base_ + offset);
-      offset += sizeof(VertexOffset) * metadata_.num_vertices;
-      assert(offset == serialized->PopNext().front().GetSize());
     } else {
       LOG_FATAL("Error in deserialize mutable csr graph");
     }
-
+    // edges pointer base
     out_edges_base_ =
         (VertexID*)(graph_serialized_->GetCSRBuffer()->at(1).Get());
+    // vertex data buf
+    vertex_data_read_base_ =
+        (VertexData*)(graph_serialized_->GetCSRBuffer()->at(2).Get());
   }
 
   // methods for sync data

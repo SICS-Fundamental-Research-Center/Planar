@@ -33,7 +33,12 @@ class MutableCSRReader : public Reader {
   void Read(ReadMessage* message,
             common::TaskRunner* runner = nullptr) override;
 
-  void ReadFromBin(const std::string& path, Serialized* serialized_graph);
+  void ReadMetaInfoFromBin(const std::string& path,
+                           common::VertexCount num_vertices,
+                           Serialized* serialized_graph);
+
+  void ReadLabelInfoFromBin(const std::string& path,
+                            Serialized* serialized_graph);
 
  private:
   const std::string root_path_;
