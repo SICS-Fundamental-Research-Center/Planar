@@ -28,7 +28,7 @@ void GraphFormatConverter::WriteSubgraph(
                                      "bitmap/border_vertices.bin");
   Bitmap border_vertices(graph_metadata.get_max_vid());
 
-for (auto iter : subgraph_vec) {
+  for (auto iter : subgraph_vec) {
     auto vertex_map = iter;
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
                                 std::to_string(gid) + ".bin");
@@ -61,8 +61,8 @@ for (auto iter : subgraph_vec) {
           buffer_globalid[j] = csr_vertex_buffer[j].vid;
           buffer_indegree[j] = csr_vertex_buffer[j].indegree;
           buffer_outdegree[j] = csr_vertex_buffer[j].outdegree;
-          WriteAdd(&count_out_edges, (size_t) csr_vertex_buffer[j].outdegree);
-          WriteAdd(&count_in_edges, (size_t) csr_vertex_buffer[j].indegree);
+          WriteAdd(&count_out_edges, (size_t)csr_vertex_buffer[j].outdegree);
+          WriteAdd(&count_in_edges, (size_t)csr_vertex_buffer[j].indegree);
         }
       });
       task_package.push_back(task);
@@ -313,7 +313,6 @@ void GraphFormatConverter::WriteSubgraph(
 
     Bitmap src_map(csr_graph.get_num_vertices());
     Bitmap is_in_graph(csr_graph.get_num_vertices());
-
 
     for (unsigned int i = 0; i < parallelism; i++) {
       auto task = std::bind([i, parallelism, &csr_graph, &src_map, &is_in_graph,
