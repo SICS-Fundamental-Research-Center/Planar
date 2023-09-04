@@ -10,8 +10,6 @@
 #include "data_structures/serialized.h"
 #include "util/logging.h"
 
-#include <fmt/core.h>
-
 namespace sics::graph::core::scheduler {
 
 struct ReadMessage {
