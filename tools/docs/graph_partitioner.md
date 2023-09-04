@@ -1,7 +1,7 @@
 `tools/graph_partitioner/graph_partitioner.cpp`
 -------------
 
-graph_partitioner provides a set of serial programs for partitioning graphs.
+graph_partitioner provides a set of programs for partitioning graphs.
 It take as input the binary edgelist.
 
 ### Usage
