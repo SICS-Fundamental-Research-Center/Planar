@@ -16,6 +16,7 @@ struct ReadMessage {
   // Request fields.
   common::GraphID graph_id;
   common::VertexCount num_vertices;
+  int round;
 
   // Response fields.
   data_structures::Serialized* response_serialized;  // initialized in loader

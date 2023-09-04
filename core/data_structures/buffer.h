@@ -26,9 +26,20 @@ class OwnedBuffer {
   explicit OwnedBuffer(size_t s) : p_((uint8_t*)(malloc(s))), s_(s) {}
   ~OwnedBuffer() { delete p_; }
   OwnedBuffer(const OwnedBuffer& r) = delete;
-  OwnedBuffer(OwnedBuffer&& r) = default;
+  OwnedBuffer(OwnedBuffer&& r) {
+    p_ = r.p_;
+    s_ = r.s_;
+    r.p_ = nullptr;
+    r.s_ = 0;
+  };
   OwnedBuffer& operator=(const OwnedBuffer& r) = delete;
-  OwnedBuffer& operator=(OwnedBuffer&& r) = default;
+  OwnedBuffer& operator=(OwnedBuffer&& r) noexcept {
+    p_ = r.p_;
+    s_ = r.s_;
+    r.p_ = nullptr;
+    r.s_ = 0;
+    return *this;
+  };
 
   Buffer GetReference(size_t offset, size_t s) {
     return Buffer(p_ + offset, s);

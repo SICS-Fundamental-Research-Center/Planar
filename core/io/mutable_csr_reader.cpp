@@ -14,6 +14,10 @@ void MutableCSRReader::Read(scheduler::ReadMessage* message,
       root_path_ + "graphs/" + std::to_string(message->graph_id) + ".bin";
   std::string label_path =
       root_path_ + "label/" + std::to_string(message->graph_id) + ".bin";
+  if (message->round != 0) {
+    file_path += ".new";
+    label_path += ".new";
+  }
 
   Serialized* graph_serialized = new SerializedMuatbleCSRGraph();
   std::vector<OwnedBuffer> buffers;
@@ -64,9 +68,10 @@ void MutableCSRReader::ReadLabelInfoFromBin(const std::string& path,
   size_t file_size = file.tellg();
   file.seekg(0, std::ios::beg);
 
+  //  buffers->emplace_back(OwnedBuffer(file_size));
   buffers->emplace_back(file_size);
 
-  file.read(reinterpret_cast<char*>(buffers->at(2).Get()), file_size);
+  file.read((char*)(buffers->at(2).Get()), file_size);
   if (!file) {
     LOG_FATAL("Error reading file: ", path.c_str());
   }

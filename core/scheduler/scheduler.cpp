@@ -13,6 +13,7 @@ void Scheduler::Start() {
     first_read_message.num_vertices =
         graph_metadata_info_.GetSubgraphNumVertices(
             first_read_message.graph_id);
+    first_read_message.round = 0;
     common::subgraph_limits--;
     message_hub_.get_reader_queue()->Push(first_read_message);
 
@@ -33,7 +34,9 @@ void Scheduler::Start() {
         case Message::Type::kExecute: {
           ExecuteMessage execute_response;
           resp.Get(&execute_response);
-          ExecuteMessageResponseAndWrite(execute_response);
+          if (!ExecuteMessageResponseAndWrite(execute_response)) {
+            running = false;
+          }
           break;
         }
         case Message::Type::kWrite: {
@@ -103,8 +106,14 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
       if (IsCurrentRoundFinish()) {
         if (IsSystemStop()) {
           // read graph in next round
-        } else {
+
+          // release all memory graph, write back to disk
+
           return false;
+        } else {
+          ExecuteMessage execute_message(execute_resp);
+          execute_message.execute_type = ExecuteType::kSerialize;
+          message_hub_.get_executor_queue()->Push(execute_resp);
         }
       } else {
         // write back to disk or save in memory
