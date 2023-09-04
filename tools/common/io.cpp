@@ -251,6 +251,8 @@ for (auto iter : subgraph_vec) {
                          sizeof(VertexLabel) * num_vertices);
 
     delete buffer_label;
+    // TODO (hsiaoko): will solve the delete problem later in an elegant manner.
+    // delete[] csr_vertex_buffer;
     out_data_file.close();
     out_label_file.close();
     src_map_file.close();
@@ -307,9 +309,11 @@ void GraphFormatConverter::WriteSubgraph(
     ImmutableCSRGraph csr_graph(i);
     util::format_converter::Edgelist2CSR(
         edge_bucket[i], edgelist_metadata_vec[i], store_strategy, &csr_graph);
+    delete edge_bucket[i];
 
     Bitmap src_map(csr_graph.get_num_vertices());
     Bitmap is_in_graph(csr_graph.get_num_vertices());
+
 
     for (unsigned int i = 0; i < parallelism; i++) {
       auto task = std::bind([i, parallelism, &csr_graph, &src_map, &is_in_graph,
