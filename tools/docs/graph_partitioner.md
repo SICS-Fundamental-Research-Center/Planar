@@ -8,7 +8,7 @@ It take as input the binary edgelist.
 You can use graph_partitioner as follows:
 ``` Bash
 $ cd ${PROJECT_ROOT_DIR}
-$ graph-partitioner --partitioner=[options] -i <input file path> -o <output file path> --n_partitions=[number of subgraphs] --store_strategty [options]
+$ graph-partitioner --partitioner=[options] -i [input path] -o [output path] -n_partitions [number of subgraphs] -store_strategty [options]
 ```
 
 General options of partitioner:
