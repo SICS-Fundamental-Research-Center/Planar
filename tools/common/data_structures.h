@@ -50,6 +50,11 @@ class Edges {
       base_ptr_++;
       return *this;
     }
+    // used for clang++ compiling
+    Iterator& operator+=(int n) {
+      base_ptr_--;
+      return *this;
+    }
     Iterator& operator--() {
       base_ptr_--;
       return *this;
@@ -74,9 +79,16 @@ class Edges {
       return (*base_ptr_).src < (*b).src;
     }
     bool operator>(const Iterator& b) const {
-      return (*base_ptr_).src < (*b).src;
+      return (*base_ptr_).src > (*b).src;
     }
-
+    // used for clang++ compiling
+    bool operator<=(const Iterator& b) const {
+      return (*base_ptr_).src <= (*b).src;
+    }
+    // used for clang++ compiling
+    bool operator>=(const Iterator& b) const {
+      return (*base_ptr_).src >= (*b).src;
+    }
     friend bool operator==(const Iterator& a, const Iterator& b) {
       return a.base_ptr_ == b.base_ptr_;
     };
@@ -91,9 +103,7 @@ class Edges {
   Edges(size_t n_edges, Edge* edges_ptr)
       : n_edges_(n_edges), edges_ptr_(edges_ptr) {}
 
-  ~Edges() {
-    delete edges_ptr_;
-  }
+  ~Edges() { delete edges_ptr_; }
 
   Iterator begin() { return Iterator(&edges_ptr_[0]); }
   Iterator end() { return Iterator(&edges_ptr_[n_edges_ - 1]); }
