@@ -48,6 +48,15 @@ class PlanarAppBase : public PIE {
 
   ~PlanarAppBase() override = default;
 
+  virtual void AppInit(
+      common::TaskRunner* runner,
+      update_stores::BspUpdateStore<VertexData, EdgeData>* update_store) {
+    runner_ = runner;
+    update_store_ = update_store;
+  }
+
+  virtual void SetRuntimeGraph(GraphType* graph) { graph_ = graph; }
+
  protected:
   // Parallel execute vertex_func in task_size chunks.
   void ParallelVertexDo(const std::function<void(VertexID)>& vertex_func) {

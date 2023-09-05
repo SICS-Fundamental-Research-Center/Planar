@@ -9,8 +9,6 @@ WCCApp::WCCApp(
     data_structures::Serializable* graph)
     : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {}
 
-void WCCApp::SetRuntimeGraph(CSRGraph* graph) { graph_ = graph; }
-
 void WCCApp::PEval() {
   ParallelVertexDo(std::bind(&WCCApp::Init, this, std::placeholders::_1));
   while (graph_->GetOutEdgeNums() != 0) {

@@ -23,7 +23,7 @@ void Executor::Start() {
           break;
         }
         case scheduler::ExecuteType::kPEval:
-//          message.app->PEval();
+          message.app->PEval();
           break;
         case scheduler::ExecuteType::kIncEval:
           message.app->IncEval();

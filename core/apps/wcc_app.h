@@ -24,8 +24,6 @@ class WCCApp : public apis::PlanarAppBase<CSRGraph> {
       data_structures::Serializable* graph);
   ~WCCApp() override = default;
 
-  void SetRuntimeGraph(CSRGraph* graph);
-
   void PEval() final;
   void IncEval() final;
   void Assemble() final;

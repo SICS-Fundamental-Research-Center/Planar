@@ -189,8 +189,8 @@ class MutableCSRGraph : public Serializable {
   std::string status_;
 };
 
-typedef MutableCSRGraph<uint32_t, uint8_t> MutableCSRGraphUInt32;
-typedef MutableCSRGraph<uint16_t, uint8_t> MutableCSRGraphUInt16;
+typedef MutableCSRGraph<uint32_t, common::EdgeData> MutableCSRGraphUInt32;
+typedef MutableCSRGraph<uint16_t, common::EdgeData> MutableCSRGraphUInt16;
 
 }  // namespace sics::graph::core::data_structures::graph
 

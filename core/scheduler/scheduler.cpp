@@ -95,6 +95,8 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
       } else {
         execute_message.execute_type = ExecuteType::kIncEval;
       }
+      SetRuntimeGraph(execute_message.graph_id);
+      execute_message.app = app_;
       message_hub_.get_executor_queue()->Push(execute_message);
       break;
     }
@@ -192,7 +194,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
 
 std::unique_ptr<data_structures::Serializable>
 Scheduler::CreateSerializableGraph(common::GraphID graph_id) {
-  if (common::Configurations::Get()->vertex_type ==
+  if (common::Configurations::Get()->vertex_data_type ==
       common::VertexDataType::kVertexDataTypeUInt32) {
     return std::make_unique<data_structures::graph::MutableCSRGraphUInt32>(
         graph_metadata_info_.GetSubgraphMetadataRef(graph_id));
@@ -200,6 +202,19 @@ Scheduler::CreateSerializableGraph(common::GraphID graph_id) {
   } else {
     return std::make_unique<data_structures::graph::MutableCSRGraphUInt16>(
         graph_metadata_info_.GetSubgraphMetadataRef(graph_id));
+  }
+}
+
+void Scheduler::SetRuntimeGraph(common::GraphID gid) {
+  if (common::Configurations::Get()->vertex_data_type ==
+      common::VertexDataType::kVertexDataTypeUInt32) {
+    auto app = dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt32>*>(app_);
+    app->SetRuntimeGraph(
+        dynamic_cast<MutableCSRGraphUInt32*>(graph_state_.GetSubgraph(gid)));
+  } else {
+    auto app = dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt16>*>(app_);
+    app->SetRuntimeGraph(
+        dynamic_cast<MutableCSRGraphUInt16*>(graph_state_.GetSubgraph(gid)));
   }
 }
 
