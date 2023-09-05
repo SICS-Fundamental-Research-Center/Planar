@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 project(graph_systems_tools_graph_convert)
 
 # Directories
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/tools/graph_converter)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/tools/)
 
 #######################
 # Artifacts
