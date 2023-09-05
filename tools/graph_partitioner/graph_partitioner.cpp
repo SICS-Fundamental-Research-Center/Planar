@@ -79,13 +79,13 @@ int main(int argc, char** argv) {
       edgecut_partitioner.RunPartitioner();
       break;
     }
-    case kPlanarVertexCut: {
-      PlanarVertexCutPartitioner planar_vertexcut_partitioner(
-          FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
-          FLAGS_n_partitions);
-      planar_vertexcut_partitioner.RunPartitioner();
-      break;
-    }
+//    case kPlanarVertexCut: {
+//      PlanarVertexCutPartitioner planar_vertexcut_partitioner(
+//          FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
+//          FLAGS_n_partitions);
+//      planar_vertexcut_partitioner.RunPartitioner();
+//      break;
+//    }
     case kHybridCut:
       // TODO (hsaioko): Add HyrbidCut partitioner.
       break;
