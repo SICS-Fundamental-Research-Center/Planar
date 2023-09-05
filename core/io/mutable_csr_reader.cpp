@@ -14,7 +14,7 @@ void MutableCSRReader::Read(scheduler::ReadMessage* message,
       root_path_ + "graphs/" + std::to_string(message->graph_id) + ".bin";
   std::string label_path =
       root_path_ + "label/" + std::to_string(message->graph_id) + ".bin";
-  if (common::configs.edge_mutate && message->round != 0) {
+  if (common::Configurations::Get()->edge_mutate && message->round != 0) {
     file_path += ".new";
     label_path += ".new";
   }

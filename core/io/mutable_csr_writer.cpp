@@ -9,7 +9,7 @@ void MutableCSRWriter::Write(WriteMessage* message,
   std::string label_path =
       root_path_ + "label/" + std::to_string(message->graph_id) + ".bin";
 
-  if (common::configs.edge_mutate) {
+  if (common::Configurations::GetMutable()->edge_mutate) {
     file_path += ".new";
     label_path += ".new";
   }
@@ -17,7 +17,7 @@ void MutableCSRWriter::Write(WriteMessage* message,
   if (message->serialized->HasNext()) {
     auto a = message->serialized->PopNext();
     WriteMetaInfoToBin(file_path, a);
-    WriteLabelInfoToBin(file_path, a);
+    WriteLabelInfoToBin(label_path, a);
   }
 }
 

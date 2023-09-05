@@ -194,7 +194,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
 
 std::unique_ptr<data_structures::Serializable>
 Scheduler::CreateSerializableGraph(common::GraphID graph_id) {
-  if (common::configs.vertex_type ==
+  if (common::Configurations::Get()->vertex_type ==
       common::VertexDataType::kVertexDataTypeUInt32) {
     return std::make_unique<data_structures::graph::MutableCSRGraphUInt32>(
         graph_metadata_info_.GetSubgraphMetadataRef(graph_id));

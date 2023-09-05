@@ -18,7 +18,7 @@ class Executor : public Component {
   Executor(scheduler::MessageHub* hub)
       : execute_q_(hub->get_executor_queue()),
         response_q_(hub->get_response_queue()),
-        task_runner_(common::configs.parallelism) {}
+        task_runner_(common::Configurations::Get()->parallelism) {}
   ~Executor() final = default;
 
   void Start() override;
