@@ -1,4 +1,9 @@
-`tools/graph_partitioner/graph_partitioner.cpp`
+# Graph Partitioner
+
+**Binary Path**: `bin/tools/graph_partitioner_exec`
+
+**Source**: `tools/graph_partitioner/graph_partitioner.cpp`
+
 -------------
 
 graph_partitioner provides a set of programs for partitioning graphs.
@@ -8,14 +13,14 @@ It take as input the binary edgelist.
 You can use graph_partitioner as follows:
 ``` Bash
 $ cd ${PROJECT_ROOT_DIR}
-$ graph-partitioner --partitioner=[options] -i [input path] -o [output path] -n_partitions [number of subgraphs] -store_strategty [options]
+$ ./bin/tools/graph_partitioner -partitioner [options] -i [input path] -o [output path] -n_partitions [number of subgraphs] -store_strategty [options]
 ```
 
 General options of partitioner:
-* edgecut: - Using hash-based edgecut partitioner
-* vertexcut: - Using hash-based vertexcut partitioner
+* hashedgecut - Using hash-based edgecut partitioner.
+* hashvertexcut - Using hash-based vertexcut partitioner.
 
 General options of store strategy:
 * incoming_only - store incoming edges for each vertex.
 * outgoing_only - store outgoing edges for each vertex.
-* unconstrained: - store both incoming and outgoing edges for each vertex.
+* unconstrained - store both incoming and outgoing edges for each vertex.
