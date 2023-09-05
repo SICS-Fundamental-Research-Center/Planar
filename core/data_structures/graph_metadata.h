@@ -61,6 +61,10 @@ class GraphMetadata {
     return subgraph_metadata_vec_.at(gid);
   }
 
+  common::VertexCount GetSubgraphNumVertices(common::GraphID gid) const {
+    return subgraph_metadata_vec_.at(gid).num_vertices;
+  }
+
  private:
   VertexID num_vertices_;
   size_t num_edges_;

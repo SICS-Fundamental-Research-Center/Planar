@@ -68,6 +68,12 @@ struct GraphState {
     graphs_.at(gid).swap(subgraph);
   }
 
+  void ReleaseSubgraphSerialized(common::GraphID gid) {
+    serialized_.at(gid).reset();
+  }
+
+  void ReleaseSubgraph(common::GraphID gid) { graphs_.at(gid).reset(); }
+
  public:
   size_t num_subgraphs_;
   std::vector<int> subgraph_round_;

@@ -3,10 +3,12 @@
 
 #include <fstream>
 #include <list>
+#include <memory>
 #include <string>
 #include <utility>
-#include <memory>
 
+#include "common/config.h"
+#include "common/types.h"
 #include "data_structures/buffer.h"
 #include "data_structures/graph_metadata.h"
 #include "data_structures/serialized.h"
@@ -26,7 +28,12 @@ class MutableCSRWriter : public Writer {
   void Write(WriteMessage* message,
              common::TaskRunner* runner = nullptr) override;
 
-  void WriteToBin(const std::string& path, const OwnedBUffer& buffer);
+ private:
+  void WriteMetaInfoToBin(const std::string& path,
+                          const std::vector<OwnedBUffer>& buffers);
+
+  void WriteLabelInfoToBin(const std::string& path,
+                           const std::vector<OwnedBUffer>& buffers);
 
  private:
   const std::string root_path_;

@@ -1,6 +1,8 @@
 #ifndef GRAPH_SYSTEMS_CORE_DATA_STRUCTURES_GRAPH_MUTABLE_CSR_GRAPH_H_
 #define GRAPH_SYSTEMS_CORE_DATA_STRUCTURES_GRAPH_MUTABLE_CSR_GRAPH_H_
 
+#include <memory>
+
 #include "common/bitmap.h"
 #include "common/types.h"
 #include "data_structures/graph/serialized_mutable_csr_graph.h"
@@ -38,7 +40,6 @@ class MutableCSRGraph : public Serializable {
 
   ~MutableCSRGraph() override {
     // TODO: delete pointer malloc in deserialize
-    delete[] graph_buf_base_;
   }
 
   // Serializable interface override functions
@@ -49,7 +50,10 @@ class MutableCSRGraph : public Serializable {
     out_degree_base_ = nullptr;
     out_offset_base_ = nullptr;
     out_edges_base_ = nullptr;
-    // write back
+    vertex_data_read_base_ = nullptr;
+    delete[] vertex_data_write_base_;
+    vertex_data_write_base_ = nullptr;
+
     return util::pointer_downcast<Serialized, SerializedMutableCSRGraph>(
         std::move(graph_serialized_));
   }
@@ -70,14 +74,18 @@ class MutableCSRGraph : public Serializable {
       out_degree_base_ = (VertexDegree*)(graph_buf_base_ + offset);
       offset += sizeof(VertexDegree) * metadata_.num_vertices;
       out_offset_base_ = (VertexOffset*)(graph_buf_base_ + offset);
-      offset += sizeof(VertexOffset) * metadata_.num_vertices;
-      assert(offset == serialized->PopNext().front().GetSize());
     } else {
       LOG_FATAL("Error in deserialize mutable csr graph");
     }
-
+    // edges pointer base
     out_edges_base_ =
         (VertexID*)(graph_serialized_->GetCSRBuffer()->at(1).Get());
+    // vertex data buf
+    vertex_data_read_base_ =
+        (VertexData*)(graph_serialized_->GetCSRBuffer()->at(2).Get());
+    vertex_data_write_base_ = new VertexData[metadata_.num_vertices];
+    memcpy(vertex_data_write_base_, vertex_data_read_base_,
+           sizeof(VertexData) * metadata_.num_vertices);
   }
 
   // methods for sync data
