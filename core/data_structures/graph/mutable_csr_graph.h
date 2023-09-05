@@ -156,9 +156,22 @@ class MutableCSRGraph : public Serializable {
 
  private:
   // use binary search to find the index of id
-  VertexIndex GetIndexByID(VertexID id) const {
+  [[nodiscard]] VertexIndex GetIndexByID(VertexID id) const {
     // TODO: binary search
-    return 0;
+    VertexIndex begin = 0;
+    VertexIndex end = metadata_.num_vertices - 1;
+    VertexIndex mid = 0;
+    while (begin <= end) {
+      mid = begin + (begin - end) / 2;
+      if (vertex_id_by_local_index_[mid] < id) {
+        begin = mid + 1;
+      } else if (vertex_id_by_local_index_[mid] > id) {
+        end = mid - 1;
+      } else {
+        return mid;
+      }
+    }
+    return INVALID_VERTEX_INDEX;
   }
 
  private:
