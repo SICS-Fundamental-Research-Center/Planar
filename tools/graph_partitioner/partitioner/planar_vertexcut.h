@@ -28,7 +28,7 @@ class PlanarVertexCutPartitioner : public PartitionerBase {
   void RunPartitioner() override;
 
  private:
-  VertexID n_partitions_;
+  const uint8_t n_partitions_;
 
   // @DESCRIPTION
   // Decompose the largest branch into a disjoint set of branches, It returns
