@@ -32,7 +32,7 @@ class Configurations {
   int parallelism = 1;
   std::string partition_type = "VertexCut";
   std::string root_path = "/testfile";
-  VertexDataType vertex_type = kVertexDataTypeUInt32;
+  VertexDataType vertex_data_type = kVertexDataTypeUInt32;
   bool edge_mutate = false;
 
  private:
