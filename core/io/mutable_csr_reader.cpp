@@ -1,7 +1,5 @@
 #include "io/mutable_csr_reader.h"
 
-#include "data_structures/graph/serialized_mutable_csr_graph.h"
-
 namespace sics::graph::core::io {
 
 using SerializedMuatbleCSRGraph =

@@ -8,7 +8,9 @@
 #include <string>
 #include <utility>
 
+#include "common/config.h"
 #include "data_structures/buffer.h"
+#include "data_structures/graph/serialized_mutable_csr_graph.h"
 #include "data_structures/graph_metadata.h"
 #include "data_structures/serialized.h"
 #include "io/reader_writer.h"

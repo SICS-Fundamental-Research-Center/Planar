@@ -29,11 +29,11 @@ void MutableCSRWriter::WriteMetaInfoToBin(
     LOG_FATAL("Error opening bin file: ", path.c_str());
   }
 
-  file.write((char*)(buffers.at(0).Get()), buffers.at(0).GetSize());
+  file.write((char*) (buffers.at(0).Get()), buffers.at(0).GetSize());
   if (!file) {
     LOG_FATAL("Error writing meta data file: ", path.c_str());
   }
-  file.write((char*)buffers.at(1).Get(), buffers.at(1).GetSize());
+  file.write((char*) (buffers.at(1).Get()), buffers.at(1).GetSize());
   if (!file) {
     LOG_FATAL("Error writing label data file: ", path.c_str());
   }
@@ -47,7 +47,7 @@ void MutableCSRWriter::WriteLabelInfoToBin(
     LOG_INFO("Error opening label bin file: ", path.c_str());
   }
 
-  label_file.write((char*)(buffers.at(2).Get()), buffers.at(2).GetSize());
+  label_file.write((char*) (buffers.at(2).Get()), buffers.at(2).GetSize());
   if (!label_file) {
     LOG_FATAL("Error writing label data file: ", path.c_str());
   }

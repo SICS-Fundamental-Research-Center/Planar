@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 
+#include "common/config.h"
 #include "common/types.h"
 #include "data_structures/buffer.h"
 #include "data_structures/graph_metadata.h"

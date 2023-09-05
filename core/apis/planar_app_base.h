@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "apis/pie.h"
+#include "common/config.h"
 #include "common/multithreading/task_runner.h"
 #include "data_structures/serializable.h"
 #include "update_stores/bsp_update_store.h"
@@ -129,7 +130,8 @@ class PlanarAppBase : public PIE {
   }
 
   uint32_t GetTaskSize(VertexID max_vid) const {
-    uint32_t task_size = max_vid / common::Configurations::Get()->max_task_package;
+    uint32_t task_size =
+        max_vid / common::Configurations::Get()->max_task_package;
     return task_size < 2 ? 2 : task_size;
   }
 

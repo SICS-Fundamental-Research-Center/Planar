@@ -6,6 +6,7 @@
 #include <type_traits>
 
 #include "apis/pie.h"
+#include "common/config.h"
 #include "common/multithreading/thread_pool.h"
 #include "components/component.h"
 #include "scheduler/message_hub.h"

@@ -1,6 +1,7 @@
 #ifndef GRAPH_SYSTEMS_SCHEDULER_H
 #define GRAPH_SYSTEMS_SCHEDULER_H
 
+#include "common/config.h"
 #include "common/multithreading/thread_pool.h"
 #include "common/types.h"
 #include "data_structures/graph/mutable_csr_graph.h"

@@ -1,7 +1,5 @@
 #include "scheduler.h"
 
-#include "data_structures/graph/mutable_csr_graph.h"
-
 namespace sics::graph::core::scheduler {
 
 void Scheduler::Start() {
