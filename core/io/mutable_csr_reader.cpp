@@ -71,7 +71,7 @@ void MutableCSRReader::ReadLabelInfoFromBin(const std::string& path,
   //  buffers->emplace_back(OwnedBuffer(file_size));
   buffers->emplace_back(file_size);
 
-  file.read((char*)(buffers->at(2).Get()), file_size);
+  file.read((char*) (buffers->at(2).Get()), file_size);
   if (!file) {
     LOG_FATAL("Error reading file: ", path.c_str());
   }

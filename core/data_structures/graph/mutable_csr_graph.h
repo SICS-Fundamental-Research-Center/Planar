@@ -51,7 +51,7 @@ class MutableCSRGraph : public Serializable {
     out_offset_base_ = nullptr;
     out_edges_base_ = nullptr;
     vertex_data_read_base_ = nullptr;
-    delete vertex_data_write_base_;
+    delete[] vertex_data_write_base_;
     vertex_data_write_base_ = nullptr;
 
     return util::pointer_downcast<Serialized, SerializedMutableCSRGraph>(
@@ -83,8 +83,7 @@ class MutableCSRGraph : public Serializable {
     // vertex data buf
     vertex_data_read_base_ =
         (VertexData*)(graph_serialized_->GetCSRBuffer()->at(2).Get());
-    vertex_data_write_base_ =
-        (VertexData*)(malloc(sizeof(VertexData) * metadata_.num_vertices));
+    vertex_data_write_base_ = new VertexData[metadata_.num_vertices];
     memcpy(vertex_data_write_base_, vertex_data_read_base_,
            sizeof(VertexData) * metadata_.num_vertices);
   }

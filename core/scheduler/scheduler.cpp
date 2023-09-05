@@ -102,6 +102,7 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
     }
     case ExecuteType::kPEval:
     case ExecuteType::kIncEval: {
+      // TODO: decide a subgraph if it stays in memory
       ExecuteMessage execute_message(execute_resp);
       execute_message.graph_id = execute_resp.graph_id;
       execute_message.execute_type = ExecuteType::kSerialize;
@@ -113,7 +114,6 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
       if (IsCurrentRoundFinish()) {
         if (IsSystemStop()) {
           // read graph in next round
-
           // release all memory graph, write back to disk
           WriteMessage write_message;
           write_message.graph_id = execute_resp.graph_id;
