@@ -1,6 +1,5 @@
 // This file belongs to the SICS graph-systems project, a C++ library for
 // exploiting parallelism graph computing. TODO (hsiaoko): add description
-//
 #include <gflags/gflags.h>
 
 #include "core/common/multithreading/thread_pool.h"
@@ -8,29 +7,35 @@
 #include "tools/common/yaml_config.h"
 #include "tools/graph_partitioner/partitioner/hash_based_edgecut.h"
 #include "tools/graph_partitioner/partitioner/hash_based_vertexcut.h"
+#include "tools/graph_partitioner/partitioner/planar_vertexcut.h"
 
 using sics::graph::tools::common::StoreStrategy2Enum;
 using EdgeCutPartitioner =
     sics::graph::tools::partitioner::HashBasedEdgeCutPartitioner;
 using VertexCutPartitioner =
     sics::graph::tools::partitioner::HashBasedVertexCutPartitioner;
+using PlanarVertexCutPartitioner =
+    sics::graph::tools::partitioner::PlanarVertexCutPartitioner;
 
 enum Partitioner {
-  kEdgeCut,  // default
-  kVertexCut,
+  kHashEdgeCut,  // default
+  kHashVertexCut,
   kHybridCut,
+  kPlanarVertexCut,
   kUndefinedPartitioner
 };
 
 Partitioner Partitioner2Enum(const std::string& s) {
-  if (s == "edgecut")
-    return kEdgeCut;
-  else if (s == "vertexcut")
-    return kVertexCut;
+  if (s == "hashedgecut")
+    return kHashEdgeCut;
+  else if (s == "hashvertexcut")
+    return kHashVertexCut;
   else if (s == "hybridcut")
     return kHybridCut;
+  else if (s == "planarvertexcut")
+    return kPlanarVertexCut;
   else
-    LOG_ERROR("Unknown partitioner type: %s", s.c_str());
+    LOG_FATAL("Unknown partitioner type: ", s.c_str());
   return kUndefinedPartitioner;
 };
 
@@ -44,13 +49,13 @@ DEFINE_string(store_strategy, "unconstrained",
 
 int main(int argc, char** argv) {
   gflags::SetUsageMessage(
-      "\n USAGE: graph-partitioner --partitioner=[options] -i <input file "
-      "path> "
-      "-o <output file path> --n_partitions \n"
+      "\n USAGE: graph-partitioner -partitioner [options] -i [input "
+      "path] "
+      "-o [output path] -n_partitions [number of partitions]\n"
       " General options:\n"
-      "\t : edgecut: - Using edge cut partitioner "
+      "\t hashedgecut: - Using hash-based edge cut partitioner "
       "\n"
-      "\t vertexcut: - Using vertex cut partitioner"
+      "\t hashvertexcut: - Using hash-based vertex cut partitioner"
       "\n"
       "\t hybridcut:   - Using hybrid cut partitioner "
       "\n");
@@ -60,18 +65,25 @@ int main(int argc, char** argv) {
     LOG_FATAL("Input (output) path is empty.");
 
   switch (Partitioner2Enum(FLAGS_partitioner)) {
-    case kVertexCut: {
+    case kHashVertexCut: {
       VertexCutPartitioner vertexcut_partitioner(
           FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
           FLAGS_n_partitions);
       vertexcut_partitioner.RunPartitioner();
       break;
     }
-    case kEdgeCut: {
+    case kHashEdgeCut: {
       EdgeCutPartitioner edgecut_partitioner(
           FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
           FLAGS_n_partitions);
       edgecut_partitioner.RunPartitioner();
+      break;
+    }
+    case kPlanarVertexCut: {
+      PlanarVertexCutPartitioner planar_vertexcut_partitioner(
+          FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
+          FLAGS_n_partitions);
+      planar_vertexcut_partitioner.RunPartitioner();
       break;
     }
     case kHybridCut:
