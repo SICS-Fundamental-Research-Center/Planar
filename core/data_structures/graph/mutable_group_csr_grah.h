@@ -24,6 +24,8 @@ class MutableGroupCSRGraph : public Serializable {
 
   }
 
+  //TODO: add corresponding methods
+
  private:
   SubgraphMetadata group_metadata_;
 };
