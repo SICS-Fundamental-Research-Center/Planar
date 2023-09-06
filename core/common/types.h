@@ -20,6 +20,8 @@ typedef uint8_t EdgeData;  // used for position
 #define MAX_VERTEX_ID std::numeric_limits<VertexID>::max()
 #define INVALID_GRAPH_ID \
   std::numeric_limits<sics::graph::core::common::GraphID>::max()
+#define INVALID_VERTEX_INDEX \
+  std::numeric_limits<sics::graph::core::common::VertexIndex>::max()
 
 static int subgraph_limits = 1;  // used only for test.
 
