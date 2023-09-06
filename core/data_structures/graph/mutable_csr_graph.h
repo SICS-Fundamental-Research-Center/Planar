@@ -86,6 +86,13 @@ class MutableCSRGraph : public Serializable {
     vertex_data_write_base_ = new VertexData[metadata_.num_vertices];
     memcpy(vertex_data_write_base_, vertex_data_read_base_,
            sizeof(VertexData) * metadata_.num_vertices);
+    // bitmap
+    is_in_graph_bitmap_.Init(
+        metadata_.num_vertices,
+        (uint64_t*)(graph_serialized_->GetCSRBuffer()->at(3).Get()));
+    vertex_src_or_dst_bitmap_.Init(
+        metadata_.num_vertices,
+        (uint64_t*)(graph_serialized_->GetCSRBuffer()->at(4).Get()));
   }
 
   // methods for sync data
@@ -136,9 +143,11 @@ class MutableCSRGraph : public Serializable {
     return vertex_data_read_base_[GetIndexByID(id)];
   }
 
-  // used for basic VertexData type
+  // all read and write methods are for basic type vertex data now
+
+  // write the min value in local vertex data of vertex id
   // @return: true for global message update, or local message update only
-  bool WriteLocalVertexDataByID(VertexID id, VertexData data_new) {
+  bool WriteMinVertexDataByID(VertexID id, VertexData data_new) {
     // TODO: need a check for unsigned type?
     auto index = GetIndexByID(id);
     if (vertex_src_or_dst_bitmap_.GetBit(index)) {
@@ -148,11 +157,47 @@ class MutableCSRGraph : public Serializable {
     }
   }
 
+  // write the value in local vertex data of vertex id
+  // this is not an atomic method. and the write operation 100% success;
+  bool WriteVertexDataByID(VertexID id, VertexData data_new) {
+    auto index = GetIndexByID(id);
+    if (vertex_src_or_dst_bitmap_.GetBit(index)) {
+      vertex_data_write_base_[index] = data_new;
+      return true;
+    }
+    return false;
+  }
+
   void DeleteEdge(EdgeIndex edge_index) {
     edge_delete_bitmap_.SetBit(edge_index);
   }
 
   void set_status(const std::string& new_status) { status_ = new_status; }
+
+  void LogVertexData() {
+    for (int i = 0; i < metadata_.num_vertices; i++) {
+      LOGF_INFO("{} -> Vertex id: {}, read_data: {} write_data: {}", i,
+                vertex_id_by_local_index_[i], vertex_data_read_base_[i],
+                vertex_data_write_base_[i]);
+    }
+  }
+
+  void LogGraphInfo() {
+    LOGF_INFO("Graph info: num_vertices: {}, num_outgoing_edges: {}",
+              metadata_.num_vertices, metadata_.num_outgoing_edges);
+    for (int i = 0; i < metadata_.num_vertices; i++) {
+      LOGF_INFO(
+          "index: {} ---> Vertex id: {}, degree: {}, offset: {}, is_src: {}", i,
+          vertex_id_by_local_index_[i], out_degree_base_[i],
+          out_offset_base_[i], vertex_src_or_dst_bitmap_.GetBit(i));
+    }
+
+    std::string edges = "";
+    for (int i = 0; i < metadata_.num_outgoing_edges; i++) {
+      edges += std::to_string(out_edges_base_[i]) + ", ";
+    }
+    LOGF_INFO("Edges: {}", edges);
+  }
 
  private:
   // use binary search to find the index of id
@@ -162,7 +207,7 @@ class MutableCSRGraph : public Serializable {
     VertexIndex end = metadata_.num_vertices - 1;
     VertexIndex mid = 0;
     while (begin <= end) {
-      mid = begin + (begin - end) / 2;
+      mid = begin + (end - begin) / 2;
       if (vertex_id_by_local_index_[mid] < id) {
         begin = mid + 1;
       } else if (vertex_id_by_local_index_[mid] > id) {
