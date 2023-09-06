@@ -1,5 +1,7 @@
 #include "miniclean/data_structures/gcr/gcr.h"
 
+#include <mutex>
+
 #include "core/util/logging.h"
 
 namespace sics::graph::miniclean::data_structures::gcr {
@@ -20,8 +22,7 @@ void GCR::Init(
 
   for (size_t i = 0; i < num_segments * num_segments; i++) {
     task_package.emplace_back(std::bind(&GCR::InitTask, this, graph,
-                                        &path_instances, &task_package,
-                                        num_segments, i));
+                                        &path_instances, num_segments, i));
   }
 
   thread_pool.SubmitSync(task_package);
@@ -31,7 +32,7 @@ void GCR::Init(
 void GCR::InitTask(
     MiniCleanCSRGraph* graph,
     std::vector<std::vector<std::vector<VertexID>>>* path_instances,
-    TaskPackage* task_package, size_t num_segments, size_t task_id) {
+    size_t num_segments, size_t task_id) {
   // Retrieve path instances of left and right path pattern.
   std::vector<std::vector<VertexID>>* left_path_instances =
       &(*path_instances)[dual_pattern_.first.front()];
@@ -39,7 +40,7 @@ void GCR::InitTask(
       &(*path_instances)[dual_pattern_.second.front()];
 
   std::list<std::pair<std::list<PathInstanceID>, std::list<PathInstanceID>>>
-      local_gcr_instances_;
+      local_gcr_instances;
 
   size_t left_segment_size = left_path_instances->size() / num_segments + 1;
   size_t right_segment_size = right_path_instances->size() / num_segments + 1;
@@ -117,14 +118,14 @@ void GCR::InitTask(
 
       if (is_consequence_satisfied) {
         local_support++;
-        local_gcr_instances_.push_back(std::make_pair(
+        local_gcr_instances.push_back(std::make_pair(
             std::list<PathInstanceID>{i}, std::list<PathInstanceID>{j}));
       }
 
       std::lock_guard<std::mutex> lock(mutex_);
       set_local_support(local_support);
       set_local_match(local_match);
-      AddGCRInstancesToBack(local_gcr_instances_);
+      AddGCRInstancesToBack(local_gcr_instances);
     }
   }
 }

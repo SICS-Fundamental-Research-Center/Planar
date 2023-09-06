@@ -3,7 +3,6 @@
 
 #include <list>
 #include <memory>
-#include <mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -49,7 +48,7 @@ class GCR {
 
   void InitTask(MiniCleanCSRGraph* graph,
                 std::vector<std::vector<std::vector<VertexID>>>* path_instances,
-                TaskPackage* task_package, size_t num_segments, size_t task_id);
+                size_t num_segments, size_t task_id);
 
   // Two GCRs are joinable if
   //   (1) Their labels of star centers are the same.
