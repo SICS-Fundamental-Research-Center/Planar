@@ -16,37 +16,11 @@
 
 namespace sics::graph::core::data_structures::graph {
 
-class ImmutableCSRVertex {
+struct ImmutableCSRVertex {
  private:
   using VertexID = sics::graph::core::common::VertexID;
-  using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
 
  public:
-  ImmutableCSRVertex() = default;
-
-  ~ImmutableCSRVertex() {
-    delete incoming_edges;
-    delete outgoing_edges;
-  }
-
-  std::string VertexLog() {
-    std::stringstream ss;
-    ss << "  ===vid: " << vid << ", indegree: " << indegree
-       << ", outdegree: " << outdegree << "===" << std::endl;
-    if (indegree != 0) {
-      ss << "    Incoming edges: ";
-      for (VertexID i = 0; i < indegree; i++) ss << incoming_edges[i] << ",";
-      ss << std::endl << std::endl;
-    }
-    if (outdegree != 0) {
-      ss << "    Outgoing edges: ";
-      for (VertexID i = 0; i < outdegree; i++) ss << outgoing_edges[i] << ",";
-      ss << std::endl << std::endl;
-    }
-    ss << "****************************************" << std::endl;
-    return ss.str();
-  }
-
   VertexID vid;
   VertexID indegree = 0;
   VertexID outdegree = 0;
@@ -59,7 +33,6 @@ class ImmutableCSRGraph : public Serializable {
   using GraphID = sics::graph::core::common::GraphID;
   using VertexID = sics::graph::core::common::VertexID;
   using VertexLabel = sics::graph::core::common::VertexLabel;
-
 
  public:
   explicit ImmutableCSRGraph(SubgraphMetadata metadata)
@@ -78,12 +51,29 @@ class ImmutableCSRGraph : public Serializable {
   void ShowGraph(VertexID display_num = 0) {
     LOG_INFO("### GID: ", gid_, ",  num_vertices: ", num_vertices_,
              ", num_incoming_edges: ", num_incoming_edges_,
-             ", num_outgoing_edges: ", num_outgoing_edges_, " ###");
+             ", num_outgoing_edges: ", num_outgoing_edges_, " Show top ",
+             display_num, " ###");
     for (VertexID i = 0; i < display_num; i++) {
       if (i >= num_vertices_) break;
       auto u = GetVertexByLocalID(i);
-      std::string s;
-      LOG_INFO(u.VertexLog());
+
+      std::stringstream ss;
+      ss << "  ===vid: " << u.vid << ", indegree: " << u.indegree
+         << ", outdegree: " << u.outdegree << "===" << std::endl;
+      if (u.indegree != 0) {
+        ss << "    Incoming edges: ";
+        for (VertexID i = 0; i < u.indegree; i++) ss << u.incoming_edges[i] << ",";
+        ss << std::endl << std::endl;
+      }
+      if (u.outdegree != 0) {
+        ss << "    Outgoing edges: ";
+        for (VertexID i = 0; i < u.outdegree; i++) ss << u.outgoing_edges[i] << ",";
+        ss << std::endl << std::endl;
+      }
+      ss << "****************************************" << std::endl;
+      std::string s =  ss.str();
+
+      LOG_INFO(s);
     }
   }
 
@@ -101,9 +91,7 @@ class ImmutableCSRGraph : public Serializable {
   VertexID get_max_vid() const { return max_vid_; }
   VertexID get_min_vid() const { return min_vid_; }
 
-  void SetGraphBuffer(uint8_t* buffer) {
-    buf_graph_base_pointer_ = buffer;
-  }
+  void SetGraphBuffer(uint8_t* buffer) { buf_graph_base_pointer_ = buffer; }
 
   void SetGlobalIDBuffer(VertexID* buffer) {
     globalid_by_localid_base_pointer_ = buffer;
