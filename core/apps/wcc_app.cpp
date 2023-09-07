@@ -17,13 +17,19 @@ void WCCApp::PEval() {
   while (graph_->GetOutEdgeNums() != 0) {
     ParallelEdgeDo(std::bind(&WCCApp::Graft, this, std::placeholders::_1,
                              std::placeholders::_2));
+    graph_->LogVertexData();
 
     ParallelVertexDo(
         std::bind(&WCCApp::PointJump, this, std::placeholders::_1));
 
+    graph_->LogVertexData();
+
+    graph_->LogEdges();
     ParallelEdgeMutateDo(std::bind(&WCCApp::Contract, this,
                                    std::placeholders::_1, std::placeholders::_2,
                                    std::placeholders::_3));
+    graph_->LogEdges();
+    graph_->LogVertexData();
   }
   graph_->set_status("PEval");
 }
@@ -71,7 +77,7 @@ void WCCApp::PointJump(VertexID src_id) {
 void WCCApp::Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
   if (graph_->ReadLocalVertexDataByID(src_id) ==
       graph_->ReadLocalVertexDataByID(dst_id)) {
-    graph_->DeleteEdge(idx);
+    graph_->DeleteEdge(src_id, idx);
   }
 }
 
