@@ -32,22 +32,23 @@ class HashBasedEdgeCutPartitioner : public PartitionerBase {
  private:
   using StoreStrategy = sics::graph::tools::common::StoreStrategy;
   using VertexID = sics::graph::core::common::VertexID;
+  using GraphID = sics::graph::core::common::GraphID;
+
 
  public:
   HashBasedEdgeCutPartitioner(const std::string& input_path,
                               const std::string& output_path,
                               StoreStrategy store_strategy,
-                              VertexID n_partitions)
+                              GraphID n_partitions)
       : PartitionerBase(input_path, output_path, store_strategy),
         n_partitions_(n_partitions) {}
 
   void RunPartitioner() override;
 
  private:
-  VertexID n_partitions_;
+  const GraphID n_partitions_;
 
-  VertexID GetBucketID(VertexID vid,
-                       VertexID n_bucket,
+  VertexID GetBucketID(VertexID vid, VertexID n_bucket,
                        size_t n_vertices) const;
 };
 
