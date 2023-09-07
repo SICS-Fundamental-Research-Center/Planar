@@ -49,13 +49,13 @@ void MutableCSRReader::ReadMetaInfoFromBin(const std::string& path,
 
   // split the buffer into two parts
   buffers->emplace_back(meta_size);
-  file.read((char*)(buffers->back().Get()), meta_size);
+  file.read((char*) (buffers->back().Get()), meta_size);
   if (!file) {
     LOG_FATAL("Error reading file meta info: ", path.c_str());
   }
 
   buffers->emplace_back(edge_size);
-  file.read((char*)(buffers->back().Get()), edge_size);
+  file.read((char*) (buffers->back().Get()), edge_size);
   if (!file) {
     LOG_FATAL("Error reading file edge info: ", path.c_str());
   }
@@ -75,7 +75,7 @@ void MutableCSRReader::ReadLabelInfoFromBin(const std::string& path,
   //  buffers->emplace_back(OwnedBuffer(file_size));
   buffers->emplace_back(file_size);
 
-  file.read((char*)(buffers->back().Get()), file_size);
+  file.read((char*) (buffers->back().Get()), file_size);
   if (!file) {
     LOG_FATAL("Error reading file: ", path.c_str());
   }
