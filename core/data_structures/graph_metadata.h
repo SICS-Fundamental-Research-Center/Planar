@@ -57,6 +57,10 @@ class GraphMetadata {
     return subgraph_metadata_vec_.at(gid);
   }
 
+  SubgraphMetadata* GetSubgraphMetadataPtr(common::GraphID gid) {
+    return &subgraph_metadata_vec_.at(gid);
+  }
+
   const SubgraphMetadata& GetSubgraphMetadataRef(common::GraphID gid) const {
     return subgraph_metadata_vec_.at(gid);
   }

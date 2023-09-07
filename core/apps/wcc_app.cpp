@@ -29,6 +29,7 @@ void WCCApp::PEval() {
                                    std::placeholders::_1, std::placeholders::_2,
                                    std::placeholders::_3));
     graph_->LogEdges();
+    graph_->LogGraphInfo();
     graph_->LogVertexData();
   }
   graph_->set_status("PEval");

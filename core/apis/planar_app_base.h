@@ -63,7 +63,7 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelVertexDo is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
-    VertexIndex begin_index = 0, end_index;
+    VertexIndex begin_index = 0, end_index = 0;
     for (; begin_index < graph_->GetVertexNums();) {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
@@ -88,7 +88,7 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelEdgeDo is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
-    VertexIndex begin_index = 0, end_index;
+    VertexIndex begin_index = 0, end_index = 0;
     for (; begin_index < graph_->GetVertexNums();) {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
@@ -117,7 +117,7 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelEdgeDelDo is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
-    VertexIndex begin_index = 0, end_index;
+    VertexIndex begin_index = 0, end_index = 0;
     for (; begin_index < graph_->GetVertexNums();) {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
@@ -125,10 +125,13 @@ class PlanarAppBase : public PIE {
       auto task = std::bind([&, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
           for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
-            edge_del_func(
-                graph_->GetVertexIDByIndex(i),
-                graph_->GetVertexIDByIndex(graph_->GetOneOutEdge(i, j)),
-                graph_->GetOutOffsetByIndex(i) + j);
+            LOGF_INFO("edge_del_func: {}, {}, {}",
+                      graph_->GetVertexIDByIndex(i),
+                      graph_->GetOneOutEdge(i, j),
+                      graph_->GetOutOffsetByIndex(i) + j);
+            edge_del_func(graph_->GetVertexIDByIndex(i),
+                          graph_->GetOneOutEdge(i, j),
+                          graph_->GetOutOffsetByIndex(i) + j);
           }
         }
       });
