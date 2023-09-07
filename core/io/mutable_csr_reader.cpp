@@ -16,11 +16,17 @@ void MutableCSRReader::Read(scheduler::ReadMessage* message,
     file_path += ".new";
     label_path += ".new";
   }
+  std::string in_graph_bitmap_path = root_path_ + "bitmap/is_in_graph/" +
+                                     std::to_string(message->graph_id) + ".bin";
+  std::string src_bitmap_path = root_path_ + "bitmap/src_map/" +
+                                std::to_string(message->graph_id) + ".bin";
 
   Serialized* graph_serialized = new SerializedMuatbleCSRGraph();
   std::vector<OwnedBuffer> buffers;
   ReadMetaInfoFromBin(file_path, message->num_vertices, &buffers);
   ReadLabelInfoFromBin(label_path, &buffers);
+  ReadLabelInfoFromBin(in_graph_bitmap_path, &buffers);
+  ReadLabelInfoFromBin(src_bitmap_path, &buffers);
 
   graph_serialized->ReceiveBuffers(std::move(buffers));
 
@@ -43,13 +49,13 @@ void MutableCSRReader::ReadMetaInfoFromBin(const std::string& path,
 
   // split the buffer into two parts
   buffers->emplace_back(meta_size);
-  buffers->emplace_back(edge_size);
-
-  file.read((char*)(buffers->at(0).Get()), meta_size);
+  file.read((char*) (buffers->back().Get()), meta_size);
   if (!file) {
     LOG_FATAL("Error reading file meta info: ", path.c_str());
   }
-  file.read((char*)(buffers->at(1).Get()), edge_size);
+
+  buffers->emplace_back(edge_size);
+  file.read((char*) (buffers->back().Get()), edge_size);
   if (!file) {
     LOG_FATAL("Error reading file edge info: ", path.c_str());
   }
@@ -69,10 +75,11 @@ void MutableCSRReader::ReadLabelInfoFromBin(const std::string& path,
   //  buffers->emplace_back(OwnedBuffer(file_size));
   buffers->emplace_back(file_size);
 
-  file.read((char*) (buffers->at(2).Get()), file_size);
+  file.read((char*) (buffers->back().Get()), file_size);
   if (!file) {
     LOG_FATAL("Error reading file: ", path.c_str());
   }
+  file.close();
 }
 
 }  // namespace sics::graph::core::io

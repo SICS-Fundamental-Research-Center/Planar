@@ -18,20 +18,13 @@ namespace sics::graph::core::common {
 class Bitmap {
  public:
   Bitmap() = default;
-  Bitmap(size_t size) {
-    Init(size);
-  }
-
-  Bitmap(size_t size, uint64_t* init_value) {
-    size_ = size;
-    data_ = init_value;
-  }
+  Bitmap(size_t size) { Init(size); }
+  Bitmap(size_t size, uint64_t* init_value) { Init(size, init_value); }
 
   // TODO: move constructor and assignment copy
   Bitmap(Bitmap&& other) = default;
 
   Bitmap& operator=(Bitmap&& other) = default;
-
 
   ~Bitmap() {
     delete data_;
