@@ -43,8 +43,8 @@ class WCCApp : public apis::PlanarAppBase<CSRGraph> {
   void PointJumpIncEval(VertexID id);
 
  private:
-  std::unordered_map<VertexID, VertexID> id_to_p;
-  std::mutex mtx;
+  std::unordered_map<VertexID, VertexID> id_to_p_;
+  std::mutex mtx_;
 };
 
 }  // namespace sics::graph::core::apps

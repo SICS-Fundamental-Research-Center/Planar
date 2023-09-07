@@ -78,9 +78,8 @@ void WCCApp::Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
 void WCCApp::MessagePassing(VertexID id) {
   if (update_store_->Read(id) < graph_->ReadLocalVertexDataByID(id)) {
     if (!graph_->IsInGraph(graph_->ReadLocalVertexDataByID(id))) {
-      mtx.lock();
-      id_to_p[graph_->ReadLocalVertexDataByID(id)] = update_store_->Read(id);
-      mtx.unlock();
+      std::lock_guard<std::mutex> grd(mtx_);
+      id_to_p_[graph_->ReadLocalVertexDataByID(id)] = update_store_->Read(id);
     } else {
       // TODO: active vertex update global info
       graph_->WriteMinVertexDataByID(graph_->ReadLocalVertexDataByID(id),
@@ -92,10 +91,9 @@ void WCCApp::MessagePassing(VertexID id) {
 void WCCApp::PointJumpIncEval(VertexID id) {
   // is not in graph
   if (!graph_->IsInGraph(graph_->ReadLocalVertexDataByID(id))) {
-    mtx.lock();
-    id_to_p[graph_->ReadLocalVertexDataByID(id)] =
+    std::lock_guard<std::mutex> grd(mtx_);
+    id_to_p_[graph_->ReadLocalVertexDataByID(id)] =
         graph_->ReadLocalVertexDataByID(id);
-    mtx.unlock();
   } else {
     bool flag = graph_->WriteMinVertexDataByID(
         id,

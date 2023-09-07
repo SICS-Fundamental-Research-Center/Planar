@@ -89,10 +89,10 @@ class MutableCSRGraph : public Serializable {
     // bitmap
     is_in_graph_bitmap_.Init(
         metadata_.num_vertices,
-        (uint64_t*)(graph_serialized_->GetCSRBuffer()->at(3).Get()));
+        (uint64_t*) (graph_serialized_->GetCSRBuffer()->at(3).Get()));
     vertex_src_or_dst_bitmap_.Init(
         metadata_.num_vertices,
-        (uint64_t*)(graph_serialized_->GetCSRBuffer()->at(4).Get()));
+        (uint64_t*) (graph_serialized_->GetCSRBuffer()->at(4).Get()));
   }
 
   // methods for sync data
