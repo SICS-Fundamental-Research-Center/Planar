@@ -41,7 +41,7 @@ VertexID HashBasedEdgeCutPartitioner::GetBucketID(VertexID vid,
                                                   VertexID n_bucket,
                                                   size_t n_vertices = 0) const {
   if (n_vertices != 0)
-    return vid / ceil((double)n_vertices / (double)n_bucket);
+    return vid / ceil((double) n_vertices / (double) n_bucket);
   else
     return fnv64_append_byte(vid, 3) % n_bucket;
 }
