@@ -2,7 +2,6 @@
 #define TOOLS_COMMON_TYPES_H_
 
 #include "core/common/types.h"
-#include "tools/common/data_structures.h"
 
 namespace sics::graph::tools::common {
 
