@@ -215,7 +215,7 @@ class Edges {
   VertexID get_src_by_index(size_t i) const { return edges_ptr_[i].src; }
   VertexID get_dst_by_index(size_t i) const { return edges_ptr_[i].dst; }
   Edge get_edge_by_index(size_t i) const { return edges_ptr_[i]; }
-  size_t get_index_byy_iter(const Iterator& iter) {
+  size_t get_index_by_iter(const Iterator& iter) {
     return (iter.get_base_ptr() - begin().get_base_ptr());
   };
 
