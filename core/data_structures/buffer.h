@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <iostream>
 
 namespace sics::graph::core::data_structures {
 
@@ -28,11 +27,7 @@ class OwnedBuffer {
   // pointer p should be owned
   explicit OwnedBuffer(size_t s, std::unique_ptr<uint8_t> p)
       : p_(p.release()), s_(s) {}
-  ~OwnedBuffer() {
-    //    std::cout << "deconstruction = size: " << s_
-    //              << " address: " << static_cast<void*>(p_) << std::endl;
-    delete p_;
-  }
+  ~OwnedBuffer() { delete p_; }
   OwnedBuffer(const OwnedBuffer& r) = delete;
   OwnedBuffer(OwnedBuffer&& r) noexcept : p_(r.p_), s_(r.s_) {
     r.p_ = nullptr;

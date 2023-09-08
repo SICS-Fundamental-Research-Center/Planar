@@ -55,15 +55,15 @@ class MutableCSRGraph : public Serializable {
     vertex_data_write_base_ = nullptr;
 
     if (common::Configurations::Get()->edge_mutate) {
-      if (out_degree_base_new_ != nullptr) {
+      if (out_degree_base_new_) {
         delete[] out_degree_base_new_;
         out_degree_base_new_ = nullptr;
       }
-      if (out_offset_base_new_ != nullptr) {
+      if (out_offset_base_new_) {
         delete[] out_offset_base_new_;
         out_offset_base_new_ = nullptr;
       }
-      if (out_edges_base_new_ != nullptr) {
+      if (out_edges_base_new_) {
         delete[] out_edges_base_new_;
         out_edges_base_new_ = nullptr;
       }
@@ -94,20 +94,20 @@ class MutableCSRGraph : public Serializable {
     }
     // edges pointer base
     out_edges_base_ =
-        (VertexID*)(graph_serialized_->GetCSRBuffer()->at(1).Get());
+        (VertexID*) (graph_serialized_->GetCSRBuffer()->at(1).Get());
     // vertex data buf
     vertex_data_read_base_ =
-        (VertexData*)(graph_serialized_->GetCSRBuffer()->at(2).Get());
+        (VertexData*) (graph_serialized_->GetCSRBuffer()->at(2).Get());
     vertex_data_write_base_ = new VertexData[metadata_->num_vertices];
     memcpy(vertex_data_write_base_, vertex_data_read_base_,
            sizeof(VertexData) * metadata_->num_vertices);
     // bitmap
     is_in_graph_bitmap_.Init(
         metadata_->num_vertices,
-        (uint64_t*)(graph_serialized_->GetCSRBuffer()->at(3).Get()));
+        (uint64_t*) (graph_serialized_->GetCSRBuffer()->at(3).Get()));
     vertex_src_or_dst_bitmap_.Init(
         metadata_->num_vertices,
-        (uint64_t*)(graph_serialized_->GetCSRBuffer()->at(4).Get()));
+        (uint64_t*) (graph_serialized_->GetCSRBuffer()->at(4).Get()));
 
     if (common::Configurations::Get()->edge_mutate) {
       out_degree_base_new_ = new VertexDegree[metadata_->num_vertices];
