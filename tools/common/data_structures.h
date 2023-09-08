@@ -209,8 +209,6 @@ class Edges {
     return iter;
   }
 
-  void PushBack(const Edge& e) {}
-
   size_t GetIndexByIter(const Iterator& iter) {
     return (iter.get_base_ptr() - begin().get_base_ptr());
   };
