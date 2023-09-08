@@ -1,17 +1,16 @@
 #ifndef TOOLS_COMMON_TYPES_H_
 #define TOOLS_COMMON_TYPES_H_
 
-#include <cstddef>  // For std::ptrdiff_t
-#include <cstdint>
-#include <iterator>  // For std::forward_iterator_tag
-#include <vector>
-
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/common/types.h"
 #include "core/util/atomic.h"
 #include "core/util/logging.h"
 #include "tools/common/data_structures.h"
+#include <cstddef>  // For std::ptrdiff_t
+#include <cstdint>
+#include <iterator>  // For std::forward_iterator_tag
+#include <vector>
 
 namespace sics::graph::tools::common {
 
@@ -208,17 +207,17 @@ class Edges {
     return iter;
   }
 
-  size_t GetIndexByIter(const Iterator& iter) {
-    return (iter.get_base_ptr() - begin().get_base_ptr());
-  };
-
   void AssignEdge(size_t pos, const Edge& e) { edges_ptr_[pos] = e; }
 
   Edge* get_base_ptr() { return edges_ptr_; }
+  EdgelistMetadata get_metadata() const { return edgelist_metadata_; }
+
   VertexID get_src_by_index(size_t i) const { return edges_ptr_[i].src; }
   VertexID get_dst_by_index(size_t i) const { return edges_ptr_[i].dst; }
   Edge get_edge_by_index(size_t i) const { return edges_ptr_[i]; }
-  EdgelistMetadata get_metadata() const { return edgelist_metadata_; }
+  size_t get_index_byy_iter(const Iterator& iter) {
+    return (iter.get_base_ptr() - begin().get_base_ptr());
+  };
 
  private:
   Edge* edges_ptr_;
