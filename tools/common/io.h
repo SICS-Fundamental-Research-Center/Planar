@@ -5,8 +5,6 @@
 #include <fstream>
 #include <string>
 
-#include <folly/concurrency/ConcurrentHashMap.h>
-
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/data_structures/graph/immutable_csr_graph.h"
@@ -53,13 +51,13 @@ class GraphFormatConverter {
   // construct CSR graphs, one CSR for each ConcurrentHashMap,and then store the
   // CSR graphs in output_root_path/graphs.
   // @PARAMETERS
-  //  subgraph_vec: a vector of vertices to be written to disk.
+  //  vertex_buckets: container of vertices.
   //  graph_metadata: metadata of the graph.
   //  store_strategy: store strategy to be used.
-  void WriteSubgraph(
-      const std::vector<folly::ConcurrentHashMap<VertexID, Vertex>*>&
-          subgraph_vec,
-      const GraphMetadata& graph_metadata, StoreStrategy store_strategy);
+  void WriteSubgraph(const std::vector<std::vector<Vertex>*>&
+                         vertex_buckets,
+                     const GraphMetadata& graph_metadata,
+                     StoreStrategy store_strategy);
 
   // @DESCRIPTION Write a set of edges to disk. It first converts edges to CSR
   // graphs, one CSR for each bucket, and then store the CSR graphs in
