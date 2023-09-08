@@ -1,5 +1,13 @@
 #include "data_structures.h"
 
+#include <cstddef>  // For std::ptrdiff_t
+#include <iterator>  // For std::forward_iterator_tag
+
+#include "core/common/bitmap.h"
+#include "core/common/multithreading/thread_pool.h"
+#include "core/util/atomic.h"
+#include "core/util/logging.h"
+
 namespace sics::graph::tools::common {
 
 using sics::graph::core::common::Bitmap;
@@ -10,6 +18,8 @@ using sics::graph::core::common::VertexLabel;
 using sics::graph::core::util::atomic::WriteAdd;
 using sics::graph::core::util::atomic::WriteMax;
 using sics::graph::core::util::atomic::WriteMin;
+using Bitmap = sics::graph::core::common::Bitmap;
+using TaskPackage = sics::graph::core::common::TaskPackage;
 
 void Edges::SortBySrc() {
   std::sort(std::begin(*this), std::end(*this),
@@ -67,10 +77,7 @@ VertexID Edges::GetVertexWithMaximumDegree() {
 }
 
 Edges::Iterator Edges::SearchVertex(VertexID vid) {
-  auto iter = std::lower_bound(this->begin(), this->end(), vid);
-  return iter;
+  return std::lower_bound(this->begin(), this->end(), vid);
 }
-
-void Edges::AssignEdge(size_t pos, const Edge& e) { edges_ptr_[pos] = e; }
 
 }  // namespace sics::graph::tools::common

@@ -1,16 +1,7 @@
 #ifndef TOOLS_COMMON_TYPES_H_
 #define TOOLS_COMMON_TYPES_H_
 
-#include <cstddef>  // For std::ptrdiff_t
-#include <cstdint>
-#include <iterator>  // For std::forward_iterator_tag
-#include <vector>
-
-#include "core/common/bitmap.h"
-#include "core/common/multithreading/thread_pool.h"
 #include "core/common/types.h"
-#include "core/util/atomic.h"
-#include "core/util/logging.h"
 #include "tools/common/data_structures.h"
 
 namespace sics::graph::tools::common {
@@ -52,8 +43,6 @@ struct Edge {
 class Edges {
  private:
   using VertexID = sics::graph::core::common::VertexID;
-  using Bitmap = sics::graph::core::common::Bitmap;
-  using TaskPackage = sics::graph::core::common::TaskPackage;
   using EdgelistMetadata = sics::graph::tools::common::EdgelistMetadata;
 
  public:
@@ -155,9 +144,6 @@ class Edges {
 
   // Find the index of given vid via binary search.
   Iterator SearchVertex(VertexID vid);
-
-  // Assign edge to the given position.
-  void AssignEdge(size_t pos, const Edge& e);
 
   Edge* get_base_ptr() { return edges_ptr_; }
   EdgelistMetadata get_metadata() const { return edgelist_metadata_; }
