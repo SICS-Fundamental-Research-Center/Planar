@@ -27,7 +27,10 @@ class OwnedBuffer {
   // pointer p should be owned
   explicit OwnedBuffer(size_t s, std::unique_ptr<uint8_t> p)
       : p_(p.release()), s_(s) {}
-  ~OwnedBuffer() { delete p_; }
+  ~OwnedBuffer() {
+    delete p_;
+//    p_ = nullptr;
+  }
   OwnedBuffer(const OwnedBuffer& r) = delete;
   OwnedBuffer(OwnedBuffer&& r) noexcept : p_(r.p_), s_(r.s_) {
     r.p_ = nullptr;
@@ -52,6 +55,14 @@ class OwnedBuffer {
   uint8_t* Get(size_t offset = 0) const { return p_ + offset; }
 
   size_t GetSize() const { return s_; }
+
+  // used to release the ownership of the pointer
+  uint8_t* Release() {
+    uint8_t* p = p_;
+    p_ = nullptr;
+    s_ = 0;
+    return p;
+  }
 
  private:
   uint8_t* p_;

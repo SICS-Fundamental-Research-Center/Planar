@@ -4,6 +4,8 @@
 #include <memory>
 
 #include "common/bitmap.h"
+#include "common/bitmap_no_ownership.h"
+#include "common/config.h"
 #include "common/types.h"
 #include "data_structures/graph/serialized_mutable_csr_graph.h"
 #include "data_structures/graph_metadata.h"
@@ -173,6 +175,7 @@ class MutableCSRGraph : public Serializable {
            sizeof(VertexOffset) * metadata_->num_vertices);
     // change out_edges_buffer to new one
     metadata_->num_outgoing_edges = num_outgoing_edges_new;
+    edge_delete_bitmap_.Clear();
     if (metadata_->num_outgoing_edges == 0) {
       // TODO: decide is release buffer now or in serialize phase
       // release all assistant buffer:
@@ -184,7 +187,7 @@ class MutableCSRGraph : public Serializable {
           OwnedBuffer(sizeof(VertexID) * metadata_->num_outgoing_edges,
                       std::unique_ptr<uint8_t>((uint8_t*)out_edges_base_new_));
       out_edges_base_ = out_edges_base_new_;
-      out_degree_base_new_ = nullptr;
+      out_edges_base_new_ = nullptr;
     }
   }
 
@@ -336,8 +339,9 @@ class MutableCSRGraph : public Serializable {
 
   VertexData* vertex_data_write_base_;
 
-  common::Bitmap vertex_src_or_dst_bitmap_;
-  common::Bitmap is_in_graph_bitmap_;
+  // bitmap read from disk, have no ownership of data
+  common::BitmapNoOwnerShip vertex_src_or_dst_bitmap_;
+  common::BitmapNoOwnerShip is_in_graph_bitmap_;
 
   // used for mutable algorithm only;
   VertexDegree* out_degree_base_new_;

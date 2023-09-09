@@ -19,11 +19,9 @@ class Bitmap {
  public:
   Bitmap() = default;
   Bitmap(size_t size) { Init(size); }
-  Bitmap(size_t size, uint64_t* init_value) { Init(size, init_value); }
 
   // TODO: move constructor and assignment copy
   Bitmap(Bitmap&& other) = default;
-
   Bitmap& operator=(Bitmap&& other) = default;
 
   ~Bitmap() {
@@ -34,11 +32,6 @@ class Bitmap {
   void Init(size_t size) {
     size_ = size;
     data_ = new uint64_t[WORD_OFFSET(size) + 1]();
-  }
-
-  void Init(size_t size, uint64_t* data) {
-    size_ = size;
-    data_ = data;
   }
 
   void Clear() {
@@ -106,7 +99,7 @@ class Bitmap {
 
   uint64_t* GetDataBasePointer() { return data_; }
 
- private:
+ protected:
   size_t size_ = 0;
   uint64_t* data_ = nullptr;
 };
