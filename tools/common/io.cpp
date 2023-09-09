@@ -19,16 +19,17 @@ void GraphFormatConverter::WriteSubgraph(
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
+  task_package.reserve(parallelism);
 
   std::vector<SubgraphMetadata> subgraph_metadata_vec;
-
   std::ofstream border_vertices_file(output_root_path_ +
                                      "bitmap/border_vertices.bin");
   Bitmap border_vertices(graph_metadata.get_max_vid());
 
-
+  // Write subgraph.
   for (GraphID gid = 0; gid < graph_metadata.get_num_subgraphs(); gid++) {
     auto bucket = vertex_buckets[gid];
+
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
                                 std::to_string(gid) + ".bin");
     std::ofstream src_map_file(output_root_path_ + "bitmap/src_map/" +
@@ -64,7 +65,7 @@ void GraphFormatConverter::WriteSubgraph(
 
     out_data_file.write(reinterpret_cast<char*>(buffer_globalid),
                         sizeof(VertexID) * num_vertices);
-    delete buffer_globalid;
+    delete[] buffer_globalid;
 
     // Compute offset for each vertex.
     auto buffer_in_offset = new VertexID[num_vertices]();
@@ -101,8 +102,8 @@ void GraphFormatConverter::WriteSubgraph(
       case kUndefinedStrategy:
         LOG_FATAL("Store_strategy is undefined");
     }
-    delete buffer_indegree;
-    delete buffer_outdegree;
+    delete[] buffer_indegree;
+    delete[] buffer_outdegree;
 
     // Fill edges.
     auto buffer_in_edges = new VertexID[count_in_edges]();
@@ -130,8 +131,8 @@ void GraphFormatConverter::WriteSubgraph(
     thread_pool.SubmitSync(task_package);
     task_package.clear();
 
-    delete buffer_in_offset;
-    delete buffer_out_offset;
+    delete[] buffer_in_offset;
+    delete[] buffer_out_offset;
 
     // LOG_INFO("X", num_vertices);
     for (unsigned int i = 0; i < parallelism; i++) {
@@ -168,8 +169,8 @@ void GraphFormatConverter::WriteSubgraph(
             case kUndefinedStrategy:
               LOG_FATAL("Store_strategy is undefined");
           }
-          delete bucket->at(j).outgoing_edges;
-          delete bucket->at(j).incoming_edges;
+          delete[] bucket->at(j).outgoing_edges;
+          delete[] bucket->at(j).incoming_edges;
         }
       });
       task_package.push_back(task);
@@ -207,8 +208,8 @@ void GraphFormatConverter::WriteSubgraph(
       case kUndefinedStrategy:
         LOG_FATAL("Store_strategy is undefined");
     }
-    delete buffer_in_edges;
-    delete buffer_out_edges;
+    delete[] buffer_in_edges;
+    delete[] buffer_out_edges;
     out_data_file.close();
 
     // Write label data with all 0.
@@ -217,7 +218,7 @@ void GraphFormatConverter::WriteSubgraph(
     auto buffer_label = new VertexLabel[num_vertices]();
     out_label_file.write(reinterpret_cast<char*>(buffer_label),
                          sizeof(VertexLabel) * num_vertices);
-    delete buffer_label;
+    delete[] buffer_label;
     out_label_file.close();
 
     // Write subgraph metadata.
@@ -265,12 +266,13 @@ void GraphFormatConverter::WriteSubgraph(
 
 // For vertex cut.
 void GraphFormatConverter::WriteSubgraph(
-    VertexID** edge_bucket, const GraphMetadata& graph_metadata,
-    const std::vector<EdgelistMetadata>& edgelist_metadata_vec,
+    const std::vector<Edges*>& edge_buckets,
+    const GraphMetadata& graph_metadata,
     StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
+  task_package.reserve(parallelism);
 
   VertexID n_subgraphs = graph_metadata.get_num_subgraphs();
 
@@ -281,7 +283,7 @@ void GraphFormatConverter::WriteSubgraph(
   Bitmap border_vertices(graph_metadata.get_max_vid());
   auto frequency_of_vertices = new int[graph_metadata.get_max_vid()]();
 
-  for (VertexID i = 0; i < n_subgraphs; i++) {
+  for (GraphID i = 0; i < n_subgraphs; i++) {
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
                                 std::to_string(i) + ".bin");
     std::ofstream src_map_file(output_root_path_ + "bitmap/src_map/" +
@@ -289,10 +291,10 @@ void GraphFormatConverter::WriteSubgraph(
     std::ofstream is_in_graph_file(output_root_path_ + "bitmap/is_in_graph/" +
                                    std::to_string(i) + ".bin");
 
+    auto bucket = edge_buckets[i];
     ImmutableCSRGraph csr_graph(i);
-    util::format_converter::Edgelist2CSR(
-        edge_bucket[i], edgelist_metadata_vec[i], store_strategy, &csr_graph);
-    delete edge_bucket[i];
+    util::format_converter::Edgelist2CSR(*bucket, store_strategy, &csr_graph);
+    delete edge_buckets[i];
 
     Bitmap src_map(csr_graph.get_num_vertices());
     Bitmap is_in_graph(csr_graph.get_num_vertices());
@@ -385,7 +387,7 @@ void GraphFormatConverter::WriteSubgraph(
     auto buffer_label = new VertexLabel[csr_graph.get_num_vertices()]();
     out_label_file.write(reinterpret_cast<char*>(buffer_label),
                          sizeof(VertexLabel) * csr_graph.get_num_vertices());
-    delete buffer_label;
+    delete[] buffer_label;
 
     // Write Bitmaps that might potentially benefit a number of graph
     // applications.
@@ -399,39 +401,39 @@ void GraphFormatConverter::WriteSubgraph(
     out_label_file.close();
     src_map_file.close();
     is_in_graph_file.close();
-
-    // Write border_vertices bitmap
-    for (unsigned int i = 0; i < parallelism; i++) {
-      auto task = std::bind([i, parallelism, &graph_metadata,
-                             &frequency_of_vertices, &border_vertices]() {
-        for (VertexID j = i; j < graph_metadata.get_max_vid();
-             j += parallelism) {
-          if (frequency_of_vertices[j] > 1) border_vertices.SetBit(j);
-        }
-      });
-      task_package.push_back(task);
-    }
-    thread_pool.SubmitSync(task_package);
-    task_package.clear();
-    delete frequency_of_vertices;
-    border_vertices_file.write(
-        reinterpret_cast<char*>(border_vertices.GetDataBasePointer()),
-        ((border_vertices.size() >> 6) + 1) * sizeof(uint64_t));
-    border_vertices_file.close();
-
-    // Write metadata
-    YAML::Node out_node;
-    out_node["GraphMetadata"]["num_vertices"] =
-        graph_metadata.get_num_vertices();
-    out_node["GraphMetadata"]["num_edges"] = graph_metadata.get_num_edges();
-    out_node["GraphMetadata"]["max_vid"] = graph_metadata.get_max_vid();
-    out_node["GraphMetadata"]["min_vid"] = graph_metadata.get_min_vid();
-    out_node["GraphMetadata"]["num_subgraphs"] = subgraph_metadata_vec.size();
-    out_node["GraphMetadata"]["subgraphs"] = subgraph_metadata_vec;
-
-    out_meta_file << out_node << std::endl;
-    out_meta_file.close();
   }
+
+  // Get border_vertices bitmap.
+  for (unsigned int i = 0; i < parallelism; i++) {
+    auto task = std::bind([i, parallelism, &graph_metadata,
+                           &frequency_of_vertices, &border_vertices]() {
+      for (VertexID j = i; j < graph_metadata.get_max_vid(); j += parallelism) {
+        if (frequency_of_vertices[j] > 1) border_vertices.SetBit(j);
+      }
+    });
+    task_package.push_back(task);
+  }
+  thread_pool.SubmitSync(task_package);
+  task_package.clear();
+  delete[] frequency_of_vertices;
+
+  // Write the global border vertices bitmap to disk.
+  border_vertices_file.write(
+      reinterpret_cast<char*>(border_vertices.GetDataBasePointer()),
+      ((border_vertices.size() >> 6) + 1) * sizeof(uint64_t));
+  border_vertices_file.close();
+
+  // Write metadata
+  YAML::Node out_node;
+  out_node["GraphMetadata"]["num_vertices"] = graph_metadata.get_num_vertices();
+  out_node["GraphMetadata"]["num_edges"] = graph_metadata.get_num_edges();
+  out_node["GraphMetadata"]["max_vid"] = graph_metadata.get_max_vid();
+  out_node["GraphMetadata"]["min_vid"] = graph_metadata.get_min_vid();
+  out_node["GraphMetadata"]["num_subgraphs"] = subgraph_metadata_vec.size();
+  out_node["GraphMetadata"]["subgraphs"] = subgraph_metadata_vec;
+
+  out_meta_file << out_node << std::endl;
+  out_meta_file.close();
 }
 
 }  // namespace sics::graph::tools::common
