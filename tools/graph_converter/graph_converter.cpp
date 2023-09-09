@@ -164,11 +164,8 @@ void ConvertEdgelistBin2CSRBin(const std::string& input_path,
 
   auto buffer_edges = new Edge[edgelist_metadata.num_edges]();
 
-  // auto buffer_edges = (VertexID*)malloc(sizeof(VertexID) * num_edges * 2);
   std::ifstream in_file(input_path + "edgelist.bin");
-  if (!in_file)
-    throw std::runtime_error("Open file failed: " + input_path +
-                             "edgelist.bin");
+  if (!in_file) LOG_FATAL("Open file failed: " + input_path + "edgelist.bin");
   in_file.read(reinterpret_cast<char*>(buffer_edges),
                sizeof(Edge) * edgelist_metadata.num_edges);
 
