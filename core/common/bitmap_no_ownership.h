@@ -8,6 +8,9 @@ namespace sics::graph::core::common {
 class BitmapNoOwnerShip : public Bitmap {
  public:
   BitmapNoOwnerShip() = default;
+  BitmapNoOwnerShip(size_t size) : Bitmap() {
+    size_ = size;
+  }
   BitmapNoOwnerShip(size_t size, uint64_t* data) : Bitmap() {
     Init(size, data);
   }

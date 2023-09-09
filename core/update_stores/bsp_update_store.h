@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "common/bitmap.h"
+#include "common/bitmap_no_ownership.h"
 #include "common/types.h"
 #include "update_stores/update_store_base.h"
 #include "util/atomic.h"
@@ -17,12 +18,12 @@ class BspUpdateStore : public UpdateStoreBase {
   BspUpdateStore() = default;
   explicit BspUpdateStore(const std::string& root_path,
                           common::VertexCount vertex_num)
-      : message_count_(vertex_num), active_vertex_bitmap_(vertex_num) {
+      : message_count_(vertex_num) {
     read_data_ = new VertexData[message_count_];
     write_data_ = new VertexData[message_count_];
   }
   explicit BspUpdateStore(common::VertexCount vertex_num)
-      : message_count_(vertex_num), active_vertex_bitmap_(vertex_num) {
+      : message_count_(vertex_num) {
     read_data_ = new VertexData[message_count_];
     write_data_ = new VertexData[message_count_];
   }
@@ -74,7 +75,7 @@ class BspUpdateStore : public UpdateStoreBase {
   VertexData* write_data_;
   common::VertexCount message_count_;
 
-  common::Bitmap active_vertex_bitmap_;
+  common::BitmapNoOwnerShip active_vertex_bitmap_;
 };
 
 }  // namespace sics::graph::core::update_stores
