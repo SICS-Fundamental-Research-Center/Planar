@@ -57,12 +57,16 @@ class GraphMetadata {
     return subgraph_metadata_vec_.at(gid);
   }
 
-  const SubgraphMetadata& GetSubgraphMetadataRef(common::GraphID gid) const {
-    return subgraph_metadata_vec_.at(gid);
+  SubgraphMetadata* GetSubgraphMetadataPtr(common::GraphID gid) {
+    return &subgraph_metadata_vec_.at(gid);
   }
 
   common::VertexCount GetSubgraphNumVertices(common::GraphID gid) const {
     return subgraph_metadata_vec_.at(gid).num_vertices;
+  }
+
+  void UpdateNumOutgoingEdges(common::GraphID gid, size_t num_outgoing_edges) {
+    subgraph_metadata_vec_.at(gid).num_outgoing_edges = num_outgoing_edges;
   }
 
  private:

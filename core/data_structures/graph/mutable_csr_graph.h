@@ -4,6 +4,8 @@
 #include <memory>
 
 #include "common/bitmap.h"
+#include "common/bitmap_no_ownership.h"
+#include "common/config.h"
 #include "common/types.h"
 #include "data_structures/graph/serialized_mutable_csr_graph.h"
 #include "data_structures/graph_metadata.h"
@@ -30,7 +32,7 @@ class MutableCSRGraph : public Serializable {
   using VertexData = TV;
   using EdgeData = TE;
   MutableCSRGraph() = default;
-  explicit MutableCSRGraph(const SubgraphMetadata& metadata)
+  explicit MutableCSRGraph(SubgraphMetadata* metadata)
       : metadata_(metadata),
         graph_buf_base_(nullptr),
         vertex_id_by_local_index_(nullptr),
@@ -54,6 +56,21 @@ class MutableCSRGraph : public Serializable {
     delete[] vertex_data_write_base_;
     vertex_data_write_base_ = nullptr;
 
+    if (common::Configurations::Get()->edge_mutate) {
+      if (out_degree_base_new_) {
+        delete[] out_degree_base_new_;
+        out_degree_base_new_ = nullptr;
+      }
+      if (out_offset_base_new_) {
+        delete[] out_offset_base_new_;
+        out_offset_base_new_ = nullptr;
+      }
+      if (out_edges_base_new_) {
+        delete[] out_edges_base_new_;
+        out_edges_base_new_ = nullptr;
+      }
+    }
+
     return util::pointer_downcast<Serialized, SerializedMutableCSRGraph>(
         std::move(graph_serialized_));
   }
@@ -67,48 +84,117 @@ class MutableCSRGraph : public Serializable {
     graph_buf_base_ = graph_serialized_->GetCSRBuffer()->at(0).Get();
 
     // set the pointer to base address
-    if (metadata_.num_incoming_edges == 0) {
+    if (metadata_->num_incoming_edges == 0) {
       size_t offset = 0;
       vertex_id_by_local_index_ = (VertexID*)(graph_buf_base_ + offset);
-      offset += sizeof(VertexID) * metadata_.num_vertices;
+      offset += sizeof(VertexID) * metadata_->num_vertices;
       out_degree_base_ = (VertexDegree*)(graph_buf_base_ + offset);
-      offset += sizeof(VertexDegree) * metadata_.num_vertices;
+      offset += sizeof(VertexDegree) * metadata_->num_vertices;
       out_offset_base_ = (VertexOffset*)(graph_buf_base_ + offset);
     } else {
       LOG_FATAL("Error in deserialize mutable csr graph");
     }
     // edges pointer base
     out_edges_base_ =
-        (VertexID*)(graph_serialized_->GetCSRBuffer()->at(1).Get());
+        (VertexID*) (graph_serialized_->GetCSRBuffer()->at(1).Get());
     // vertex data buf
     vertex_data_read_base_ =
-        (VertexData*)(graph_serialized_->GetCSRBuffer()->at(2).Get());
-    vertex_data_write_base_ = new VertexData[metadata_.num_vertices];
+        (VertexData*) (graph_serialized_->GetCSRBuffer()->at(2).Get());
+    vertex_data_write_base_ = new VertexData[metadata_->num_vertices];
     memcpy(vertex_data_write_base_, vertex_data_read_base_,
-           sizeof(VertexData) * metadata_.num_vertices);
+           sizeof(VertexData) * metadata_->num_vertices);
     // bitmap
     is_in_graph_bitmap_.Init(
-        metadata_.num_vertices,
+        metadata_->num_vertices,
         (uint64_t*) (graph_serialized_->GetCSRBuffer()->at(3).Get()));
     vertex_src_or_dst_bitmap_.Init(
-        metadata_.num_vertices,
+        metadata_->num_vertices,
         (uint64_t*) (graph_serialized_->GetCSRBuffer()->at(4).Get()));
+
+    if (common::Configurations::Get()->edge_mutate) {
+      out_degree_base_new_ = new VertexDegree[metadata_->num_vertices];
+      memcpy(out_degree_base_new_, out_degree_base_,
+             sizeof(VertexDegree) * metadata_->num_vertices);
+      out_offset_base_new_ = new VertexOffset[metadata_->num_vertices];
+      edge_delete_bitmap_.Init(metadata_->num_outgoing_edges);
+      // out_edges_base_new_ buffer is malloc when used
+    }
   }
 
   // methods for sync data
   void SyncVertexData() {
     memcpy(vertex_data_read_base_, vertex_data_write_base_,
-           sizeof(VertexData) * metadata_.num_vertices);
+           sizeof(VertexData) * metadata_->num_vertices);
   }
 
   void MutateGraphEdge(common::TaskRunner* runner) {
-    // TODO: use taskrunner to delete unused egdes
+    uint32_t task_size = metadata_->num_vertices /
+                         common::Configurations::Get()->max_task_package;
+    task_size = task_size < 2 ? 2 : task_size;
+    // compute out_offset
+    size_t num_outgoing_edges_new =
+        metadata_->num_outgoing_edges - edge_delete_bitmap_.Count();
+    out_edges_base_new_ = new VertexID[num_outgoing_edges_new];
+    out_offset_base_new_[0] = 0;
+    for (int i = 1; i < metadata_->num_vertices; i++) {
+      out_offset_base_new_[i] =
+          out_offset_base_new_[i - 1] + out_degree_base_new_[i - 1];
+    }
+    for (int i = 0; i < metadata_->num_vertices; i++) {
+      LOGF_INFO("check: id: {}, new degree: {}, new offset: {}",
+                vertex_id_by_local_index_[i], out_degree_base_new_[i],
+                out_offset_base_new_[i]);
+    }
+
+    common::TaskPackage tasks;
+    VertexIndex begin_index = 0, end_index = 0;
+    for (; begin_index < metadata_->num_vertices;) {
+      end_index += task_size;
+      if (end_index > metadata_->num_vertices) {
+        end_index = metadata_->num_vertices;
+      }
+      auto task = std::bind([&, begin_index, end_index]() {
+        VertexOffset index = out_offset_base_new_[begin_index];
+        for (int i = begin_index; i < end_index; i++) {
+          VertexOffset offset = out_offset_base_[i];
+          for (int j = 0; j < out_degree_base_[i]; j++) {
+            if (!edge_delete_bitmap_.GetBit(offset + j)) {
+              out_edges_base_new_[index++] = out_edges_base_[offset + j];
+            }
+          }
+        }
+      });
+      tasks.push_back(task);
+      begin_index = end_index;
+    }
+    runner->SubmitSync(tasks);
+    // tear down degree and offset buffer
+    memcpy(out_degree_base_, out_degree_base_new_,
+           sizeof(VertexDegree) * metadata_->num_vertices);
+    memcpy(out_offset_base_, out_offset_base_new_,
+           sizeof(VertexOffset) * metadata_->num_vertices);
+    // change out_edges_buffer to new one
+    metadata_->num_outgoing_edges = num_outgoing_edges_new;
+    edge_delete_bitmap_.Clear();
+    if (metadata_->num_outgoing_edges == 0) {
+      // TODO: decide is release buffer now or in serialize phase
+      // release all assistant buffer:
+      // - out_edges_base_new_,
+      // - out_degree_base_new_,
+      // - out_offset_base_new_
+    } else {
+      graph_serialized_->GetCSRBuffer()->at(1) =
+          OwnedBuffer(sizeof(VertexID) * metadata_->num_outgoing_edges,
+                      std::unique_ptr<uint8_t>((uint8_t*)out_edges_base_new_));
+      out_edges_base_ = out_edges_base_new_;
+      out_edges_base_new_ = nullptr;
+    }
   }
 
   // methods for vertex info
 
-  common::VertexCount GetVertexNums() const { return metadata_.num_vertices; }
-  size_t GetOutEdgeNums() const { return metadata_.num_outgoing_edges; }
+  common::VertexCount GetVertexNums() const { return metadata_->num_vertices; }
+  size_t GetOutEdgeNums() const { return metadata_->num_outgoing_edges; }
 
   VertexID GetVertexIDByIndex(VertexIndex index) const {
     return vertex_id_by_local_index_[index];
@@ -122,12 +208,14 @@ class MutableCSRGraph : public Serializable {
     return out_offset_base_[index];
   }
 
-  VertexID GetOneOutEdge(VertexIndex index, VertexOffset out_offset) const {
-    return out_offset_base_[index] + out_offset;
+  // fetch one out edge of vertex by index
+  VertexID GetOneOutEdge(VertexIndex index, VertexIndex out_edge_index) const {
+    return out_edges_base_[out_offset_base_[index] + out_edge_index];
   }
 
+  // fetch all out edges of vertex by index
   VertexID* GetOutEdges(VertexIndex index) const {
-    return out_offset_base_ + index;
+    return out_edges_base_ + index;
   }
 
   VertexData* GetVertxDataByIndex(VertexIndex index) const {
@@ -168,24 +256,38 @@ class MutableCSRGraph : public Serializable {
     return false;
   }
 
-  void DeleteEdge(EdgeIndex edge_index) {
+  void DeleteEdge(VertexID id, EdgeIndex edge_index) {
     edge_delete_bitmap_.SetBit(edge_index);
+    VertexIndex index = GetIndexByID(id);
+    util::atomic::WriteMin(&out_degree_base_new_[index],
+                           out_degree_base_new_[index] - 1);
   }
 
   void set_status(const std::string& new_status) { status_ = new_status; }
 
   void LogVertexData() {
-    for (int i = 0; i < metadata_.num_vertices; i++) {
+    for (int i = 0; i < metadata_->num_vertices; i++) {
       LOGF_INFO("{} -> Vertex id: {}, read_data: {} write_data: {}", i,
                 vertex_id_by_local_index_[i], vertex_data_read_base_[i],
                 vertex_data_write_base_[i]);
     }
   }
 
+  void LogEdges() {
+    for (int i = 0; i < metadata_->num_vertices; i++) {
+      std::string edges = "";
+      for (int j = 0; j < out_degree_base_[i]; j++) {
+        edges += std::to_string(out_edges_base_[out_offset_base_[i] + j]) + " ";
+      }
+      LOGF_INFO("{} -> Vertex id: {}, out_edge: {}", i,
+                vertex_id_by_local_index_[i], edges);
+    }
+  }
+
   void LogGraphInfo() {
     LOGF_INFO("Graph info: num_vertices: {}, num_outgoing_edges: {}",
-              metadata_.num_vertices, metadata_.num_outgoing_edges);
-    for (int i = 0; i < metadata_.num_vertices; i++) {
+              metadata_->num_vertices, metadata_->num_outgoing_edges);
+    for (int i = 0; i < metadata_->num_vertices; i++) {
       LOGF_INFO(
           "index: {} ---> Vertex id: {}, degree: {}, offset: {}, is_src: {}", i,
           vertex_id_by_local_index_[i], out_degree_base_[i],
@@ -193,7 +295,7 @@ class MutableCSRGraph : public Serializable {
     }
 
     std::string edges = "";
-    for (int i = 0; i < metadata_.num_outgoing_edges; i++) {
+    for (int i = 0; i < metadata_->num_outgoing_edges; i++) {
       edges += std::to_string(out_edges_base_[i]) + ", ";
     }
     LOGF_INFO("Edges: {}", edges);
@@ -204,7 +306,7 @@ class MutableCSRGraph : public Serializable {
   [[nodiscard]] VertexIndex GetIndexByID(VertexID id) const {
     // TODO: binary search
     VertexIndex begin = 0;
-    VertexIndex end = metadata_.num_vertices - 1;
+    VertexIndex end = metadata_->num_vertices - 1;
     VertexIndex mid = 0;
     while (begin <= end) {
       mid = begin + (end - begin) / 2;
@@ -220,28 +322,31 @@ class MutableCSRGraph : public Serializable {
   }
 
  private:
-  const SubgraphMetadata& metadata_;
+  SubgraphMetadata* metadata_;
 
   std::unique_ptr<data_structures::graph::SerializedMutableCSRGraph>
       graph_serialized_;
 
   // deserialized data pointer in CSR format
 
+  // below pointer need method to replace memory
   uint8_t* graph_buf_base_;
   VertexID* vertex_id_by_local_index_;
   VertexDegree* out_degree_base_;
   VertexOffset* out_offset_base_;
   VertexID* out_edges_base_;
-
   VertexData* vertex_data_read_base_;
-  common::Bitmap vertex_src_or_dst_bitmap_;
-  common::Bitmap is_in_graph_bitmap_;
+
+  VertexData* vertex_data_write_base_;
+
+  // bitmap read from disk, have no ownership of data
+  common::BitmapNoOwnerShip vertex_src_or_dst_bitmap_;
+  common::BitmapNoOwnerShip is_in_graph_bitmap_;
 
   // used for mutable algorithm only;
   VertexDegree* out_degree_base_new_;
   VertexOffset* out_offset_base_new_;
   VertexID* out_edges_base_new_;
-  VertexData* vertex_data_write_base_;
   common::Bitmap edge_delete_bitmap_;
 
   std::string status_;
