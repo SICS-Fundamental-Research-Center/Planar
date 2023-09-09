@@ -1,14 +1,19 @@
 #ifndef TOOLS_COMMON_TYPES_H_
 #define TOOLS_COMMON_TYPES_H_
 
-#include <cstddef>  // For std::ptrdiff_t
-#include <cstdint>
-#include <iterator>  // For std::forward_iterator_tag
-#include <vector>
-
 #include "core/common/types.h"
 
 namespace sics::graph::tools::common {
+
+struct EdgelistMetadata {
+ private:
+  using VertexID = sics::graph::core::common::VertexID;
+
+ public:
+  size_t num_vertices;
+  size_t num_edges;
+  VertexID max_vid;
+};
 
 struct Edge {
  private:
@@ -16,14 +21,7 @@ struct Edge {
 
  public:
   Edge(VertexID src, VertexID dst) : src(src), dst(dst) {}
-
-  bool operator<(const Edge& e) const {
-    if (src != e.src) {
-      return src < e.src;
-    } else {
-      return dst < e.dst;
-    }
-  }
+  Edge() = default;
 
  public:
   VertexID src;
@@ -31,6 +29,10 @@ struct Edge {
 };
 
 class Edges {
+ private:
+  using VertexID = sics::graph::core::common::VertexID;
+  using EdgelistMetadata = sics::graph::tools::common::EdgelistMetadata;
+
  public:
   struct Iterator {
     // Iterator tags
@@ -89,6 +91,7 @@ class Edges {
     bool operator>=(const Iterator& b) const {
       return (*base_ptr_).src >= (*b).src;
     }
+
     friend bool operator==(const Iterator& a, const Iterator& b) {
       return a.base_ptr_ == b.base_ptr_;
     };
@@ -96,46 +99,53 @@ class Edges {
       return a.base_ptr_ != b.base_ptr_;
     };
 
+    pointer get_base_ptr() const { return base_ptr_; };
+
    private:
     pointer base_ptr_;
   };
 
-  Edges(size_t n_edges, Edge* edges_ptr)
-      : n_edges_(n_edges), edges_ptr_(edges_ptr) {}
+  Edges(const EdgelistMetadata& edgelist_metadata, Edge* edges_ptr)
+      : edgelist_metadata_(edgelist_metadata), edges_ptr_(edges_ptr) {}
 
-  ~Edges() { delete edges_ptr_; }
+  Edges(const EdgelistMetadata& edgelist_metadata)
+      : edgelist_metadata_(edgelist_metadata) {
+    edges_ptr_ = new Edge[edgelist_metadata.num_edges]();
+  }
+
+  ~Edges() { delete[] edges_ptr_; }
 
   Iterator begin() { return Iterator(&edges_ptr_[0]); }
-  Iterator end() { return Iterator(&edges_ptr_[n_edges_ - 1]); }
-
-  static void SortBySrc(Edges edges) {
-    std::sort(std::begin(edges), std::end(edges),
-              [](const Edge& l, const Edge& r) {
-                if (l.src != r.src) {
-                  return l.src < r.src;
-                } else {
-                  return l.dst < r.dst;
-                }
-              });
+  Iterator end() {
+    return Iterator(&edges_ptr_[edgelist_metadata_.num_edges - 1]);
   }
 
-  static void SortByDst(Edges edges) {
-    // TODO (hsiaoko):
-  }
+  // Sort edges by source.
+  void SortBySrc();
+
+  // Sort edges by destination.
+  void SortByDst();
+
+  // Count the number of vertices and find the vertex with maximum
+  // outdegree.
+  VertexID GetVertexWithMaximumDegree();
+
+  // Find the index of given vid via binary search.
+  Iterator SearchVertex(VertexID vid);
+
+  Edge* get_base_ptr() { return edges_ptr_; }
+  EdgelistMetadata get_metadata() const { return edgelist_metadata_; }
+
+  VertexID get_src_by_index(size_t i) const { return edges_ptr_[i].src; }
+  VertexID get_dst_by_index(size_t i) const { return edges_ptr_[i].dst; }
+  Edge get_edge_by_index(size_t i) const { return edges_ptr_[i]; }
+  size_t get_index_by_iter(const Iterator& iter) {
+    return (iter.get_base_ptr() - begin().get_base_ptr());
+  };
 
  private:
-  size_t n_edges_ = 0;
   Edge* edges_ptr_;
-};
-
-struct EdgelistMetadata {
- private:
-  using VertexID = sics::graph::core::common::VertexID;
-
- public:
-  size_t num_vertices;
-  size_t num_edges;
-  VertexID max_vid;
+  EdgelistMetadata edgelist_metadata_;
 };
 
 }  // namespace sics::graph::tools::common
