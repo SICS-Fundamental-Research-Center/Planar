@@ -72,7 +72,8 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   std::ofstream out_meta_file(output_path + "meta.yaml");
 
   // Read edgelist graph.
-  auto edge_list = new std::list<VertexID>;
+  std::list<VertexID> edge_list;
+
   VertexID max_vid = 0, compressed_vid = 0;
   std::string line, vid_str;
   uint64_t count = 0;
@@ -83,7 +84,7 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
       std::stringstream ss(line);
       while (getline(ss, vid_str, *sep.c_str())) {
         VertexID vid = stoll(vid_str);
-        edge_list->push_back(vid);
+        edge_list.push_back(vid);
         sics::graph::core::util::atomic::WriteMax(&max_vid, vid);
       }
     }
@@ -92,22 +93,21 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   // Compute the mapping between origin vid to compressed vid.
   auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
   auto bitmap = Bitmap(aligned_max_vid);
-  auto n_edges = edge_list->size() / 2;
+  auto n_edges = edge_list.size() / 2;
   auto buffer_edges = new VertexID[n_edges * 2]();
   auto compressed_buffer_edges = new VertexID[n_edges * 2]();
   auto vid_map = new VertexID[aligned_max_vid]();
 
   auto index = 0;
-  while (edge_list->size() > 0) {
-    buffer_edges[index] = edge_list->front();
-    edge_list->pop_front();
+  while (edge_list.size() > 0) {
+    buffer_edges[index] = edge_list.front();
+    edge_list.pop_front();
     if (!bitmap.GetBit(buffer_edges[index])) {
       bitmap.SetBit(buffer_edges[index]);
       vid_map[buffer_edges[index]] = compressed_vid++;
     }
     index++;
   }
-  delete edge_list;
 
   // Compress vid and buffer graph.
   for (unsigned int i = 0; i < parallelism; i++) {
