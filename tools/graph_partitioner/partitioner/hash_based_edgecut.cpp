@@ -1,11 +1,8 @@
-#include "tools/graph_partitioner/partitioner/hash_based_edgecut.h"
-
-#include <array>
+#include <folly/hash/Hash.h>
 #include <filesystem>
 #include <string>
 
-#include <folly/hash/Hash.h>
-
+#include "tools/graph_partitioner/partitioner/hash_based_edgecut.h"
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/common/types.h"
@@ -26,6 +23,7 @@ using sics::graph::core::data_structures::GraphMetadata;
 using sics::graph::core::util::atomic::WriteAdd;
 using sics::graph::core::util::atomic::WriteMax;
 using sics::graph::core::util::atomic::WriteMin;
+using sics::graph::tools::common::Edge;
 using sics::graph::tools::common::EdgelistMetadata;
 using sics::graph::tools::common::GraphFormatConverter;
 using sics::graph::tools::common::kIncomingOnly;
@@ -41,7 +39,7 @@ VertexID HashBasedEdgeCutPartitioner::GetBucketID(VertexID vid,
                                                   VertexID n_bucket,
                                                   size_t n_vertices = 0) const {
   if (n_vertices != 0)
-    return vid / ceil((double) n_vertices / (double) n_bucket);
+    return vid / ceil((double)n_vertices / (double)n_bucket);
   else
     return fnv64_append_byte(vid, 3) % n_bucket;
 }
@@ -50,6 +48,8 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
+  task_package.reserve(parallelism);
+  std::mutex mtx;
 
   // Load Yaml node (Edgelist metadata).
   YAML::Node input_node;
@@ -59,12 +59,12 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   // Create Edgelist Graph.
   auto aligned_max_vid = ((edgelist_metadata.max_vid >> 6) << 6) + 64;
   auto bitmap = Bitmap(aligned_max_vid);
-  auto buffer_edges = new VertexID[edgelist_metadata.num_edges * 2];
+  auto buffer_edges = new Edge[edgelist_metadata.num_edges]();
   std::ifstream input_stream(input_path_ + "edgelist.bin", std::ios::binary);
   if (!input_stream.is_open()) LOG_FATAL("Cannot open edgelist.bin");
 
   input_stream.read(reinterpret_cast<char*>(buffer_edges),
-                    sizeof(VertexID) * edgelist_metadata.num_edges * 2);
+                    sizeof(Edge) * edgelist_metadata.num_edges);
   input_stream.close();
 
   // Generate vertices.
@@ -74,21 +74,21 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   auto visited = Bitmap(aligned_max_vid);
   VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
 
+  // Compute max_vid, min_vid. And get degree for each vertex.
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
                            &num_inedges_by_vid, &num_outedges_by_vid, &visited,
                            &max_vid, &min_vid]() {
       for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
-        auto src = buffer_edges[j * 2];
-        auto dst = buffer_edges[j * 2 + 1];
-        visited.SetBit(src);
-        visited.SetBit(dst);
-        WriteAdd(num_inedges_by_vid + dst, (VertexID)1);
-        WriteAdd(num_outedges_by_vid + src, (VertexID)1);
-        WriteMax(&max_vid, src);
-        WriteMax(&max_vid, dst);
-        WriteMin(&min_vid, src);
-        WriteMin(&min_vid, dst);
+        auto e = buffer_edges[j];
+        visited.SetBit(e.src);
+        visited.SetBit(e.dst);
+        WriteAdd(num_inedges_by_vid + e.dst, (VertexID)1);
+        WriteAdd(num_outedges_by_vid + e.src, (VertexID)1);
+        WriteMax(&max_vid, e.src);
+        WriteMax(&max_vid, e.dst);
+        WriteMin(&min_vid, e.src);
+        WriteMin(&min_vid, e.dst);
       }
     });
     task_package.push_back(task);
@@ -122,24 +122,21 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   }
   thread_pool.SubmitSync(task_package);
   task_package.clear();
-  delete num_inedges_by_vid;
-  delete num_outedges_by_vid;
+  delete[] num_inedges_by_vid;
+  delete[] num_outedges_by_vid;
 
   // Fill edges.
   VertexID* offset_in_edges = new VertexID[aligned_max_vid]();
   VertexID* offset_out_edges = new VertexID[aligned_max_vid]();
 
   for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
-                           &offset_in_edges, &offset_out_edges,
-                           &buffer_csr_vertices]() {
+    auto task = std::bind([&, i, parallelism]() {
       for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
-        auto src = buffer_edges[j * 2];
-        auto dst = buffer_edges[j * 2 + 1];
-        auto offset_out = __sync_fetch_and_add(offset_out_edges + src, 1);
-        auto offset_in = __sync_fetch_and_add(offset_in_edges + dst, 1);
-        buffer_csr_vertices[src].outgoing_edges[offset_out] = dst;
-        buffer_csr_vertices[dst].incoming_edges[offset_in] = src;
+        auto e = buffer_edges[j];
+        auto offset_out = __sync_fetch_and_add(offset_out_edges + e.src, 1);
+        auto offset_in = __sync_fetch_and_add(offset_in_edges + e.dst, 1);
+        buffer_csr_vertices[e.src].outgoing_edges[offset_out] = e.dst;
+        buffer_csr_vertices[e.dst].incoming_edges[offset_in] = e.src;
       }
     });
     task_package.push_back(task);
@@ -147,9 +144,9 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  delete buffer_edges;
-  delete offset_in_edges;
-  delete offset_out_edges;
+  delete[] buffer_edges;
+  delete[] offset_in_edges;
+  delete[] offset_out_edges;
 
   // Construct subgraphs.
   std::vector<std::vector<Vertex>*> vertex_buckets;
@@ -167,6 +164,8 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
            j += parallelism) {
         auto gid = GetBucketID(buffer_csr_vertices[j].vid, n_partitions,
                                edgelist_metadata.num_vertices);
+
+        std::lock_guard<std::mutex> lck(mtx);
         vertex_buckets[gid]->push_back(buffer_csr_vertices[j]);
       }
     });
