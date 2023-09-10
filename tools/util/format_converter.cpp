@@ -101,6 +101,9 @@ void Edgelist2CSR(const Edges& edges,
   }
   thread_pool.SubmitSync(task_package);
   task_package.clear();
+  delete[] offset_in_edges;
+  delete[] offset_out_edges;
+
 
   // Construct CSR graph.
   auto buffer_globalid = new VertexID[edges.get_metadata().num_vertices]();

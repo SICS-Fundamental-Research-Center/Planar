@@ -169,8 +169,8 @@ void ConvertEdgelistBin2CSRBin(const std::string& input_path,
   in_file.read(reinterpret_cast<char*>(buffer_edges),
                sizeof(Edge) * edgelist_metadata.num_edges);
 
-  Edges edges(edgelist_metadata, buffer_edges);
-  edges.SortBySrc();
+  Edges *edges = new Edges(edgelist_metadata, buffer_edges);
+  edges->SortBySrc();
 
   GraphMetadata graph_metadata;
   graph_metadata.set_num_vertices(edgelist_metadata.num_vertices);
@@ -182,7 +182,7 @@ void ConvertEdgelistBin2CSRBin(const std::string& input_path,
   // Write the csr graph to disk
   GraphFormatConverter graph_format_converter(output_path);
   std::vector<Edges*> edge_buckets;
-  edge_buckets.push_back(&edges);
+  edge_buckets.push_back(edges);
   graph_format_converter.WriteSubgraph(edge_buckets, graph_metadata,
                                        store_strategy);
 }
