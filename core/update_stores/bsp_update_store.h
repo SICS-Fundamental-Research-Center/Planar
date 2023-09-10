@@ -21,11 +21,7 @@ class BspUpdateStore : public UpdateStoreBase {
       : message_count_(vertex_num) {
     read_data_ = new VertexData[message_count_];
     write_data_ = new VertexData[message_count_];
-  }
-  explicit BspUpdateStore(common::VertexCount vertex_num)
-      : message_count_(vertex_num) {
-    read_data_ = new VertexData[message_count_];
-    write_data_ = new VertexData[message_count_];
+    ReadActiveVertexBitmap(root_path);
   }
 
   ~BspUpdateStore() {
