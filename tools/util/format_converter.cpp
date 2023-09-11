@@ -137,13 +137,11 @@ void Edgelist2CSR(const Edges& edges,
       memcpy(buffer_in_edges + buffer_in_offset[vid],
              buffer_csr_vertices[i].incoming_edges,
              buffer_csr_vertices[i].indegree * sizeof(VertexID));
-      delete[] buffer_csr_vertices[i].incoming_edges;
     }
     if (buffer_csr_vertices[i].outdegree != 0) {
       memcpy(buffer_out_edges + buffer_out_offset[vid],
              buffer_csr_vertices[i].outgoing_edges,
              buffer_csr_vertices[i].outdegree * sizeof(VertexID));
-      delete[] buffer_csr_vertices[i].outgoing_edges;
     }
     vid++;
   }

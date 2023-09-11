@@ -1,6 +1,7 @@
-#include <folly/hash/Hash.h>
 #include <filesystem>
 #include <string>
+
+#include <folly/hash/Hash.h>
 
 #include "tools/graph_partitioner/partitioner/hash_based_edgecut.h"
 #include "core/common/bitmap.h"
@@ -96,28 +97,29 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  Vertex* buffer_csr_vertices = new Vertex[aligned_max_vid]();
+  auto buffer_csr_vertices = new Vertex*[aligned_max_vid]();
+  for (size_t i = 0; i < aligned_max_vid; i++) {
+    buffer_csr_vertices[i] = new Vertex();
+  }
+
   VertexID count_in_edges = 0, count_out_edges = 0;
 
   // malloc space for each vertex.
   for (unsigned int i = 0; i < parallelism; i++) {
-    auto task =
-        std::bind([i, parallelism, &aligned_max_vid, &num_inedges_by_vid,
-                   &num_outedges_by_vid, &buffer_csr_vertices, &count_in_edges,
-                   &count_out_edges, &visited]() {
-          for (VertexID j = i; j < aligned_max_vid; j += parallelism) {
-            if (!visited.GetBit(j)) continue;
-            buffer_csr_vertices[j].vid = j;
-            buffer_csr_vertices[j].indegree = num_inedges_by_vid[j];
-            buffer_csr_vertices[j].outdegree = num_outedges_by_vid[j];
-            buffer_csr_vertices[j].incoming_edges =
-                new VertexID[num_inedges_by_vid[j]]();
-            buffer_csr_vertices[j].outgoing_edges =
-                new VertexID[num_outedges_by_vid[j]]();
-            WriteAdd(&count_in_edges, num_inedges_by_vid[j]);
-            WriteAdd(&count_out_edges, num_outedges_by_vid[j]);
-          }
-        });
+    auto task = std::bind([&, i]() {
+      for (VertexID j = i; j < aligned_max_vid; j += parallelism) {
+        if (!visited.GetBit(j)) continue;
+        buffer_csr_vertices[j]->vid = j;
+        buffer_csr_vertices[j]->indegree = num_inedges_by_vid[j];
+        buffer_csr_vertices[j]->outdegree = num_outedges_by_vid[j];
+        buffer_csr_vertices[j]->incoming_edges =
+            new VertexID[num_inedges_by_vid[j]]();
+        buffer_csr_vertices[j]->outgoing_edges =
+            new VertexID[num_outedges_by_vid[j]]();
+        WriteAdd(&count_in_edges, num_inedges_by_vid[j]);
+        WriteAdd(&count_out_edges, num_outedges_by_vid[j]);
+      }
+    });
     task_package.push_back(task);
   }
   thread_pool.SubmitSync(task_package);
@@ -135,8 +137,8 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
         auto e = buffer_edges[j];
         auto offset_out = __sync_fetch_and_add(offset_out_edges + e.src, 1);
         auto offset_in = __sync_fetch_and_add(offset_in_edges + e.dst, 1);
-        buffer_csr_vertices[e.src].outgoing_edges[offset_out] = e.dst;
-        buffer_csr_vertices[e.dst].incoming_edges[offset_in] = e.src;
+        buffer_csr_vertices[e.src]->outgoing_edges[offset_out] = e.dst;
+        buffer_csr_vertices[e.dst]->incoming_edges[offset_in] = e.src;
       }
     });
     task_package.push_back(task);
@@ -149,12 +151,11 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   delete[] offset_out_edges;
 
   // Construct subgraphs.
-  std::vector<std::vector<Vertex>*> vertex_buckets;
-  vertex_buckets.reserve(n_partitions_);
+  std::vector<std::vector<Vertex>> vertex_buckets;
 
   for (VertexID i = 0; i < n_partitions_; i++) {
-    vertex_buckets[i] = new std::vector<Vertex>();
-    vertex_buckets[i]->reserve(aligned_max_vid / n_partitions_);
+    vertex_buckets.emplace_back();
+    vertex_buckets[i].reserve(aligned_max_vid / n_partitions_);
   }
 
   // Fill buckets.
@@ -162,23 +163,22 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
     auto task = std::bind([&, i, parallelism, n_partitions = n_partitions_]() {
       for (VertexID j = i; j < edgelist_metadata.num_vertices;
            j += parallelism) {
-        auto gid = GetBucketID(buffer_csr_vertices[j].vid, n_partitions,
+        auto gid = GetBucketID(buffer_csr_vertices[j]->vid, n_partitions,
                                edgelist_metadata.num_vertices);
 
         std::lock_guard<std::mutex> lck(mtx);
-        vertex_buckets[gid]->push_back(buffer_csr_vertices[j]);
+        vertex_buckets[gid].emplace_back(*buffer_csr_vertices[j]);
       }
     });
     task_package.push_back(task);
   }
   thread_pool.SubmitSync(task_package);
   task_package.clear();
-  delete[] buffer_csr_vertices;
 
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
       for (VertexID j = i; j < n_partitions_; j += parallelism) {
-        std::sort(vertex_buckets[j]->begin(), vertex_buckets[j]->end(),
+        std::sort(vertex_buckets[j].begin(), vertex_buckets[j].end(),
                   [](const auto& l, const auto& r) { return l.vid < r.vid; });
       }
     });
@@ -200,7 +200,6 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   graph_format_converter.WriteSubgraph(vertex_buckets, graph_metadata,
                                        store_strategy_);
 
-  for (VertexID i = 0; i < n_partitions_; i++) delete vertex_buckets[i];
   LOG_INFO("Finished writing the subgraphs to disk");
 }
 
