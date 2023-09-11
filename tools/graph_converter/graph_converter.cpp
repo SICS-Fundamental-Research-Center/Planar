@@ -58,7 +58,8 @@ DEFINE_bool(read_head, false, "whether to read header of csv.");
 void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
                                     const std::string& output_path,
                                     const std::string& sep,
-                                    uint64_t max_n_edges, bool read_head) {
+                                    uint64_t max_n_edges,
+                                    bool read_head) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
