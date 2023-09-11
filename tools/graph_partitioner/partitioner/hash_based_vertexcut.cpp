@@ -48,7 +48,6 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
   task_package.reserve(parallelism);
-  std::mutex mtx;
 
   // Load Yaml node (Edgelist metadata).
   YAML::Node input_node;
@@ -132,6 +131,7 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
 
   auto bucket_offset = new VertexID[n_partitions_]();
 
+  std::mutex mtx;
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
       for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
