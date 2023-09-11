@@ -7,14 +7,6 @@
 // USAGE: graph-convert --convert_mode=[options] -i <input file path> -o <output
 // file path> --sep=[separator]
 
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <type_traits>
-
-#include <gflags/gflags.h>
-#include <yaml-cpp/yaml.h>
-
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/common/types.h"
@@ -24,6 +16,12 @@
 #include "tools/common/data_structures.h"
 #include "tools/common/io.h"
 #include "tools/common/yaml_config.h"
+#include <gflags/gflags.h>
+#include <yaml-cpp/yaml.h>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <type_traits>
 
 using sics::graph::core::common::Bitmap;
 using sics::graph::core::common::TaskPackage;
@@ -58,8 +56,7 @@ DEFINE_bool(read_head, false, "whether to read header of csv.");
 void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
                                     const std::string& output_path,
                                     const std::string& sep,
-                                    uint64_t max_n_edges,
-                                    bool read_head) {
+                                    uint64_t max_n_edges, bool read_head) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -168,8 +165,8 @@ void ConvertEdgelistBin2CSRBin(const std::string& input_path,
   in_file.read(reinterpret_cast<char*>(buffer_edges),
                sizeof(Edge) * edgelist_metadata.num_edges);
 
-  Edges* edges = new Edges(edgelist_metadata, buffer_edges);
-  edges->SortBySrc();
+  Edges edges(edgelist_metadata, buffer_edges);
+  edges.SortBySrc();
 
   GraphMetadata graph_metadata;
   graph_metadata.set_num_vertices(edgelist_metadata.num_vertices);
@@ -180,12 +177,10 @@ void ConvertEdgelistBin2CSRBin(const std::string& input_path,
 
   // Write the csr graph to disk
   GraphFormatConverter graph_format_converter(output_path);
-  std::vector<Edges*> edge_buckets;
+  std::vector<Edges> edge_buckets;
   edge_buckets.push_back(edges);
   graph_format_converter.WriteSubgraph(edge_buckets, graph_metadata,
                                        store_strategy);
-
-  for (size_t i = 0; i < edge_buckets.size(); i++) delete edge_buckets[i];
 }
 
 int main(int argc, char** argv) {
