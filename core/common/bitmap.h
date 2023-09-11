@@ -34,6 +34,13 @@ class Bitmap {
     data_ = new uint64_t[WORD_OFFSET(size) + 1]();
   }
 
+  // init data pointer from call function， and own the pointer of data
+  // delete pointer in decstructor
+  virtual void Init(size_t size, uint64_t* data) {
+    size_ = size;
+    data_ = data;
+  }
+
   void Clear() {
     size_t bm_size = WORD_OFFSET(size_);
     for (size_t i = 0; i <= bm_size; i++) data_[i] = 0;

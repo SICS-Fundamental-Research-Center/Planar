@@ -14,6 +14,9 @@ namespace sics::graph::core::update_stores {
 
 template <typename VertexData, typename EdgeData>
 class BspUpdateStore : public UpdateStoreBase {
+  using GraphID = common::GraphID;
+  using VertexID = common::VertexID;
+
  public:
   BspUpdateStore() = default;
   explicit BspUpdateStore(const std::string& root_path,
@@ -30,18 +33,26 @@ class BspUpdateStore : public UpdateStoreBase {
   }
 
   // used for basic unsigned type
-  VertexData Read(common::GraphID gid) {
-    if (gid >= message_count_) {
+  VertexData Read(VertexID vid) {
+    if (vid >= message_count_) {
       LOG_FATAL("Read out of bound");
     }
-    return read_data_[gid];
+    return read_data_[vid];
   }
 
-  bool Write(common::GraphID gid, VertexData vdata_new) {
-    if (gid >= message_count_) {
+  bool Write(VertexID vid, VertexData vdata_new) {
+    if (vid >= message_count_) {
       return false;
     }
-    util::atomic::WriteMin(write_data_ + gid, vdata_new);
+    write_data_[vid] = vdata_new;
+    return true;
+  }
+
+  bool WriteMin(VertexID vid, VertexData vdata_new) {
+    if (vid >= message_count_) {
+      return false;
+    }
+    util::atomic::WriteMin(write_data_ + vid, vdata_new);
     return true;
   }
 
@@ -50,19 +61,21 @@ class BspUpdateStore : public UpdateStoreBase {
 
  private:
   void ReadActiveVertexBitmap(const std::string& root_path) {
-    std::ifstream file(root_path + "bitmap/global_is_border_vertices.bin",
+    std::ifstream file(root_path + "bitmap/border_vertices.bin",
                        std::ios::binary);
     if (!file.is_open()) {
       LOG_FATAL("Cannot open file: %s",
-                (root_path + "bitmap/global_is_border_vertices.bin").c_str());
+                (root_path + "bitmap/border_vertices.bin").c_str());
     }
     file.seekg(0, std::ios::end);
     size_t file_size = file.tellg();
-    size_t size = file_size / sizeof(uint64_t);
     file.seekg(0, std::ios::beg);
-    uint64_t* buffer = new uint64_t[size];
-    // TODO: bitmap assignment
-    active_vertex_bitmap_.Init(size, buffer);
+
+    size_t buffer_size = (message_count_ >> 6) + 1;
+    uint64_t* buffer = new uint64_t[buffer_size];
+    file.read((char*)(buffer), file_size);
+
+    active_vertex_bitmap_.Init(message_count_, buffer);
     file.close();
   }
 
@@ -71,8 +84,15 @@ class BspUpdateStore : public UpdateStoreBase {
   VertexData* write_data_;
   common::VertexCount message_count_;
 
-  common::BitmapNoOwnerShip active_vertex_bitmap_;
+  common::Bitmap active_vertex_bitmap_;
 };
+
+typedef BspUpdateStore<common::Uint32VertexDataType,
+                       common::DefaultEdgeDataType>
+    BspUpdateStoreUInt32;
+typedef BspUpdateStore<common::Uint16VertexDataType,
+                       common::DefaultEdgeDataType>
+    BspUpdateStoreUInt16;
 
 }  // namespace sics::graph::core::update_stores
 

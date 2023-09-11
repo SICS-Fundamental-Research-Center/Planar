@@ -67,6 +67,8 @@ class MutableGroupCSRGraph : public Serializable {
   std::vector<MutableCSRGraph<VertexData, EdgeData>> subgraphs_;
 };
 
+// TODO: typedef for uint32 and uint16
+
 }  // namespace sics::graph::core::data_structures::graph
 
 #endif  // GRAPH_SYSTEMS_CORE_DATA_STRUCTURES_GRAPH_MUTABLE_GROUP_CSR_GRAH_H_
