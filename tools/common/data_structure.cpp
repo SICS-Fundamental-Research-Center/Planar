@@ -52,7 +52,7 @@ VertexID Edges::GetVertexWithMaximumDegree() {
   std::mutex mtx;
 
   auto aligned_max_vid = ((edgelist_metadata_.max_vid >> 6) << 6) + 64;
-  VertexID outdegree_by_vid[aligned_max_vid] = {0};
+  auto outdegree = new VertexID[aligned_max_vid]();
   VertexID max_outdegree = 0, vid_with_maximum_degree = 0;
 
   for (unsigned int i = 0; i < parallelism; i++) {
@@ -73,6 +73,7 @@ VertexID Edges::GetVertexWithMaximumDegree() {
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
+  delete outdegree;
   return vid_with_maximum_degree;
 }
 
