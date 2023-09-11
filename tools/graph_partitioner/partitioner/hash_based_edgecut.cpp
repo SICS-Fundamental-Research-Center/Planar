@@ -173,6 +173,7 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   }
   thread_pool.SubmitSync(task_package);
   task_package.clear();
+  delete[] buffer_csr_vertices;
 
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
@@ -195,11 +196,11 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   graph_metadata.set_max_vid(max_vid);
   graph_metadata.set_min_vid(min_vid);
 
+  LOG_INFO("Writing the subgraphs to disk");
   graph_format_converter.WriteSubgraph(vertex_buckets, graph_metadata,
                                        store_strategy_);
 
   for (VertexID i = 0; i < n_partitions_; i++) delete vertex_buckets[i];
-  delete[] buffer_csr_vertices;
   LOG_INFO("Finished writing the subgraphs to disk");
 }
 

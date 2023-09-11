@@ -66,23 +66,21 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
                     sizeof(Edge) * edgelist_metadata.num_edges);
 
   Edges edges(edgelist_metadata, reinterpret_cast<Edge*>(buffer_edges));
-
-  std::vector<Edges*> edge_buckets;
   edges.SortBySrc();
 
   // Precompute the size of each edge bucket.
-  auto size_per_bucket = new VertexID[n_partitions_]();
-  auto max_vid_per_bucket = new VertexID[n_partitions_]();
-  auto min_vid_per_bucket = new VertexID[n_partitions_]();
+  VertexID size_per_bucket[n_partitions_] = {0};
+  VertexID max_vid_per_bucket[n_partitions_] = {0};
+  VertexID min_vid_per_bucket[n_partitions_] = {0};
 
   VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
   for (VertexID i = 0; i < n_partitions_; i++)
     min_vid_per_bucket[i] = MAX_VERTEX_ID;
 
-  auto bitmap_vec = new std::vector<Bitmap*>();
+  std::vector<Bitmap*> bitmap_vec;
   for (size_t i = 0; i < n_partitions_; i++) {
     auto bitmap = new Bitmap(aligned_max_vid);
-    bitmap_vec->push_back(bitmap);
+    bitmap_vec.push_back(bitmap);
   }
 
   for (unsigned int i = 0; i < parallelism; i++) {
@@ -103,8 +101,8 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
           default:
             LOG_FATAL("Undefined store strategy.");
         }
-        bitmap_vec->at(bid)->SetBit(e.src);
-        bitmap_vec->at(bid)->SetBit(e.dst);
+        bitmap_vec.at(bid)->SetBit(e.src);
+        bitmap_vec.at(bid)->SetBit(e.dst);
         WriteAdd(size_per_bucket + bid, (VertexID)1);
         WriteMax(max_vid_per_bucket + bid, e.src);
         WriteMax(max_vid_per_bucket + bid, e.dst);
@@ -119,29 +117,23 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  auto edge_bucket = new VertexID*[n_partitions_]();
   std::vector<EdgelistMetadata> edgelist_metadata_vec;
-
-  for (size_t i = 0; i < n_partitions_; i++)
-    edge_bucket[i] = new VertexID[size_per_bucket[i] * 2]();
+  std::vector<Edges*> edge_buckets;
 
   for (size_t i = 0; i < n_partitions_; i++) {
     EdgelistMetadata edgelist_metadata = {
-        bitmap_vec->at(i)->Count(), size_per_bucket[i], max_vid_per_bucket[i]};
+        bitmap_vec.at(i)->Count(), size_per_bucket[i], max_vid_per_bucket[i]};
     edgelist_metadata_vec.push_back(edgelist_metadata);
-    auto bucket = new Edges(edgelist_metadata);
-    edge_buckets.push_back(bucket);
+    edge_buckets.push_back(new Edges(edgelist_metadata));
   }
+  for (size_t i = 0; i < bitmap_vec.size(); i++) delete bitmap_vec.at(i);
 
-  // auto buckets_offset = new VertexID[n_partitions_]();
   VertexID bucket_offset[n_partitions_] = {0};
 
   parallelism = 1;
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
       for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
-        // auto src = buffer_edges[j * 2];
-        // auto dst = buffer_edges[j * 2 + 1];
         auto e = edges.get_edge_by_index(j);
         VertexID bid;
         switch (store_strategy_) {
@@ -177,9 +169,10 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   graph_metadata.set_max_vid(max_vid);
   graph_metadata.set_min_vid(min_vid);
 
+  LOG_INFO("Writing the subgraphs to disk");
   graph_format_converter.WriteSubgraph(edge_buckets, graph_metadata,
                                        store_strategy_);
-
+  for (size_t i = 0; i < edge_buckets.size(); i++) delete edge_buckets.at(i);
   input_stream.close();
   LOG_INFO("Finished writing the subgraphs to disk");
 }

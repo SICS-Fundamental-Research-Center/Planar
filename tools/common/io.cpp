@@ -112,18 +112,24 @@ void GraphFormatConverter::WriteSubgraph(
     for (unsigned int i = 0; i < parallelism; i++) {
       auto task = std::bind([&, i, parallelism]() {
         for (VertexID j = i; j < num_vertices; j += parallelism) {
-          memcpy(buffer_in_edges + buffer_in_offset[j],
-                 bucket->at(j).incoming_edges,
-                 bucket->at(j).indegree * sizeof(VertexID));
-          memcpy(buffer_out_edges + buffer_out_offset[j],
-                 bucket->at(j).outgoing_edges,
-                 bucket->at(j).outdegree * sizeof(VertexID));
-          std::sort(
-              buffer_in_edges + buffer_in_offset[j],
-              buffer_in_edges + buffer_in_offset[j] + bucket->at(j).indegree);
-          std::sort(buffer_out_edges + buffer_out_offset[j],
-                    buffer_out_edges + buffer_out_offset[j] +
-                        bucket->at(j).outdegree);
+          if (bucket->at(j).outdegree != 0) {
+            memcpy(buffer_in_edges + buffer_in_offset[j],
+                   bucket->at(j).incoming_edges,
+                   bucket->at(j).indegree * sizeof(VertexID));
+            std::sort(
+                buffer_in_edges + buffer_in_offset[j],
+                buffer_in_edges + buffer_in_offset[j] + bucket->at(j).indegree);
+            delete bucket->at(j).incoming_edges;
+          }
+          if (bucket->at(j).outdegree != 0) {
+            memcpy(buffer_out_edges + buffer_out_offset[j],
+                   bucket->at(j).outgoing_edges,
+                   bucket->at(j).outdegree * sizeof(VertexID));
+            std::sort(buffer_out_edges + buffer_out_offset[j],
+                      buffer_out_edges + buffer_out_offset[j] +
+                          bucket->at(j).outdegree);
+            delete bucket->at(j).outgoing_edges;
+          }
         }
       });
       task_package.push_back(task);
@@ -131,6 +137,7 @@ void GraphFormatConverter::WriteSubgraph(
     thread_pool.SubmitSync(task_package);
     task_package.clear();
 
+    // delete bucket;
     delete[] buffer_in_offset;
     delete[] buffer_out_offset;
 
@@ -169,8 +176,6 @@ void GraphFormatConverter::WriteSubgraph(
             case kUndefinedStrategy:
               LOG_FATAL("Store_strategy is undefined");
           }
-          delete[] bucket->at(j).outgoing_edges;
-          delete[] bucket->at(j).incoming_edges;
         }
       });
       task_package.push_back(task);
@@ -267,8 +272,7 @@ void GraphFormatConverter::WriteSubgraph(
 // For vertex cut.
 void GraphFormatConverter::WriteSubgraph(
     const std::vector<Edges*>& edge_buckets,
-    const GraphMetadata& graph_metadata,
-    StoreStrategy store_strategy) {
+    const GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -281,7 +285,7 @@ void GraphFormatConverter::WriteSubgraph(
   std::ofstream border_vertices_file(output_root_path_ +
                                      "bitmap/border_vertices.bin");
   Bitmap border_vertices(graph_metadata.get_max_vid());
-  auto frequency_of_vertices = new int[graph_metadata.get_max_vid()]();
+  auto frequency_of_vertices = new uint16_t[graph_metadata.get_max_vid()]();
 
   for (GraphID i = 0; i < n_subgraphs; i++) {
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
@@ -291,10 +295,13 @@ void GraphFormatConverter::WriteSubgraph(
     std::ofstream is_in_graph_file(output_root_path_ + "bitmap/is_in_graph/" +
                                    std::to_string(i) + ".bin");
 
-    auto bucket = edge_buckets[i];
-    ImmutableCSRGraph csr_graph(i);
-    util::format_converter::Edgelist2CSR(*bucket, store_strategy, &csr_graph);
-    delete edge_buckets[i];
+    Edges* bucket = edge_buckets.at(i);
+
+    // ImmutableCSRGraph csr_graph(i);
+    auto p_csr_graph = new ImmutableCSRGraph(i);
+    auto& csr_graph = *p_csr_graph;
+
+    util::format_converter::Edgelist2CSR(*bucket, store_strategy, p_csr_graph);
 
     Bitmap src_map(csr_graph.get_num_vertices());
     Bitmap is_in_graph(csr_graph.get_num_vertices());
@@ -307,7 +314,7 @@ void GraphFormatConverter::WriteSubgraph(
           if (csr_graph.GetOutDegreeByLocalID(j) > 0) src_map.SetBit(j);
           is_in_graph.SetBit(csr_graph.GetGlobalIDByLocalID(j));
           WriteAdd(frequency_of_vertices + csr_graph.GetGlobalIDByLocalID(j),
-                   1);
+                   (uint16_t)1);
         }
       });
       task_package.push_back(task);
@@ -431,7 +438,6 @@ void GraphFormatConverter::WriteSubgraph(
   out_node["GraphMetadata"]["min_vid"] = graph_metadata.get_min_vid();
   out_node["GraphMetadata"]["num_subgraphs"] = subgraph_metadata_vec.size();
   out_node["GraphMetadata"]["subgraphs"] = subgraph_metadata_vec;
-
   out_meta_file << out_node << std::endl;
   out_meta_file.close();
 }

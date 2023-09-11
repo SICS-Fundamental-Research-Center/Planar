@@ -58,8 +58,7 @@ DEFINE_bool(read_head, false, "whether to read header of csv.");
 void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
                                     const std::string& output_path,
                                     const std::string& sep,
-                                    uint64_t max_n_edges,
-                                    bool read_head) {
+                                    uint64_t max_n_edges, bool read_head) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -169,7 +168,7 @@ void ConvertEdgelistBin2CSRBin(const std::string& input_path,
   in_file.read(reinterpret_cast<char*>(buffer_edges),
                sizeof(Edge) * edgelist_metadata.num_edges);
 
-  Edges *edges = new Edges(edgelist_metadata, buffer_edges);
+  Edges* edges = new Edges(edgelist_metadata, buffer_edges);
   edges->SortBySrc();
 
   GraphMetadata graph_metadata;
@@ -185,6 +184,8 @@ void ConvertEdgelistBin2CSRBin(const std::string& input_path,
   edge_buckets.push_back(edges);
   graph_format_converter.WriteSubgraph(edge_buckets, graph_metadata,
                                        store_strategy);
+
+  for (size_t i = 0; i < edge_buckets.size(); i++) delete edge_buckets[i];
 }
 
 int main(int argc, char** argv) {

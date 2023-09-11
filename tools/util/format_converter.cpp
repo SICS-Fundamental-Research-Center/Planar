@@ -57,8 +57,6 @@ void Edgelist2CSR(const Edges& edges,
 
   // Initialize the buffer_csr_vertices
   auto buffer_csr_vertices = new Vertex[aligned_max_vid]();
-
-  // Initialize the buffer_csr_vertices
   VertexID count_in_edges = 0, count_out_edges = 0;
 
   // Malloc space for each vertex.
