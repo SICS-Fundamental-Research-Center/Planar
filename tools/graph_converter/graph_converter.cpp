@@ -131,7 +131,7 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   out_meta_file << node << std::endl;
 
   delete[] buffer_edges;
-  delete vid_map;
+  delete[] vid_map;
   delete[] compressed_buffer_edges;
   in_file.close();
   out_data_file.close();
@@ -160,7 +160,6 @@ void ConvertEdgelistBin2CSRBin(const std::string& input_path,
       node["EdgelistBin"]["max_vid"].as<VertexID>()};
 
   auto aligned_max_vid = ((edgelist_metadata.max_vid >> 6) << 6) + 64;
-
   auto buffer_edges = new Edge[edgelist_metadata.num_edges]();
 
   std::ifstream in_file(input_path + "edgelist.bin");

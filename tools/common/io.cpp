@@ -295,13 +295,11 @@ void GraphFormatConverter::WriteSubgraph(
     std::ofstream is_in_graph_file(output_root_path_ + "bitmap/is_in_graph/" +
                                    std::to_string(i) + ".bin");
 
-    Edges* bucket = edge_buckets.at(i);
+    auto bucket = edge_buckets.at(i);
 
-    // ImmutableCSRGraph csr_graph(i);
-    auto p_csr_graph = new ImmutableCSRGraph(i);
-    auto& csr_graph = *p_csr_graph;
+    ImmutableCSRGraph csr_graph(i);
 
-    util::format_converter::Edgelist2CSR(*bucket, store_strategy, p_csr_graph);
+    util::format_converter::Edgelist2CSR(*bucket, store_strategy, &csr_graph);
 
     Bitmap src_map(csr_graph.get_num_vertices());
     Bitmap is_in_graph(csr_graph.get_num_vertices());

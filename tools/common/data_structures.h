@@ -133,7 +133,7 @@ class Edges {
   // Find the index of given vid via binary search.
   Iterator SearchVertex(VertexID vid);
 
-  Edge* get_base_ptr() { return edges_ptr_; }
+  Edge* get_base_ptr() const { return edges_ptr_; }
   EdgelistMetadata get_metadata() const { return edgelist_metadata_; }
 
   VertexID get_src_by_index(size_t i) const { return edges_ptr_[i].src; }
