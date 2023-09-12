@@ -32,6 +32,8 @@ using sics::graph::core::common::VertexLabel;
 using sics::graph::core::data_structures::GraphMetadata;
 using sics::graph::core::data_structures::SubgraphMetadata;
 using sics::graph::core::util::atomic::WriteAdd;
+using sics::graph::tools::common::Edge;
+using sics::graph::tools::common::Edges;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
 using namespace sics::graph::tools::common;
@@ -40,6 +42,7 @@ DEFINE_string(partitioner, "", "partitioner type.");
 DEFINE_string(i, "", "input path.");
 DEFINE_string(o, "", "output path.");
 DEFINE_uint64(n_partitions, 1, "the number of partitions");
+DEFINE_uint64(max_n_edges, UINT64_MAX, "the maximum number of edges to read");
 DEFINE_string(store_strategy, "unconstrained",
               "graph-systems adopted three strategies to store edges: "
               "kUnconstrained, incoming, and outgoing.");
@@ -55,11 +58,12 @@ DEFINE_bool(read_head, false, "whether to read header of csv.");
 void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
                                     const std::string& output_path,
                                     const std::string& sep,
+                                    uint64_t max_n_edges,
                                     bool read_head) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
-  std::mutex mtx;
+  task_package.reserve(parallelism);
 
   if (!exists(output_path)) create_directory(output_path);
   std::ifstream in_file(input_path);
@@ -68,17 +72,19 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   std::ofstream out_meta_file(output_path + "meta.yaml");
 
   // Read edgelist graph.
-  std::vector<VertexID> edges_vec;
-  edges_vec.reserve(1048576);
+  std::list<VertexID> edge_list;
+
   VertexID max_vid = 0, compressed_vid = 0;
   std::string line, vid_str;
+  uint64_t count = 0;
   if (in_file) {
     if (read_head) getline(in_file, line);
     while (getline(in_file, line)) {
+      if (count++ > max_n_edges) break;
       std::stringstream ss(line);
       while (getline(ss, vid_str, *sep.c_str())) {
         VertexID vid = stoll(vid_str);
-        edges_vec.push_back(vid);
+        edge_list.push_back(vid);
         sics::graph::core::util::atomic::WriteMax(&max_vid, vid);
       }
     }
@@ -87,54 +93,47 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   // Compute the mapping between origin vid to compressed vid.
   auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
   auto bitmap = Bitmap(aligned_max_vid);
-  bitmap.Clear();
-  auto buffer_edges =
-      (VertexID*)malloc(sizeof(VertexID) * edges_vec.size() * 2);
-  memset(buffer_edges, 0, sizeof(VertexID) * edges_vec.size() * 2);
-  auto vid_map = (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
+  auto n_edges = edge_list.size() / 2;
+  auto buffer_edges = new VertexID[n_edges * 2]();
+  auto compressed_buffer_edges = new VertexID[n_edges * 2]();
+  auto vid_map = new VertexID[aligned_max_vid]();
+
+  auto index = 0;
+  while (edge_list.size() > 0) {
+    buffer_edges[index] = edge_list.front();
+    edge_list.pop_front();
+    if (!bitmap.GetBit(buffer_edges[index])) {
+      bitmap.SetBit(buffer_edges[index]);
+      vid_map[buffer_edges[index]] = compressed_vid++;
+    }
+    index++;
+  }
+
+  // Compress vid and buffer graph.
   for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([i, parallelism, &bitmap, &edges_vec, &compressed_vid,
-                           &vid_map, &buffer_edges, &mtx]() {
-      for (VertexID j = i; j < edges_vec.size(); j += parallelism) {
-        buffer_edges[j] = edges_vec.at(j);
-        std::lock_guard<std::mutex> lck(mtx);
-        if (!bitmap.GetBit(edges_vec.at(j))) {
-          auto local_vid = compressed_vid++;
-          bitmap.SetBit(edges_vec.at(j));
-          vid_map[edges_vec.at(j)] = local_vid;
-        }
-      }
+    auto task = std::bind([&, i, parallelism]() {
+      for (VertexID j = i; j < n_edges * 2; j += parallelism)
+        compressed_buffer_edges[j] = vid_map[buffer_edges[j]];
     });
     task_package.push_back(task);
   }
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  // Compress vid and buffer graph.
-  for (unsigned int i = 0; i < parallelism; i++) {
-    auto task =
-        std::bind([i, parallelism, &buffer_edges, &edges_vec, &vid_map]() {
-          for (VertexID j = i; j < edges_vec.size(); j += parallelism)
-            buffer_edges[j] = vid_map[edges_vec.at(j)];
-        });
-    task_package.push_back(task);
-  }
-  thread_pool.SubmitSync(task_package);
-  task_package.clear();
-
   // Write binary edgelist
-  out_data_file.write((char*)buffer_edges,
-                      sizeof(VertexID) * 2 * edges_vec.size());
+  out_data_file.write(reinterpret_cast<char*>(compressed_buffer_edges),
+                      sizeof(VertexID) * 2 * n_edges);
 
   // Write Meta date.
   YAML::Node node;
   node["EdgelistBin"]["num_vertices"] = bitmap.Count();
-  node["EdgelistBin"]["num_edges"] = edges_vec.size() / 2;
+  node["EdgelistBin"]["num_edges"] = n_edges;
   node["EdgelistBin"]["max_vid"] = compressed_vid - 1;
   out_meta_file << node << std::endl;
 
-  delete buffer_edges;
-  delete vid_map;
+  delete[] buffer_edges;
+  delete[] vid_map;
+  delete[] compressed_buffer_edges;
   in_file.close();
   out_data_file.close();
   out_meta_file.close();
@@ -147,7 +146,7 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
 // incoming_only store incoming edges only, and outgoing_only store outgoing
 // edges of a vertex only. By default, the graph is store in unconstrained
 // manner.
-bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
+void ConvertEdgelistBin2CSRBin(const std::string& input_path,
                                const std::string& output_path,
                                const StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
@@ -155,67 +154,36 @@ bool ConvertEdgelistBin2CSRBin(const std::string& input_path,
 
   YAML::Node node = YAML::LoadFile(input_path + "meta.yaml");
   LOG_INFO(input_path + "meta.yaml");
-  auto num_vertices = node["EdgelistBin"]["num_vertices"].as<VertexID>();
-  auto num_edges = node["EdgelistBin"]["num_edges"].as<VertexID>();
-  auto max_vid = node["EdgelistBin"]["max_vid"].as<VertexID>();
-  auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
 
-  auto buffer_edges = (VertexID*)malloc(sizeof(VertexID) * num_edges * 2);
+  EdgelistMetadata edgelist_metadata = {
+      node["EdgelistBin"]["num_vertices"].as<VertexID>(),
+      node["EdgelistBin"]["num_edges"].as<VertexID>(),
+      node["EdgelistBin"]["max_vid"].as<VertexID>()};
+
+  auto aligned_max_vid = ((edgelist_metadata.max_vid >> 6) << 6) + 64;
+  auto buffer_edges = new Edge[edgelist_metadata.num_edges]();
+
   std::ifstream in_file(input_path + "edgelist.bin");
-  if (!in_file)
-    throw std::runtime_error("Open file failed: " + input_path +
-                             "edgelist.bin");
-  in_file.read((char*)buffer_edges, sizeof(VertexID) * 2 * num_edges);
+  if (!in_file) LOG_FATAL("Open file failed: " + input_path + "edgelist.bin");
+  in_file.read(reinterpret_cast<char*>(buffer_edges),
+               sizeof(Edge) * edgelist_metadata.num_edges);
 
-  auto num_inedges_by_vid =
-      (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
-  auto num_outedges_by_vid =
-      (VertexID*)malloc(sizeof(VertexID) * aligned_max_vid);
-  memset(num_inedges_by_vid, 0, sizeof(VertexID) * aligned_max_vid);
-  memset(num_outedges_by_vid, 0, sizeof(VertexID) * aligned_max_vid);
-  auto visited = Bitmap(aligned_max_vid);
-  visited.Clear();
-
-  // Traversal edges to get the num_in_edges and num_out_edges respectively
-  auto task_package = TaskPackage();
-  for (unsigned int i = 0; i < parallelism; i++) {
-    auto task =
-        std::bind([i, parallelism, &num_edges, &buffer_edges,
-                   &num_inedges_by_vid, &num_outedges_by_vid, &visited]() {
-          for (VertexID j = i; j < num_edges; j += parallelism) {
-            auto src = buffer_edges[j * 2];
-            auto dst = buffer_edges[j * 2 + 1];
-            visited.SetBit(src);
-            visited.SetBit(dst);
-            WriteAdd(num_inedges_by_vid + dst, (VertexID)1);
-            WriteAdd(num_outedges_by_vid + src, (VertexID)1);
-          }
-        });
-    task_package.push_back(task);
-  }
-  thread_pool.SubmitSync(task_package);
-  task_package.clear();
-
-  auto edge_bucket = (VertexID**)malloc(sizeof(VertexID*));
-  *edge_bucket = buffer_edges;
+  Edges edges(edgelist_metadata, buffer_edges);
+  edges.SortBySrc();
 
   GraphMetadata graph_metadata;
-  graph_metadata.set_num_vertices(num_vertices);
-  graph_metadata.set_num_edges(num_edges);
-  graph_metadata.set_max_vid(max_vid);
+  graph_metadata.set_num_vertices(edgelist_metadata.num_vertices);
+  graph_metadata.set_num_edges(edgelist_metadata.num_edges);
+  graph_metadata.set_max_vid(edgelist_metadata.max_vid);
   graph_metadata.set_min_vid(0);
   graph_metadata.set_num_subgraphs(1);
 
-  std::vector<EdgelistMetadata> edgelist_metadata_vec;
-  edgelist_metadata_vec.push_back({num_vertices, num_edges, max_vid});
-
   // Write the csr graph to disk
   GraphFormatConverter graph_format_converter(output_path);
-  graph_format_converter.WriteSubgraph(edge_bucket,
-                                       graph_metadata,
-                                       edgelist_metadata_vec,
+  std::vector<Edges> edge_buckets;
+  edge_buckets.push_back(edges);
+  graph_format_converter.WriteSubgraph(edge_buckets, graph_metadata,
                                        store_strategy);
-  return 0;
 }
 
 int main(int argc, char** argv) {
@@ -240,7 +208,7 @@ int main(int argc, char** argv) {
         LOG_FATAL("CSV separator is not empty. Use -sep [e.g. \",\"].");
 
       ConvertEdgelistCSV2EdgelistBin(FLAGS_i, FLAGS_o, FLAGS_sep,
-                                     FLAGS_read_head);
+                                     FLAGS_max_n_edges, FLAGS_read_head);
       break;
     case kEdgelistCSV2CSRBin:
       // TODO(hsiaoko): to add edgelist csv 2 csr bin function.

@@ -1,6 +1,8 @@
 #ifndef TOOLS_COMMON_TYPES_H_
 #define TOOLS_COMMON_TYPES_H_
 
+#include <cstring>
+
 #include "core/common/types.h"
 
 namespace sics::graph::tools::common {
@@ -113,6 +115,13 @@ class Edges {
     edges_ptr_ = new Edge[edgelist_metadata.num_edges]();
   }
 
+  Edges(const Edges& edges) {
+    edgelist_metadata_ = edges.get_metadata();
+    edges_ptr_ = new Edge[edgelist_metadata_.num_edges]();
+    memcpy(edges_ptr_, edges.get_base_ptr(),
+           sizeof(Edge) * edgelist_metadata_.num_edges);
+  }
+
   ~Edges() { delete[] edges_ptr_; }
 
   Iterator begin() { return Iterator(&edges_ptr_[0]); }
@@ -133,7 +142,7 @@ class Edges {
   // Find the index of given vid via binary search.
   Iterator SearchVertex(VertexID vid);
 
-  Edge* get_base_ptr() { return edges_ptr_; }
+  Edge* get_base_ptr() const { return edges_ptr_; }
   EdgelistMetadata get_metadata() const { return edgelist_metadata_; }
 
   VertexID get_src_by_index(size_t i) const { return edges_ptr_[i].src; }

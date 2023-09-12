@@ -54,8 +54,7 @@ class GraphFormatConverter {
   //  vertex_buckets: container of vertices.
   //  graph_metadata: metadata of the graph.
   //  store_strategy: store strategy to be used.
-  void WriteSubgraph(const std::vector<std::vector<Vertex>*>&
-                         vertex_buckets,
+  void WriteSubgraph(const std::vector<std::vector<Vertex>>& vertex_buckets,
                      const GraphMetadata& graph_metadata,
                      StoreStrategy store_strategy);
 
@@ -65,11 +64,9 @@ class GraphFormatConverter {
   // @PARAMETERS
   //  edge_bucket: a set of edges.
   //  graph_metadata: metadata of the graph.
-  //  edgelist_metadata_vec: metadata for each bucket.
   //  store_strategy: store strategy to be used.
-  void WriteSubgraph(VertexID** edge_bucket,
+  void WriteSubgraph(const std::vector<Edges>& edge_buckets,
                      const GraphMetadata& graph_metadata,
-                     const std::vector<EdgelistMetadata>& edgelist_metadata_vec,
                      StoreStrategy store_strategy);
 
  private:
