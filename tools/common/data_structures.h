@@ -1,6 +1,8 @@
 #ifndef TOOLS_COMMON_TYPES_H_
 #define TOOLS_COMMON_TYPES_H_
 
+#include <cstring>
+
 #include "core/common/types.h"
 
 namespace sics::graph::tools::common {
@@ -111,6 +113,13 @@ class Edges {
   Edges(const EdgelistMetadata& edgelist_metadata)
       : edgelist_metadata_(edgelist_metadata) {
     edges_ptr_ = new Edge[edgelist_metadata.num_edges]();
+  }
+
+  Edges(const Edges& edges) {
+    edgelist_metadata_ = edges.get_metadata();
+    edges_ptr_ = new Edge[edgelist_metadata_.num_edges]();
+    memcpy(edges_ptr_, edges.get_base_ptr(),
+           sizeof(Edge) * edgelist_metadata_.num_edges);
   }
 
   ~Edges() { delete[] edges_ptr_; }

@@ -98,7 +98,6 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   task_package.clear();
 
   std::vector<Vertex> vertices;
-  vertices.reserve(aligned_max_vid);
   vertices.resize(aligned_max_vid);
 
   VertexID count_in_edges = 0, count_out_edges = 0;
