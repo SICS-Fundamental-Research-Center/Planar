@@ -10,6 +10,7 @@ namespace sics::graph::miniclean::data_structures::gcr::refactor {
 
 typedef enum {
   kEq = 0,
+  kGe,
 } OperatorType;
 
 // x.A [op] c
@@ -22,7 +23,7 @@ class ConstantPredicate {
   ConstantPredicate() = default;
   ConstantPredicate(VertexLabel vertex_label,
                     VertexAttributeID vertex_attribute_id,
-                    uint8_t operator_type, uint8_t constant_value)
+                    uint8_t operator_type, size_t constant_value)
       : vertex_label_(vertex_label),
         vertex_attribute_id_(vertex_attribute_id),
         operator_type_(static_cast<OperatorType>(operator_type)),
@@ -33,7 +34,7 @@ class ConstantPredicate {
     return vertex_attribute_id_;
   }
   OperatorType get_operator_type() const { return operator_type_; }
-  uint8_t get_constant_value() const { return constant_value_; }
+  size_t get_constant_value() const { return constant_value_; }
 
   void set_vertex_label(VertexLabel vertex_label) {
     vertex_label_ = vertex_label;
@@ -41,10 +42,10 @@ class ConstantPredicate {
   void set_vertex_attribute_id(VertexAttributeID vertex_attribute_id) {
     vertex_attribute_id_ = vertex_attribute_id;
   }
-  void set_operator_type(uint8_t operator_type) {
-    operator_type_ = static_cast<OperatorType>(operator_type);
+  void set_operator_type(OperatorType operator_type) {
+    operator_type_ = operator_type;
   }
-  void set_constant_value(uint8_t constant_value) {
+  void set_constant_value(size_t constant_value) {
     constant_value_ = constant_value;
   }
 
@@ -52,7 +53,7 @@ class ConstantPredicate {
   VertexLabel vertex_label_;
   VertexAttributeID vertex_attribute_id_;
   OperatorType operator_type_;
-  uint8_t constant_value_;
+  size_t constant_value_;
 };
 }  // namespace sics::graph::miniclean::data_structures::gcr::refactor
 
@@ -86,7 +87,7 @@ struct convert<
             node["vertex_attribute_id"]
                 .as<sics::graph::miniclean::common::VertexAttributeID>(),
             node["operator_type"].as<uint8_t>(),
-            node["constant_value"].as<uint8_t>());
+            node["constant_value"].as<size_t>());
     return true;
   }
 };

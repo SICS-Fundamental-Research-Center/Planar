@@ -9,15 +9,15 @@
 #include "miniclean/data_structures/gcr/refactor_predicate.h"
 
 namespace sics::graph::miniclean::components::rule_discovery::refactor {
+
 class RuleMiner {
  private:
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using ConstantPredicate =
       sics::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate;
-  // using ConstantPredicateMap =
-  //     sics::graph::miniclean::common::ConstantPredicateMap;
+
  public:
-  RuleMiner() {}
+  RuleMiner() = default;
 
   // Path rule contains:
   //   - a path pattern

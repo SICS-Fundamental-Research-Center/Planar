@@ -7,6 +7,7 @@
 #include "core/util/logging.h"
 
 namespace sics::graph::miniclean::components::rule_discovery::refactor {
+
 using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
 using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;

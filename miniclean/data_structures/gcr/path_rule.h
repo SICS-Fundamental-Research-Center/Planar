@@ -24,7 +24,7 @@ class PathRule {
 
   // The first element is the index of vertex in the pattern;
   // The second element the constant predicate.
-  std::list<std::pair<uint8_t, ConstantPredicate>> constant_predicates_;
+  std::vector<std::pair<uint8_t, ConstantPredicate>> constant_predicates_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr
