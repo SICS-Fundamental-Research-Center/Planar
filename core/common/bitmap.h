@@ -20,12 +20,8 @@ namespace sics::graph::core::common {
 // make sure the pointer is created by new[].
 class Bitmap {
  public:
-  Bitmap() { LOG_INFO("default constructor"); }
-  Bitmap(size_t size) {
-    Init(size);
-    LOGF_INFO("construct bitmap with init value {}, {}", size,
-              static_cast<void*>(this));
-  }
+  Bitmap() = default;
+  Bitmap(size_t size) { Init(size); }
   Bitmap(size_t size, uint64_t* init_value) {
     size_ = size;
     data_ = init_value;
@@ -37,24 +33,37 @@ class Bitmap {
     data_ = new uint64_t[WORD_OFFSET(size_) + 1]();
     memcpy(data_, other.GetDataBasePointer(),
            (WORD_OFFSET(size_) + 1) * sizeof(uint64_t));
-    LOGF_INFO("copy constructor {}, {}", size_, static_cast<void*>(this));
   };
   // move constructor
-  Bitmap(Bitmap&& other) noexcept { LOG_INFO("move constructor"); }
+  Bitmap(Bitmap&& other) noexcept : size_(other.size_), data_(other.data_) {
+    other.size_ = 0;
+    other.data_ = nullptr;
+  }
+
   // copy assignment
   Bitmap& operator=(const Bitmap& other) {
-    size_ = other.size();
-    data_ = new uint64_t[WORD_OFFSET(size_) + 1]();
-    memcpy(data_, other.GetDataBasePointer(),
-           (WORD_OFFSET(size_) + 1) * sizeof(uint64_t));
-    LOGF_INFO("copy assignment {}, {}", size_, static_cast<void*>(this));
+    if (this != &other) {
+      delete[] data_;
+      size_ = other.size();
+      data_ = new uint64_t[WORD_OFFSET(size_) + 1]();
+      memcpy(data_, other.GetDataBasePointer(),
+             (WORD_OFFSET(size_) + 1) * sizeof(uint64_t));
+    }
     return *this;
   };
   // move assignment
-  Bitmap& operator=(Bitmap&& other) noexcept { LOG_INFO("move assignment"); }
+  Bitmap& operator=(Bitmap&& other) noexcept {
+    if (this != &other) {
+      delete[] data_;
+      size_ = other.size_;
+      data_ = other.data_;
+      other.size_ = 0;
+      other.data_ = nullptr;
+    }
+    return *this;
+  };
 
   ~Bitmap() {
-    LOGF_INFO("destructor {}, {}", size_, static_cast<void*>(this));
     delete[] data_;
     size_ = 0;
   }

@@ -66,16 +66,11 @@ TEST_F(BitmapTest, CountShouldReturnAllKSetBits) {
 TEST_F(BitmapTest, CopyAndMoveConstructor) {
   std::vector<Bitmap> bitmaps;
   bitmaps.reserve(100);
-  LOGF_INFO("capacity: {}", bitmaps.capacity());
   bitmaps.push_back(Bitmap());
-  LOGF_INFO("capacity: {}", bitmaps.capacity());
   Bitmap a(11);
   bitmaps.push_back(a);
-  LOGF_INFO("capacity: {}", bitmaps.capacity());
   bitmaps.push_back(std::move(Bitmap(3)));
-  LOGF_INFO("capacity: {}", bitmaps.capacity());
   bitmaps.emplace_back(Bitmap());
-  LOGF_INFO("capacity: {}", bitmaps.capacity());
   bitmaps.emplace_back(Bitmap(2));
 }
 
