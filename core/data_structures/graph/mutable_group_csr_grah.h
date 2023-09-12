@@ -35,7 +35,7 @@ class MutableGroupCSRGraph : public Serializable {
 
   // TODO: add corresponding methods
 
-  VertexData ReadLocalVertexDataByID(VertexID id) {
+  VertexData ReadLocalVertexDataByID(VertexID id) const {
     for (auto& subgraph : subgraphs_) {
       return subgraph.ReadLocalVertexDataByID(id);
     }
@@ -57,7 +57,7 @@ class MutableGroupCSRGraph : public Serializable {
     return flag;
   }
 
-  int GetNumSubgraphs() { return subgraphs_.size(); }
+  int GetNumSubgraphs() const { return subgraphs_.size(); }
 
   // log methods
   void LogVertexData() const {

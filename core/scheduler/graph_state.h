@@ -34,16 +34,22 @@ struct GraphState {
     return subgraph_storage_state_.at(gid);
   }
 
+  void UpdateSubgraphState(common::GraphID gid, StorageStateType type) {
+    subgraph_storage_state_.at(gid) = type;
+    subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
+    current_round_pending_.at(gid) = false;
+  }
+
   void SetGraphState(common::GraphID gid, StorageStateType type) {
     subgraph_storage_state_.at(gid) = type;
   }
 
-  size_t GetSubgraphRound(common::GraphID gid) const {
+  int GetSubgraphRound(common::GraphID gid) const {
     return subgraph_round_.at(gid);
   }
 
-  void SetSubgraphRound(common::GraphID gid, size_t round) {
-    subgraph_round_.at(gid) = round;
+  void SetSubgraphRound(common::GraphID gid) {
+    subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
   }
 
   void SyncRoundState() { current_round_pending_.swap(next_round_pending_); }
@@ -87,6 +93,7 @@ struct GraphState {
   // memory size and graph size
   // TODO: memory size should be set by gflags
   const size_t memory_size_;
+  size_t subgraph_limits = 1;
 
  private:
   std::vector<std::unique_ptr<data_structures::Serialized>> serialized_;

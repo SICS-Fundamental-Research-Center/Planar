@@ -155,9 +155,12 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
 
 bool Scheduler::WriteMessageResponseAndCheckTerminate(
     const WriteMessage& write_resp) {
-  graph_state_.SetGraphState(write_resp.graph_id,
-                             GraphState::StorageStateType::OnDisk);
-  TryReadNextGraph(true);
+  // Update subgraph state.
+  common::subgraph_limits++;
+  graph_state_.UpdateSubgraphState(write_resp.graph_id,
+                                   GraphState::StorageStateType::OnDisk);
+  // Read next subgraph if permitted
+  TryReadNextGraph();
   return true;
 }
 
@@ -172,6 +175,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       read_message.graph_id = next_graph_id;
       read_message.num_vertices =
           graph_metadata_info_.GetSubgraphNumVertices(read_message.graph_id);
+      read_message.round = graph_state_.GetSubgraphRound(read_message.graph_id);
       message_hub_.get_reader_queue()->Push(read_message);
     } else {
       // check next round graph which can be read, if not just skip
@@ -184,6 +188,8 @@ bool Scheduler::TryReadNextGraph(bool sync) {
         read_message.graph_id = next_gid_next_round;
         read_message.num_vertices =
             graph_metadata_info_.GetSubgraphNumVertices(read_message.graph_id);
+        read_message.round =
+            graph_state_.GetSubgraphRound(read_message.graph_id);
         message_hub_.get_reader_queue()->Push(read_message);
       } else {
         // no graph can be read, terminate system
