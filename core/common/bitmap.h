@@ -44,7 +44,7 @@ class Bitmap {
   Bitmap& operator=(const Bitmap& other) = default;
 
   ~Bitmap() {
-    delete data_;
+    delete[] data_;
     size_ = 0;
   }
 
