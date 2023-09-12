@@ -35,28 +35,44 @@ class MutableGroupCSRGraph : public Serializable {
 
   // TODO: add corresponding methods
 
-  VertexData ReadLocalVertexDataByID(VertexID id) {}
+  VertexData ReadLocalVertexDataByID(VertexID id) {
+    for (auto& subgraph : subgraphs_) {
+      return subgraph.ReadLocalVertexDataByID(id);
+    }
+  }
 
-  bool WriteMinVertexDataByID(VertexID id, VertexData data_new) {}
+  bool WriteMinVertexDataByID(VertexID id, VertexData data_new) {
+    bool flag = false;
+    for (auto& subgraph : subgraphs_) {
+      flag = subgraph.WriteMinVertexDataByID(id, data_new);
+    }
+    return flag;
+  }
 
-  bool WriteVertexDataByID(VertexID id, VertexData data_new) {}
+  bool WriteVertexDataByID(VertexID id, VertexData data_new) {
+    bool flag = false;
+    for (auto& subgraph : subgraphs_) {
+      flag = subgraph.WriteVertexDataByID(id, data_new);
+    }
+    return flag;
+  }
 
   int GetNumSubgraphs() { return subgraphs_.size(); }
 
   // log methods
-  void LogVertexData() {
+  void LogVertexData() const {
     for (auto& subgraph : subgraphs_) {
       subgraph.LogVertexData();
     }
   }
 
-  void LogEdges() {
+  void LogEdges() const {
     for (auto& subgraph : subgraphs_) {
       subgraph.LogEdges();
     }
   }
 
-  void LogGraphInfo(VertexID id) {
+  void LogGraphInfo(VertexID id) const {
     for (auto& subgraph : subgraphs_) {
       subgraph.LogGraphInfo(id);
     }

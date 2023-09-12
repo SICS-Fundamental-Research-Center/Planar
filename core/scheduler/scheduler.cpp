@@ -162,6 +162,8 @@ bool Scheduler::WriteMessageResponseAndCheckTerminate(
 }
 
 // private methods:
+
+// try to read a graph from disk into memory if memory_limit is permitted
 bool Scheduler::TryReadNextGraph(bool sync) {
   if (common::subgraph_limits > 0) {
     auto next_graph_id = GetNextReadGraphInCurrentRound();
