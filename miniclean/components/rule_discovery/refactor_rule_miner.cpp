@@ -45,7 +45,7 @@ void RuleMiner::LoadGraph(const std::string& graph_path) {
 
 void RuleMiner::LoadPathInstances(const std::string& path_instances_path) {
   if (path_patterns_.empty()) {
-    LOG_WARN("Path patterns are not loaded yet.");
+    LOG_FATAL("Path patterns are not loaded yet.");
   }
   // Initialize path instance vector.
   path_instances_.resize(path_patterns_.size());
@@ -156,7 +156,7 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
 
   // Reserve space for constant predicates
   constant_predicates_.reserve(constant_predicate_nodes.size());
-  for (auto constant_predicate_node : constant_predicate_nodes) {
+  for (const auto constant_predicate_node : constant_predicate_nodes) {
     VertexLabel vertex_label = static_cast<VertexLabel>(
         std::stoi(constant_predicate_node.first.as<std::string>()));
     // Check if this label `has existed.
@@ -167,7 +167,7 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
       constant_predicates_[vertex_label].reserve(
           constant_predicate_node.second.size());
     }
-    for (auto node : constant_predicate_node.second) {
+    for (const auto node : constant_predicate_node.second) {
       VertexAttributeID attribute_id = static_cast<VertexAttributeID>(
           std::stoi(node.first.as<std::string>()));
       // Check if this attribute id has existed.

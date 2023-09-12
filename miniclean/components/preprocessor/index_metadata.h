@@ -23,7 +23,8 @@ class IndexMetadata {
           attribute_bitmap)
       : attribute_bitmap_(attribute_bitmap) {}
 
-  std::unordered_map<VertexLabel, std::vector<std::pair<uint8_t, uint8_t>>>
+  const std::unordered_map<VertexLabel,
+                           std::vector<std::pair<uint8_t, uint8_t>>>&
   get_attribute_bitmap() const {
     return attribute_bitmap_;
   }
@@ -59,14 +60,14 @@ struct convert<
     auto attribute_bitmap_nodes = node["AttributeBitMap"];
     attribute_bitmap.reserve(attribute_bitmap_nodes.size());
 
-    for (auto attribute_bitmap_node : attribute_bitmap_nodes) {
+    for (const auto attribute_bitmap_node : attribute_bitmap_nodes) {
       sics::graph::miniclean::common::VertexLabel vertex_label =
           static_cast<sics::graph::miniclean::common::VertexLabel>(
               std::stoi(attribute_bitmap_node.first.as<std::string>()));
 
       std::vector<std::pair<uint8_t, uint8_t>> attribute;
       attribute.reserve(attribute_bitmap_node.second.size());
-      for (auto pair_node : attribute_bitmap_node.second) {
+      for (const auto pair_node : attribute_bitmap_node.second) {
         uint8_t attribute_id = static_cast<uint8_t>(
             std::stoi(pair_node["attribute_id"].as<std::string>()));
         uint8_t attribute_num = static_cast<uint8_t>(
