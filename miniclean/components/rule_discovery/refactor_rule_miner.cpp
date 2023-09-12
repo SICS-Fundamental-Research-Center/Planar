@@ -22,7 +22,6 @@ using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 using ThreadPool = sics::graph::core::common::ThreadPool;
 using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
 
-
 void RuleMiner::LoadGraph(const std::string& graph_path) {
   // Prepare reader.
   MiniCleanCSRReader reader(graph_path);
@@ -160,15 +159,40 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
   for (auto constant_predicate_node : constant_predicate_nodes) {
     VertexLabel vertex_label = static_cast<VertexLabel>(
         std::stoi(constant_predicate_node.first.as<std::string>()));
-    // Check if this label has existed.
+    // Check if this label `has existed.
     if (constant_predicates_.find(vertex_label) != constant_predicates_.end()) {
-      LOG_FATAL("Duplicated vertex label for constant predicate: ",
-                vertex_label);
+      LOG_WARN("Duplicated vertex label for constant predicate: ",
+               vertex_label);
     } else {
-      constant_predicates_[vertex_label] =
-          constant_predicate_node.second.as<std::vector<ConstantPredicate>>();
+      constant_predicates_[vertex_label].reserve(
+          constant_predicate_node.second.size());
+    }
+    for (auto node : constant_predicate_node.second) {
+      VertexAttributeID attribute_id = static_cast<VertexAttributeID>(
+          std::stoi(node.first.as<std::string>()));
+      // Check if this attribute id has existed.
+      if (constant_predicates_[vertex_label].find(attribute_id) !=
+          constant_predicates_[vertex_label].end()) {
+        LOG_WARN("Duplicated attribute id for constant predicate: ",
+                 attribute_id);
+      } else {
+        constant_predicates_[vertex_label][attribute_id] =
+            node.second.as<std::vector<ConstantPredicate>>();
+      }
     }
   }
+}
+
+void RuleMiner::LoadIndexMetadata(const std::string& index_metadata_path) {
+  YAML::Node index_metadata_node;
+  try {
+    index_metadata_node = YAML::LoadFile(index_metadata_path);
+  } catch (const YAML::BadFile& e) {
+    LOG_FATAL("Failed to open index metadata file: ",
+              index_metadata_path.c_str());
+  }
+
+  index_metadata_ = index_metadata_node.as<IndexMetadata>();
 }
 
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor

@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "miniclean/components/preprocessor/index_metadata.h"
 #include "miniclean/components/rule_discovery/refactor_rule_miner.h"
 
 using RuleMiner =
@@ -10,6 +11,8 @@ using RuleMiner =
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph =
     sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+using IndexMetadata =
+    sics::graph::miniclean::components::preprocessor::IndexMetadata;
 
 DEFINE_string(workspace_path, "", "workspace_path");
 
@@ -34,6 +37,10 @@ int main(int argc, char* argv[]) {
   LOG_INFO("Loading path instances...");
   rule_miner.LoadPathInstances(FLAGS_workspace_path + "/matched_path_patterns");
   LOG_INFO("Loading path instances done.");
+
+  LOG_INFO("Loading index metadata...");
+  rule_miner.LoadIndexMetadata(FLAGS_workspace_path + "/index_meta.yaml");
+  LOG_INFO("Loading index metadata done.");
 
   gflags::ShutDownCommandLineFlags();
 }

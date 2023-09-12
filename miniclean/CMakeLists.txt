@@ -32,6 +32,7 @@ file(GLOB GRAPH_MINICLEAN_SOURCES
         "data_structures/gcr/*.cpp"
         "components/*.cpp"
         "components/matcher/*.cpp"
+        "components/preprocessor/*.cpp"
         "components/rule_discovery/*.cpp"
         "io/*.cpp"
         )
@@ -45,6 +46,7 @@ file(GLOB GRAPH_MINICLEAN_HEADERS
         "data_structures/gcr/*.h"
         "components/*.h"
         "components/matcher/*.h"
+        "components/preprocessor/*.h"
         "components/rule_discovery/*.h"
         "io/*.h"
         )
