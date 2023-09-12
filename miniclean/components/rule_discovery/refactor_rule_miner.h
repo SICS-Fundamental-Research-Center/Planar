@@ -7,6 +7,7 @@
 
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/gcr/refactor_predicate.h"
+#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 namespace sics::graph::miniclean::components::rule_discovery::refactor {
 
@@ -15,10 +16,16 @@ class RuleMiner {
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using ConstantPredicate =
       sics::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate;
+  using MiniCleanCSRGraph =
+      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+  using VertexID = sics::graph::miniclean::common::VertexID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
-  RuleMiner() = default;
+  RuleMiner(MiniCleanCSRGraph* graph) : graph_(graph) {}
 
+  void LoadGraph(const std::string& graph_path);
+  void LoadPathInstances(const std::string& path_instances_path);
   // Path rule contains:
   //   - a path pattern
   //   - several constant predicates on its non-center vertices.
@@ -30,8 +37,10 @@ class RuleMiner {
   void LoadPredicates(const std::string& predicates_path);
 
  private:
+  MiniCleanCSRGraph* graph_;
   std::vector<PathPattern> path_patterns_;
-  std::unordered_map<uint8_t, std::vector<ConstantPredicate>>
+  std::vector<std::vector<std::vector<VertexID>>> path_instances_;
+  std::unordered_map<VertexLabel, std::vector<ConstantPredicate>>
       constant_predicates_;
 };
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor
