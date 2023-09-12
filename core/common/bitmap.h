@@ -25,15 +25,23 @@ class Bitmap {
     data_ = init_value;
   }
 
-  Bitmap(Bitmap&& other){
+  Bitmap(Bitmap&& other) {
     size_ = other.size();
     data_ = new uint64_t[WORD_OFFSET(size_) + 1]();
     memcpy(data_, other.GetDataBasePointer(),
            (WORD_OFFSET(size_) + 1) * sizeof(uint64_t));
   }
 
+  Bitmap(const Bitmap& other) {
+    size_ = other.size();
+    data_ = new uint64_t[WORD_OFFSET(size_) + 1]();
+    memcpy(data_, other.GetDataBasePointer(),
+           (WORD_OFFSET(size_) + 1) * sizeof(uint64_t));
+  };
+
   // TODO: move constructor and assignment copy
   Bitmap& operator=(Bitmap&& other) = default;
+  Bitmap& operator=(const Bitmap& other) = default;
 
   ~Bitmap() {
     delete data_;
@@ -41,12 +49,13 @@ class Bitmap {
   }
 
   void Init(size_t size) {
+    delete[] data_;
     size_ = size;
     data_ = new uint64_t[WORD_OFFSET(size) + 1]();
   }
 
   void Init(size_t size, uint64_t* data) {
-    if(data_ != nullptr) delete data_;
+    delete[] data_;
     size_ = size;
     data_ = data;
   }

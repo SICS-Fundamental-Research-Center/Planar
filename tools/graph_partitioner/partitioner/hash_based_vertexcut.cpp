@@ -77,10 +77,8 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
     min_vid_per_bucket[i] = MAX_VERTEX_ID;
 
   std::vector<Bitmap> bitmap_vec;
-  // bitmap_vec.reserve(n_partitions_);
-  for (size_t i = 0; i < 30; i++) {
-    bitmap_vec.emplace_back(Bitmap(aligned_max_vid));
-  }
+  bitmap_vec.reserve(n_partitions_);
+  bitmap_vec.resize(n_partitions_, aligned_max_vid);
 
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
