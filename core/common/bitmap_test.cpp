@@ -1,13 +1,14 @@
 #include "bitmap.h"
 
-#include <list>
-#include <random>
-
 #include <folly/FileUtil.h>
 #include <folly/Format.h>
 #include <folly/experimental/TestUtil.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+#include <vector>
+
+#include "util/logging.h"
 
 namespace sics::graph::core::common {
 
@@ -62,4 +63,20 @@ TEST_F(BitmapTest, CountShouldReturnAllKSetBits) {
   EXPECT_EQ(k, bitmap.Count());
 }
 
-}  // namespace sics::graph::core::util
+TEST_F(BitmapTest, CopyAndMoveConstructor) {
+  std::vector<Bitmap> bitmaps;
+  bitmaps.reserve(100);
+  LOGF_INFO("capacity: {}", bitmaps.capacity());
+  bitmaps.push_back(Bitmap());
+  LOGF_INFO("capacity: {}", bitmaps.capacity());
+  Bitmap a(11);
+  bitmaps.push_back(a);
+  LOGF_INFO("capacity: {}", bitmaps.capacity());
+  bitmaps.push_back(std::move(Bitmap(3)));
+  LOGF_INFO("capacity: {}", bitmaps.capacity());
+  bitmaps.emplace_back(Bitmap());
+  LOGF_INFO("capacity: {}", bitmaps.capacity());
+  bitmaps.emplace_back(Bitmap(2));
+}
+
+}  // namespace sics::graph::core::common

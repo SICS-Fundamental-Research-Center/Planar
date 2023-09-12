@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <cstring>
 
+#include "util/logging.h"
+
 namespace sics::graph::core::common {
 
 #define WORD_OFFSET(i) (i >> 6)
@@ -18,31 +20,41 @@ namespace sics::graph::core::common {
 // make sure the pointer is created by new[].
 class Bitmap {
  public:
-  Bitmap() = default;
-  Bitmap(size_t size) { Init(size); }
+  Bitmap() { LOG_INFO("default constructor"); }
+  Bitmap(size_t size) {
+    Init(size);
+    LOGF_INFO("construct bitmap with init value {}, {}", size,
+              static_cast<void*>(this));
+  }
   Bitmap(size_t size, uint64_t* init_value) {
     size_ = size;
     data_ = init_value;
   }
 
-  Bitmap(Bitmap&& other) {
-    size_ = other.size();
-    data_ = new uint64_t[WORD_OFFSET(size_) + 1]();
-    memcpy(data_, other.GetDataBasePointer(),
-           (WORD_OFFSET(size_) + 1) * sizeof(uint64_t));
-  }
-
+  // copy constructor
   Bitmap(const Bitmap& other) {
     size_ = other.size();
     data_ = new uint64_t[WORD_OFFSET(size_) + 1]();
     memcpy(data_, other.GetDataBasePointer(),
            (WORD_OFFSET(size_) + 1) * sizeof(uint64_t));
+    LOGF_INFO("copy constructor {}, {}", size_, static_cast<void*>(this));
   };
-  
-  Bitmap& operator=(Bitmap&& other) = default;
-  Bitmap& operator=(const Bitmap& other) = default;  
+  // move constructor
+  Bitmap(Bitmap&& other) noexcept { LOG_INFO("move constructor"); }
+  // copy assignment
+  Bitmap& operator=(const Bitmap& other) {
+    size_ = other.size();
+    data_ = new uint64_t[WORD_OFFSET(size_) + 1]();
+    memcpy(data_, other.GetDataBasePointer(),
+           (WORD_OFFSET(size_) + 1) * sizeof(uint64_t));
+    LOGF_INFO("copy assignment {}, {}", size_, static_cast<void*>(this));
+    return *this;
+  };
+  // move assignment
+  Bitmap& operator=(Bitmap&& other) noexcept { LOG_INFO("move assignment"); }
 
   ~Bitmap() {
+    LOGF_INFO("destructor {}, {}", size_, static_cast<void*>(this));
     delete[] data_;
     size_ = 0;
   }
