@@ -5,7 +5,8 @@ namespace sics::graph::core::update_stores {
 
 class UpdateStoreBase {
  public:
-  virtual void Clear() = 0;
+  virtual ~UpdateStoreBase() = default;
+  virtual void Clear(){};
 };
 
 }  // namespace sics::graph::core::update_stores

@@ -6,14 +6,15 @@ void Executor::Start() {
     while (true) {
       scheduler::ExecuteMessage message = execute_q_->PopOrWait();
       if (message.terminated) {
-        LOG_INFO("*** Executer is signaled termination ***");
+        LOG_INFO("*** Executor is signaled termination ***");
         break;
       }
 
-      LOGF_INFO("Executer starts executing subgraph {}", message.graph_id);
+      LOGF_INFO("Executor starts executing subgraph {}", message.graph_id);
       // TODO: execute api logic
       switch (message.execute_type) {
         case scheduler::ExecuteType::kDeserialize: {
+          LOGF_INFO("Executor: Deserialize graph {}", message.graph_id);
           data_structures::Serializable* graph = message.graph;
           graph->Deserialize(
               task_runner_,
@@ -28,10 +29,11 @@ void Executor::Start() {
           message.app->IncEval();
           break;
         case scheduler::ExecuteType::kSerialize:
-          //            message.graph->Deserialize();
+          auto serialized = message.graph->Serialize(task_runner_);
+          message.serialized = serialized.release();
           break;
       }
-      LOGF_INFO("Executer completes executing subgraph {}", message.graph_id);
+      LOGF_INFO("Executor completes executing subgraph {}", message.graph_id);
       response_q_->Push(scheduler::Message(message));
     }
   });

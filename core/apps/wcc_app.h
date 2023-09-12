@@ -24,8 +24,6 @@ class WCCApp : public apis::PlanarAppBase<CSRGraph> {
       data_structures::Serializable* graph);
   ~WCCApp() override = default;
 
-  void SetRuntimeGraph(CSRGraph* graph);
-
   void PEval() final;
   void IncEval() final;
   void Assemble() final;
@@ -45,8 +43,8 @@ class WCCApp : public apis::PlanarAppBase<CSRGraph> {
   void PointJumpIncEval(VertexID id);
 
  private:
-  std::unordered_map<VertexID, VertexID> id_to_p;
-  std::mutex mtx;
+  std::unordered_map<VertexID, VertexID> id_to_p_;
+  std::mutex mtx_;
 };
 
 }  // namespace sics::graph::core::apps

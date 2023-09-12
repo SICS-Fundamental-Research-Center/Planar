@@ -2,7 +2,6 @@
 #define GRAPH_SYSTEMS_MESSAGE_H
 
 #include <string>
-#include <fmt/core.h>
 
 #include "apis/pie.h"
 #include "common/blocking_queue.h"
@@ -16,10 +15,11 @@ namespace sics::graph::core::scheduler {
 struct ReadMessage {
   // Request fields.
   common::GraphID graph_id;
-  // TODO: add subgraph metadata fields.
+  common::VertexCount num_vertices;
+  int round;
 
   // Response fields.
-  data_structures::Serialized* response_serialized; // initialized in loader
+  data_structures::Serialized* response_serialized;  // initialized in loader
 
   // Termination flag.
   bool terminated = false;

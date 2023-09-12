@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "apis/pie.h"
+#include "common/config.h"
 #include "common/multithreading/task_runner.h"
 #include "data_structures/serializable.h"
 #include "update_stores/bsp_update_store.h"
@@ -47,13 +48,22 @@ class PlanarAppBase : public PIE {
 
   ~PlanarAppBase() override = default;
 
+  virtual void AppInit(
+      common::TaskRunner* runner,
+      update_stores::BspUpdateStore<VertexData, EdgeData>* update_store) {
+    runner_ = runner;
+    update_store_ = update_store;
+  }
+
+  virtual void SetRuntimeGraph(GraphType* graph) { graph_ = graph; }
+
  protected:
   // Parallel execute vertex_func in task_size chunks.
   void ParallelVertexDo(const std::function<void(VertexID)>& vertex_func) {
     LOG_DEBUG("ParallelVertexDo is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
-    VertexIndex begin_index = 0, end_index;
+    VertexIndex begin_index = 0, end_index = 0;
     for (; begin_index < graph_->GetVertexNums();) {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
@@ -78,7 +88,7 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelEdgeDo is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
-    VertexIndex begin_index = 0, end_index;
+    VertexIndex begin_index = 0, end_index = 0;
     for (; begin_index < graph_->GetVertexNums();) {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
@@ -86,8 +96,10 @@ class PlanarAppBase : public PIE {
       auto task = std::bind([&, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
           for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
+            LOGF_INFO("edge_func: {}, {}", graph_->GetVertexIDByIndex(i),
+                      graph_->GetOneOutEdge(i, j));
             edge_func(graph_->GetVertexIDByIndex(i),
-                      graph_->GetVertexIDByIndex(graph_->GetOneOutEdge(i, j)));
+                      graph_->GetOneOutEdge(i, j));
           }
         }
       });
@@ -105,7 +117,7 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelEdgeDelDo is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
-    VertexIndex begin_index = 0, end_index;
+    VertexIndex begin_index = 0, end_index = 0;
     for (; begin_index < graph_->GetVertexNums();) {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
@@ -113,10 +125,13 @@ class PlanarAppBase : public PIE {
       auto task = std::bind([&, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
           for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
-            edge_del_func(
-                graph_->GetVertexIDByIndex(i),
-                graph_->GetVertexIDByIndex(graph_->GetOneOutEdge(i, j)),
-                graph_->GetOutOffsetByIndex(i) + j);
+            LOGF_INFO("edge_del_func: {}, {}, {}",
+                      graph_->GetVertexIDByIndex(i),
+                      graph_->GetOneOutEdge(i, j),
+                      graph_->GetOutOffsetByIndex(i) + j);
+            edge_del_func(graph_->GetVertexIDByIndex(i),
+                          graph_->GetOneOutEdge(i, j),
+                          graph_->GetOutOffsetByIndex(i) + j);
           }
         }
       });
@@ -129,7 +144,8 @@ class PlanarAppBase : public PIE {
   }
 
   uint32_t GetTaskSize(VertexID max_vid) const {
-    uint32_t task_size = max_vid / common::configs.max_task_package;
+    uint32_t task_size =
+        max_vid / common::Configurations::Get()->max_task_package;
     return task_size < 2 ? 2 : task_size;
   }
 

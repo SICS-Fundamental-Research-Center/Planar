@@ -1,6 +1,9 @@
 #ifndef GRAPH_SYSTEMS_SCHEDULER_H
 #define GRAPH_SYSTEMS_SCHEDULER_H
 
+#include "apis/pie.h"
+#include "apis/planar_app_base.h"
+#include "common/config.h"
 #include "common/multithreading/thread_pool.h"
 #include "common/types.h"
 #include "data_structures/graph/mutable_csr_graph.h"
@@ -13,6 +16,9 @@
 namespace sics::graph::core::scheduler {
 
 class Scheduler {
+  using MutableCSRGraphUInt32 = data_structures::graph::MutableCSRGraphUInt32;
+  using MutableCSRGraphUInt16 = data_structures::graph::MutableCSRGraphUInt16;
+
  public:
   Scheduler(const std::string& root_path)
       : graph_metadata_info_(root_path),
@@ -74,6 +80,8 @@ class Scheduler {
     return (GetNextReadGraphInCurrentRound() == INVALID_GRAPH_ID) &&
            (GetNextReadGraphInNextRound() == INVALID_GRAPH_ID);
   }
+
+  void SetRuntimeGraph(common::GraphID gid);
 
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.

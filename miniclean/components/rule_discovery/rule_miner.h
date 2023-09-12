@@ -48,6 +48,8 @@ class RuleMiner {
 
   void LoadPredicates(const std::string& predicates_path);
 
+  void BuildPathInstanceTree();
+
   void InitGCRs();
 
   void RuleDiscovery();
