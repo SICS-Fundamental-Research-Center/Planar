@@ -89,6 +89,7 @@ class Bitmap {
     __sync_fetch_and_and(data_ + WORD_OFFSET(i), ~(1ul << BIT_OFFSET(i)));
   }
 
+  // TODO: test time consumed for clue-web graph
   size_t Count() const {
     size_t count = 0;
     for (size_t i = 0; i <= WORD_OFFSET(size_); i++) {
