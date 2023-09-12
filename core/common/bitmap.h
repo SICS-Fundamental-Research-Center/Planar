@@ -20,18 +20,46 @@ class Bitmap {
   Bitmap() = default;
   Bitmap(size_t size) { Init(size); }
 
+  Bitmap(size_t size, uint64_t* init_value) {
+    size_ = size;
+    data_ = init_value;
+  }
+
+  Bitmap(Bitmap&& other) {
+    size_ = other.size();
+    data_ = new uint64_t[WORD_OFFSET(size_) + 1]();
+    memcpy(data_, other.GetDataBasePointer(),
+           (WORD_OFFSET(size_) + 1) * sizeof(uint64_t));
+  }
+
+  Bitmap(const Bitmap& other) {
+    size_ = other.size();
+    data_ = new uint64_t[WORD_OFFSET(size_) + 1]();
+    memcpy(data_, other.GetDataBasePointer(),
+           (WORD_OFFSET(size_) + 1) * sizeof(uint64_t));
+  };
+
   // TODO: move constructor and assignment copy
   Bitmap(Bitmap&& other) = default;
+  
   Bitmap& operator=(Bitmap&& other) = default;
+  Bitmap& operator=(const Bitmap& other) = default;  
 
   ~Bitmap() {
-    delete data_;
+    delete[] data_;
     size_ = 0;
   }
 
   void Init(size_t size) {
+    delete[] data_;
     size_ = size;
     data_ = new uint64_t[WORD_OFFSET(size) + 1]();
+  }
+
+  void Init(size_t size, uint64_t* data) {
+    delete[] data_;
+    size_ = size;
+    data_ = data;
   }
 
   void Clear() {
@@ -97,7 +125,7 @@ class Bitmap {
 
   size_t size() const { return size_; }
 
-  uint64_t* GetDataBasePointer() { return data_; }
+  uint64_t* GetDataBasePointer() const { return data_; }
 
  protected:
   size_t size_ = 0;

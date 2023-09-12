@@ -17,38 +17,37 @@ using std::filesystem::create_directory;
 using std::filesystem::exists;
 using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
 using sics::graph::core::data_structures::graph::ImmutableCSRGraph;
+using sics::graph::tools::common::Edge;
 using sics::graph::tools::common::EdgelistMetadata;
+using sics::graph::tools::common::Edges;
 using sics::graph::tools::common::kUnconstrained;
 using sics::graph::tools::common::StoreStrategy;
 
-void Edgelist2CSR(VertexID* buffer_edges,
-                  const EdgelistMetadata& edgelist_metadata,
-                  StoreStrategy store_strategy, ImmutableCSRGraph* csr_graph) {
+void Edgelist2CSR(const Edges& edges,
+                  StoreStrategy store_strategy,
+                  ImmutableCSRGraph* csr_graph) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(1);
   auto task_package = TaskPackage();
+  task_package.reserve(parallelism);
 
-  auto aligned_max_vid = ((edgelist_metadata.max_vid >> 6) << 6) + 64;
+  auto aligned_max_vid = ((edges.get_metadata().max_vid >> 6) << 6) + 64;
   auto visited = Bitmap(aligned_max_vid);
   auto num_inedges_by_vid = new VertexID[aligned_max_vid]();
   auto num_outedges_by_vid = new VertexID[aligned_max_vid]();
-  VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
+  VertexID min_vid = MAX_VERTEX_ID;
 
   for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
-                           &num_inedges_by_vid, &num_outedges_by_vid, &max_vid,
-                           &min_vid, &visited]() {
-      for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
-        auto src = buffer_edges[j * 2];
-        auto dst = buffer_edges[j * 2 + 1];
-        visited.SetBit(src);
-        visited.SetBit(dst);
-        WriteAdd(num_inedges_by_vid + dst, (VertexID)1);
-        WriteAdd(num_outedges_by_vid + src, (VertexID)1);
-        WriteMin(&min_vid, src);
-        WriteMin(&min_vid, dst);
-        WriteMax(&max_vid, src);
-        WriteMax(&max_vid, dst);
+    auto task = std::bind([&, i, parallelism]() {
+      for (VertexID j = i; j < edges.get_metadata().num_edges;
+           j += parallelism) {
+        auto e = edges.get_edge_by_index(j);
+        visited.SetBit(e.src);
+        visited.SetBit(e.dst);
+        WriteAdd(num_inedges_by_vid + e.dst, (VertexID)1);
+        WriteAdd(num_outedges_by_vid + e.src, (VertexID)1);
+        WriteMin(&min_vid, e.src);
+        WriteMin(&min_vid, e.dst);
       }
     });
     task_package.push_back(task);
@@ -58,16 +57,11 @@ void Edgelist2CSR(VertexID* buffer_edges,
 
   // Initialize the buffer_csr_vertices
   auto buffer_csr_vertices = new Vertex[aligned_max_vid]();
-
-  // Initialize the buffer_csr_vertices
   VertexID count_in_edges = 0, count_out_edges = 0;
 
   // Malloc space for each vertex.
   for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([i, parallelism, &aligned_max_vid, &buffer_edges,
-                           &num_inedges_by_vid, &num_outedges_by_vid,
-                           &buffer_csr_vertices, &count_in_edges,
-                           &count_out_edges, &visited]() {
+    auto task = std::bind([&, i, parallelism]() {
       for (VertexID j = i; j < aligned_max_vid; j += parallelism) {
         if (!visited.GetBit(j)) continue;
         buffer_csr_vertices[j].vid = j;
@@ -85,57 +79,49 @@ void Edgelist2CSR(VertexID* buffer_edges,
   }
   thread_pool.SubmitSync(task_package);
   task_package.clear();
-  delete num_inedges_by_vid;
-  delete num_outedges_by_vid;
+  delete[] num_inedges_by_vid;
+  delete[] num_outedges_by_vid;
 
   VertexID* offset_in_edges = new VertexID[aligned_max_vid]();
   VertexID* offset_out_edges = new VertexID[aligned_max_vid]();
   for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
-                           &offset_in_edges, &offset_out_edges,
-                           &buffer_csr_vertices]() {
-      for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
-        auto src = buffer_edges[j * 2];
-        auto dst = buffer_edges[j * 2 + 1];
-        auto offset_out = __sync_fetch_and_add(offset_out_edges + src, 1);
-        auto offset_in = __sync_fetch_and_add(offset_in_edges + dst, 1);
-        buffer_csr_vertices[src].outgoing_edges[offset_out] = dst;
-        buffer_csr_vertices[dst].incoming_edges[offset_in] = src;
+    auto task = std::bind([&, i, parallelism]() {
+      for (VertexID j = i; j < edges.get_metadata().num_edges;
+           j += parallelism) {
+        auto e = edges.get_edge_by_index(j);
+        auto offset_out = __sync_fetch_and_add(offset_out_edges + e.src, 1);
+        auto offset_in = __sync_fetch_and_add(offset_in_edges + e.dst, 1);
+        buffer_csr_vertices[e.src].outgoing_edges[offset_out] = e.dst;
+        buffer_csr_vertices[e.dst].incoming_edges[offset_in] = e.src;
       }
     });
     task_package.push_back(task);
   }
   thread_pool.SubmitSync(task_package);
   task_package.clear();
+  delete[] offset_in_edges;
+  delete[] offset_out_edges;
+
 
   // Construct CSR graph.
-  auto buffer_globalid = new VertexID[edgelist_metadata.num_vertices]();
-  auto buffer_indegree = new VertexID[edgelist_metadata.num_vertices]();
-  auto buffer_outdegree = new VertexID[edgelist_metadata.num_vertices]();
+  auto buffer_globalid = new VertexID[edges.get_metadata().num_vertices]();
+  auto buffer_indegree = new VertexID[edges.get_metadata().num_vertices]();
+  auto buffer_outdegree = new VertexID[edges.get_metadata().num_vertices]();
 
   VertexID vid = 0;
-  for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([i, parallelism, &vid, &visited, &aligned_max_vid,
-                           &buffer_globalid, &buffer_indegree,
-                           &buffer_outdegree, &buffer_csr_vertices]() {
-      for (VertexID j = i; j < aligned_max_vid; j += parallelism) {
-        if (!visited.GetBit(j)) continue;
-        auto local_vid = __sync_fetch_and_add(&vid, 1);
-        buffer_globalid[local_vid] = buffer_csr_vertices[j].vid;
-        buffer_indegree[local_vid] = buffer_csr_vertices[j].indegree;
-        buffer_outdegree[local_vid] = buffer_csr_vertices[j].outdegree;
-      }
-    });
-    task_package.push_back(task);
+  for (VertexID i = 0; i < aligned_max_vid; i++) {
+    if (!visited.GetBit(i)) continue;
+    buffer_globalid[vid] = buffer_csr_vertices[i].vid;
+    buffer_indegree[vid] = buffer_csr_vertices[i].indegree;
+    buffer_outdegree[vid] = buffer_csr_vertices[i].outdegree;
+    vid++;
   }
-  thread_pool.SubmitSync(task_package);
-  task_package.clear();
 
-  auto buffer_in_offset = new VertexID[edgelist_metadata.num_vertices]();
-  auto buffer_out_offset = new VertexID[edgelist_metadata.num_vertices]();
+  auto buffer_in_offset = new VertexID[edges.get_metadata().num_vertices]();
+  auto buffer_out_offset = new VertexID[edges.get_metadata().num_vertices]();
 
   // Compute offset for each vertex.
-  for (VertexID i = 1; i < edgelist_metadata.num_vertices; i++) {
+  for (VertexID i = 1; i < edges.get_metadata().num_vertices; i++) {
     buffer_in_offset[i] = buffer_in_offset[i - 1] + buffer_indegree[i - 1];
     buffer_out_offset[i] = buffer_out_offset[i - 1] + buffer_outdegree[i - 1];
   }
@@ -143,31 +129,37 @@ void Edgelist2CSR(VertexID* buffer_edges,
   auto buffer_in_edges = new VertexID[count_in_edges]();
   auto buffer_out_edges = new VertexID[count_out_edges]();
 
-  // Copy edges into buffer.;
+  // Fill edges.
   vid = 0;
+  for (VertexID i = 0; i < aligned_max_vid; i++) {
+    if (!visited.GetBit(i)) continue;
+    if (buffer_csr_vertices[i].indegree != 0) {
+      memcpy(buffer_in_edges + buffer_in_offset[vid],
+             buffer_csr_vertices[i].incoming_edges,
+             buffer_csr_vertices[i].indegree * sizeof(VertexID));
+    }
+    if (buffer_csr_vertices[i].outdegree != 0) {
+      memcpy(buffer_out_edges + buffer_out_offset[vid],
+             buffer_csr_vertices[i].outgoing_edges,
+             buffer_csr_vertices[i].outdegree * sizeof(VertexID));
+    }
+    vid++;
+  }
+  delete[] buffer_csr_vertices;
+
+  // Sort edges.
   for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([i, parallelism, &vid, &visited, &aligned_max_vid,
-                           &buffer_in_edges, &buffer_out_edges,
-                           &buffer_in_offset, &buffer_out_offset,
-                           &buffer_csr_vertices, &count_out_edges]() {
-      for (VertexID j = i; j < aligned_max_vid; j += parallelism) {
-        if (!visited.GetBit(j)) continue;
-        auto local_vid = __sync_fetch_and_add(&vid, 1);
-        if (buffer_csr_vertices[j].indegree != 0) {
-          memcpy(buffer_in_edges + buffer_in_offset[local_vid],
-                 buffer_csr_vertices[j].incoming_edges,
-                 buffer_csr_vertices[j].indegree * sizeof(VertexID));
-          std::sort(buffer_in_edges + buffer_in_offset[local_vid],
-                    buffer_in_edges + buffer_in_offset[local_vid] +
-                        buffer_csr_vertices[j].indegree);
+    auto task = std::bind([&, i, parallelism]() {
+      for (VertexID j = i; j < edges.get_metadata().num_vertices;
+           j += parallelism) {
+        if (buffer_indegree[j] != 0) {
+          std::sort(buffer_in_edges + buffer_in_offset[j],
+                    buffer_in_edges + buffer_in_offset[j] + buffer_indegree[j]);
         }
-        if (buffer_csr_vertices[j].outdegree != 0) {
-          memcpy(buffer_out_edges + buffer_out_offset[local_vid],
-                 buffer_csr_vertices[j].outgoing_edges,
-                 buffer_csr_vertices[j].outdegree * sizeof(VertexID));
-          std::sort(buffer_out_edges + buffer_out_offset[local_vid],
-                    buffer_out_edges + buffer_out_offset[local_vid] +
-                        buffer_csr_vertices[j].outdegree);
+        if (buffer_outdegree[j] != 0) {
+          std::sort(
+              buffer_out_edges + buffer_out_offset[j],
+              buffer_out_edges + buffer_out_offset[j] + buffer_outdegree[j]);
         }
       }
     });
@@ -176,7 +168,6 @@ void Edgelist2CSR(VertexID* buffer_edges,
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  delete[] buffer_csr_vertices;
   csr_graph->SetGlobalIDBuffer(buffer_globalid);
   csr_graph->SetInDegreeBuffer(buffer_indegree);
   csr_graph->SetOutDegreeBuffer(buffer_outdegree);
@@ -184,10 +175,10 @@ void Edgelist2CSR(VertexID* buffer_edges,
   csr_graph->SetOutOffsetBuffer(buffer_out_offset);
   csr_graph->SetIncomingEdgesBuffer(buffer_in_edges);
   csr_graph->SetOutgoingEdgesBuffer(buffer_out_edges);
-  csr_graph->set_num_vertices(edgelist_metadata.num_vertices);
+  csr_graph->set_num_vertices(edges.get_metadata().num_vertices);
   csr_graph->set_num_incoming_edges(count_in_edges);
   csr_graph->set_num_outgoing_edges(count_out_edges);
-  csr_graph->set_max_vid(max_vid);
+  csr_graph->set_max_vid(edges.get_metadata().max_vid);
   csr_graph->set_min_vid(min_vid);
 }
 
