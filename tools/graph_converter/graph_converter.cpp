@@ -49,7 +49,6 @@ DEFINE_string(store_strategy, "unconstrained",
 DEFINE_string(convert_mode, "", "Conversion mode");
 DEFINE_string(sep, "", "separator to split csv file.");
 DEFINE_bool(read_head, false, "whether to read header of csv.");
-DEFINE_bool(biggraph, false, "whether to read big graph.");
 
 // @DESCRIPTION: convert a edgelist graph from csv file to binary file. Here the
 // compression operations is default in ConvertEdgelist.
@@ -59,95 +58,6 @@ DEFINE_bool(biggraph, false, "whether to read big graph.");
 void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
                                     const std::string& output_path,
                                     const std::string& sep, bool read_head) {
-  LOG_INFO("ConvertEdgelistCSV2EdgelistBin");
-  auto parallelism = std::thread::hardware_concurrency();
-  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
-  auto task_package = TaskPackage();
-  task_package.reserve(parallelism);
-
-  if (!exists(output_path)) create_directory(output_path);
-  std::ifstream in_file(input_path);
-  if (!in_file) throw std::runtime_error("Open file failed: " + input_path);
-  std::ofstream out_data_file(output_path + "edgelist.bin");
-  std::ofstream out_meta_file(output_path + "meta.yaml");
-
-  // Read edgelist graph.
-  std::list<VertexID> edge_list;
-
-  VertexID max_vid = 0, compressed_vid = 0;
-  std::string line, vid_str;
-  uint64_t count = 0;
-  if (in_file) {
-    if (read_head) getline(in_file, line);
-    while (getline(in_file, line)) {
-      std::stringstream ss(line);
-      while (getline(ss, vid_str, *sep.c_str())) {
-        VertexID vid = stoll(vid_str);
-        edge_list.push_back(vid);
-        sics::graph::core::util::atomic::WriteMax(&max_vid, vid);
-      }
-    }
-  }
-
-  // Compute the mapping between origin vid to compressed vid.
-  auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
-  auto bitmap = Bitmap(aligned_max_vid);
-  auto n_edges = edge_list.size() / 2;
-  auto buffer_edges = new VertexID[n_edges * 2]();
-  auto compressed_buffer_edges = new VertexID[n_edges * 2]();
-  auto vid_map = new VertexID[aligned_max_vid]();
-
-  auto index = 0;
-  while (edge_list.size() > 0) {
-    buffer_edges[index] = edge_list.front();
-    edge_list.pop_front();
-    if (!bitmap.GetBit(buffer_edges[index])) {
-      bitmap.SetBit(buffer_edges[index]);
-      vid_map[buffer_edges[index]] = compressed_vid++;
-    }
-    index++;
-  }
-
-  // Compress vid and buffer graph.
-  for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([&, i, parallelism]() {
-      for (VertexID j = i; j < n_edges * 2; j += parallelism)
-        compressed_buffer_edges[j] = vid_map[buffer_edges[j]];
-    });
-    task_package.push_back(task);
-  }
-  thread_pool.SubmitSync(task_package);
-  task_package.clear();
-
-  // Write binary edgelist
-  out_data_file.write(reinterpret_cast<char*>(compressed_buffer_edges),
-                      sizeof(VertexID) * 2 * n_edges);
-
-  // Write Meta date.
-  YAML::Node node;
-  node["EdgelistBin"]["num_vertices"] = bitmap.Count();
-  node["EdgelistBin"]["num_edges"] = n_edges;
-  node["EdgelistBin"]["max_vid"] = compressed_vid - 1;
-  out_meta_file << node << std::endl;
-
-  delete[] buffer_edges;
-  delete[] vid_map;
-  delete[] compressed_buffer_edges;
-  in_file.close();
-  out_data_file.close();
-  out_meta_file.close();
-}
-
-// @DESCRIPTION: convert a edgelist graph from csv file to binary file. The
-// users are strongly recommended to use this function to convert the graph to
-// binary file when they know how many edges to read.
-// @PARAMETER: input_path and output_path indicates the input and output path
-// respectively, sep determines the separator for the csv file, n_edges name the
-// number of edges to read, read_head indicates whether to read head.
-void BigGraphConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
-                                            const std::string& output_path,
-                                            const std::string& sep,
-                                            uint64_t n_edges, bool read_head) {
   LOG_INFO("BigGraphConvertEdgelistCSV2EdgelistBin");
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
@@ -160,27 +70,39 @@ void BigGraphConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   std::ofstream out_data_file(output_path + "edgelist.bin");
   std::ofstream out_meta_file(output_path + "meta.yaml");
 
-  // Read edgelist graph.
-  auto buffer_edges = new VertexID[n_edges * 2]();
-
   // Compute the mapping between origin vid to compressed vid.
-  auto compressed_buffer_edges = new VertexID[n_edges * 2]();
   VertexID max_vid = 0, compressed_vid = 0;
-  uint64_t count = 0, index = 0;
-
+  uint64_t index = 0;
   std::string line, vid_str;
+  size_t n_edges = 0;
+  VertexID *buffer_edges = nullptr, *compressed_buffer_edges = nullptr;
+
   if (in_file) {
-    if (read_head) getline(in_file, line);
-    while (getline(in_file, line)) {
-      if (count++ > n_edges) break;
-      std::stringstream ss(line);
-      while (getline(ss, vid_str, *sep.c_str())) {
+    in_file.seekg(0, std::ios::end);
+    int length = in_file.tellg();
+    in_file.seekg(0, std::ios::beg);
+
+    char* buff = new char[length]();
+    in_file.read(buff, length);
+    std::string content(buff, length);
+    n_edges = count(content.begin(), content.end(), '\n');
+
+    buffer_edges = new VertexID[n_edges * 2]();
+    compressed_buffer_edges = new VertexID[n_edges * 2]();
+    std::stringstream ss(content);
+    delete[] buff;
+
+    if (read_head) getline(ss, line, '\n');
+    while (getline(ss, line, '\n')) {
+      std::stringstream ss_line(line);
+      while (getline(ss_line, vid_str, *sep.c_str())) {
         VertexID vid = stoll(vid_str);
-        buffer_edges[index] = vid;
         sics::graph::core::util::atomic::WriteMax(&max_vid, vid);
-        index++;
+        buffer_edges[index++] = vid;
       }
     }
+  } else {
+    LOG_FATAL("File not found!");
   }
 
   auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
@@ -291,14 +213,8 @@ int main(int argc, char** argv) {
     case kEdgelistCSV2EdgelistBin:
       if (FLAGS_sep == "")
         LOG_FATAL("CSV separator is not empty. Use -sep [e.g. \",\"].");
-
-      if (FLAGS_biggraph) {
-        BigGraphConvertEdgelistCSV2EdgelistBin(FLAGS_i, FLAGS_o, FLAGS_sep,
-                                               FLAGS_n_edges, FLAGS_read_head);
-      } else {
-        ConvertEdgelistCSV2EdgelistBin(FLAGS_i, FLAGS_o, FLAGS_sep,
-                                       FLAGS_read_head);
-      }
+      ConvertEdgelistCSV2EdgelistBin(FLAGS_i, FLAGS_o, FLAGS_sep,
+                                     FLAGS_read_head);
       break;
     case kEdgelistCSV2CSRBin:
       // TODO(hsiaoko): to add edgelist csv 2 csr bin function.
