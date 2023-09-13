@@ -60,9 +60,9 @@ class BspUpdateStore : public UpdateStoreBase {
     return false;
   }
 
-  bool IsActive() { return active != 0; }
+  bool IsActive() override { return active != 0; }
 
-  // TODO
+  // Now is useless.
   void Clear() override {}
 
  private:
