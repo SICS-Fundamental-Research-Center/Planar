@@ -40,8 +40,10 @@ class Bitmap {
   };
 
   // TODO: move constructor and assignment copy
+  Bitmap(Bitmap&& other) = default;
+  
   Bitmap& operator=(Bitmap&& other) = default;
-  Bitmap& operator=(const Bitmap& other) = default;
+  Bitmap& operator=(const Bitmap& other) = default;  
 
   ~Bitmap() {
     delete[] data_;
@@ -125,7 +127,7 @@ class Bitmap {
 
   uint64_t* GetDataBasePointer() const { return data_; }
 
- private:
+ protected:
   size_t size_ = 0;
   uint64_t* data_ = nullptr;
 };

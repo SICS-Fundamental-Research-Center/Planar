@@ -7,6 +7,7 @@
 
 #include "core/util/logging.h"
 #include "miniclean/common/types.h"
+#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
@@ -30,9 +31,12 @@ typedef enum {
 class GCRPredicate {
  protected:
   using PatternVertexID = sics::graph::miniclean::common::PatternVertexID;
+  using MiniCleanCSRGraph =
+      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
   using VertexAttributeValue =
       sics::graph::miniclean::common::VertexAttributeValue;
+  using VertexID = sics::graph::miniclean::common::VertexID;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
   using PathPatternID = sics::graph::miniclean::common::PathPatternID;
 
@@ -102,14 +106,28 @@ class VariablePredicate : public GCRPredicate {
   PathPatternID get_lhs_ppid() const { return lhs_ppid_; }
   PathPatternID get_rhs_ppid() const { return rhs_ppid_; }
 
-  size_t get_lhs_edge_id() const { return lhs_edge_id_; }
-  size_t get_rhs_edge_id() const { return rhs_edge_id_; }
+  size_t get_lhs_vertex_id() const { return lhs_vertex_id_; }
+  size_t get_rhs_vertex_id() const { return rhs_vertex_id_; }
 
   void set_lhs_ppid(PathPatternID lhs_ppid) { lhs_ppid_ = lhs_ppid; }
   void set_rhs_ppid(PathPatternID rhs_ppid) { rhs_ppid_ = rhs_ppid; }
 
-  void set_lhs_edge_id(size_t lhs_edge_id) { lhs_edge_id_ = lhs_edge_id; }
-  void set_rhs_edge_id(size_t rhs_edge_id) { rhs_edge_id_ = rhs_edge_id; }
+  void set_lhs_vertex_id(size_t lhs_vertex_id) {
+    lhs_vertex_id_ = lhs_vertex_id;
+  }
+  void set_rhs_vertex_id(size_t rhs_vertex_id) {
+    rhs_vertex_id_ = rhs_vertex_id;
+  }
+
+  bool VariableCompare(MiniCleanCSRGraph* graph,
+                       const std::vector<VertexID>& left_path,
+                       const std::vector<VertexID>& right_path) {
+    VertexAttributeValue lhs_value = graph->GetVertexAttributeValuesByLocalID(
+        left_path[lhs_vertex_id_])[lhs_aid_];
+    VertexAttributeValue rhs_value = graph->GetVertexAttributeValuesByLocalID(
+        right_path[rhs_vertex_id_])[rhs_aid_];
+    return Compare(lhs_value, rhs_value);
+  }
 
  private:
   VertexAttributeID lhs_aid_;
@@ -119,8 +137,8 @@ class VariablePredicate : public GCRPredicate {
 
   PathPatternID lhs_ppid_;
   PathPatternID rhs_ppid_;
-  size_t lhs_edge_id_;
-  size_t rhs_edge_id_;
+  size_t lhs_vertex_id_;
+  size_t rhs_vertex_id_;
 };
 
 /* Constant predicate: x.A [op] c */
@@ -147,11 +165,26 @@ class ConstantPredicate : public GCRPredicate {
 
   PathPatternID get_lhs_ppid() const { return lhs_ppid_; }
 
-  size_t get_lhs_edge_id() const { return lhs_edge_id_; }
+  size_t get_lhs_vertex_id() const { return lhs_vertex_id_; }
+
+  bool is_in_lhs_pattern() const { return is_in_lhs_pattern_; }
 
   void set_lhs_ppid(PathPatternID lhs_ppid) { lhs_ppid_ = lhs_ppid; }
 
-  void set_lhs_edge_id(size_t lhs_edge_id) { lhs_edge_id_ = lhs_edge_id; }
+  void set_lhs_vertex_id(size_t lhs_vertex_id) {
+    lhs_vertex_id_ = lhs_vertex_id;
+  }
+
+  void set_is_in_lhs_pattern(bool is_in_lhs_pattern) {
+    is_in_lhs_pattern_ = is_in_lhs_pattern;
+  }
+
+  bool ConstantCompare(MiniCleanCSRGraph* graph,
+                       const std::vector<VertexID>& path) {
+    VertexAttributeValue lhs_value = graph->GetVertexAttributeValuesByLocalID(
+        path[lhs_vertex_id_])[lhs_aid_];
+    return Compare(lhs_value, c_);
+  }
 
  private:
   VertexLabel lhs_vlabel_;
@@ -159,7 +192,8 @@ class ConstantPredicate : public GCRPredicate {
   VertexAttributeValue c_;
 
   PathPatternID lhs_ppid_;
-  size_t lhs_edge_id_;
+  size_t lhs_vertex_id_;
+  bool is_in_lhs_pattern_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr
