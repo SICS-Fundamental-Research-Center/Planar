@@ -1,5 +1,5 @@
-#ifndef MINICLEAN_COMPONENTS_PREPROCESSOR_INDEX_METADATA_H_
-#define MINICLEAN_COMPONENTS_PREPROCESSOR_INDEX_METADATA_H_
+#ifndef MINICLEAN_COMPONENTS_PREPROCESSOR_STAR_BITMAP_H_
+#define MINICLEAN_COMPONENTS_PREPROCESSOR_STAR_BITMAP_H_
 
 #include <bitset>
 #include <vector>
@@ -11,13 +11,24 @@ namespace sics::graph::miniclean::components::preprocessor {
 
 class StarBitmap {
  public:
+  StarBitmap() = default;
   StarBitmap(size_t map_size) : map_size_(map_size) {
     size_t bitmap_size = WORD_OFFSET(map_size) + 1;
     star_bitmap_.resize(bitmap_size);
   }
 
+  void Clear() {
+    for (size_t i = 0; i < star_bitmap_.size(); ++i) {
+      star_bitmap_[i].reset();
+    }
+  }
+
   void SetBit(size_t index) {
     star_bitmap_[WORD_OFFSET(index)].set(BIT_OFFSET(index));
+  }
+
+  bool TestBit(size_t index) {
+    return star_bitmap_[WORD_OFFSET(index)].test(BIT_OFFSET(index));
   }
 
   void MergeWith(StarBitmap& other) {
@@ -41,4 +52,4 @@ class StarBitmap {
 
 }  // namespace sics::graph::miniclean::components::preprocessor
 
-#endif  // MINICLEAN_COMPONENTS_PREPROCESSOR_INDEX_METADATA_H_
+#endif  // MINICLEAN_COMPONENTS_PREPROCESSOR_STAR_BITMAP_H_

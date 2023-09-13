@@ -42,5 +42,9 @@ int main(int argc, char* argv[]) {
   rule_miner.LoadIndexMetadata(FLAGS_workspace_path + "/index_meta.yaml");
   LOG_INFO("Loading index metadata done.");
 
+  LOG_INFO("Init path rules...");
+  rule_miner.InitPathRules();
+  LOG_INFO("Init path rules done.");
+
   gflags::ShutDownCommandLineFlags();
 }

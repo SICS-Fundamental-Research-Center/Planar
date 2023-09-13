@@ -195,4 +195,44 @@ void RuleMiner::LoadIndexMetadata(const std::string& index_metadata_path) {
   index_metadata_ = index_metadata_node.as<IndexMetadata>();
 }
 
+void RuleMiner::InitPathRules() {
+  size_t num_vertex = graph_->get_num_vertices();
+
+  for (size_t i = 0; i < path_patterns_.size(); i++) {
+    PathRule path_rule(path_patterns_[i], num_vertex);
+    // Case 0. Do not add any constant predicate.
+    path_rule.InitBitmap(path_instances_[i], graph_);
+    // TODO (bai-wenchao): check the support.
+    path_rules_.push_back(path_rule);
+    for (size_t j = 0; j < path_patterns_[i].size(); i++) {
+      InitPathRulesRecur(path_rule, i, j);
+    }
+  }
+}
+
+void RuleMiner::InitPathRulesRecur(PathRule& path_rule, size_t pattern_id,
+                                   size_t index) {
+  VertexLabel vlabel = std::get<0>(path_rule.get_path_pattern()[index]);
+  if (index >= path_rule.get_path_pattern().size()) {
+    return;
+  }
+  if (path_rule.get_constant_predicates().size() >= max_predicate_num_) {
+    return;
+  }
+  if (constant_predicates_.find(vlabel) == constant_predicates_.end()) {
+    InitPathRulesRecur(path_rule, pattern_id, index + 1);
+  }
+
+  for (const auto& predicate_pair : constant_predicates_[vlabel]) {
+    for (const auto& predicate : predicate_pair.second) {
+      path_rule.AddConstantPredicate(index, predicate);
+      path_rule.InitBitmap(path_instances_[pattern_id], graph_);
+      // TODO (bai-wenchao): check the support.
+      path_rules_.push_back(path_rule);
+      InitPathRulesRecur(path_rule, pattern_id, index + 1);
+      path_rule.PopConstantPredicate();
+    }
+  }
+}
+
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor
