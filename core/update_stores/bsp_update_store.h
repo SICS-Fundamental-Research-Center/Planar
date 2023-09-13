@@ -50,7 +50,7 @@ class BspUpdateStore : public UpdateStoreBase {
     }
     if (border_vertex_bitmap_.GetBit(vid)) {
       write_data_[vid] = vdata_new;
-      active++;
+      active_count_++;
     }
     return true;
   }
@@ -61,21 +61,21 @@ class BspUpdateStore : public UpdateStoreBase {
     }
     if (border_vertex_bitmap_.GetBit(vid)) {
       if (util::atomic::WriteMin(write_data_ + vid, vdata_new)) {
-        active++;
+        active_count_++;
         return true;
       }
     }
     return false;
   }
 
-  bool IsActive() override { return active != 0; }
+  bool IsActive() override { return active_count_ != 0; }
 
   // Now is useless.
   void Clear() override {}
 
   void Sync() override {
     memcpy(read_data_, write_data_, message_count_ * sizeof(VertexData));
-    active = 0;
+    active_count_ = 0;
   }
 
  private:
@@ -105,7 +105,7 @@ class BspUpdateStore : public UpdateStoreBase {
 
   common::Bitmap border_vertex_bitmap_;
 
-  int active = 0;
+  size_t active_count_ = 0;
 };
 
 typedef BspUpdateStore<common::Uint32VertexDataType,
