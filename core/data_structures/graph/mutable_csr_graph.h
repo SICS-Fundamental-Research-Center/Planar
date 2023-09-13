@@ -244,22 +244,15 @@ class MutableCSRGraph : public Serializable {
   bool WriteMinVertexDataByID(VertexID id, VertexData data_new) {
     // TODO: need a check for unsigned type?
     auto index = GetIndexByID(id);
-    if (vertex_src_or_dst_bitmap_.GetBit(index)) {
-      return util::atomic::WriteMin(&vertex_data_write_base_[index], data_new);
-    } else {
-      return true;
-    }
+    return util::atomic::WriteMin(&vertex_data_write_base_[index], data_new);
   }
 
   // write the value in local vertex data of vertex id
   // this is not an atomic method. and the write operation 100% success;
   bool WriteVertexDataByID(VertexID id, VertexData data_new) {
     auto index = GetIndexByID(id);
-    if (vertex_src_or_dst_bitmap_.GetBit(index)) {
-      vertex_data_write_base_[index] = data_new;
-      return true;
-    }
-    return false;
+    vertex_data_write_base_[index] = data_new;
+    return true;
   }
 
   void DeleteEdge(VertexID id, EdgeIndex edge_index) {

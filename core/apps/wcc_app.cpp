@@ -49,19 +49,21 @@ void WCCApp::Assemble() { graph_->set_status("Assemble"); }
 
 void WCCApp::Init(VertexID id) { graph_->WriteVertexDataByID(id, id); }
 
+// TODO: maybe update_store_ can check bitmap first when write_min
 void WCCApp::Graft(VertexID src_id, VertexID dst_id) {
   VertexID src_parent_id = graph_->ReadLocalVertexDataByID(src_id);
   VertexID dst_parent_id = graph_->ReadLocalVertexDataByID(dst_id);
-  if (src_parent_id != dst_parent_id) {
-    if (src_parent_id < dst_parent_id) {
-      graph_->WriteMinVertexDataByID(
-          dst_parent_id, graph_->ReadLocalVertexDataByID(src_parent_id));
-    } else {
-      graph_->WriteMinVertexDataByID(
-          src_parent_id, graph_->ReadLocalVertexDataByID(dst_parent_id));
-    }
+  if (src_parent_id < dst_parent_id) {
+    if (graph_->WriteMinVertexDataByID(
+            dst_parent_id, graph_->ReadLocalVertexDataByID(src_parent_id)))
+      update_store_->WriteMin(dst_parent_id,
+                              graph_->ReadLocalVertexDataByID(src_parent_id));
+  } else if (src_parent_id > dst_parent_id) {
+    if (graph_->WriteMinVertexDataByID(
+            src_parent_id, graph_->ReadLocalVertexDataByID(dst_parent_id)))
+      update_store_->WriteMin(src_parent_id,
+                              graph_->ReadLocalVertexDataByID(dst_parent_id));
   }
-  // TODO: add UpdateStore info logic
 }
 
 void WCCApp::PointJump(VertexID src_id) {
@@ -70,9 +72,10 @@ void WCCApp::PointJump(VertexID src_id) {
     while (parent_id != graph_->ReadLocalVertexDataByID(parent_id)) {
       parent_id = graph_->ReadLocalVertexDataByID(parent_id);
     }
-    graph_->WriteMinVertexDataByID(src_id, parent_id);
+    if (graph_->WriteMinVertexDataByID(src_id, parent_id)) {
+      update_store_->WriteMin(src_id, parent_id);
+    }
   }
-  // TODO: update vertex global data in update_store
 }
 
 void WCCApp::Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
@@ -84,13 +87,14 @@ void WCCApp::Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
 
 void WCCApp::MessagePassing(VertexID id) {
   if (update_store_->Read(id) < graph_->ReadLocalVertexDataByID(id)) {
-    if (!graph_->IsInGraph(graph_->ReadLocalVertexDataByID(id))) {
-      std::lock_guard<std::mutex> grd(mtx_);
-      id_to_p_[graph_->ReadLocalVertexDataByID(id)] = update_store_->Read(id);
+    VertexData parent_id = graph_->ReadLocalVertexDataByID(id);
+    VertexData new_data = update_store_->Read(id);
+    if (!graph_->IsInGraph(parent_id)) {
+      WriteMinAuxiliary(parent_id, new_data);
     } else {
-      // TODO: active vertex update global info
-      graph_->WriteMinVertexDataByID(graph_->ReadLocalVertexDataByID(id),
-                                     update_store_->Read(id));
+      if (graph_->WriteMinVertexDataByID(parent_id, new_data)) {
+        update_store_->WriteMin(parent_id, new_data);
+      }
     }
   }
 }
@@ -102,11 +106,21 @@ void WCCApp::PointJumpIncEval(VertexID id) {
     id_to_p_[graph_->ReadLocalVertexDataByID(id)] =
         graph_->ReadLocalVertexDataByID(id);
   } else {
-    bool flag = graph_->WriteMinVertexDataByID(
-        id,
-        graph_->ReadLocalVertexDataByID(graph_->ReadLocalVertexDataByID(id)));
-    if (flag) {
-      // TODO: active vertex update global info
+    if (graph_->WriteMinVertexDataByID(
+            id, graph_->ReadLocalVertexDataByID(
+                    graph_->ReadLocalVertexDataByID(id)))) {
+//      update_store_->WriteMin(id, );
+    }
+  }
+}
+
+void WCCApp::WriteMinAuxiliary(VertexID id, VertexData data) {
+  std::lock_guard<std::mutex> grd(mtx_);
+  if (id_to_p_.find(id) == id_to_p_.end()) {
+    id_to_p_[id] = data;
+  } else {
+    if (id_to_p_[id] > data) {
+      id_to_p_[id] = data;
     }
   }
 }

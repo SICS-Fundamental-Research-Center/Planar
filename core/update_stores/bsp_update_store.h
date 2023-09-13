@@ -24,6 +24,10 @@ class BspUpdateStore : public UpdateStoreBase {
       : message_count_(vertex_num) {
     read_data_ = new VertexData[message_count_];
     write_data_ = new VertexData[message_count_];
+    for (int i = 0; i < vertex_num; i++) {
+      read_data_[i] = i;
+      write_data_[i] = i;
+    }
     ReadBorderVertexBitmap(root_path);
   }
 
@@ -44,8 +48,10 @@ class BspUpdateStore : public UpdateStoreBase {
     if (vid >= message_count_) {
       return false;
     }
-    write_data_[vid] = vdata_new;
-    active++;
+    if (border_vertex_bitmap_.GetBit(vid)) {
+      write_data_[vid] = vdata_new;
+      active++;
+    }
     return true;
   }
 
@@ -53,9 +59,11 @@ class BspUpdateStore : public UpdateStoreBase {
     if (vid >= message_count_) {
       return false;
     }
-    if (util::atomic::WriteMin(write_data_ + vid, vdata_new)) {
-      active++;
-      return true;
+    if (border_vertex_bitmap_.GetBit(vid)) {
+      if (util::atomic::WriteMin(write_data_ + vid, vdata_new)) {
+        active++;
+        return true;
+      }
     }
     return false;
   }
