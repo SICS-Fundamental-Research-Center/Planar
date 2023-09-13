@@ -129,6 +129,8 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
         } else {
           // This sync maybe replaced by borderVertex check.
           graph_state_.SyncCurrentRoundPending();
+          update_store_->Sync();
+          current_round_++;
 
           WriteMessage write_message;
           write_message.graph_id = execute_resp.graph_id;
@@ -191,7 +193,6 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       // check next round graph which can be read, if not just skip
       if (sync) {
         current_round_++;
-        graph_state_.SyncRoundState();
       }
       auto next_gid_next_round = GetNextReadGraphInNextRound();
       if (next_gid_next_round != INVALID_GRAPH_ID) {

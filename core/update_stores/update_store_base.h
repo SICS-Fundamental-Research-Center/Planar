@@ -9,6 +9,8 @@ class UpdateStoreBase {
   virtual void Clear(){};
 
   virtual bool IsActive() { return false; };
+
+  virtual void Sync(){};
 };
 
 }  // namespace sics::graph::core::update_stores

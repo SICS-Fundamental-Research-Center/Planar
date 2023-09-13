@@ -18,17 +18,18 @@ void WCCApp::PEval() {
   while (graph_->GetOutEdgeNums() != 0) {
     ParallelEdgeDo(std::bind(&WCCApp::Graft, this, std::placeholders::_1,
                              std::placeholders::_2));
+    LOG_INFO("graft finished");
     graph_->LogVertexData();
 
     ParallelVertexDo(
         std::bind(&WCCApp::PointJump, this, std::placeholders::_1));
-
+    LOG_INFO("pointjump finished");
     graph_->LogVertexData();
-
     graph_->LogEdges();
     ParallelEdgeMutateDo(std::bind(&WCCApp::Contract, this,
                                    std::placeholders::_1, std::placeholders::_2,
                                    std::placeholders::_3));
+    LOG_INFO("contract finished");
     graph_->LogEdges();
     graph_->LogGraphInfo();
     graph_->LogVertexData();

@@ -73,6 +73,11 @@ class BspUpdateStore : public UpdateStoreBase {
   // Now is useless.
   void Clear() override {}
 
+  void Sync() override {
+    memcpy(read_data_, write_data_, message_count_ * sizeof(VertexData));
+    active = 0;
+  }
+
  private:
   void ReadBorderVertexBitmap(const std::string& root_path) {
     std::ifstream file(root_path + "bitmap/border_vertices.bin",

@@ -80,8 +80,6 @@ struct GraphState {
     }
   }
 
-  void SyncRoundState() { current_round_pending_.swap(next_round_pending_); }
-
   // graph handlers
   data_structures::Serialized* GetSubgraphSerialized(common::GraphID gid) {
     return serialized_.at(gid).get();
