@@ -15,7 +15,10 @@ typedef uint32_t VertexIndex;
 typedef uint32_t VertexLabel;
 typedef uint32_t VertexCount;
 typedef uint64_t EdgeIndex;
-typedef uint8_t EdgeData;  // used for position
+typedef uint8_t DefaultEdgeDataType;  // used for position
+
+typedef uint32_t Uint32VertexDataType;
+typedef uint16_t Uint16VertexDataType;
 
 #define MAX_VERTEX_ID std::numeric_limits<VertexID>::max()
 #define INVALID_GRAPH_ID \

@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <cstring>
 
+#include "util/logging.h"
+
 namespace sics::graph::core::common {
 
 #define WORD_OFFSET(i) (i >> 6)
@@ -15,35 +17,51 @@ namespace sics::graph::core::common {
 // Bitmap is a mapping from integers~(indexes) to bits. If the unit is
 // occupied, the bit is a nonzero integer constant and if it is empty, the bit
 // is zero.
+// make sure the pointer is created by new[].
 class Bitmap {
  public:
   Bitmap() = default;
   Bitmap(size_t size) { Init(size); }
-
   Bitmap(size_t size, uint64_t* init_value) {
     size_ = size;
     data_ = init_value;
   }
 
-  Bitmap(Bitmap&& other) {
-    size_ = other.size();
-    data_ = new uint64_t[WORD_OFFSET(size_) + 1]();
-    memcpy(data_, other.GetDataBasePointer(),
-           (WORD_OFFSET(size_) + 1) * sizeof(uint64_t));
-  }
-
+  // copy constructor
   Bitmap(const Bitmap& other) {
     size_ = other.size();
     data_ = new uint64_t[WORD_OFFSET(size_) + 1]();
     memcpy(data_, other.GetDataBasePointer(),
            (WORD_OFFSET(size_) + 1) * sizeof(uint64_t));
   };
+  // move constructor
+  Bitmap(Bitmap&& other) noexcept : size_(other.size_), data_(other.data_) {
+    other.size_ = 0;
+    other.data_ = nullptr;
+  }
 
-  // TODO: move constructor and assignment copy
-  Bitmap(Bitmap&& other) = default;
-  
-  Bitmap& operator=(Bitmap&& other) = default;
-  Bitmap& operator=(const Bitmap& other) = default;  
+  // copy assignment
+  Bitmap& operator=(const Bitmap& other) {
+    if (this != &other) {
+      delete[] data_;
+      size_ = other.size();
+      data_ = new uint64_t[WORD_OFFSET(size_) + 1]();
+      memcpy(data_, other.GetDataBasePointer(),
+             (WORD_OFFSET(size_) + 1) * sizeof(uint64_t));
+    }
+    return *this;
+  };
+  // move assignment
+  Bitmap& operator=(Bitmap&& other) noexcept {
+    if (this != &other) {
+      delete[] data_;
+      size_ = other.size_;
+      data_ = other.data_;
+      other.size_ = 0;
+      other.data_ = nullptr;
+    }
+    return *this;
+  };
 
   ~Bitmap() {
     delete[] data_;
@@ -56,7 +74,9 @@ class Bitmap {
     data_ = new uint64_t[WORD_OFFSET(size) + 1]();
   }
 
-  void Init(size_t size, uint64_t* data) {
+  // init data pointer from call function， and own the pointer of data
+  // delete pointer in decstructor
+  virtual void Init(size_t size, uint64_t* data) {
     delete[] data_;
     size_ = size;
     data_ = data;
@@ -108,6 +128,7 @@ class Bitmap {
     __sync_fetch_and_and(data_ + WORD_OFFSET(i), ~(1ul << BIT_OFFSET(i)));
   }
 
+  // TODO: test time consumed for clue-web graph
   size_t Count() const {
     size_t count = 0;
     for (size_t i = 0; i <= WORD_OFFSET(size_); i++) {
