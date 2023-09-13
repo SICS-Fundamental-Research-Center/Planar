@@ -11,6 +11,7 @@ WCCApp::WCCApp(
 
 void WCCApp::PEval() {
   graph_->LogGraphInfo();
+  graph_->LogEdges();
   graph_->LogVertexData();
   ParallelVertexDo(std::bind(&WCCApp::Init, this, std::placeholders::_1));
   graph_->LogVertexData();
@@ -101,15 +102,19 @@ void WCCApp::MessagePassing(VertexID id) {
 
 void WCCApp::PointJumpIncEval(VertexID id) {
   // is not in graph
-  if (!graph_->IsInGraph(graph_->ReadLocalVertexDataByID(id))) {
+  VertexData parent_id = graph_->ReadLocalVertexDataByID(id);
+  if (!graph_->IsInGraph(parent_id)) {
     std::lock_guard<std::mutex> grd(mtx_);
-    id_to_p_[graph_->ReadLocalVertexDataByID(id)] =
-        graph_->ReadLocalVertexDataByID(id);
+    if (id_to_p_.find(parent_id) != id_to_p_.end())
+      if (graph_->WriteMinVertexDataByID(id, id_to_p_[parent_id])) {
+        update_store_->WriteMin(id, id_to_p_[parent_id]);
+      }
   } else {
-    if (graph_->WriteMinVertexDataByID(
-            id, graph_->ReadLocalVertexDataByID(
-                    graph_->ReadLocalVertexDataByID(id)))) {
-//      update_store_->WriteMin(id, );
+    auto tmp = graph_->ReadLocalVertexDataByID(parent_id);
+    if (tmp != parent_id) {
+      if (graph_->WriteMinVertexDataByID(id, tmp)) {
+        update_store_->WriteMin(id, tmp);
+      }
     }
   }
 }
