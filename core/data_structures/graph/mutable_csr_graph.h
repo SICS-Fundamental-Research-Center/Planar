@@ -142,11 +142,11 @@ class MutableCSRGraph : public Serializable {
         out_offset_base_new_[i] =
             out_offset_base_new_[i - 1] + out_degree_base_new_[i - 1];
       }
-      for (int i = 0; i < metadata_->num_vertices; i++) {
-        LOGF_INFO("check: id: {}, new degree: {}, new offset: {}",
-                  vertex_id_by_local_index_[i], out_degree_base_new_[i],
-                  out_offset_base_new_[i]);
-      }
+      //      for (int i = 0; i < metadata_->num_vertices; i++) {
+      //        LOGF_INFO("check: id: {}, new degree: {}, new offset: {}",
+      //                  vertex_id_by_local_index_[i], out_degree_base_new_[i],
+      //                  out_offset_base_new_[i]);
+      //      }
 
       common::TaskPackage tasks;
       VertexIndex begin_index = 0, end_index = 0;
