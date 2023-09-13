@@ -52,6 +52,12 @@ struct GraphState {
     subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
   }
 
+  void SyncCurrentRoundPending() {
+    for (int i = 0; i < num_subgraphs_; i++) {
+      current_round_pending_.at(i) = true;
+    }
+  }
+
   void SyncRoundState() { current_round_pending_.swap(next_round_pending_); }
 
   // graph handlers

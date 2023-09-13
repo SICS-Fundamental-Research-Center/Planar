@@ -7,6 +7,8 @@ class UpdateStoreBase {
  public:
   virtual ~UpdateStoreBase() = default;
   virtual void Clear(){};
+
+  virtual bool IsActive(){};
 };
 
 }  // namespace sics::graph::core::update_stores

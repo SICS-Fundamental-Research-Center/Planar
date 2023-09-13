@@ -58,8 +58,8 @@ void Scheduler::Start() {
 
 bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
   // read finish, to execute the loaded graph
-  graph_state_.SetGraphState(read_resp.graph_id,
-                             GraphState::StorageStateType::Serialized);
+  graph_state_.subgraph_storage_state_.at(read_resp.graph_id) =
+      GraphState::StorageStateType::Serialized;
 
   // read graph need deserialize first
   // check current round subgraph and send it to executer to Deserialization.
@@ -87,6 +87,9 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
   // execute finish, to write back the graph
   switch (execute_resp.execute_type) {
     case ExecuteType::kDeserialize: {
+      graph_state_.subgraph_storage_state_.at(execute_resp.graph_id) =
+          GraphState::StorageStateType::Deserialized;
+
       ExecuteMessage execute_message;
       execute_message.graph_id = execute_resp.graph_id;
       execute_message.graph = execute_resp.response_serializable;
@@ -102,6 +105,9 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
     }
     case ExecuteType::kPEval:
     case ExecuteType::kIncEval: {
+      graph_state_.subgraph_storage_state_.at(execute_resp.graph_id) =
+          GraphState::StorageStateType::Computed;
+
       // TODO: decide a subgraph if it stays in memory
       ExecuteMessage execute_message(execute_resp);
       execute_message.graph_id = execute_resp.graph_id;
@@ -110,6 +116,9 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
       break;
     }
     case ExecuteType::kSerialize: {
+      graph_state_.subgraph_storage_state_.at(execute_resp.graph_id) =
+          GraphState::StorageStateType::Serialized;
+
       // check if current round finish
       if (IsCurrentRoundFinish()) {
         if (IsSystemStop()) {
@@ -121,14 +130,24 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
           message_hub_.get_writer_queue()->Push(write_message);
           return false;
         } else {
-          WriteMessage write_message;
-          write_message.graph_id = execute_resp.graph_id;
-          write_message.serialized = execute_resp.serialized;
-          message_hub_.get_writer_queue()->Push(write_message);
+          // This sync maybe replaced by borderVertex check.
+          if (update_store_->IsActive()) {
+            graph_state_.SyncCurrentRoundPending();
+            WriteMessage write_message;
+            write_message.graph_id = execute_resp.graph_id;
+            write_message.serialized = execute_resp.serialized;
+            message_hub_.get_writer_queue()->Push(write_message);
+          } else {
+            // Write back all subgraphs in memory.
+            WriteMessage write_message;
+            write_message.graph_id = execute_resp.graph_id;
+            write_message.serialized = execute_resp.serialized;
+            message_hub_.get_writer_queue()->Push(write_message);
+          }
         }
       } else {
-        // write back to disk or save in memory
-        // TODO: check if graph can stay in memory
+        // Write back to disk or save in memory.
+        // TODO: Check if graph can stay in memory.
         if (false) {
           // stay in memory with StorageStateType::Deserialized
         } else {
@@ -139,16 +158,18 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
           message_hub_.get_writer_queue()->Push(write_message);
         }
       }
-      // check border vertex and dependency matrix, mark active subgraph in
-      // next round
-      // TODO: check border vertex and dependency matrix
+      // Check border vertex and dependency matrix, mark active subgraph in
+      // next round.
+      // Now, load all subgraphs in next round.
+      // TODO: Check border vertex and dependency matrix.
       break;
     }
     default:
-      LOG_WARN("Executer response show it doing nothing!");
+      LOG_WARN("Executor response show it doing nothing!");
       break;
   }
 
+  // Where to use this.
   TryReadNextGraph();
   return true;
 }

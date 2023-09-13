@@ -29,8 +29,8 @@ void Executor::Start() {
           message.app->IncEval();
           break;
         case scheduler::ExecuteType::kSerialize:
-          auto serialized = message.graph->Serialize(task_runner_);
-          message.serialized = serialized.release();
+          // Set serialized graph to message for write back to disk.
+          message.serialized = message.graph->Serialize(task_runner_).release();
           break;
       }
       LOGF_INFO("Executor completes executing subgraph {}", message.graph_id);

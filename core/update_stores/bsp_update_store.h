@@ -24,7 +24,7 @@ class BspUpdateStore : public UpdateStoreBase {
       : message_count_(vertex_num) {
     read_data_ = new VertexData[message_count_];
     write_data_ = new VertexData[message_count_];
-    ReadActiveVertexBitmap(root_path);
+    ReadBorderVertexBitmap(root_path);
   }
 
   ~BspUpdateStore() {
@@ -45,6 +45,7 @@ class BspUpdateStore : public UpdateStoreBase {
       return false;
     }
     write_data_[vid] = vdata_new;
+    active++;
     return true;
   }
 
@@ -52,15 +53,20 @@ class BspUpdateStore : public UpdateStoreBase {
     if (vid >= message_count_) {
       return false;
     }
-    util::atomic::WriteMin(write_data_ + vid, vdata_new);
-    return true;
+    if (util::atomic::WriteMin(write_data_ + vid, vdata_new)) {
+      active++;
+      return true;
+    }
+    return false;
   }
+
+  bool IsActive() { return active != 0; }
 
   // TODO
   void Clear() override {}
 
  private:
-  void ReadActiveVertexBitmap(const std::string& root_path) {
+  void ReadBorderVertexBitmap(const std::string& root_path) {
     std::ifstream file(root_path + "bitmap/border_vertices.bin",
                        std::ios::binary);
     if (!file.is_open()) {
@@ -75,7 +81,7 @@ class BspUpdateStore : public UpdateStoreBase {
     uint64_t* buffer = new uint64_t[buffer_size];
     file.read((char*)(buffer), file_size);
 
-    active_vertex_bitmap_.Init(message_count_, buffer);
+    border_vertex_bitmap_.Init(message_count_, buffer);
     file.close();
   }
 
@@ -84,7 +90,9 @@ class BspUpdateStore : public UpdateStoreBase {
   VertexData* write_data_;
   common::VertexCount message_count_;
 
-  common::Bitmap active_vertex_bitmap_;
+  common::Bitmap border_vertex_bitmap_;
+
+  int active = 0;
 };
 
 typedef BspUpdateStore<common::Uint32VertexDataType,
