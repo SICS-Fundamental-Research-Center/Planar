@@ -70,9 +70,6 @@ class BspUpdateStore : public UpdateStoreBase {
 
   bool IsActive() override { return active_count_ != 0; }
 
-  // Now is useless.
-  void Clear() override {}
-
   void Sync() override {
     memcpy(read_data_, write_data_, message_count_ * sizeof(VertexData));
     active_count_ = 0;
