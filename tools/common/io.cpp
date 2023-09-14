@@ -15,7 +15,8 @@ using std::filesystem::exists;
 
 void GraphFormatConverter::WriteSubgraph(
     const std::vector<std::vector<Vertex>>& vertex_buckets,
-    const GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
+    const GraphMetadata& graph_metadata,
+    StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
