@@ -6,7 +6,11 @@ namespace sics::graph::core::update_stores {
 class UpdateStoreBase {
  public:
   virtual ~UpdateStoreBase() = default;
-  virtual void Clear(){};
+
+  virtual bool IsActive() { return false; };
+
+  // synchronize the data of global read and global write
+  virtual void Sync(){};
 };
 
 }  // namespace sics::graph::core::update_stores

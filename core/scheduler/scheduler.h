@@ -76,10 +76,12 @@ class Scheduler {
   }
 
   bool IsSystemStop() {
-    // if current and next round both have no graph to read, system stop
+    // If current and next round both have no graph to read, system stop.
     return (GetNextReadGraphInCurrentRound() == INVALID_GRAPH_ID) &&
-           (GetNextReadGraphInNextRound() == INVALID_GRAPH_ID);
+           !update_store_->IsActive();
   }
+
+  void ReleaseAllGraph();
 
   void SetRuntimeGraph(common::GraphID gid);
 

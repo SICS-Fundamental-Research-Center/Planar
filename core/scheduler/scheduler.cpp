@@ -12,7 +12,7 @@ void Scheduler::Start() {
         graph_metadata_info_.GetSubgraphNumVertices(
             first_read_message.graph_id);
     first_read_message.round = 0;
-    common::subgraph_limits--;
+    graph_state_.subgraph_limits--;
     message_hub_.get_reader_queue()->Push(first_read_message);
 
     while (running) {
@@ -58,8 +58,7 @@ void Scheduler::Start() {
 
 bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
   // read finish, to execute the loaded graph
-  graph_state_.SetGraphState(read_resp.graph_id,
-                             GraphState::StorageStateType::Serialized);
+  graph_state_.SetOnDiskToSerialized(read_resp.graph_id);
 
   // read graph need deserialize first
   // check current round subgraph and send it to executer to Deserialization.
@@ -87,6 +86,8 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
   // execute finish, to write back the graph
   switch (execute_resp.execute_type) {
     case ExecuteType::kDeserialize: {
+      graph_state_.SetSerializedToDeserialized(execute_resp.graph_id);
+
       ExecuteMessage execute_message;
       execute_message.graph_id = execute_resp.graph_id;
       execute_message.graph = execute_resp.response_serializable;
@@ -102,6 +103,8 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
     }
     case ExecuteType::kPEval:
     case ExecuteType::kIncEval: {
+      graph_state_.SetDeserializedToComputed(execute_resp.graph_id);
+
       // TODO: decide a subgraph if it stays in memory
       ExecuteMessage execute_message(execute_resp);
       execute_message.graph_id = execute_resp.graph_id;
@@ -110,25 +113,33 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
       break;
     }
     case ExecuteType::kSerialize: {
-      // check if current round finish
+      graph_state_.SetComputedToSerialized(execute_resp.graph_id);
+
+      // Check if current round finish.
       if (IsCurrentRoundFinish()) {
         if (IsSystemStop()) {
-          // read graph in next round
-          // release all memory graph, write back to disk
           WriteMessage write_message;
           write_message.graph_id = execute_resp.graph_id;
           write_message.serialized = execute_resp.serialized;
           message_hub_.get_writer_queue()->Push(write_message);
+
+          // Release other graphs in memory, write back to disk.
+          ReleaseAllGraph();
           return false;
         } else {
+          // This sync maybe replaced by borderVertex check.
+          graph_state_.SyncCurrentRoundPending();
+          update_store_->Sync();
+          current_round_++;
+
           WriteMessage write_message;
           write_message.graph_id = execute_resp.graph_id;
           write_message.serialized = execute_resp.serialized;
           message_hub_.get_writer_queue()->Push(write_message);
         }
       } else {
-        // write back to disk or save in memory
-        // TODO: check if graph can stay in memory
+        // Write back to disk or save in memory.
+        // TODO: Check if graph can stay in memory.
         if (false) {
           // stay in memory with StorageStateType::Deserialized
         } else {
@@ -139,16 +150,18 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
           message_hub_.get_writer_queue()->Push(write_message);
         }
       }
-      // check border vertex and dependency matrix, mark active subgraph in
-      // next round
-      // TODO: check border vertex and dependency matrix
+      // Check border vertex and dependency matrix, mark active subgraph in
+      // next round.
+      // Now, load all subgraphs in next round.
+      // TODO: Check border vertex and dependency matrix.
       break;
     }
     default:
-      LOG_WARN("Executer response show it doing nothing!");
+      LOG_WARN("Executor response show it doing nothing!");
       break;
   }
 
+  // Where to use this.
   TryReadNextGraph();
   return true;
 }
@@ -156,9 +169,8 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
 bool Scheduler::WriteMessageResponseAndCheckTerminate(
     const WriteMessage& write_resp) {
   // Update subgraph state.
-  common::subgraph_limits++;
-  graph_state_.UpdateSubgraphState(write_resp.graph_id,
-                                   GraphState::StorageStateType::OnDisk);
+  graph_state_.subgraph_limits++;
+  graph_state_.SetSerializedToOnDisk(write_resp.graph_id);
   // Read next subgraph if permitted
   TryReadNextGraph();
   return true;
@@ -168,7 +180,7 @@ bool Scheduler::WriteMessageResponseAndCheckTerminate(
 
 // try to read a graph from disk into memory if memory_limit is permitted
 bool Scheduler::TryReadNextGraph(bool sync) {
-  if (common::subgraph_limits > 0) {
+  if (graph_state_.subgraph_limits > 0) {
     auto next_graph_id = GetNextReadGraphInCurrentRound();
     ReadMessage read_message;
     if (next_graph_id != INVALID_GRAPH_ID) {
@@ -181,7 +193,6 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       // check next round graph which can be read, if not just skip
       if (sync) {
         current_round_++;
-        graph_state_.SyncRoundState();
       }
       auto next_gid_next_round = GetNextReadGraphInNextRound();
       if (next_gid_next_round != INVALID_GRAPH_ID) {
@@ -196,6 +207,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
         return false;
       }
     }
+    graph_state_.subgraph_limits--;
   }
   return true;
 }
@@ -210,6 +222,12 @@ Scheduler::CreateSerializableGraph(common::GraphID graph_id) {
   } else {
     return std::make_unique<MutableCSRGraphUInt16>(
         graph_metadata_info_.GetSubgraphMetadataPtr(graph_id));
+  }
+}
+
+void Scheduler::ReleaseAllGraph() {
+  for (int i = 0; i < graph_state_.num_subgraphs_; i++) {
+    // TODO: write back all graphs in memory
   }
 }
 
