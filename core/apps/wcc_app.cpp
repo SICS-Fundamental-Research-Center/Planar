@@ -43,6 +43,7 @@ void WCCApp::IncEval() {
   graph_->LogGraphInfo();
   graph_->LogVertexData();
   update_store_->LogGlobalMessage();
+  graph_->LogIsIngraphInfo();
   ParallelVertexDo(
       std::bind(&WCCApp::MessagePassing, this, std::placeholders::_1));
   graph_->LogVertexData();

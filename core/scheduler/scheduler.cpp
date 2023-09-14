@@ -4,6 +4,7 @@ namespace sics::graph::core::scheduler {
 
 void Scheduler::Start() {
   thread_ = std::make_unique<std::thread>([this]() {
+    LOGF_INFO(" ============ Current Round: {} ============ ", current_round_);
     bool running = true;
     // init round 0 loaded graph
     ReadMessage first_read_message;
@@ -14,7 +15,6 @@ void Scheduler::Start() {
     first_read_message.round = 0;
     graph_state_.subgraph_limits--;
     message_hub_.get_reader_queue()->Push(first_read_message);
-
     while (running) {
       Message resp = message_hub_.GetResponse();
 
@@ -131,6 +131,8 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
           graph_state_.SyncCurrentRoundPending();
           update_store_->Sync();
           current_round_++;
+          LOGF_INFO(" ============ Current Round: {} ============ ",
+                    current_round_);
 
           WriteMessage write_message;
           write_message.graph_id = execute_resp.graph_id;
