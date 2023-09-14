@@ -1,10 +1,11 @@
-#include <filesystem>
-#include <string>
+#include "tools/graph_partitioner/partitioner/hash_based_vertexcut.h"
 
 #include <folly/concurrency/ConcurrentHashMap.h>
 #include <folly/hash/Hash.h>
 
-#include "tools/graph_partitioner/partitioner/hash_based_vertexcut.h"
+#include <filesystem>
+#include <string>
+
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/common/types.h"
@@ -55,17 +56,16 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   auto edgelist_metadata = input_node["EdgelistBin"].as<EdgelistMetadata>();
 
   // Create Edgelist Graph.
-  auto aligned_max_vid = ((edgelist_metadata.max_vid >> 6) << 6) + 64;
+  auto aligned_max_vid = (((edgelist_metadata.max_vid + 1) >> 6) << 6) + 64;
   auto bitmap = Bitmap(aligned_max_vid);
   auto buffer_edges = new Edge[edgelist_metadata.num_edges]();
   std::ifstream input_stream(input_path_ + "edgelist.bin", std::ios::binary);
+
   if (!input_stream.is_open()) LOG_FATAL("Cannot open edgelist.bin");
 
   input_stream.read(reinterpret_cast<char*>(buffer_edges),
                     sizeof(Edge) * edgelist_metadata.num_edges);
-
   Edges edges(edgelist_metadata, reinterpret_cast<Edge*>(buffer_edges));
-  edges.SortBySrc();
 
   // Precompute the size of each edge bucket.
   auto size_per_bucket = new VertexID[n_partitions_]();
@@ -168,7 +168,6 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   graph_metadata.set_max_vid(max_vid);
   graph_metadata.set_min_vid(min_vid);
 
-  LOG_INFO("Writing the subgraphs to disk");
   graph_format_converter.WriteSubgraph(edge_buckets, graph_metadata,
                                        store_strategy_);
   input_stream.close();
