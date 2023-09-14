@@ -76,6 +76,19 @@ class BspUpdateStore : public UpdateStoreBase {
     active_count_ = 0;
   }
 
+  void LogBorderVertexInfo() {
+    for (size_t i = 0; i < message_count_; i++) {
+      LOGF_INFO("vertex id: {}, is border: {}", i,
+                border_vertex_bitmap_.GetBit(i));
+    }
+  }
+
+  void LogGlobalMessage() {
+    for (size_t i = 0; i < message_count_; i++) {
+      LOGF_INFO("global message: id({}) -> {}", i, read_data_[i]);
+    }
+  }
+
  private:
   void ReadBorderVertexBitmap(const std::string& root_path) {
     std::ifstream file(root_path + "bitmap/border_vertices.bin",

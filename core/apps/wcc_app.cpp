@@ -11,6 +11,7 @@ WCCApp::WCCApp(
 
 void WCCApp::PEval() {
   LOG_INFO("PEval begin");
+  update_store_->LogBorderVertexInfo();
   graph_->LogGraphInfo();
   graph_->LogEdges();
   graph_->LogVertexData();
@@ -39,11 +40,18 @@ void WCCApp::PEval() {
 }
 
 void WCCApp::IncEval() {
+  graph_->LogGraphInfo();
+  graph_->LogVertexData();
+  update_store_->LogGlobalMessage();
   ParallelVertexDo(
       std::bind(&WCCApp::MessagePassing, this, std::placeholders::_1));
+  graph_->LogVertexData();
+  update_store_->LogGlobalMessage();
 
   ParallelVertexDo(
       std::bind(&WCCApp::PointJumpIncEval, this, std::placeholders::_1));
+  graph_->LogVertexData();
+  update_store_->LogGlobalMessage();
 
   graph_->set_status("IncEval");
 }
