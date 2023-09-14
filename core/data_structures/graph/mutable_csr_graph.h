@@ -189,7 +189,9 @@ class MutableCSRGraph : public Serializable {
       memcpy(out_degree_base_, out_degree_base_new_,
              sizeof(VertexDegree) * metadata_->num_vertices);
       delete[] out_degree_base_new_;
+      out_degree_base_new_ = nullptr;
       delete[] out_offset_base_new_;
+      out_offset_base_new_ = nullptr;
       // TODO: whether release bitmap now or in deconstructor
     }
     metadata_->num_outgoing_edges = num_outgoing_edges_new;

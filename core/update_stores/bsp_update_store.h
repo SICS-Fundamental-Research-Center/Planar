@@ -18,7 +18,8 @@ class BspUpdateStore : public UpdateStoreBase {
   using VertexID = common::VertexID;
 
  public:
-  BspUpdateStore() = default;
+  BspUpdateStore()
+      : read_data_(nullptr), write_data_(nullptr), message_count_(0) {}
   explicit BspUpdateStore(const std::string& root_path,
                           common::VertexCount vertex_num)
       : message_count_(vertex_num) {
@@ -91,7 +92,7 @@ class BspUpdateStore : public UpdateStoreBase {
     uint64_t* buffer = new uint64_t[buffer_size];
     file.read((char*)(buffer), file_size);
 
-    border_vertex_bitmap_.Init(message_count_, buffer);
+    border_vertex_bitmap_.Init(buffer_size, buffer);
     file.close();
   }
 
