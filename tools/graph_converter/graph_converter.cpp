@@ -42,7 +42,6 @@ DEFINE_string(partitioner, "", "partitioner type.");
 DEFINE_string(i, "", "input path.");
 DEFINE_string(o, "", "output path.");
 DEFINE_uint64(n_partitions, 1, "the number of partitions");
-DEFINE_uint64(n_edges, UINT64_MAX, "the maximum number of edges to read");
 DEFINE_string(store_strategy, "unconstrained",
               "graph-systems adopted three strategies to store edges: "
               "kUnconstrained, incoming, and outgoing.");
@@ -77,37 +76,35 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   size_t n_edges = 0;
   VertexID *buffer_edges = nullptr, *compressed_buffer_edges = nullptr;
 
-  if (in_file) {
-    in_file.seekg(0, std::ios::end);
-    int length = in_file.tellg();
-    in_file.seekg(0, std::ios::beg);
+  if (!in_file) LOG_FATAL("File not found!");
 
-    char* buff = new char[length]();
-    in_file.read(buff, length);
-    std::string content(buff, length);
-    n_edges = count(content.begin(), content.end(), '\n');
+  in_file.seekg(0, std::ios::end);
+  int length = in_file.tellg();
+  in_file.seekg(0, std::ios::beg);
 
-    buffer_edges = new VertexID[n_edges * 2]();
-    compressed_buffer_edges = new VertexID[n_edges * 2]();
-    std::stringstream ss(content);
-    delete[] buff;
+  char* buff = new char[length]();
+  in_file.read(buff, length);
+  std::string content(buff, length);
+  n_edges = count(content.begin(), content.end(), '\n');
 
-    if (read_head) getline(ss, line, '\n');
-    while (getline(ss, line, '\n')) {
-      std::stringstream ss_line(line);
-      while (getline(ss_line, vid_str, *sep.c_str())) {
-        VertexID vid = stoll(vid_str);
-        sics::graph::core::util::atomic::WriteMax(&max_vid, vid);
-        buffer_edges[index++] = vid;
-      }
+  buffer_edges = new VertexID[n_edges * 2]();
+  compressed_buffer_edges = new VertexID[n_edges * 2]();
+  std::stringstream ss(content);
+  delete[] buff;
+
+  if (read_head) getline(ss, line, '\n');
+  while (getline(ss, line, '\n')) {
+    std::stringstream ss_line(line);
+    while (getline(ss_line, vid_str, *sep.c_str())) {
+      VertexID vid = stoll(vid_str);
+      sics::graph::core::util::atomic::WriteMax(&max_vid, vid);
+      buffer_edges[index++] = vid;
     }
-  } else {
-    LOG_FATAL("File not found!");
   }
 
   auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
   auto vid_map = new VertexID[aligned_max_vid]();
-  Bitmap bitmap((size_t) aligned_max_vid);
+  Bitmap bitmap(aligned_max_vid);
 
   for (size_t index = 0; index < n_edges * 2; index++) {
     if (!bitmap.GetBit(buffer_edges[index])) {
