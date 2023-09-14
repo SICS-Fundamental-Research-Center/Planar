@@ -32,8 +32,9 @@ class MutableCSRGraph : public Serializable {
   using VertexData = TV;
   using EdgeData = TE;
   MutableCSRGraph() = default;
-  explicit MutableCSRGraph(SubgraphMetadata* metadata)
+  explicit MutableCSRGraph(SubgraphMetadata* metadata, size_t num_all_vertices)
       : metadata_(metadata),
+        num_all_vertices_(num_all_vertices),
         graph_buf_base_(nullptr),
         vertex_id_by_local_index_(nullptr),
         out_degree_base_(nullptr),
@@ -104,7 +105,7 @@ class MutableCSRGraph : public Serializable {
            sizeof(VertexData) * metadata_->num_vertices);
     // bitmap
     is_in_graph_bitmap_.Init(
-        metadata_->num_vertices,
+        num_all_vertices_,
         (uint64_t*)(graph_serialized_->GetCSRBuffer()->at(3).Get()));
     vertex_src_or_dst_bitmap_.Init(
         metadata_->num_vertices,
@@ -228,7 +229,7 @@ class MutableCSRGraph : public Serializable {
     return vertex_data_read_base_ + index;
   }
 
-  bool IsInGraph(VertexID id) const { return true; }
+  bool IsInGraph(VertexID id) const { return is_in_graph_bitmap_.GetBit(id); }
 
   bool IsBorderVertex(VertexID id) const { return true; }
 
@@ -300,6 +301,13 @@ class MutableCSRGraph : public Serializable {
     LOGF_INFO("Edges: {}", edges);
   }
 
+  void LogIsIngraphInfo() {
+    for (size_t i = 0; i < num_all_vertices_; i++) {
+      LOGF_INFO("Vertex id: {}, is_in_graph: {}", i,
+                is_in_graph_bitmap_.GetBit(i));
+    }
+  }
+
  private:
   // use binary search to find the index of id
   [[nodiscard]] VertexIndex GetIndexByID(VertexID id) const {
@@ -349,6 +357,7 @@ class MutableCSRGraph : public Serializable {
   common::Bitmap edge_delete_bitmap_;
 
   std::string status_;
+  size_t num_all_vertices_;
 };
 
 typedef MutableCSRGraph<common::Uint32VertexDataType,

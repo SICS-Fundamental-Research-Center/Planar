@@ -217,11 +217,13 @@ Scheduler::CreateSerializableGraph(common::GraphID graph_id) {
   if (common::Configurations::Get()->vertex_data_type ==
       common::VertexDataType::kVertexDataTypeUInt32) {
     return std::make_unique<MutableCSRGraphUInt32>(
-        graph_metadata_info_.GetSubgraphMetadataPtr(graph_id));
+        graph_metadata_info_.GetSubgraphMetadataPtr(graph_id),
+        graph_metadata_info_.get_num_vertices());
 
   } else {
     return std::make_unique<MutableCSRGraphUInt16>(
-        graph_metadata_info_.GetSubgraphMetadataPtr(graph_id));
+        graph_metadata_info_.GetSubgraphMetadataPtr(graph_id),
+        graph_metadata_info_.get_num_vertices());
   }
 }
 
