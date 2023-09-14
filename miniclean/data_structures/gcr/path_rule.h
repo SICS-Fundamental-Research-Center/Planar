@@ -29,6 +29,10 @@ class PathRule {
  public:
   PathRule(PathPattern path_pattern, size_t map_size)
       : path_pattern_(path_pattern), star_bitmap_(map_size) {}
+  PathRule(PathRule& other)
+      : path_pattern_(other.path_pattern_),
+        star_bitmap_(other.star_bitmap_),
+        constant_predicates_(other.constant_predicates_) {}
 
   void AddConstantPredicate(uint8_t vertex_index,
                             ConstantPredicate constant_predicate) {
@@ -40,8 +44,12 @@ class PathRule {
     }
   }
 
+  size_t CountOneBits() { return star_bitmap_.CountOneBits(); }
+
   void InitBitmap(std::vector<std::vector<VertexID>> path_instance,
                   MiniCleanCSRGraph* graph);
+
+  bool ComposeWith(PathRule& other, size_t max_pred_num) {};
 
   const PathPattern& get_path_pattern() const { return path_pattern_; }
 
@@ -50,7 +58,6 @@ class PathRule {
     return constant_predicates_;
   }
 
-  size_t CountOneBits() { return star_bitmap_.CountOneBits(); }
 
  private:
   PathPattern path_pattern_;

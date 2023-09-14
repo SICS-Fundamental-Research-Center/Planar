@@ -42,4 +42,11 @@ void PathRule::InitBitmap(std::vector<std::vector<VertexID>> path_instance,
   }
 }
 
+bool PathRule::ComposeWith(PathRule& other, size_t max_pred_num) {
+  // Check whether path pattern is the same.
+  if (path_pattern_ != other.path_pattern_) {
+    return false;
+  } 
+}
+
 }  // namespace sics::graph::miniclean::data_structures::gcr
