@@ -10,6 +10,7 @@ WCCApp::WCCApp(
     : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {}
 
 void WCCApp::PEval() {
+  LOG_INFO("PEval begin");
   //  graph_->LogGraphInfo();
   //  graph_->LogEdges();
   //  graph_->LogVertexData();
@@ -34,7 +35,7 @@ void WCCApp::PEval() {
     //    graph_->LogGraphInfo();
     //    graph_->LogVertexData();
   }
-  graph_->set_status("PEval");
+  LOG_INFO("PEval finished");
 }
 
 void WCCApp::IncEval() {

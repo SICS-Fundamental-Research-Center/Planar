@@ -23,12 +23,15 @@ void Executor::Start() {
           break;
         }
         case scheduler::ExecuteType::kPEval:
+          LOGF_INFO("Executor: PEval graph {}", message.graph_id);
           message.app->PEval();
           break;
         case scheduler::ExecuteType::kIncEval:
+          LOGF_INFO("Executor: kIncEval graph {}", message.graph_id);
           message.app->IncEval();
           break;
         case scheduler::ExecuteType::kSerialize:
+          LOGF_INFO("Executor: Serialized graph {}", message.graph_id);
           // Set serialized graph to message for write back to disk.
           message.serialized = message.graph->Serialize(task_runner_).release();
           break;
