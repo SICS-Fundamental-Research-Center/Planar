@@ -25,7 +25,8 @@ void GraphFormatConverter::WriteSubgraph(
   std::vector<SubgraphMetadata> subgraph_metadata_vec;
   std::ofstream border_vertices_file(output_root_path_ +
                                      "bitmap/border_vertices.bin");
-  Bitmap border_vertices(graph_metadata.get_max_vid());
+  auto aligned_max_vid = (((graph_metadata.get_max_vid() + 1) >> 6) << 6) + 64;
+  Bitmap border_vertices(aligned_max_vid);
 
   // Write subgraph.
   for (GraphID gid = 0; gid < graph_metadata.get_num_subgraphs(); gid++) {
@@ -41,7 +42,7 @@ void GraphFormatConverter::WriteSubgraph(
     size_t count_in_edges = 0, count_out_edges = 0;
     auto num_vertices = bucket.size();
     VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
-    Bitmap src_map(num_vertices), is_in_graph(graph_metadata.get_max_vid());
+    Bitmap src_map(num_vertices), is_in_graph(aligned_max_vid);
 
     auto buffer_globalid = new VertexID[num_vertices]();
     auto buffer_indegree = new VertexID[num_vertices]();
@@ -154,8 +155,7 @@ void GraphFormatConverter::WriteSubgraph(
               }
               break;
             case kIncomingOnly:
-              for (VertexID nbr_i = 0; nbr_i < bucket.at(j).indegree;
-                   nbr_i++) {
+              for (VertexID nbr_i = 0; nbr_i < bucket.at(j).indegree; nbr_i++) {
                 if (!is_in_graph.GetBit(bucket.at(j).incoming_edges[nbr_i])) {
                   border_vertices.SetBit(bucket.at(j).vid);
                   break;
@@ -268,10 +268,9 @@ void GraphFormatConverter::WriteSubgraph(
 }
 
 // For vertex cut.
-void GraphFormatConverter::WriteSubgraph(
-    const std::vector<Edges>& edge_buckets,
-    const GraphMetadata& graph_metadata,
-    StoreStrategy store_strategy) {
+void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
+                                         const GraphMetadata& graph_metadata,
+                                         StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -283,8 +282,10 @@ void GraphFormatConverter::WriteSubgraph(
   std::ofstream out_meta_file(output_root_path_ + "meta.yaml");
   std::ofstream border_vertices_file(output_root_path_ +
                                      "bitmap/border_vertices.bin");
-  Bitmap border_vertices(graph_metadata.get_max_vid());
-  auto frequency_of_vertices = new int[graph_metadata.get_max_vid()]();
+
+  auto aligned_max_vid = (((graph_metadata.get_max_vid() + 1) >> 6) << 6) + 64;
+  auto frequency_of_vertices = new int[aligned_max_vid]();
+  Bitmap border_vertices(aligned_max_vid);
 
   for (GraphID i = 0; i < n_subgraphs; i++) {
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
@@ -408,9 +409,8 @@ void GraphFormatConverter::WriteSubgraph(
 
   // Get border_vertices bitmap.
   for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([i, parallelism, &graph_metadata,
-                           &frequency_of_vertices, &border_vertices]() {
-      for (VertexID j = i; j < graph_metadata.get_max_vid(); j += parallelism) {
+    auto task = std::bind([&, i]() {
+      for (VertexID j = i; j < aligned_max_vid; j += parallelism) {
         if (frequency_of_vertices[j] > 1) border_vertices.SetBit(j);
       }
     });
