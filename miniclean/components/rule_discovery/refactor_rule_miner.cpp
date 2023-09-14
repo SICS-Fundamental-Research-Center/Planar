@@ -205,7 +205,7 @@ void RuleMiner::InitPathRules() {
     LOG_INFO("Pattern ID: ", i, " count: " , path_rule.CountOneBits());
     // TODO (bai-wenchao): check the support.
     path_rules_.push_back(path_rule);
-    for (size_t j = 0; j < path_patterns_[i].size(); i++) {
+    for (size_t j = 0; j < path_patterns_[i].size(); j++) {
       InitPathRulesRecur(path_rule, i, j);
     }
   }
@@ -228,7 +228,15 @@ void RuleMiner::InitPathRulesRecur(PathRule& path_rule, size_t pattern_id,
     for (const auto& predicate : predicate_pair.second) {
       path_rule.AddConstantPredicate(index, predicate);
       path_rule.InitBitmap(path_instances_[pattern_id], graph_);
-      LOG_INFO("Pattern ID: ", pattern_id, " count: " , path_rule.CountOneBits(), " index: ", index, "");
+      LOG_INFO("Pattern ID: ", pattern_id, " count: ", path_rule.CountOneBits(),
+               " index: ", index, "");
+      for (const auto& carried_predicate : path_rule.get_constant_predicates()) {
+        LOG_INFO("Predicate: ", carried_predicate.first, " ",
+                 carried_predicate.second.get_vertex_label(), " ",
+                 carried_predicate.second.get_vertex_attribute_id(), " ",
+                 carried_predicate.second.get_operator_type(), " ",
+                 carried_predicate.second.get_constant_value());
+      }
       // TODO (bai-wenchao): check the support.
       path_rules_.push_back(path_rule);
       InitPathRulesRecur(path_rule, pattern_id, index + 1);
