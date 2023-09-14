@@ -42,7 +42,6 @@ DEFINE_string(partitioner, "", "partitioner type.");
 DEFINE_string(i, "", "input path.");
 DEFINE_string(o, "", "output path.");
 DEFINE_uint64(n_partitions, 1, "the number of partitions");
-DEFINE_uint64(max_n_edges, UINT64_MAX, "the maximum number of edges to read");
 DEFINE_string(store_strategy, "unconstrained",
               "graph-systems adopted three strategies to store edges: "
               "kUnconstrained, incoming, and outgoing.");
@@ -57,9 +56,8 @@ DEFINE_bool(read_head, false, "whether to read header of csv.");
 // indicates whether to read head.
 void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
                                     const std::string& output_path,
-                                    const std::string& sep,
-                                    uint64_t max_n_edges,
-                                    bool read_head) {
+                                    const std::string& sep, bool read_head) {
+  LOG_INFO("BigGraphConvertEdgelistCSV2EdgelistBin");
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -71,42 +69,48 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   std::ofstream out_data_file(output_path + "edgelist.bin");
   std::ofstream out_meta_file(output_path + "meta.yaml");
 
-  // Read edgelist graph.
-  std::list<VertexID> edge_list;
-
+  // Compute the mapping between origin vid to compressed vid.
   VertexID max_vid = 0, compressed_vid = 0;
+  uint64_t index = 0;
   std::string line, vid_str;
-  uint64_t count = 0;
-  if (in_file) {
-    if (read_head) getline(in_file, line);
-    while (getline(in_file, line)) {
-      if (count++ > max_n_edges) break;
-      std::stringstream ss(line);
-      while (getline(ss, vid_str, *sep.c_str())) {
-        VertexID vid = stoll(vid_str);
-        edge_list.push_back(vid);
-        sics::graph::core::util::atomic::WriteMax(&max_vid, vid);
-      }
+  size_t n_edges = 0;
+  VertexID *buffer_edges = nullptr, *compressed_buffer_edges = nullptr;
+
+  if (!in_file) LOG_FATAL("File not found!");
+
+  in_file.seekg(0, std::ios::end);
+  int length = in_file.tellg();
+  in_file.seekg(0, std::ios::beg);
+
+  char* buff = new char[length]();
+  in_file.read(buff, length);
+  std::string content(buff, length);
+  n_edges = count(content.begin(), content.end(), '\n');
+
+  buffer_edges = new VertexID[n_edges * 2]();
+  compressed_buffer_edges = new VertexID[n_edges * 2]();
+  std::stringstream ss(content);
+  delete[] buff;
+
+  if (read_head) getline(ss, line, '\n');
+  while (getline(ss, line, '\n')) {
+    std::stringstream ss_line(line);
+    while (getline(ss_line, vid_str, *sep.c_str())) {
+      VertexID vid = stoll(vid_str);
+      sics::graph::core::util::atomic::WriteMax(&max_vid, vid);
+      buffer_edges[index++] = vid;
     }
   }
 
-  // Compute the mapping between origin vid to compressed vid.
   auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
-  auto bitmap = Bitmap(aligned_max_vid);
-  auto n_edges = edge_list.size() / 2;
-  auto buffer_edges = new VertexID[n_edges * 2]();
-  auto compressed_buffer_edges = new VertexID[n_edges * 2]();
   auto vid_map = new VertexID[aligned_max_vid]();
+  Bitmap bitmap(aligned_max_vid);
 
-  auto index = 0;
-  while (edge_list.size() > 0) {
-    buffer_edges[index] = edge_list.front();
-    edge_list.pop_front();
+  for (size_t index = 0; index < n_edges * 2; index++) {
     if (!bitmap.GetBit(buffer_edges[index])) {
       bitmap.SetBit(buffer_edges[index]);
       vid_map[buffer_edges[index]] = compressed_vid++;
     }
-    index++;
   }
 
   // Compress vid and buffer graph.
@@ -206,9 +210,8 @@ int main(int argc, char** argv) {
     case kEdgelistCSV2EdgelistBin:
       if (FLAGS_sep == "")
         LOG_FATAL("CSV separator is not empty. Use -sep [e.g. \",\"].");
-
       ConvertEdgelistCSV2EdgelistBin(FLAGS_i, FLAGS_o, FLAGS_sep,
-                                     FLAGS_max_n_edges, FLAGS_read_head);
+                                     FLAGS_read_head);
       break;
     case kEdgelistCSV2CSRBin:
       // TODO(hsiaoko): to add edgelist csv 2 csr bin function.
