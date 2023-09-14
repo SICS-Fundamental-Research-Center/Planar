@@ -19,6 +19,8 @@ TEST_F(ImmutableCSRGraphTest, TestDeserialize4Subgraph_0) {
   auto subgraphmetadata = data_structures::SubgraphMetadata();
   auto graph = data_structures::graph::ImmutableCSRGraph(subgraphmetadata);
   auto graph_ptr = std::make_unique<ImmutableCSRGraph>(subgraphmetadata);
+
+  EXPECT_NE(graph_ptr, nullptr);
 }
 
 }  // namespace sics::graph::core::test
