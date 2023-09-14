@@ -50,6 +50,8 @@ class PathRule {
     return constant_predicates_;
   }
 
+  size_t CountOneBits() { return star_bitmap_.CountOneBits(); }
+
  private:
   PathPattern path_pattern_;
 

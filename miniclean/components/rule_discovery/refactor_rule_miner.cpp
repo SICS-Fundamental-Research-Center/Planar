@@ -202,6 +202,7 @@ void RuleMiner::InitPathRules() {
     PathRule path_rule(path_patterns_[i], num_vertex);
     // Case 0. Do not add any constant predicate.
     path_rule.InitBitmap(path_instances_[i], graph_);
+    LOG_INFO("Pattern ID: ", i, " count: " , path_rule.CountOneBits());
     // TODO (bai-wenchao): check the support.
     path_rules_.push_back(path_rule);
     for (size_t j = 0; j < path_patterns_[i].size(); i++) {
@@ -227,6 +228,7 @@ void RuleMiner::InitPathRulesRecur(PathRule& path_rule, size_t pattern_id,
     for (const auto& predicate : predicate_pair.second) {
       path_rule.AddConstantPredicate(index, predicate);
       path_rule.InitBitmap(path_instances_[pattern_id], graph_);
+      LOG_INFO("Pattern ID: ", pattern_id, " count: " , path_rule.CountOneBits(), " index: ", index, "");
       // TODO (bai-wenchao): check the support.
       path_rules_.push_back(path_rule);
       InitPathRulesRecur(path_rule, pattern_id, index + 1);
