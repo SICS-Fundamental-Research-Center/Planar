@@ -57,7 +57,7 @@ DEFINE_bool(read_head, false, "whether to read header of csv.");
 void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
                                     const std::string& output_path,
                                     const std::string& sep, bool read_head) {
-  LOG_INFO("BigGraphConvertEdgelistCSV2EdgelistBin");
+  LOG_INFO("ConvertEdgelistCSV2EdgelistBin");
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -79,7 +79,7 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   if (!in_file) LOG_FATAL("File not found!");
 
   in_file.seekg(0, std::ios::end);
-  int length = in_file.tellg();
+  size_t length = in_file.tellg();
   in_file.seekg(0, std::ios::beg);
 
   char* buff = new char[length]();
@@ -101,6 +101,7 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
       buffer_edges[index++] = vid;
     }
   }
+  content.clear();
 
   auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
   auto vid_map = new VertexID[aligned_max_vid]();
