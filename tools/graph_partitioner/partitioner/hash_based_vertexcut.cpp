@@ -168,6 +168,7 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   graph_metadata.set_max_vid(max_vid);
   graph_metadata.set_min_vid(min_vid);
 
+  LOG_INFO("Writing the subgraphs to disk");
   graph_format_converter.WriteSubgraph(edge_buckets, graph_metadata,
                                        store_strategy_);
   input_stream.close();
