@@ -107,7 +107,7 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
 
   auto aligned_max_vid = ((max_vid >> 6) << 6) + 64;
   auto vid_map = new VertexID[aligned_max_vid]();
-  Bitmap bitmap((size_t)aligned_max_vid);
+  Bitmap bitmap((size_t) aligned_max_vid);
 
   for (size_t index = 0; index < n_edges * 2; index++) {
     if (!bitmap.GetBit(buffer_edges[index])) {
