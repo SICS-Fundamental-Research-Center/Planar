@@ -7,31 +7,45 @@ WCCApp::WCCApp(
     common::TaskRunner* runner,
     update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
     data_structures::Serializable* graph)
-    : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {}
+    : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {
+  init_ = std::bind(&WCCApp::Init, this, std::placeholders::_1);
+  graft_ = std::bind(&WCCApp::Graft, this, std::placeholders::_1,
+                     std::placeholders::_2);
+  point_jump_ = std::bind(&WCCApp::PointJump, this, std::placeholders::_1);
+
+  contract_ = std::bind(&WCCApp::Contract, this, std::placeholders::_1,
+                        std::placeholders::_2, std::placeholders::_3);
+  message_passing_ =
+      std::bind(&WCCApp::MessagePassing, this, std::placeholders::_1);
+  point_jump_inc_eval_ =
+      std::bind(&WCCApp::PointJumpIncEval, this, std::placeholders::_1);
+}
 
 void WCCApp::PEval() {
+  auto init = std::bind(&WCCApp::Init, this, std::placeholders::_1);
+  auto graft = std::bind(&WCCApp::Graft, this, std::placeholders::_1,
+                         std::placeholders::_2);
+  auto point_jump = std::bind(&WCCApp::PointJump, this, std::placeholders::_1);
+  auto contract = std::bind(&WCCApp::Contract, this, std::placeholders::_1,
+                            std::placeholders::_2, std::placeholders::_3);
   LOG_INFO("PEval begin");
   //  update_store_->LogBorderVertexInfo();
   //  graph_->LogGraphInfo();
   //  graph_->LogEdges();
   //  graph_->LogVertexData();
-  ParallelVertexDo(std::bind(&WCCApp::Init, this, std::placeholders::_1));
+  ParallelVertexDo(init);
   //  graph_->LogVertexData();
   LOG_INFO("init finished");
   while (graph_->GetOutEdgeNums() != 0) {
-    ParallelEdgeDo(std::bind(&WCCApp::Graft, this, std::placeholders::_1,
-                             std::placeholders::_2));
+    ParallelEdgeDo(graft);
     LOG_INFO("graft finished");
     //    graph_->LogVertexData();
 
-    ParallelVertexDo(
-        std::bind(&WCCApp::PointJump, this, std::placeholders::_1));
+    ParallelVertexDo(point_jump);
     LOG_INFO("pointjump finished");
     //    graph_->LogVertexData();
     //    graph_->LogEdges();
-    ParallelEdgeMutateDo(std::bind(&WCCApp::Contract, this,
-                                   std::placeholders::_1, std::placeholders::_2,
-                                   std::placeholders::_3));
+    ParallelEdgeMutateDo(contract);
     LOG_INFO("contract finished");
     //    graph_->LogEdges();
     //    graph_->LogGraphInfo();
@@ -41,17 +55,19 @@ void WCCApp::PEval() {
 }
 
 void WCCApp::IncEval() {
+  auto message_passing =
+      std::bind(&WCCApp::MessagePassing, this, std::placeholders::_1);
+  auto point_jump_inc_eval =
+      std::bind(&WCCApp::PointJumpIncEval, this, std::placeholders::_1);
   //  graph_->LogGraphInfo();
   //  graph_->LogVertexData();
   //  update_store_->LogGlobalMessage();
   //  graph_->LogIsIngraphInfo();
-  ParallelVertexDo(
-      std::bind(&WCCApp::MessagePassing, this, std::placeholders::_1));
+  ParallelVertexDo(message_passing);
   //  graph_->LogVertexData();
   //  update_store_->LogGlobalMessage();
 
-  ParallelVertexDo(
-      std::bind(&WCCApp::PointJumpIncEval, this, std::placeholders::_1));
+  ParallelVertexDo(point_jump_inc_eval);
   //  graph_->LogVertexData();
   //  update_store_->LogGlobalMessage();
 

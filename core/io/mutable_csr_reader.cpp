@@ -20,13 +20,16 @@ void MutableCSRReader::Read(scheduler::ReadMessage* message,
                                      std::to_string(message->graph_id) + ".bin";
   std::string src_bitmap_path = root_path_ + "bitmap/src_map/" +
                                 std::to_string(message->graph_id) + ".bin";
+  std::string index_path =
+      root_path_ + "index/" + std::to_string(message->graph_id) + ".bin";
 
   Serialized* graph_serialized = new SerializedMuatbleCSRGraph();
   std::vector<OwnedBuffer> buffers;
   ReadMetaInfoFromBin(file_path, message->num_vertices, &buffers);
-  ReadLabelInfoFromBin(label_path, &buffers);
-  ReadLabelInfoFromBin(in_graph_bitmap_path, &buffers);
-  ReadLabelInfoFromBin(src_bitmap_path, &buffers);
+  ReadSingleBufferFromBin(label_path, &buffers);
+  ReadSingleBufferFromBin(in_graph_bitmap_path, &buffers);
+  ReadSingleBufferFromBin(src_bitmap_path, &buffers);
+//  ReadSingleBufferFromBin(index_path, &buffers);
 
   graph_serialized->ReceiveBuffers(std::move(buffers));
 
@@ -61,7 +64,7 @@ void MutableCSRReader::ReadMetaInfoFromBin(const std::string& path,
   }
 }
 
-void MutableCSRReader::ReadLabelInfoFromBin(const std::string& path,
+void MutableCSRReader::ReadSingleBufferFromBin(const std::string& path,
                                             std::vector<OwnedBuffer>* buffers) {
   std::ifstream file(path, std::ios::binary);
   if (!file) {

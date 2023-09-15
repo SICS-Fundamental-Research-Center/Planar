@@ -97,8 +97,9 @@ class PlanarAppBase : public PIE {
       auto task = std::bind([&, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
           for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
-//            LOGF_INFO("edge_func: {}, {}", graph_->GetVertexIDByIndex(i),
-//                      graph_->GetOneOutEdge(i, j));
+            //            LOGF_INFO("edge_func: {}, {}",
+            //            graph_->GetVertexIDByIndex(i),
+            //                      graph_->GetOneOutEdge(i, j));
             edge_func(graph_->GetVertexIDByIndex(i),
                       graph_->GetOneOutEdge(i, j));
           }
@@ -108,7 +109,8 @@ class PlanarAppBase : public PIE {
       begin_index = end_index;
       count++;
     }
-    LOGF_INFO("task_size: {}, num tasks: {}", task_size, count);
+    LOGF_INFO("task_size: {}, num tasks: {}. left edges: {}", task_size, count,
+              graph_->GetOutEdgeNums());
     runner_->SubmitSync(tasks);
     graph_->SyncVertexData();
     LOG_DEBUG("ParallelEdgeDo is done");
@@ -128,10 +130,10 @@ class PlanarAppBase : public PIE {
       auto task = std::bind([&, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
           for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
-//            LOGF_INFO("edge_del_func: {}, {}, {}",
-//                      graph_->GetVertexIDByIndex(i),
-//                      graph_->GetOneOutEdge(i, j),
-//                      graph_->GetOutOffsetByIndex(i) + j);
+            //            LOGF_INFO("edge_del_func: {}, {}, {}",
+            //                      graph_->GetVertexIDByIndex(i),
+            //                      graph_->GetOneOutEdge(i, j),
+            //                      graph_->GetOutOffsetByIndex(i) + j);
             edge_del_func(graph_->GetVertexIDByIndex(i),
                           graph_->GetOneOutEdge(i, j),
                           graph_->GetOutOffsetByIndex(i) + j);
