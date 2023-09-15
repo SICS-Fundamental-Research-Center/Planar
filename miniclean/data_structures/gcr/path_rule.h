@@ -29,7 +29,7 @@ class PathRule {
  public:
   PathRule(PathPattern path_pattern, size_t map_size)
       : path_pattern_(path_pattern), star_bitmap_(map_size) {}
-  PathRule(PathRule& other)
+  PathRule(const PathRule& other)
       : path_pattern_(other.path_pattern_),
         star_bitmap_(other.star_bitmap_),
         constant_predicates_(other.constant_predicates_) {}
@@ -49,7 +49,8 @@ class PathRule {
   void InitBitmap(std::vector<std::vector<VertexID>> path_instance,
                   MiniCleanCSRGraph* graph);
 
-  bool ComposeWith(PathRule& other, size_t max_pred_num) {};
+  // Compose with another path rule with the same path pattern.
+  bool ComposeWith(PathRule& other, size_t max_pred_num);
 
   const PathPattern& get_path_pattern() const { return path_pattern_; }
 

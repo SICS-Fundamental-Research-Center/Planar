@@ -197,16 +197,51 @@ void RuleMiner::LoadIndexMetadata(const std::string& index_metadata_path) {
 
 void RuleMiner::InitPathRules() {
   size_t num_vertex = graph_->get_num_vertices();
+  path_rules_.resize(path_patterns_.size());
 
   for (size_t i = 0; i < path_patterns_.size(); i++) {
     PathRule path_rule(path_patterns_[i], num_vertex);
-    // Case 0. Do not add any constant predicate.
+    // Construct path rules with no constant predicates.
     path_rule.InitBitmap(path_instances_[i], graph_);
     LOG_INFO("Pattern ID: ", i, " count: " , path_rule.CountOneBits());
     // TODO (bai-wenchao): check the support.
-    path_rules_.push_back(path_rule);
+    path_rules_[i].push_back(path_rule);
     for (size_t j = 0; j < path_patterns_[i].size(); j++) {
       InitPathRulesRecur(path_rule, i, j);
+    }
+
+    // Merge the path rules with the same path patterns.
+    size_t num_unit = path_rules_[i].size();
+    size_t begin_from = 0;
+    size_t offset = num_unit;
+    bool should_continue = true;
+    while (should_continue) {
+      should_continue = false;
+      size_t inner_offset = 0;
+      for (size_t j = 0; j < num_unit; j++) {
+        for (size_t k = begin_from; k < offset; k++) {
+          PathRule path_rule_cp(path_rules_[i][k]);
+          should_continue =
+              path_rule_cp.ComposeWith(path_rule_cp, max_predicate_num_);
+          if (should_continue) {
+            // TODO (bai-wenchao): check support.
+            LOG_INFO("[compose stage] Pattern ID: ", i,
+                     " count: ", path_rule_cp.CountOneBits());
+            for (const auto& carried_predicate :
+                 path_rule_cp.get_constant_predicates()) {
+              LOG_INFO("Predicate: ", carried_predicate.first, " ",
+                       carried_predicate.second.get_vertex_label(), " ",
+                       carried_predicate.second.get_vertex_attribute_id(), " ",
+                       carried_predicate.second.get_operator_type(), " ",
+                       carried_predicate.second.get_constant_value());
+            }
+            path_rules_[i].push_back(path_rule_cp);
+            inner_offset += 1;
+          }
+        }
+      }
+      begin_from += offset;
+      offset = inner_offset;
     }
   }
 }
@@ -238,7 +273,7 @@ void RuleMiner::InitPathRulesRecur(PathRule& path_rule, size_t pattern_id,
                  carried_predicate.second.get_constant_value());
       }
       // TODO (bai-wenchao): check the support.
-      path_rules_.push_back(path_rule);
+      path_rules_[pattern_id].push_back(path_rule);
       InitPathRulesRecur(path_rule, pattern_id, index + 1);
       path_rule.PopConstantPredicate();
     }

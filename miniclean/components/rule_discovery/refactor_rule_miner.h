@@ -55,7 +55,7 @@ class RuleMiner {
       std::unordered_map<VertexAttributeID, std::vector<ConstantPredicate>>>
       constant_predicates_;
   IndexMetadata index_metadata_;
-  std::vector<PathRule> path_rules_;
+  std::vector<std::vector<PathRule>> path_rules_;
 
   uint8_t max_predicate_num_ = 3;
 };

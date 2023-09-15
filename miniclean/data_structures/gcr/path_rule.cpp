@@ -43,10 +43,33 @@ void PathRule::InitBitmap(std::vector<std::vector<VertexID>> path_instance,
 }
 
 bool PathRule::ComposeWith(PathRule& other, size_t max_pred_num) {
-  // Check whether path pattern is the same.
-  if (path_pattern_ != other.path_pattern_) {
+  // Compose the predicates.
+  auto other_constant_predicates = other.get_constant_predicates();
+  bool has_composed = false;
+  for (const auto& other_constant_predicate_pair : other_constant_predicates) {
+    // check whether the current path rule already has this predicate.
+    bool has_same_predicate = false;
+    for (const auto& constant_predicate_pair : constant_predicates_) {
+      if (constant_predicate_pair.first ==
+              other_constant_predicate_pair.first &&
+          constant_predicate_pair.second.get_vertex_attribute_id() ==
+              other_constant_predicate_pair.second.get_vertex_attribute_id()) {
+        has_same_predicate = true;
+        break;
+      }
+    }
+    if (!has_same_predicate) {
+      constant_predicates_.emplace_back(other_constant_predicate_pair);
+      has_composed = true;
+    }
+  }
+  if (!has_composed || constant_predicates_.size() > max_pred_num) {
     return false;
-  } 
+  }
+
+  // Compose the star bitmap.
+  star_bitmap_.MergeWith(other.star_bitmap_);
+  return true;
 }
 
 }  // namespace sics::graph::miniclean::data_structures::gcr
