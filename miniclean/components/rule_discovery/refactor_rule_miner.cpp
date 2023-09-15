@@ -203,7 +203,7 @@ void RuleMiner::InitPathRules() {
     PathRule path_rule(path_patterns_[i], num_vertex);
     // Construct path rules with no constant predicates.
     path_rule.InitBitmap(path_instances_[i], graph_);
-    LOG_INFO("Pattern ID: ", i, " count: " , path_rule.CountOneBits());
+    LOG_INFO("Pattern ID: ", i, " count: ", path_rule.CountOneBits());
     // TODO (bai-wenchao): check the support.
     path_rules_[i].push_back(path_rule);
     for (size_t j = 0; j < path_patterns_[i].size(); j++) {
@@ -222,7 +222,8 @@ void RuleMiner::InitPathRules() {
         for (size_t k = begin_from; k < offset; k++) {
           PathRule path_rule_cp(path_rules_[i][k]);
           should_continue =
-              path_rule_cp.ComposeWith(path_rule_cp, max_predicate_num_);
+              path_rule_cp.ComposeWith(path_rules_[i][j], max_predicate_num_);
+          LOG_INFO("Compose status: ", should_continue);
           if (should_continue) {
             // TODO (bai-wenchao): check support.
             LOG_INFO("[compose stage] Pattern ID: ", i,
@@ -249,12 +250,8 @@ void RuleMiner::InitPathRules() {
 void RuleMiner::InitPathRulesRecur(PathRule& path_rule, size_t pattern_id,
                                    size_t index) {
   VertexLabel vlabel = std::get<0>(path_rule.get_path_pattern()[index]);
-  if (index >= path_rule.get_path_pattern().size()) {
-    return;
-  }
-  if (path_rule.get_constant_predicates().size() >= max_predicate_num_) {
-    return;
-  }
+  if (index >= path_rule.get_path_pattern().size()) return;
+  if (path_rule.get_constant_predicates().size() >= max_predicate_num_) return;
   if (constant_predicates_.find(vlabel) == constant_predicates_.end()) {
     InitPathRulesRecur(path_rule, pattern_id, index + 1);
   }
@@ -265,7 +262,8 @@ void RuleMiner::InitPathRulesRecur(PathRule& path_rule, size_t pattern_id,
       path_rule.InitBitmap(path_instances_[pattern_id], graph_);
       LOG_INFO("Pattern ID: ", pattern_id, " count: ", path_rule.CountOneBits(),
                " index: ", index, "");
-      for (const auto& carried_predicate : path_rule.get_constant_predicates()) {
+      for (const auto& carried_predicate :
+           path_rule.get_constant_predicates()) {
         LOG_INFO("Predicate: ", carried_predicate.first, " ",
                  carried_predicate.second.get_vertex_label(), " ",
                  carried_predicate.second.get_vertex_attribute_id(), " ",
@@ -275,7 +273,10 @@ void RuleMiner::InitPathRulesRecur(PathRule& path_rule, size_t pattern_id,
       // TODO (bai-wenchao): check the support.
       path_rules_[pattern_id].push_back(path_rule);
       InitPathRulesRecur(path_rule, pattern_id, index + 1);
-      path_rule.PopConstantPredicate();
+      bool pop_status = path_rule.PopConstantPredicate();
+      if (!pop_status) {
+        LOG_FATAL("Failed to pop constant predicate.");
+      }
     }
   }
 }

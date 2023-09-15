@@ -35,13 +35,15 @@ class PathRule {
         constant_predicates_(other.constant_predicates_) {}
 
   void AddConstantPredicate(uint8_t vertex_index,
-                            ConstantPredicate constant_predicate) {
+                            const ConstantPredicate& constant_predicate) {
     constant_predicates_.emplace_back(vertex_index, constant_predicate);
   }
-  void PopConstantPredicate() {
+  bool PopConstantPredicate() {
     if (!constant_predicates_.empty()) {
       constant_predicates_.pop_back();
+      return true;
     }
+    return false;
   }
 
   size_t CountOneBits() { return star_bitmap_.CountOneBits(); }
@@ -58,7 +60,6 @@ class PathRule {
   get_constant_predicates() const {
     return constant_predicates_;
   }
-
 
  private:
   PathPattern path_pattern_;
