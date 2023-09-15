@@ -124,7 +124,6 @@ void GraphFormatConverter::WriteSubgraph(
                    bucket.at(j).incoming_edges,
                    bucket.at(j).indegree * sizeof(VertexID));
             std::sort(
-                std::execution::par_unseq,
                 buffer_in_edges + buffer_in_offset[j],
                 buffer_in_edges + buffer_in_offset[j] + bucket.at(j).indegree);
           }
