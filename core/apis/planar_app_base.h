@@ -88,6 +88,7 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelEdgeDo is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
+    int count = 0;
     VertexIndex begin_index = 0, end_index = 0;
     for (; begin_index < graph_->GetVertexNums();) {
       end_index += task_size;
@@ -105,7 +106,9 @@ class PlanarAppBase : public PIE {
       });
       tasks.push_back(task);
       begin_index = end_index;
+      count++;
     }
+    LOGF_INFO("task_size: {}, num tasks: {}", task_size, count);
     runner_->SubmitSync(tasks);
     graph_->SyncVertexData();
     LOG_DEBUG("ParallelEdgeDo is done");
