@@ -60,14 +60,14 @@ struct convert<
     auto attribute_metadata_nodes = node["AttributeMetadata"];
     attribute_metadata.reserve(attribute_metadata_nodes.size());
 
-    for (const auto attribute_metadata_node : attribute_metadata_nodes) {
+    for (const auto& attribute_metadata_node : attribute_metadata_nodes) {
       sics::graph::miniclean::common::VertexLabel vertex_label =
           static_cast<sics::graph::miniclean::common::VertexLabel>(
               std::stoi(attribute_metadata_node.first.as<std::string>()));
 
       std::vector<std::pair<uint8_t, uint8_t>> attribute;
       attribute.reserve(attribute_metadata_node.second.size());
-      for (const auto pair_node : attribute_metadata_node.second) {
+      for (const auto& pair_node : attribute_metadata_node.second) {
         uint8_t attribute_id = static_cast<uint8_t>(
             std::stoi(pair_node["attribute_id"].as<std::string>()));
         uint8_t attribute_num = static_cast<uint8_t>(

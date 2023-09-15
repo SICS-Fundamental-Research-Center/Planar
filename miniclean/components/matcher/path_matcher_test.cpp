@@ -60,10 +60,10 @@ TEST_F(PathMatcherTest, CheckMatches) {
 
   // Convert list to vector.
   std::vector<std::vector<std::vector<VertexID>>> matched_results;
-  for (std::list<std::vector<VertexID>>& single_matched_result :
+  for (const std::list<std::vector<VertexID>>& single_matched_result :
        matched_results_tmp) {
     std::vector<std::vector<VertexID>> single_matched_result_vec;
-    for (std::vector<VertexID>& single_matched_result_inst :
+    for (const std::vector<VertexID>& single_matched_result_inst :
          single_matched_result) {
       single_matched_result_vec.push_back(single_matched_result_inst);
     }

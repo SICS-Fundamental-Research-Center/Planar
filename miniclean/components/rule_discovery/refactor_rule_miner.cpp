@@ -156,10 +156,10 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
 
   // Reserve space for constant predicates
   constant_predicates_.reserve(constant_predicate_nodes.size());
-  for (const auto constant_predicate_node : constant_predicate_nodes) {
+  for (const auto& constant_predicate_node : constant_predicate_nodes) {
     VertexLabel vertex_label = static_cast<VertexLabel>(
         std::stoi(constant_predicate_node.first.as<std::string>()));
-    // Check if this label `has existed.
+    // Check if this label has existed.
     if (constant_predicates_.find(vertex_label) != constant_predicates_.end()) {
       LOG_WARN("Duplicated vertex label for constant predicate: ",
                vertex_label);
@@ -167,7 +167,7 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
       constant_predicates_[vertex_label].reserve(
           constant_predicate_node.second.size());
     }
-    for (const auto node : constant_predicate_node.second) {
+    for (const auto& node : constant_predicate_node.second) {
       VertexAttributeID attribute_id = static_cast<VertexAttributeID>(
           std::stoi(node.first.as<std::string>()));
       // Check if this attribute id has existed.
