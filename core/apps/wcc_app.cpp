@@ -9,8 +9,9 @@ WCCApp::WCCApp(
     data_structures::Serializable* graph)
     : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {
   init_ = std::bind(&WCCApp::Init, this, std::placeholders::_1);
-  graft_ = std::bind(&WCCApp::Graft, this, std::placeholders::_1,
-                     std::placeholders::_2);
+  graft_ = [this](VertexID src_id, VertexID dstId) {
+    this->Graft(src_id, dstId);
+  };
   point_jump_ = std::bind(&WCCApp::PointJump, this, std::placeholders::_1);
 
   contract_ = std::bind(&WCCApp::Contract, this, std::placeholders::_1,
@@ -22,12 +23,27 @@ WCCApp::WCCApp(
 }
 
 void WCCApp::PEval() {
-  auto init = std::bind(&WCCApp::Init, this, std::placeholders::_1);
-  auto graft = std::bind(&WCCApp::Graft, this, std::placeholders::_1,
-                         std::placeholders::_2);
-  auto point_jump = std::bind(&WCCApp::PointJump, this, std::placeholders::_1);
-  auto contract = std::bind(&WCCApp::Contract, this, std::placeholders::_1,
-                            std::placeholders::_2, std::placeholders::_3);
+  //  auto init = std::bind(&WCCApp::Init, this, std::placeholders::_1);
+  //  auto graft = std::bind(&WCCApp::Graft, this, std::placeholders::_1,
+  //                         std::placeholders::_2);
+
+  //  auto point_jump = std::bind(&WCCApp::PointJump, this,
+  //  std::placeholders::_1); auto contract = std::bind(&WCCApp::Contract, this,
+  //  std::placeholders::_1,
+  //                            std::placeholders::_2, std::placeholders::_3);
+  auto init = [this](VertexID id) { this->Init(id); };
+  auto graft = [this](VertexID src_id, VertexID dstId) {
+    this->Graft(src_id, dstId);
+  };
+  auto point_jump = [this](VertexID id) { this->PointJump(id); };
+  auto contract = [this](VertexID src_id, VertexID dst_id,
+                         EdgeIndex edge_index) {
+    this->Contract(src_id, dst_id, edge_index);
+  };
+  auto message_passing = [this](VertexID id) { this->MessagePassing(id); };
+  auto point_jump_inc_eval = [this](VertexID id) {
+    this->PointJumpIncEval(id);
+  };
   LOG_INFO("PEval begin");
   //  update_store_->LogBorderVertexInfo();
   //  graph_->LogGraphInfo();
