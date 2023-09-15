@@ -10,6 +10,13 @@ enum VertexDataType {
   kVertexDataTypeUInt16,
 };
 
+enum PartitionType {
+  VertexCut = 1,
+  EdgeCut,
+  HybridCut,
+  PlanarCut,
+};
+
 class Configurations {
  public:
   static const Configurations* Get() {
@@ -28,12 +35,13 @@ class Configurations {
 
   Configurations(const Configurations& rhs) = delete;
   Configurations& operator=(const Configurations& rhs) = delete;
-  int max_task_package = 4000;
-  int parallelism = 1;
-  std::string partition_type = "VertexCut";
+  uint32_t max_task_package = 4000;
+  uint32_t parallelism = 1;
+  PartitionType partition_type = VertexCut;
   std::string root_path = "/testfile";
   VertexDataType vertex_data_type = kVertexDataTypeUInt32;
   bool edge_mutate = false;
+  bool in_memory = false;
 
  private:
   Configurations() = default;

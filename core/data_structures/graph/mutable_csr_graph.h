@@ -120,6 +120,13 @@ class MutableCSRGraph : public Serializable {
       // Out_edges_base_new_ buffer is malloc when used. And release in the same
       // function.
     }
+
+    // TODO: read index_by_global_id_ from disk
+    //    if (common::Configurations::Get()->partition_type ==
+    //        common::PartitionType::VertexCut) {
+    //      index_by_global_id_ =
+    //          (VertexIndex*)(graph_serialized_->GetCSRBuffer()->at(5).Get());
+    //    }
   }
 
   // methods for sync data
@@ -312,6 +319,9 @@ class MutableCSRGraph : public Serializable {
   // use binary search to find the index of id
   [[nodiscard]] VertexIndex GetIndexByID(VertexID id) const {
     // TODO: binary search
+    if (common::Configurations::Get()->in_memory) {
+      return id;
+    }
     VertexIndex begin = 0;
     VertexIndex end = metadata_->num_vertices - 1;
     VertexIndex mid = 0;
@@ -343,6 +353,8 @@ class MutableCSRGraph : public Serializable {
   VertexOffset* out_offset_base_;
   VertexID* out_edges_base_;
   VertexData* vertex_data_read_base_;
+
+  VertexIndex* index_by_global_id_;
 
   VertexData* vertex_data_write_base_;
 
