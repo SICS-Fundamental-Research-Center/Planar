@@ -1,9 +1,10 @@
-#include <filesystem>
-#include <string>
+#include "tools/graph_partitioner/partitioner/hash_based_edgecut.h"
 
 #include <folly/hash/Hash.h>
 
-#include "tools/graph_partitioner/partitioner/hash_based_edgecut.h"
+#include <filesystem>
+#include <string>
+
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/common/types.h"
@@ -58,7 +59,7 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   auto edgelist_metadata = input_node["EdgelistBin"].as<EdgelistMetadata>();
 
   // Create Edgelist Graph.
-  auto aligned_max_vid = ((edgelist_metadata.max_vid >> 6) << 6) + 64;
+  auto aligned_max_vid = (((edgelist_metadata.max_vid + 1) >> 6) << 6) + 64;
   auto bitmap = Bitmap(aligned_max_vid);
   auto buffer_edges = new Edge[edgelist_metadata.num_edges]();
   std::ifstream input_stream(input_path_ + "edgelist.bin", std::ios::binary);
