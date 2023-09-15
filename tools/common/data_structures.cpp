@@ -1,13 +1,16 @@
 #include "tools/common/data_structures.h"
 
-#include <cstddef>  // For std::ptrdiff_t
-#include <execution>
+#include <cstddef>   // For std::ptrdiff_t
 #include <iterator>  // For std::forward_iterator_tag
 
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/util/atomic.h"
 #include "core/util/logging.h"
+
+#ifdef TBB_FOUND
+#include <execution>
+#endif
 
 namespace sics::graph::tools::common {
 
@@ -23,8 +26,12 @@ using Bitmap = sics::graph::core::common::Bitmap;
 using TaskPackage = sics::graph::core::common::TaskPackage;
 
 void Edges::SortBySrc() {
+#ifdef TBB_FOUND
   std::sort(std::execution::par, edges_ptr_,
             edges_ptr_ + edgelist_metadata_.num_edges);
+#else
+  std::sort(edges_ptr_, edges_ptr_ + edgelist_metadata_.num_edges);
+#endif
 }
 
 VertexID Edges::GetVertexWithMaximumDegree() {
@@ -61,6 +68,7 @@ VertexID Edges::GetVertexWithMaximumDegree() {
 
 Edges::Iterator Edges::SearchVertex(VertexID vid) {
   return std::lower_bound(
+      // std::execution::par,
       this->begin(), this->end(), vid,
       [](const auto& l, VertexID vid) { return l.src < vid; });
 }

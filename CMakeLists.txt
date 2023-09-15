@@ -39,10 +39,6 @@ endif ()
 find_package(FOLLY REQUIRED)
 include_directories(SYSTEM ${FOLLY_INCLUDE_DIR})
 
-#TBB
-find_package(TBB)
-
-
 ###### Add third party to the project, if necessary ######
 # googleTest
 if (TEST)
@@ -78,7 +74,6 @@ add_subdirectory(core)
 add_subdirectory(tools)
 add_subdirectory(miniclean)
 add_subdirectory(planar)
-
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/core
 )
