@@ -78,9 +78,7 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
 
   // Compute max_vid, min_vid. And get degree for each vertex.
   for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([i, parallelism, &edgelist_metadata, &buffer_edges,
-                           &num_inedges_by_vid, &num_outedges_by_vid, &visited,
-                           &max_vid, &min_vid]() {
+    auto task = std::bind([&, i]() {
       for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = buffer_edges[j];
         visited.SetBit(e.src);
