@@ -69,14 +69,6 @@ class Edges {
       base_ptr_ += n;
       return *this;
     }
-    Iterator& operator+(const size_t n) {
-      base_ptr_ += n;
-      return *this;
-    }
-    Iterator& operator+(long int n) {
-      base_ptr_ += n;
-      return *this;
-    }
     Iterator& operator-(int n) {
       base_ptr_ -= n;
       return *this;
