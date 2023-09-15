@@ -1,4 +1,4 @@
-#include <tbb/tbb.h>
+#include "tools/common/data_structures.h"
 
 #include <cstddef>  // For std::ptrdiff_t
 #include <execution>
@@ -8,7 +8,6 @@
 #include "core/common/multithreading/thread_pool.h"
 #include "core/util/atomic.h"
 #include "core/util/logging.h"
-#include "tools/common/data_structures.h"
 
 namespace sics::graph::tools::common {
 

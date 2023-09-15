@@ -25,6 +25,8 @@ struct Edge {
   Edge(VertexID src, VertexID dst) : src(src), dst(dst) {}
   Edge() = default;
 
+  bool operator<(const Edge& b) const { return src < b.src; }
+
  public:
   VertexID src;
   VertexID dst;
@@ -56,7 +58,7 @@ class Edges {
     }
     // used for clang++ compiling
     Iterator& operator+=(int n) {
-      base_ptr_--;
+      base_ptr_ += n;
       return *this;
     }
     Iterator& operator--() {
@@ -64,6 +66,14 @@ class Edges {
       return *this;
     }
     Iterator& operator+(int n) {
+      base_ptr_ += n;
+      return *this;
+    }
+    Iterator& operator+(const size_t n) {
+      base_ptr_ += n;
+      return *this;
+    }
+    Iterator& operator+(long int n) {
       base_ptr_ += n;
       return *this;
     }
