@@ -121,11 +121,12 @@ class MutableCSRGraph : public Serializable {
       // function.
     }
 
-    if (common::Configurations::Get()->partition_type ==
-        common::PartitionType::VertexCut) {
-      index_by_global_id_ =
-          (VertexIndex*)(graph_serialized_->GetCSRBuffer()->at(5).Get());
-    }
+    // TODO: read index_by_global_id_ from disk
+    //    if (common::Configurations::Get()->partition_type ==
+    //        common::PartitionType::VertexCut) {
+    //      index_by_global_id_ =
+    //          (VertexIndex*)(graph_serialized_->GetCSRBuffer()->at(5).Get());
+    //    }
   }
 
   // methods for sync data
