@@ -17,6 +17,7 @@ void WCCApp::PEval() {
   //  graph_->LogVertexData();
   ParallelVertexDo(std::bind(&WCCApp::Init, this, std::placeholders::_1));
   //  graph_->LogVertexData();
+  LOG_INFO("init finished");
   while (graph_->GetOutEdgeNums() != 0) {
     ParallelEdgeDo(std::bind(&WCCApp::Graft, this, std::placeholders::_1,
                              std::placeholders::_2));
