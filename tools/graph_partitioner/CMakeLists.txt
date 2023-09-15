@@ -21,5 +21,6 @@ foreach (appfile ${appfiles})
             yaml-cpp
             gflags
             ${FOLLY_LIBRARIES}
+            ${TBB_LIBRARIES}
     )
 endforeach ()

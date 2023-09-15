@@ -8,6 +8,10 @@
 #include "core/util/atomic.h"
 #include "core/util/logging.h"
 
+#ifdef TBB_FOUND
+#include <execution>
+#endif
+
 namespace sics::graph::tools::common {
 
 using sics::graph::core::common::Bitmap;
@@ -22,27 +26,12 @@ using Bitmap = sics::graph::core::common::Bitmap;
 using TaskPackage = sics::graph::core::common::TaskPackage;
 
 void Edges::SortBySrc() {
-  std::sort(std::begin(*this), std::end(*this),
-            [](const Edge& l, const Edge& r) {
-              if (l.src != r.src) {
-                return l.src < r.src;
-              }
-              if (l.dst != r.dst) {
-                return l.dst < r.dst;
-              }
-            });
-}
-
-void Edges::SortByDst() {
-  std::sort(std::begin(*this), std::end(*this),
-            [](const Edge& l, const Edge& r) {
-              if (l.dst != r.dst) {
-                return l.dst < r.dst;
-              }
-              if (l.src != r.src) {
-                return l.src < r.src;
-              }
-            });
+#ifdef TBB_FOUND
+  std::sort(std::execution::par, edges_ptr_,
+            edges_ptr_ + edgelist_metadata_.num_edges);
+#else
+  std::sort(edges_ptr_, edges_ptr_ + edgelist_metadata_.num_edges);
+#endif
 }
 
 VertexID Edges::GetVertexWithMaximumDegree() {
@@ -51,7 +40,7 @@ VertexID Edges::GetVertexWithMaximumDegree() {
   auto task_package = TaskPackage();
   std::mutex mtx;
 
-  auto aligned_max_vid = ((edgelist_metadata_.max_vid >> 6) << 6) + 64;
+  auto aligned_max_vid = (((edgelist_metadata_.max_vid + 1) >> 6) << 6) + 64;
   auto outdegree_by_vid = new VertexID[aligned_max_vid]();
   VertexID max_outdegree = 0, vid_with_maximum_degree = 0;
 
