@@ -68,7 +68,6 @@ VertexID Edges::GetVertexWithMaximumDegree() {
 
 Edges::Iterator Edges::SearchVertex(VertexID vid) {
   return std::lower_bound(
-      // std::execution::par,
       this->begin(), this->end(), vid,
       [](const auto& l, VertexID vid) { return l.src < vid; });
 }
