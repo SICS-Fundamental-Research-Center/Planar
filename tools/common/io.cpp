@@ -7,6 +7,7 @@ using sics::graph::core::common::GraphID;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::common::VertexLabel;
+using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::util::atomic::WriteAdd;
 using sics::graph::core::util::atomic::WriteMax;
 using sics::graph::core::util::atomic::WriteMin;
@@ -42,7 +43,7 @@ void GraphFormatConverter::WriteSubgraph(
     std::ofstream is_in_graph_file(output_root_path_ + "bitmap/is_in_graph/" +
                                    std::to_string(gid) + ".bin");
 
-    size_t count_in_edges = 0, count_out_edges = 0;
+    EdgeIndex count_in_edges = 0, count_out_edges = 0;
     auto num_vertices = bucket.size();
     VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
     Bitmap src_map(num_vertices), is_in_graph(aligned_max_vid);
@@ -58,8 +59,8 @@ void GraphFormatConverter::WriteSubgraph(
           buffer_globalid2index[bucket.at(j).vid] = j;
           buffer_indegree[j] = bucket.at(j).indegree;
           buffer_outdegree[j] = bucket.at(j).outdegree;
-          WriteAdd(&count_out_edges, (size_t)bucket.at(j).outdegree);
-          WriteAdd(&count_in_edges, (size_t)bucket.at(j).indegree);
+          WriteAdd(&count_out_edges, (EdgeIndex)bucket.at(j).outdegree);
+          WriteAdd(&count_in_edges, (EdgeIndex)bucket.at(j).indegree);
           WriteMin(&min_vid, buffer_globalid[j]);
           WriteMax(&max_vid, buffer_globalid[j]);
         }
