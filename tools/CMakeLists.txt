@@ -16,6 +16,13 @@ file(GLOB TOOLS_SOURCES
 # find gflag
 find_package(gflags REQUIRED)
 
+# find TBB
+find_package(TBB)
+if (TBB_FOUND)
+    message("TBB found")
+    add_compile_definitions(TBB_FOUND)
+endif ()
+
 #######################
 # Tests
 #######################
