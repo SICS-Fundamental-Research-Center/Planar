@@ -7,30 +7,9 @@ WCCApp::WCCApp(
     common::TaskRunner* runner,
     update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
     data_structures::Serializable* graph)
-    : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {
-  init_ = std::bind(&WCCApp::Init, this, std::placeholders::_1);
-  graft_ = [this](VertexID src_id, VertexID dstId) {
-    this->Graft(src_id, dstId);
-  };
-  point_jump_ = std::bind(&WCCApp::PointJump, this, std::placeholders::_1);
-
-  contract_ = std::bind(&WCCApp::Contract, this, std::placeholders::_1,
-                        std::placeholders::_2, std::placeholders::_3);
-  message_passing_ =
-      std::bind(&WCCApp::MessagePassing, this, std::placeholders::_1);
-  point_jump_inc_eval_ =
-      std::bind(&WCCApp::PointJumpIncEval, this, std::placeholders::_1);
-}
+    : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {}
 
 void WCCApp::PEval() {
-  //  auto init = std::bind(&WCCApp::Init, this, std::placeholders::_1);
-  //  auto graft = std::bind(&WCCApp::Graft, this, std::placeholders::_1,
-  //                         std::placeholders::_2);
-
-  //  auto point_jump = std::bind(&WCCApp::PointJump, this,
-  //  std::placeholders::_1); auto contract = std::bind(&WCCApp::Contract, this,
-  //  std::placeholders::_1,
-  //                            std::placeholders::_2, std::placeholders::_3);
   auto init = [this](VertexID id) { this->Init(id); };
   auto graft = [this](VertexID src_id, VertexID dstId) {
     this->Graft(src_id, dstId);
@@ -39,10 +18,6 @@ void WCCApp::PEval() {
   auto contract = [this](VertexID src_id, VertexID dst_id,
                          EdgeIndex edge_index) {
     this->Contract(src_id, dst_id, edge_index);
-  };
-  auto message_passing = [this](VertexID id) { this->MessagePassing(id); };
-  auto point_jump_inc_eval = [this](VertexID id) {
-    this->PointJumpIncEval(id);
   };
   LOG_INFO("PEval begin");
   //  update_store_->LogBorderVertexInfo();
@@ -71,10 +46,10 @@ void WCCApp::PEval() {
 }
 
 void WCCApp::IncEval() {
-  auto message_passing =
-      std::bind(&WCCApp::MessagePassing, this, std::placeholders::_1);
-  auto point_jump_inc_eval =
-      std::bind(&WCCApp::PointJumpIncEval, this, std::placeholders::_1);
+  auto message_passing = [this](VertexID id) { this->MessagePassing(id); };
+  auto point_jump_inc_eval = [this](VertexID id) {
+    this->PointJumpIncEval(id);
+  };
   //  graph_->LogGraphInfo();
   //  graph_->LogVertexData();
   //  update_store_->LogGlobalMessage();

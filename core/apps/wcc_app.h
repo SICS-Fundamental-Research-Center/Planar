@@ -47,16 +47,6 @@ class WCCApp : public apis::PlanarAppBase<CSRGraph> {
  private:
   std::unordered_map<VertexID, VertexID> id_to_p_;
   std::mutex mtx_;
-
-  // function pointers
-  // PEval
-  std::function<void(VertexID)> init_;
-  std::function<void(VertexID, VertexID)> graft_;
-  std::function<void(VertexID)> point_jump_;
-  std::function<void(VertexID, VertexID, EdgeIndex)> contract_;
-  // IncEval
-  std::function<void(VertexID)> message_passing_;
-  std::function<void(VertexID)> point_jump_inc_eval_;
 };
 
 }  // namespace sics::graph::core::apps
