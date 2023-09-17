@@ -33,7 +33,7 @@ void PathRule::InitBitmap(std::vector<std::vector<VertexID>> path_instance,
             break;
           }
           break;
-        case refactor::OperatorType::kGe:
+        case refactor::OperatorType::kGt:
           LOG_FATAL("Not implemented yet.");
       }
     }
@@ -47,10 +47,15 @@ bool PathRule::ComposeWith(PathRule& other, size_t max_pred_num) {
   // Compose the predicates.
   auto other_constant_predicates = other.get_constant_predicates();
   bool has_composed = false;
+  if (other_constant_predicates.size() == 0 || constant_predicates_.size() == 0) {
+    return false;
+  }
+
   for (const auto& other_constant_predicate_pair : other_constant_predicates) {
-    // check whether the current path rule already has this predicate.
     bool has_same_predicate = false;
+    bool is_largest_predicate = true;
     for (const auto& constant_predicate_pair : constant_predicates_) {
+      // check whether the current path rule already has this predicate.
       if (constant_predicate_pair.first ==
               other_constant_predicate_pair.first &&
           constant_predicate_pair.second.get_vertex_attribute_id() ==
@@ -58,8 +63,19 @@ bool PathRule::ComposeWith(PathRule& other, size_t max_pred_num) {
         has_same_predicate = true;
         break;
       }
+      // check whether the order of the predicates.
+      size_t this_order =
+          constant_predicate_pair.first * 10 +
+          constant_predicate_pair.second.get_vertex_attribute_id();
+      size_t other_order =
+          other_constant_predicate_pair.first * 10 +
+          other_constant_predicate_pair.second.get_vertex_attribute_id();
+      if (this_order >= other_order) {
+        is_largest_predicate = false;
+        break;
+      }
     }
-    if (!has_same_predicate) {
+    if (!has_same_predicate && is_largest_predicate) {
       constant_predicates_.emplace_back(other_constant_predicate_pair);
       has_composed = true;
     }
@@ -68,7 +84,6 @@ bool PathRule::ComposeWith(PathRule& other, size_t max_pred_num) {
     return false;
   }
 
-  // Compose the star bitmap.
   star_bitmap_.MergeWith(other.star_bitmap_);
   return true;
 }

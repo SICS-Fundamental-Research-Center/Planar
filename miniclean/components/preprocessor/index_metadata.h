@@ -25,7 +25,7 @@ class IndexMetadata {
 
   const std::unordered_map<VertexLabel,
                            std::vector<std::pair<uint8_t, uint8_t>>>&
-  get_attribute_bitmap() const {
+  get_attribute_metadata() const {
     return attribute_metadata_;
   }
 

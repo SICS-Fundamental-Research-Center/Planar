@@ -10,7 +10,7 @@ namespace sics::graph::miniclean::data_structures::gcr::refactor {
 
 typedef enum {
   kEq = 0,
-  kGe,
+  kGt,
 } OperatorType;
 
 // x.A [op] c
