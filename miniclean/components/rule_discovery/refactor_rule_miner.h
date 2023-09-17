@@ -47,12 +47,12 @@ class RuleMiner {
   void LoadPathRules(const std::string& workspace_path);
   void LoadIndexMetadata(const std::string& index_metadata_path);
 
-  void InitPathRules();
+  void InitPathRuleUnits();
 
  private:
   void LoadPathPatterns(const std::string& path_patterns_path);
   void LoadPredicates(const std::string& predicates_path);
-  void InitPathRulesRecur(PathRule& path_rule, size_t pattern_id, size_t index);
+  void ExtendPathRules(size_t pattern_id);
 
  private:
   MiniCleanCSRGraph* graph_;
