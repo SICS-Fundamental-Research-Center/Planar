@@ -197,7 +197,7 @@ void RuleMiner::LoadIndexMetadata(const std::string& index_metadata_path) {
 
 void RuleMiner::InitPathRuleUnits() {
   size_t num_vertex = graph_->get_num_vertices();
-  auto attribute_metadata = index_metadata_.get_attribute_metadata();
+  const auto& attribute_metadata = index_metadata_.get_attribute_metadata();
   // Initialize path rule unit container.
   //   1. Initialize the container.
   path_rule_unit_container_.resize(path_patterns_.size());
@@ -210,15 +210,19 @@ void RuleMiner::InitPathRuleUnits() {
     path_rule_unit_container_[i][0][0][0].resize(1);
     for (size_t j = 1; j < path_rule_unit_container_[i].size(); j++) {
       VertexLabel label = std::get<0>(path_patterns_[i][j - 1]);
-      path_rule_unit_container_[i][j].resize(attribute_metadata[label].size());
-      for (size_t k = 0; k < path_rule_unit_container_[i][j].size(); k++) {
-        // TODO (bai-wenchao): this is a dangurous implementation, we need to
-        // make sure whether attribute_metadata[label] range from 0 to n.
-        path_rule_unit_container_[i][j][k].resize(
-            attribute_metadata[label][k].second);
-        for (size_t l = 0; l < path_rule_unit_container_[i][j][k].size(); l++) {
-          // TODO (bai-wenchao): `2` is the number of operator types.
-          path_rule_unit_container_[i][j][k][l].resize(2);
+      if (attribute_metadata.find(label) != attribute_metadata.end()) {
+        path_rule_unit_container_[i][j].resize(
+            attribute_metadata.at(label).size());
+        for (size_t k = 0; k < path_rule_unit_container_[i][j].size(); k++) {
+          // TODO (bai-wenchao): this is a dangurous implementation, we need to
+          // make sure whether attribute_metadata[label] range from 0 to n.
+          path_rule_unit_container_[i][j][k].resize(
+              attribute_metadata.at(label)[k].second);
+          for (size_t l = 0; l < path_rule_unit_container_[i][j][k].size();
+               l++) {
+            // TODO (bai-wenchao): `2` is the number of operator types.
+            path_rule_unit_container_[i][j][k][l].resize(2);
+          }
         }
       }
     }
