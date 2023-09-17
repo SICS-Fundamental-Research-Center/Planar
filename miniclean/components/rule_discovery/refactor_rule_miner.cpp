@@ -212,7 +212,7 @@ void RuleMiner::InitPathRuleUnits() {
       VertexLabel label = std::get<0>(path_patterns_[i][j - 1]);
       path_rule_unit_container_[i][j].resize(attribute_metadata[label].size());
       for (size_t k = 0; k < path_rule_unit_container_[i][j].size(); k++) {
-        // TODO (bai-wenchao): this is a danguous implementation, we need to
+        // TODO (bai-wenchao): this is a dangurous implementation, we need to
         // make sure whether attribute_metadata[label] range from 0 to n.
         path_rule_unit_container_[i][j][k].resize(
             attribute_metadata[label][k].second);
