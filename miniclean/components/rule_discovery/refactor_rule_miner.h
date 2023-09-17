@@ -26,6 +26,14 @@ class RuleMiner {
   using IndexMetadata =
       sics::graph::miniclean::components::preprocessor::IndexMetadata;
   using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
+  // The first dimension is the path pattern id.
+  // The second dimension is the vertex id (indicates the vertex that carries
+  // predicate).
+  // The third dimension is the attribute id.
+  // The fourth dimension is the value of attribute.
+  // The fifth dimension is the operator type.
+  using PathRuleUnitContainer =
+      std::vector<std::vector<std::vector<std::vector<std::vector<PathRule>>>>>;
 
  public:
   RuleMiner(MiniCleanCSRGraph* graph) : graph_(graph) {}
@@ -39,12 +47,12 @@ class RuleMiner {
   void LoadPathRules(const std::string& workspace_path);
   void LoadIndexMetadata(const std::string& index_metadata_path);
 
-  void InitPathRules();
+  void InitPathRuleUnits();
 
  private:
   void LoadPathPatterns(const std::string& path_patterns_path);
   void LoadPredicates(const std::string& predicates_path);
-  void InitPathRulesRecur(PathRule& path_rule, size_t pattern_id, size_t index);
+  void ExtendPathRules(size_t pattern_id);
 
  private:
   MiniCleanCSRGraph* graph_;
@@ -56,6 +64,7 @@ class RuleMiner {
       constant_predicates_;
   IndexMetadata index_metadata_;
   std::vector<std::vector<PathRule>> path_rules_;
+  PathRuleUnitContainer path_rule_unit_container_;
 
   uint8_t max_predicate_num_ = 3;
 };
