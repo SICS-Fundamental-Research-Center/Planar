@@ -47,7 +47,8 @@ bool PathRule::ComposeWith(PathRule& other, size_t max_pred_num) {
   // Compose the predicates.
   auto other_constant_predicates = other.get_constant_predicates();
   bool has_composed = false;
-  if (other_constant_predicates.size() == 0 || constant_predicates_.size() == 0) {
+  if (other_constant_predicates.size() == 0 ||
+      constant_predicates_.size() == 0) {
     return false;
   }
 

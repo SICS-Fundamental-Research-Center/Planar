@@ -250,8 +250,8 @@ void RuleMiner::InitPathRuleUnits() {
             }
             continue;
           }
-          LOG_INFO("Pattern ID: ", i,
-                   " count: ", path_rule.CountOneBits(), " index: ", j, "");
+          LOG_INFO("Pattern ID: ", i, " count: ", path_rule.CountOneBits(),
+                   " index: ", j, "");
           for (const auto& carried_predicate :
                path_rule.get_constant_predicates()) {
             LOG_INFO("Predicate: ", carried_predicate.first, " ",

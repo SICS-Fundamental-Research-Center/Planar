@@ -28,8 +28,8 @@ class RuleMiner {
   using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
   // The first dimension is the path pattern id.
   // The second dimension is the vertex id (indicates the vertex that carries
-  // predicate). 
-  // The third dimension is the attribute id. 
+  // predicate).
+  // The third dimension is the attribute id.
   // The fourth dimension is the value of attribute.
   // The fifth dimension is the operator type.
   using PathRuleUnitContainer =
