@@ -27,6 +27,7 @@ class PathRule {
   using VertexID = sics::graph::miniclean::common::VertexID;
 
  public:
+  PathRule() = default;
   PathRule(PathPattern path_pattern, size_t map_size)
       : path_pattern_(path_pattern), star_bitmap_(map_size) {}
   PathRule(const PathRule& other)
