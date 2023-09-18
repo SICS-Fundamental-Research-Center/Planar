@@ -121,11 +121,11 @@ class MutableCSRGraph : public Serializable {
       // function.
     }
     // If partition type is vertex cut, get index_by_global_id_.
-//    if (common::Configurations::Get()->partition_type ==
-//        common::PartitionType::VertexCut) {
-//      index_by_global_id_ =
-//          (VertexIndex*)(graph_serialized_->GetCSRBuffer()->at(5).Get());
-//    }
+    if (common::Configurations::Get()->partition_type ==
+        common::PartitionType::VertexCut) {
+      index_by_global_id_ =
+          (VertexIndex*)(graph_serialized_->GetCSRBuffer()->at(5).Get());
+    }
   }
 
   // methods for sync data
@@ -241,7 +241,8 @@ class MutableCSRGraph : public Serializable {
 
   // this will be used when VertexData is basic num type
   VertexData ReadLocalVertexDataByID(VertexID id) const {
-    return vertex_data_read_base_[GetIndexByID(id)];
+    auto index = index_by_global_id_[id];
+    return vertex_data_read_base_[index];
   }
 
   // all read and write methods are for basic type vertex data now
@@ -250,21 +251,21 @@ class MutableCSRGraph : public Serializable {
   // @return: true for global message update, or local message update only
   bool WriteMinVertexDataByID(VertexID id, VertexData data_new) {
     // TODO: need a check for unsigned type?
-    auto index = GetIndexByID(id);
+    auto index = index_by_global_id_[id];
     return util::atomic::WriteMin(&vertex_data_write_base_[index], data_new);
   }
 
   // write the value in local vertex data of vertex id
   // this is not an atomic method. and the write operation 100% success;
   bool WriteVertexDataByID(VertexID id, VertexData data_new) {
-    auto index = GetIndexByID(id);
+    auto index = index_by_global_id_[id];
     vertex_data_write_base_[index] = data_new;
     return true;
   }
 
   void DeleteEdge(VertexID id, EdgeIndex edge_index) {
     edge_delete_bitmap_.SetBit(edge_index);
-    VertexIndex index = GetIndexByID(id);
+    auto index = index_by_global_id_[id];
     util::atomic::WriteMin(&out_degree_base_new_[index],
                            out_degree_base_new_[index] - 1);
   }
@@ -311,6 +312,12 @@ class MutableCSRGraph : public Serializable {
     for (size_t i = 0; i < num_all_vertices_; i++) {
       LOGF_INFO("Vertex id: {}, is_in_graph: {}", i,
                 is_in_graph_bitmap_.GetBit(i));
+    }
+  }
+
+  void LogIndexInfo() {
+    for (int i = 0; i < num_all_vertices_; i++) {
+      LOGF_INFO("Vertex id: {}, index: {}", i, index_by_global_id_[i]);
     }
   }
 

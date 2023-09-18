@@ -20,27 +20,31 @@ void WCCApp::PEval() {
     this->Contract(src_id, dst_id, edge_index);
   };
   LOG_INFO("PEval begin");
-  //  update_store_->LogBorderVertexInfo();
-  //  graph_->LogGraphInfo();
-  //  graph_->LogEdges();
-  //  graph_->LogVertexData();
+  update_store_->LogBorderVertexInfo();
+  graph_->LogGraphInfo();
+  graph_->LogEdges();
+  graph_->LogVertexData();
+  graph_->LogIndexInfo();
   ParallelVertexDo(init);
   //  graph_->LogVertexData();
   LOG_INFO("init finished");
   while (graph_->GetOutEdgeNums() != 0) {
+    update_store_->LogGlobalMessage();
     ParallelEdgeDo(graft);
     LOG_INFO("graft finished");
-    //    graph_->LogVertexData();
+    graph_->LogVertexData();
+    update_store_->LogGlobalMessage();
 
     ParallelVertexDo(point_jump);
     LOG_INFO("pointjump finished");
-    //    graph_->LogVertexData();
-    //    graph_->LogEdges();
+    graph_->LogVertexData();
+    update_store_->LogGlobalMessage();
+    graph_->LogEdges();
     ParallelEdgeMutateDo(contract);
     LOG_INFO("contract finished");
-    //    graph_->LogEdges();
-    //    graph_->LogGraphInfo();
-    //    graph_->LogVertexData();
+    graph_->LogEdges();
+    graph_->LogGraphInfo();
+    graph_->LogVertexData();
   }
   LOG_INFO("PEval finished");
 }
@@ -50,17 +54,17 @@ void WCCApp::IncEval() {
   auto point_jump_inc_eval = [this](VertexID id) {
     this->PointJumpIncEval(id);
   };
-  //  graph_->LogGraphInfo();
-  //  graph_->LogVertexData();
-  //  update_store_->LogGlobalMessage();
-  //  graph_->LogIsIngraphInfo();
+  graph_->LogGraphInfo();
+  graph_->LogVertexData();
+  update_store_->LogGlobalMessage();
+  graph_->LogIsIngraphInfo();
   ParallelVertexDo(message_passing);
-  //  graph_->LogVertexData();
-  //  update_store_->LogGlobalMessage();
+  graph_->LogVertexData();
+  update_store_->LogGlobalMessage();
 
   ParallelVertexDo(point_jump_inc_eval);
-  //  graph_->LogVertexData();
-  //  update_store_->LogGlobalMessage();
+  graph_->LogVertexData();
+  update_store_->LogGlobalMessage();
 
   graph_->set_status("IncEval");
 }

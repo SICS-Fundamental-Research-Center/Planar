@@ -29,7 +29,7 @@ void MutableCSRReader::Read(scheduler::ReadMessage* message,
   ReadSingleBufferFromBin(label_path, &buffers);
   ReadSingleBufferFromBin(in_graph_bitmap_path, &buffers);
   ReadSingleBufferFromBin(src_bitmap_path, &buffers);
-//  ReadSingleBufferFromBin(index_path, &buffers);
+  ReadSingleBufferFromBin(index_path, &buffers);
 
   graph_serialized->ReceiveBuffers(std::move(buffers));
 
@@ -62,6 +62,7 @@ void MutableCSRReader::ReadMetaInfoFromBin(const std::string& path,
   if (!file) {
     LOG_FATAL("Error reading file edge info: ", path.c_str());
   }
+  file.close();
 }
 
 void MutableCSRReader::ReadSingleBufferFromBin(const std::string& path,
