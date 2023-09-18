@@ -39,6 +39,9 @@ class GraphMetadata {
   void set_num_edges(size_t num_edges) { num_edges_ = num_edges; }
   void set_max_vid(VertexID max_vid) { max_vid_ = max_vid; }
   void set_min_vid(VertexID min_vid) { min_vid_ = min_vid; }
+  void set_count_border_vertices(VertexID count_border_vertices) {
+    count_border_vertices_ = count_border_vertices;
+  }
   void set_num_subgraphs(GraphID num_subgraphs) {
     num_subgraphs_ = num_subgraphs;
   }
@@ -47,6 +50,7 @@ class GraphMetadata {
   GraphID get_num_subgraphs() const { return num_subgraphs_; }
   VertexID get_min_vid() const { return min_vid_; }
   VertexID get_max_vid() const { return max_vid_; }
+  VertexID get_count_border_vertices() const { return count_border_vertices_; }
 
   void set_subgraph_metadata_vec(
       const std::vector<SubgraphMetadata>& subgraph_metadata_vec) {
@@ -74,6 +78,7 @@ class GraphMetadata {
   size_t num_edges_;
   VertexID max_vid_;
   VertexID min_vid_;
+  VertexID count_border_vertices_;
   GraphID num_subgraphs_;
   std::vector<std::vector<int>> dependency_matrix_;
   std::string data_root_path_;
@@ -128,6 +133,9 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
     Node node;
     node["num_vertices"] = metadata.get_num_vertices();
     node["num_edges"] = metadata.get_num_edges();
+    node["max_vid"] = metadata.get_max_vid();
+    node["min_vid"] = metadata.get_min_vid();
+    node["count_border_vertices"] = metadata.get_count_border_vertices();
     node["num_subgraphs"] = metadata.get_num_subgraphs();
     std::vector<sics::graph::core::data_structures::SubgraphMetadata> tmp;
     for (size_t i = 0; i < metadata.get_num_subgraphs(); i++) {
@@ -140,13 +148,15 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
   static bool decode(
       const Node& node,
       sics::graph::core::data_structures::GraphMetadata& metadata) {
-    if (node.size() != 6) {
-      return false;
-    }
+    if (node.size() != 7) return false;
+
     metadata.set_num_vertices(node["num_vertices"].as<size_t>());
     metadata.set_num_edges(node["num_edges"].as<size_t>());
     metadata.set_max_vid(node["max_vid"].as<VertexID>());
     metadata.set_min_vid(node["min_vid"].as<VertexID>());
+    metadata.set_min_vid(node["count_border_vertices"].as<VertexID>());
+    metadata.set_count_border_vertices(
+        node["count_border_vertices"].as<VertexID>());
     metadata.set_num_subgraphs(node["num_subgraphs"].as<size_t>());
     auto subgraph_metadata_vec =
         node["subgraphs"]
