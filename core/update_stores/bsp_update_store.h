@@ -87,7 +87,8 @@ class BspUpdateStore : public UpdateStoreBase {
   void LogGlobalMessage() {
     LOG_INFO("Global message info:");
     for (size_t i = 0; i < message_count_; i++) {
-      LOGF_INFO("global message: id({}) -> {}", i, read_data_[i]);
+      LOGF_INFO("global message: id({}) -> read: {} write: {}", i,
+                read_data_[i], write_data_[i]);
     }
   }
 
