@@ -68,11 +68,11 @@ class PlanarAppBase : public PIE {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
         end_index = graph_->GetVertexNums();
-      auto task = std::bind([&, begin_index, end_index]() {
+      auto task = [&, begin_index, end_index]() {
         for (VertexIndex idx = begin_index; idx < end_index; idx++) {
           vertex_func(graph_->GetVertexIDByIndex(idx));
         }
-      });
+      };
       tasks.push_back(task);
       begin_index = end_index;
     }
@@ -94,7 +94,7 @@ class PlanarAppBase : public PIE {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
         end_index = graph_->GetVertexNums();
-      auto task = std::bind([&, begin_index, end_index]() {
+      auto task = [&, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
           for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
             //            LOGF_INFO("edge_func: {}, {}",
@@ -104,7 +104,7 @@ class PlanarAppBase : public PIE {
                       graph_->GetOneOutEdge(i, j));
           }
         }
-      });
+      };
       tasks.push_back(task);
       begin_index = end_index;
       count++;
@@ -127,7 +127,7 @@ class PlanarAppBase : public PIE {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
         end_index = graph_->GetVertexNums();
-      auto task = std::bind([&, begin_index, end_index]() {
+      auto task = [&, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
           for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
             //            LOGF_INFO("edge_del_func: {}, {}, {}",
@@ -139,7 +139,7 @@ class PlanarAppBase : public PIE {
                           graph_->GetOutOffsetByIndex(i) + j);
           }
         }
-      });
+      };
       tasks.push_back(task);
       begin_index = end_index;
     }
