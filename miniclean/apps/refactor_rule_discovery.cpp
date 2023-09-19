@@ -46,5 +46,9 @@ int main(int argc, char* argv[]) {
   rule_miner.InitPathRuleUnits();
   LOG_INFO("Init path rule units done.");
 
+  LOG_INFO("Mining GCRs...");
+  rule_miner.MineGCRs();
+  LOG_INFO("Mining GCRs done.");
+
   gflags::ShutDownCommandLineFlags();
 }

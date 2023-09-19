@@ -81,7 +81,7 @@ bool PathRule::ComposeWith(PathRule& other, size_t max_pred_num) {
       has_composed = true;
     }
   }
-  if (!has_composed || constant_predicates_.size() > max_pred_num) {
+  if (!has_composed || constant_predicates_.size() > max_pred_num - 1) {
     return false;
   }
 

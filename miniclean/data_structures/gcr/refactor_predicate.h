@@ -55,6 +55,48 @@ class ConstantPredicate {
   OperatorType operator_type_;
   size_t constant_value_;
 };
+
+class VariablePredicate {
+ private:
+  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+
+ public:
+  VariablePredicate() = default;
+  VariablePredicate(VertexLabel lhs_label, VertexLabel rhs_label,
+                    VertexAttributeID lhs_attribute_id,
+                    VertexAttributeID rhs_attribute_id, uint8_t operator_type)
+      : lhs_label_(lhs_label),
+        rhs_label_(rhs_label),
+        lhs_attribute_id_(lhs_attribute_id),
+        rhs_attribute_id_(rhs_attribute_id),
+        operator_type_(static_cast<OperatorType>(operator_type)) {}
+
+  VertexLabel get_lhs_label() const { return lhs_label_; }
+  VertexLabel get_rhs_label() const { return rhs_label_; }
+  VertexAttributeID get_lhs_attribute_id() const { return lhs_attribute_id_; }
+  VertexAttributeID get_rhs_attribute_id() const { return rhs_attribute_id_; }
+  OperatorType get_operator_type() const { return operator_type_; }
+
+  void set_lhs_label(VertexLabel lhs_label) { lhs_label_ = lhs_label; }
+  void set_rhs_label(VertexLabel rhs_label) { rhs_label_ = rhs_label; }
+  void set_lhs_attribute_id(VertexAttributeID lhs_attribute_id) {
+    lhs_attribute_id_ = lhs_attribute_id;
+  }
+  void set_rhs_attribute_id(VertexAttributeID rhs_attribute_id) {
+    rhs_attribute_id_ = rhs_attribute_id;
+  }
+  void set_operator_type(OperatorType operator_type) {
+    operator_type_ = operator_type;
+  }
+
+ private:
+  VertexLabel lhs_label_;
+  VertexLabel rhs_label_;
+  VertexAttributeID lhs_attribute_id_;
+  VertexAttributeID rhs_attribute_id_;
+  OperatorType operator_type_;
+};
 }  // namespace sics::graph::miniclean::data_structures::gcr::refactor
 
 namespace YAML {
@@ -88,6 +130,42 @@ struct convert<
                 .as<sics::graph::miniclean::common::VertexAttributeID>(),
             node["operator_type"].as<uint8_t>(),
             node["constant_value"].as<size_t>());
+    return true;
+  }
+};
+
+template <>
+struct convert<
+    sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate> {
+  struct Node encode(const sics::graph::miniclean::data_structures::gcr::
+                         refactor::VariablePredicate& variable_predicate) {
+    Node node;
+    node["lhs_label"] = variable_predicate.get_lhs_label();
+    node["rhs_label"] = variable_predicate.get_rhs_label();
+    node["lhs_attribute_id"] = variable_predicate.get_lhs_attribute_id();
+    node["rhs_attribute_id"] = variable_predicate.get_rhs_attribute_id();
+    node["operator_type"] =
+        static_cast<uint8_t>(variable_predicate.get_operator_type());
+    return node;
+  }
+
+  static bool decode(
+      const Node& node,
+      sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate&
+          variable_predicate) {
+    if (node.size() != 5) {
+      return false;
+    }
+
+    variable_predicate = sics::graph::miniclean::data_structures::gcr::
+        refactor::VariablePredicate(
+            node["lhs_label"].as<sics::graph::miniclean::common::VertexLabel>(),
+            node["rhs_label"].as<sics::graph::miniclean::common::VertexLabel>(),
+            node["lhs_attribute_id"]
+                .as<sics::graph::miniclean::common::VertexAttributeID>(),
+            node["rhs_attribute_id"]
+                .as<sics::graph::miniclean::common::VertexAttributeID>(),
+            node["operator_type"].as<uint8_t>());
     return true;
   }
 };
