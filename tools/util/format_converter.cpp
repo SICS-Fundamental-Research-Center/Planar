@@ -26,7 +26,6 @@ using sics::graph::tools::common::StoreStrategy;
 
 void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
                   ImmutableCSRGraph* csr_graph) {
-  LOG_INFO("X");
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -73,8 +72,8 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
             new VertexID[num_inedges_by_vid[j]]();
         buffer_csr_vertices[j].outgoing_edges =
             new VertexID[num_outedges_by_vid[j]]();
-        WriteAdd(&count_in_edges, (EdgeIndex)buffer_csr_vertices[j].indegree);
-        WriteAdd(&count_out_edges, (EdgeIndex)buffer_csr_vertices[j].outdegree);
+        WriteAdd(&count_in_edges, (EdgeIndex) buffer_csr_vertices[j].indegree);
+        WriteAdd(&count_out_edges, (EdgeIndex) buffer_csr_vertices[j].outdegree);
       }
     });
     task_package.push_back(task);
@@ -93,10 +92,8 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
            j += parallelism) {
         auto e = edges.get_edge_by_index(j);
         EdgeIndex offset_out = 0, offset_in = 0;
-        {
-          offset_out = __sync_fetch_and_add(offset_out_edges + e.src, 1);
-          offset_in = __sync_fetch_and_add(offset_in_edges + e.dst, 1);
-        }
+        offset_out = __sync_fetch_and_add(offset_out_edges + e.src, 1);
+        offset_in = __sync_fetch_and_add(offset_in_edges + e.dst, 1);
         buffer_csr_vertices[e.src].outgoing_edges[offset_out] = e.dst;
         buffer_csr_vertices[e.dst].incoming_edges[offset_in] = e.src;
       }
