@@ -32,6 +32,7 @@ class WCCApp : public apis::PlanarAppBase<CSRGraph> {
   void Init(VertexID id);
 
   void Graft(VertexID src_id, VertexID dst_id);
+  void Graft2(VertexID src_id, VertexID dst_id);
 
   void PointJump(VertexID src_id);
 

@@ -78,15 +78,30 @@ void WCCApp::Graft(VertexID src_id, VertexID dst_id) {
   VertexID src_parent_id = graph_->ReadLocalVertexDataByID(src_id);
   VertexID dst_parent_id = graph_->ReadLocalVertexDataByID(dst_id);
   if (src_parent_id < dst_parent_id) {
-    if (graph_->WriteMinVertexDataByID(
-            dst_parent_id, graph_->ReadLocalVertexDataByID(src_parent_id)))
-      update_store_->WriteMin(dst_parent_id,
-                              graph_->ReadLocalVertexDataByID(src_parent_id));
+    if (graph_->WriteMinVertexDataByID(dst_parent_id, src_parent_id))
+      update_store_->WriteMin(dst_parent_id, src_parent_id);
   } else if (src_parent_id > dst_parent_id) {
-    if (graph_->WriteMinVertexDataByID(
-            src_parent_id, graph_->ReadLocalVertexDataByID(dst_parent_id)))
-      update_store_->WriteMin(src_parent_id,
-                              graph_->ReadLocalVertexDataByID(dst_parent_id));
+    if (graph_->WriteMinVertexDataByID(src_parent_id, dst_parent_id))
+      update_store_->WriteMin(src_parent_id, dst_parent_id);
+  }
+}
+
+// TODO: delete when test finished
+void WCCApp::Graft2(VertexID src_id, VertexID dst_id) {
+  VertexID src_parent_id =
+      graph_->vertex_data_read_base_[graph_->index_by_global_id_[src_id]];
+  VertexID dst_parent_id =
+      graph_->vertex_data_read_base_[graph_->index_by_global_id_[dst_id]];
+  if (src_parent_id < dst_parent_id) {
+    auto data_new = graph_->vertex_data_read_base_
+                        [graph_->index_by_global_id_[src_parent_id]];
+    if (graph_->WriteMinVertexDataByID(dst_parent_id, data_new))
+      update_store_->WriteMin(dst_parent_id, data_new);
+  } else if (src_parent_id > dst_parent_id) {
+    auto data_new = graph_->vertex_data_read_base_
+                        [graph_->index_by_global_id_[dst_parent_id]];
+    if (graph_->WriteMinVertexDataByID(src_parent_id, data_new))
+      update_store_->WriteMin(src_parent_id, data_new);
   }
 }
 

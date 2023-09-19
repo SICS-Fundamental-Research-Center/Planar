@@ -135,14 +135,17 @@ class MutableCSRGraph : public Serializable {
   }
 
   void MutateGraphEdge(common::TaskRunner* runner) {
+    LOG_INFO("Mutate graph edge");
     uint32_t task_size = metadata_->num_vertices /
                          common::Configurations::Get()->max_task_package;
     task_size = task_size < 2 ? 2 : task_size;
+    LOGF_INFO("task size {}", task_size);
     // Check left edges in subgraph.
     size_t num_outgoing_edges_new =
         metadata_->num_outgoing_edges - edge_delete_bitmap_.Count();
     // compute out_offset
     if (num_outgoing_edges_new != 0) {
+      LOG_INFO("init new data structure for graph");
       out_edges_base_new_ = new VertexID[num_outgoing_edges_new];
       out_offset_base_new_[0] = 0;
       for (int i = 1; i < metadata_->num_vertices; i++) {
@@ -157,6 +160,7 @@ class MutableCSRGraph : public Serializable {
 
       common::TaskPackage tasks;
       VertexIndex begin_index = 0, end_index = 0;
+      int count = 0;
       for (; begin_index < metadata_->num_vertices;) {
         end_index += task_size;
         if (end_index > metadata_->num_vertices) {
@@ -175,9 +179,12 @@ class MutableCSRGraph : public Serializable {
         });
         tasks.push_back(task);
         begin_index = end_index;
+        count++;
       }
+      LOGF_INFO("task count: {}", count);
       runner->SubmitSync(tasks);
       // tear down degree and offset buffer
+      LOG_INFO("tear down old data structure for graph");
       memcpy(out_degree_base_, out_degree_base_new_,
              sizeof(VertexDegree) * metadata_->num_vertices);
       memcpy(out_offset_base_, out_offset_base_new_,
@@ -192,6 +199,7 @@ class MutableCSRGraph : public Serializable {
       out_edges_base_new_ = nullptr;
     } else {
       // Release all assistant buffer in deserialize phase.
+      LOG_INFO("No edges left, release all assistant buffer");
       graph_serialized_->GetCSRBuffer()->at(1) = OwnedBuffer(0);
       memcpy(out_degree_base_, out_degree_base_new_,
              sizeof(VertexDegree) * metadata_->num_vertices);
@@ -202,6 +210,7 @@ class MutableCSRGraph : public Serializable {
       // TODO: whether release bitmap now or in deconstructor
     }
     metadata_->num_outgoing_edges = num_outgoing_edges_new;
+    LOG_INFO("Mutate graph edge done");
   }
 
   // methods for vertex info
@@ -342,7 +351,7 @@ class MutableCSRGraph : public Serializable {
     return INVALID_VERTEX_INDEX;
   }
 
- private:
+ public:
   SubgraphMetadata* metadata_;
 
   std::unique_ptr<data_structures::graph::SerializedMutableCSRGraph>
