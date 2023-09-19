@@ -154,7 +154,6 @@ void GraphFormatConverter::WriteSubgraph(
               for (VertexID nbr_i = 0; nbr_i < bucket.at(j).outdegree;
                    nbr_i++) {
                 if (!is_in_graph.GetBit(bucket.at(j).outgoing_edges[nbr_i])) {
-                  LOG_INFO(bucket.at(j).outgoing_edges[nbr_i]);
                   border_vertices.SetBit(bucket.at(j).vid);
                   break;
                 }
@@ -187,7 +186,6 @@ void GraphFormatConverter::WriteSubgraph(
     thread_pool.SubmitSync(task_package);
     task_package.clear();
 
-    LOG_INFO("X");
     // Write bitmap that indicate whether a vertex has outgoing edges.
     src_map_file.write(reinterpret_cast<char*>(src_map.GetDataBasePointer()),
                        ((src_map.size() >> 6) + 1) * sizeof(uint64_t));
