@@ -51,6 +51,9 @@ class GCR {
   // Return the number of precondition predicates.
   size_t CountPreconditions() const;
 
+  bool IsCompatibleWithVariablePredicates(
+      const ConcreteVariablePredicate& variable_predicate) const;
+
  private:
   StarRule left_star_;
   StarRule right_star_;
