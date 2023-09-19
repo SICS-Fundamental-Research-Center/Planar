@@ -18,9 +18,9 @@ namespace sics::graph::tools::partitioner {
 using folly::ConcurrentHashMap;
 using folly::hash::fnv64_append_byte;
 using sics::graph::core::common::Bitmap;
+using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
-using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::common::VertexLabel;
 using sics::graph::core::data_structures::GraphMetadata;
 using sics::graph::core::util::atomic::WriteAdd;
@@ -42,7 +42,7 @@ VertexID HashBasedEdgeCutPartitioner::GetBucketID(VertexID vid,
                                                   VertexID n_bucket,
                                                   size_t n_vertices = 0) const {
   if (n_vertices != 0)
-    return vid / ceil((double)n_vertices / (double)n_bucket);
+    return vid / ceil((double) n_vertices / (double) n_bucket);
   else
     return fnv64_append_byte(vid, 3) % n_bucket;
 }
@@ -111,8 +111,8 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
         vertices.at(j).outdegree = num_outedges_by_vid[j];
         vertices.at(j).incoming_edges = new VertexID[num_inedges_by_vid[j]]();
         vertices.at(j).outgoing_edges = new VertexID[num_outedges_by_vid[j]]();
-        WriteAdd(&count_in_edges, (EdgeIndex) num_inedges_by_vid[j]);
-        WriteAdd(&count_out_edges, (EdgeIndex) num_outedges_by_vid[j]);
+        WriteAdd(&count_in_edges, (EdgeIndex)num_inedges_by_vid[j]);
+        WriteAdd(&count_out_edges, (EdgeIndex)num_outedges_by_vid[j]);
       }
     });
     task_package.push_back(task);
@@ -159,7 +159,6 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
            j += parallelism) {
         auto gid = GetBucketID(vertices.at(j).vid, n_partitions,
                                edgelist_metadata.num_vertices);
-
         std::lock_guard<std::mutex> lck(mtx);
         vertex_buckets[gid].emplace_back(std::move(vertices.at(j)));
       }
