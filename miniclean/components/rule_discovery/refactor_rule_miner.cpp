@@ -328,7 +328,7 @@ void RuleMiner::ExtendPathRules(size_t pattern_id) {
   }
 }
 
-void RuleMiner::MiningGCRs() {
+void RuleMiner::MineGCRs() {
   gcr_factory_ = GCRFactory(consequence_predicates_, variable_predicates_,
                             max_predicate_num_);
   // Enumerate all star pattern pairs.
@@ -364,7 +364,7 @@ void RuleMiner::MiningGCRs() {
   }
 }
 
-void RuleMiner::ExtendGCR(GCR gcr, size_t start_pattern_id,
+void RuleMiner::ExtendGCR(const GCR& gcr, size_t start_pattern_id,
                           size_t start_rule_id, VertexLabel left_center_label,
                           VertexLabel right_center_label) {
   for (size_t i = start_pattern_id; i < path_rules_.size(); i++) {

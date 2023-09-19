@@ -29,13 +29,13 @@ class GCRFactory {
   //   - assign consequence
   //   - assign variable predicates
   // The input GCR only carries constant predicates.
-  std::vector<GCR>& InitializeGCRs(const GCR& gcr);
+  std::vector<GCR> InitializeGCRs(const GCR& gcr);
 
   // This function aims to extend GCRs:
   //   - merge the path_rule into the GCR
   //   - assign consequence predicates
-  std::vector<GCR>& MergeAndCompleteGCRs(const GCR& gcr,
-                                         const PathRule& path_rule);
+  std::vector<GCR> MergeAndCompleteGCRs(const GCR& gcr,
+                                        const PathRule& path_rule);
 
  private:
   std::vector<VariablePredicate> consequence_predicates_;

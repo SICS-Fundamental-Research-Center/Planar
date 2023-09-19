@@ -56,13 +56,13 @@ class RuleMiner {
 
   void InitPathRuleUnits();
 
-  void MiningGCRs();
+  void MineGCRs();
 
  private:
   void LoadPathPatterns(const std::string& path_patterns_path);
   void LoadPredicates(const std::string& predicates_path);
   void ExtendPathRules(size_t pattern_id);
-  void ExtendGCR(GCR gcr, size_t start_pattern_id, size_t start_rule_id,
+  void ExtendGCR(const GCR& gcr, size_t start_pattern_id, size_t start_rule_id,
                  VertexLabel left_center_label, VertexLabel right_center_label);
 
  private:

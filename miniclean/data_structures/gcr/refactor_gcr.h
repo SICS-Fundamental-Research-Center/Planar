@@ -24,12 +24,11 @@ class GCR {
                 std::tuple<uint8_t, uint8_t, VariablePredicate>>;
 
  public:
-  GCR() = default;
   GCR(StarRule left_star, StarRule right_star)
       : left_star_(left_star), right_star_(right_star) {}
 
   void AddVariablePredicateToBack(
-      ConcreteVariablePredicate variable_predicate) {
+      const ConcreteVariablePredicate& variable_predicate) {
     variable_predicates_.push_back(variable_predicate);
   }
 
@@ -37,14 +36,15 @@ class GCR {
     consequence_ = consequence;
   }
 
-  StarRule get_left_star() const { return left_star_; }
-  StarRule get_right_star() const { return right_star_; }
+  const StarRule& get_left_star() const { return left_star_; }
+  const StarRule& get_right_star() const { return right_star_; }
 
-  std::vector<ConcreteVariablePredicate> get_variable_predicates() const {
+  const std::vector<ConcreteVariablePredicate>& get_variable_predicates()
+      const {
     return variable_predicates_;
   }
 
-  ConcreteConsequence get_consequence() const { return consequence_; }
+  const ConcreteConsequence& get_consequence() const { return consequence_; }
 
   std::pair<size_t, size_t> ComputeMatchAndSupport() const;
 
