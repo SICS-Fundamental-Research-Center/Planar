@@ -68,7 +68,7 @@ class PlanarAppBase : public PIE {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
         end_index = graph_->GetVertexNums();
-      auto task = [&, begin_index, end_index]() {
+      auto task = [this, vertex_func, begin_index, end_index]() {
         for (VertexIndex idx = begin_index; idx < end_index; idx++) {
           vertex_func(graph_->GetVertexIDByIndex(idx));
         }
@@ -94,14 +94,17 @@ class PlanarAppBase : public PIE {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
         end_index = graph_->GetVertexNums();
-      auto task = [&, begin_index, end_index]() {
+      auto task = [this, edge_func, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
-          for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
-            //            LOGF_INFO("edge_func: {}, {}",
-            //            graph_->GetVertexIDByIndex(i),
-            //                      graph_->GetOneOutEdge(i, j));
-            edge_func(graph_->GetVertexIDByIndex(i),
-                      graph_->GetOneOutEdge(i, j));
+          auto degree = graph_->GetOutDegreeByIndex(i);
+          if (degree != 0) {
+            VertexID* outEdges = graph_->GetOutEdgesByIndex(i);
+            for (VertexIndex j = 0; j < degree; j++) {
+              //            LOGF_INFO("edge_func: {}, {}",
+              //            graph_->GetVertexIDByIndex(i),
+              //                      graph_->GetOneOutEdge(i, j));
+              edge_func(graph_->GetVertexIDByIndex(i), outEdges[j]);
+            }
           }
         }
       };
@@ -127,16 +130,20 @@ class PlanarAppBase : public PIE {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
         end_index = graph_->GetVertexNums();
-      auto task = [&, begin_index, end_index]() {
+      auto task = [this, edge_del_func, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
-          for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
-            //            LOGF_INFO("edge_del_func: {}, {}, {}",
-            //                      graph_->GetVertexIDByIndex(i),
-            //                      graph_->GetOneOutEdge(i, j),
-            //                      graph_->GetOutOffsetByIndex(i) + j);
-            edge_del_func(graph_->GetVertexIDByIndex(i),
-                          graph_->GetOneOutEdge(i, j),
-                          graph_->GetOutOffsetByIndex(i) + j);
+          auto degree = graph_->GetOutDegreeByIndex(i);
+          if (degree != 0) {
+            EdgeIndex outOffset_base = graph_->GetOutOffsetByIndex(i);
+            VertexID* outEdges = graph_->GetOutEdgesByIndex(i);
+            for (VertexIndex j = 0; j < degree; j++) {
+              //            LOGF_INFO("edge_del_func: {}, {}, {}",
+              //                      graph_->GetVertexIDByIndex(i),
+              //                      graph_->GetOneOutEdge(i, j),
+              //                      graph_->GetOutOffsetByIndex(i) + j);
+              edge_del_func(graph_->GetVertexIDByIndex(i), outEdges[j],
+                            outOffset_base + j);
+            }
           }
         }
       };

@@ -11,6 +11,7 @@ namespace sics::graph::core::apps {
 using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 
 class WCCApp : public apis::PlanarAppBase<CSRGraph> {
+  using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
   using VertexID = common::VertexID;
 

@@ -38,7 +38,10 @@ class MutableCSRGraph : public Serializable {
         vertex_id_by_local_index_(nullptr),
         out_degree_base_(nullptr),
         out_offset_base_(nullptr),
-        out_edges_base_(nullptr) {}
+        out_edges_base_(nullptr) {
+    parallelism_ = common::Configurations::Get()->parallelism;
+    max_task_package_ = common::Configurations::Get()->max_task_package;
+  }
 
   ~MutableCSRGraph() override = default;
 
@@ -133,31 +136,92 @@ class MutableCSRGraph : public Serializable {
            sizeof(VertexData) * metadata_->num_vertices);
   }
 
+  void UpdateOutOffsetBaseNew(common::TaskRunner* runner) {
+    LOG_INFO("out_offset_base_new update begin!");
+    size_t align_vertices_num =
+        ceil((double)metadata_->num_vertices / parallelism_) * parallelism_;
+    auto step = align_vertices_num / parallelism_;
+    VertexIndex b1 = 0, e1 = 0;
+    {
+      common::TaskPackage pre_tasks;
+      for (uint32_t i = 0; i < parallelism_; i++) {
+        b1 = i * step;
+        if (b1 + step > metadata_->num_vertices) {
+          e1 = metadata_->num_vertices;
+        } else {
+          e1 = b1 + step;
+        }
+        auto task = [this, b1, e1]() {
+          out_offset_base_new_[b1] = 0;
+          for (uint32_t i = b1 + 1; i < e1; i++) {
+            out_offset_base_new_[i] =
+                out_offset_base_new_[i - 1] + out_degree_base_new_[i - 1];
+          }
+        };
+        pre_tasks.push_back(task);
+      }
+      runner->SubmitSync(pre_tasks);
+    }
+    // compute the base offset of each range
+    EdgeIndex accumulate_base = 0;
+    for (uint32_t i = 0; i < parallelism_; i++) {
+      VertexIndex b = i * step;
+      VertexIndex e = (i + 1) * step;
+      if (e > metadata_->num_vertices) {
+        e = metadata_->num_vertices;
+      }
+      out_offset_base_new_[b] += accumulate_base;
+      accumulate_base += out_offset_base_new_[e - 1];
+      accumulate_base += out_degree_base_new_[e - 1];
+    }
+    {
+      common::TaskPackage fix_tasks;
+      b1 = 0;
+      e1 = 0;
+      for (uint32_t i = 0; i < parallelism_; i++) {
+        b1 = i * step;
+        if (b1 + step > metadata_->num_vertices) {
+          e1 = metadata_->num_vertices;
+        } else {
+          e1 = b1 + step;
+        }
+        auto task = [this, b1, e1]() {
+          for (uint32_t i = b1 + 1; i < e1; i++) {
+            out_offset_base_new_[i] += out_offset_base_new_[b1];
+          }
+        };
+        fix_tasks.push_back(task);
+        b1 += step;
+      }
+      runner->SubmitSync(fix_tasks);
+    }
+    LOG_INFO("out_offset_base_new update finish!");
+  }
+
   void MutateGraphEdge(common::TaskRunner* runner) {
     LOG_INFO("Mutate graph edge");
-    uint32_t task_size = metadata_->num_vertices /
-                         common::Configurations::Get()->max_task_package;
+    uint32_t task_size = metadata_->num_vertices / max_task_package_;
     task_size = task_size < 2 ? 2 : task_size;
     LOGF_INFO("task size {}", task_size);
     // Check left edges in subgraph.
     size_t num_outgoing_edges_new =
         metadata_->num_outgoing_edges - edge_delete_bitmap_.Count();
     // compute out_offset
+    UpdateOutOffsetBaseNew(runner);
     if (num_outgoing_edges_new != 0) {
       LOG_INFO("init new data structure for graph");
       out_edges_base_new_ = new VertexID[num_outgoing_edges_new];
-      out_offset_base_new_[0] = 0;
       // TODO: use runner do this parallel
-      for (int i = 1; i < metadata_->num_vertices; i++) {
-        out_offset_base_new_[i] =
-            out_offset_base_new_[i - 1] + out_degree_base_new_[i - 1];
-      }
+      UpdateOutOffsetBaseNew(runner);
+      //      for (int i = 1; i < metadata_->num_vertices; i++) {
+      //        out_offset_base_new_[i] =
+      //            out_offset_base_new_[i - 1] + out_degree_base_new_[i - 1];
+      //      }
       //      for (int i = 0; i < metadata_->num_vertices; i++) {
       //        LOGF_INFO("check: id: {}, new degree: {}, new offset: {}",
       //                  vertex_id_by_local_index_[i], out_degree_base_new_[i],
       //                  out_offset_base_new_[i]);
       //      }
-
       common::TaskPackage tasks;
       VertexIndex begin_index = 0, end_index = 0;
       int count = 0;
@@ -230,14 +294,14 @@ class MutableCSRGraph : public Serializable {
     return out_offset_base_[index];
   }
 
-  // fetch one out edge of vertex by index
-  VertexID GetOneOutEdge(VertexIndex index, VertexIndex out_edge_index) const {
-    return out_edges_base_[out_offset_base_[index] + out_edge_index];
+  // fetch the j-th outEdge of vertex by index i
+  VertexID GetOneOutEdge(VertexIndex i, VertexIndex j) const {
+    return out_edges_base_[out_offset_base_[i] + j];
   }
 
-  // fetch all out edges of vertex by index
-  VertexID* GetOutEdges(VertexIndex index) const {
-    return out_edges_base_ + index;
+  // fetch all out edges of vertex by index i
+  VertexID* GetOutEdgesByIndex(VertexIndex i) const {
+    return out_edges_base_ + out_offset_base_[i];
   }
 
   VertexData* GetVertxDataByIndex(VertexIndex index) const {
@@ -383,6 +447,8 @@ class MutableCSRGraph : public Serializable {
 
   std::string status_;
   size_t num_all_vertices_;
+  uint32_t parallelism_;
+  uint32_t max_task_package_;
 };
 
 typedef MutableCSRGraph<common::Uint32VertexDataType,
