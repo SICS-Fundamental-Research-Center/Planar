@@ -24,7 +24,6 @@ class MutableCSRGraph : public Serializable {
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
   using VertexDegree = uint32_t;
-  using VertexOffset = uint32_t;
   using SerializedMutableCSRGraph =
       data_structures::graph::SerializedMutableCSRGraph;
 
@@ -90,7 +89,7 @@ class MutableCSRGraph : public Serializable {
       offset += sizeof(VertexID) * metadata_->num_vertices;
       out_degree_base_ = (VertexDegree*)(graph_buf_base_ + offset);
       offset += sizeof(VertexDegree) * metadata_->num_vertices;
-      out_offset_base_ = (VertexOffset*)(graph_buf_base_ + offset);
+      out_offset_base_ = (EdgeIndex*)(graph_buf_base_ + offset);
     } else {
       LOG_FATAL("Error in deserialize mutable csr graph");
     }
@@ -115,7 +114,7 @@ class MutableCSRGraph : public Serializable {
       out_degree_base_new_ = new VertexDegree[metadata_->num_vertices];
       memcpy(out_degree_base_new_, out_degree_base_,
              sizeof(VertexDegree) * metadata_->num_vertices);
-      out_offset_base_new_ = new VertexOffset[metadata_->num_vertices];
+      out_offset_base_new_ = new EdgeIndex[metadata_->num_vertices];
       edge_delete_bitmap_.Init(metadata_->num_outgoing_edges);
       // Out_edges_base_new_ buffer is malloc when used. And release in the same
       // function.
@@ -167,9 +166,9 @@ class MutableCSRGraph : public Serializable {
           end_index = metadata_->num_vertices;
         }
         auto task = std::bind([&, begin_index, end_index]() {
-          VertexOffset index = out_offset_base_new_[begin_index];
+          EdgeIndex index = out_offset_base_new_[begin_index];
           for (int i = begin_index; i < end_index; i++) {
-            VertexOffset offset = out_offset_base_[i];
+            EdgeIndex offset = out_offset_base_[i];
             for (int j = 0; j < out_degree_base_[i]; j++) {
               if (!edge_delete_bitmap_.GetBit(offset + j)) {
                 out_edges_base_new_[index++] = out_edges_base_[offset + j];
@@ -188,7 +187,7 @@ class MutableCSRGraph : public Serializable {
       memcpy(out_degree_base_, out_degree_base_new_,
              sizeof(VertexDegree) * metadata_->num_vertices);
       memcpy(out_offset_base_, out_offset_base_new_,
-             sizeof(VertexOffset) * metadata_->num_vertices);
+             sizeof(EdgeIndex) * metadata_->num_vertices);
       // change out_edges_buffer to new one
       edge_delete_bitmap_.Clear();
       // replace edges buffer of subgraph
@@ -226,7 +225,7 @@ class MutableCSRGraph : public Serializable {
     return out_degree_base_[index];
   }
 
-  VertexOffset GetOutOffsetByIndex(VertexIndex index) const {
+  EdgeIndex GetOutOffsetByIndex(VertexIndex index) const {
     return out_offset_base_[index];
   }
 
@@ -363,7 +362,7 @@ class MutableCSRGraph : public Serializable {
   uint8_t* graph_buf_base_;
   VertexID* vertex_id_by_local_index_;
   VertexDegree* out_degree_base_;
-  VertexOffset* out_offset_base_;
+  EdgeIndex* out_offset_base_;
   VertexID* out_edges_base_;
   VertexData* vertex_data_read_base_;
 
@@ -377,7 +376,7 @@ class MutableCSRGraph : public Serializable {
 
   // used for mutable algorithm only;
   VertexDegree* out_degree_base_new_;
-  VertexOffset* out_offset_base_new_;
+  EdgeIndex* out_offset_base_new_;
   VertexID* out_edges_base_new_;
   common::Bitmap edge_delete_bitmap_;
 
