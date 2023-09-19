@@ -18,6 +18,7 @@ namespace sics::graph::tools::partitioner {
 using folly::ConcurrentHashMap;
 using folly::hash::fnv64_append_byte;
 using sics::graph::core::common::Bitmap;
+using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::common::VertexLabel;
@@ -79,7 +80,7 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   // Compute max_vid, min_vid. And get degree for each vertex.
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i]() {
-      for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
+      for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = buffer_edges[j];
         visited.SetBit(e.src);
         visited.SetBit(e.dst);
@@ -99,9 +100,8 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   std::vector<Vertex> vertices;
   vertices.resize(aligned_max_vid);
 
-  VertexID count_in_edges = 0, count_out_edges = 0;
-
   // malloc space for each vertex.
+  EdgeIndex count_in_edges = 0, count_out_edges = 0;
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i]() {
       for (VertexID j = i; j < aligned_max_vid; j += parallelism) {
@@ -111,8 +111,8 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
         vertices.at(j).outdegree = num_outedges_by_vid[j];
         vertices.at(j).incoming_edges = new VertexID[num_inedges_by_vid[j]]();
         vertices.at(j).outgoing_edges = new VertexID[num_outedges_by_vid[j]]();
-        WriteAdd(&count_in_edges, num_inedges_by_vid[j]);
-        WriteAdd(&count_out_edges, num_outedges_by_vid[j]);
+        WriteAdd(&count_in_edges, (EdgeIndex) num_inedges_by_vid[j]);
+        WriteAdd(&count_out_edges, (EdgeIndex) num_outedges_by_vid[j]);
       }
     });
     task_package.push_back(task);
@@ -123,12 +123,12 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   delete[] num_outedges_by_vid;
 
   // Fill edges.
-  VertexID* offset_in_edges = new VertexID[aligned_max_vid]();
-  VertexID* offset_out_edges = new VertexID[aligned_max_vid]();
+  EdgeIndex* offset_in_edges = new EdgeIndex[aligned_max_vid]();
+  EdgeIndex* offset_out_edges = new EdgeIndex[aligned_max_vid]();
 
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
-      for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
+      for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = buffer_edges[j];
         auto offset_out = __sync_fetch_and_add(offset_out_edges + e.src, 1);
         auto offset_in = __sync_fetch_and_add(offset_in_edges + e.dst, 1);
@@ -159,7 +159,6 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
            j += parallelism) {
         auto gid = GetBucketID(vertices.at(j).vid, n_partitions,
                                edgelist_metadata.num_vertices);
-
         std::lock_guard<std::mutex> lck(mtx);
         vertex_buckets[gid].emplace_back(std::move(vertices.at(j)));
       }

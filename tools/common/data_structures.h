@@ -10,10 +10,11 @@ namespace sics::graph::tools::common {
 struct EdgelistMetadata {
  private:
   using VertexID = sics::graph::core::common::VertexID;
+  using EdgeIndex = sics::graph::core::common::EdgeIndex;
 
  public:
-  size_t num_vertices;
-  size_t num_edges;
+  VertexID num_vertices;
+  EdgeIndex num_edges;
   VertexID max_vid;
 };
 

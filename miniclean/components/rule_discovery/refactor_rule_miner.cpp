@@ -181,6 +181,14 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
       }
     }
   }
+
+  YAML::Node variable_predicate_nodes = predicate_nodes["VariablePredicates"];
+  variable_predicates_ =
+      variable_predicate_nodes.as<std::vector<VariablePredicate>>();
+
+  YAML::Node consequence_predicate_nodes = predicate_nodes["Consequence"];
+  consequence_predicates_ =
+      consequence_predicate_nodes.as<std::vector<VariablePredicate>>();
 }
 
 void RuleMiner::LoadIndexMetadata(const std::string& index_metadata_path) {
@@ -317,6 +325,69 @@ void RuleMiner::ExtendPathRules(size_t pattern_id) {
     }
     begin_from += offset;
     offset = inner_offset;
+  }
+}
+
+void RuleMiner::MineGCRs() {
+  gcr_factory_ = GCRFactory(consequence_predicates_, variable_predicates_,
+                            max_predicate_num_);
+  // Enumerate all star pattern pairs.
+  for (size_t i = 0; i < path_rules_.size(); i++) {
+    for (size_t j = i; j < path_rules_.size(); j++) {
+      VertexLabel left_label = std::get<0>(path_patterns_[i][0]);
+      VertexLabel right_label = std::get<0>(path_patterns_[j][0]);
+      // Enumerate all GCRs
+      for (size_t k = 0; k < path_rules_[i].size(); k++) {
+        for (size_t l = k; k < path_rules_[j].size(); l++) {
+          StarRule left_star = {&path_rules_[i][k]};
+          StarRule right_star = {&path_rules_[j][l]};
+          // Initialize the GCR: assign consequence predicate and variable
+          // predicates.
+          GCR gcr(left_star, right_star);
+          std::vector<GCR> init_gcrs = gcr_factory_.InitializeGCRs(gcr);
+
+          for (const auto& init_gcr : init_gcrs) {
+            // Check the support and match of `init_gcr`.
+            std::pair<size_t, size_t> support_and_match =
+                init_gcr.ComputeMatchAndSupport();
+            // If the match is less than the threshold, continue.
+
+            // If the support is higher than the threshold, add it to the
+            // verified GCRs than continue.
+
+            // Otherwise, extend the GCR.
+            ExtendGCR(init_gcr, j, l, left_label, right_label);
+          }
+        }
+      }
+    }
+  }
+}
+
+void RuleMiner::ExtendGCR(const GCR& gcr, size_t start_pattern_id,
+                          size_t start_rule_id, VertexLabel left_center_label,
+                          VertexLabel right_center_label) {
+  for (size_t i = start_pattern_id; i < path_rules_.size(); i++) {
+    if (std::get<0>(path_patterns_[i][0]) != left_center_label ||
+        std::get<0>(path_patterns_[i][0]) != right_center_label) {
+      continue;
+    }
+    for (size_t j = start_rule_id; j < path_rules_[i].size(); j++) {
+      std::vector<GCR> extended_gcrs =
+          gcr_factory_.MergeAndCompleteGCRs(gcr, path_rules_[i][j]);
+      for (const auto& extended_gcr : extended_gcrs) {
+        // Check the support and match of `extended_gcr`.
+        std::pair<size_t, size_t> support_and_match =
+            extended_gcr.ComputeMatchAndSupport();
+        // If the match is less than the threshold, continue.
+
+        // If the support is higher than the threshold, add it to the verified
+        // GCRs than continue.
+
+        // Otherwise, extend the GCR.
+        ExtendGCR(extended_gcr, i, j, left_center_label, right_center_label);
+      }
+    }
   }
 }
 
