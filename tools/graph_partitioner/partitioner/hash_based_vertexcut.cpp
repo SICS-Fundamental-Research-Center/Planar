@@ -117,8 +117,9 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   std::vector<Edges> edge_buckets;
 
   for (size_t i = 0; i < n_partitions_; i++) {
-    EdgelistMetadata edgelist_metadata = {
-        bitmap_vec.at(i).Count(), size_per_bucket[i], max_vid_per_bucket[i]};
+    EdgelistMetadata edgelist_metadata = {(VertexID)(bitmap_vec.at(i).Count()),
+                                          size_per_bucket[i],
+                                          max_vid_per_bucket[i]};
     edgelist_metadata_vec.push_back(edgelist_metadata);
     edge_buckets.emplace_back(Edges(edgelist_metadata));
   }
