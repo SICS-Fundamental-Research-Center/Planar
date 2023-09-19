@@ -48,6 +48,9 @@ class GCR {
 
   std::pair<size_t, size_t> ComputeMatchAndSupport() const;
 
+  // Return the number of precondition predicates.
+  size_t CountPreconditions() const;
+
  private:
   StarRule left_star_;
   StarRule right_star_;
