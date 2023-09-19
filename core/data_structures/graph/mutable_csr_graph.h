@@ -207,16 +207,10 @@ class MutableCSRGraph : public Serializable {
     size_t num_outgoing_edges_new =
         metadata_->num_outgoing_edges - edge_delete_bitmap_.Count();
     // compute out_offset
-    UpdateOutOffsetBaseNew(runner);
     if (num_outgoing_edges_new != 0) {
       LOG_INFO("init new data structure for graph");
       out_edges_base_new_ = new VertexID[num_outgoing_edges_new];
-      // TODO: use runner do this parallel
       UpdateOutOffsetBaseNew(runner);
-      //      for (int i = 1; i < metadata_->num_vertices; i++) {
-      //        out_offset_base_new_[i] =
-      //            out_offset_base_new_[i - 1] + out_degree_base_new_[i - 1];
-      //      }
       //      for (int i = 0; i < metadata_->num_vertices; i++) {
       //        LOGF_INFO("check: id: {}, new degree: {}, new offset: {}",
       //                  vertex_id_by_local_index_[i], out_degree_base_new_[i],
