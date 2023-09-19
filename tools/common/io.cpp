@@ -76,8 +76,8 @@ void GraphFormatConverter::WriteSubgraph(
     delete[] buffer_globalid;
 
     // Compute offset for each vertex.
-    auto buffer_in_offset = new VertexID[num_vertices]();
-    auto buffer_out_offset = new VertexID[num_vertices]();
+    auto buffer_in_offset = new EdgeIndex[num_vertices]();
+    auto buffer_out_offset = new EdgeIndex[num_vertices]();
     for (VertexID i = 1; i < num_vertices; i++) {
       buffer_in_offset[i] = buffer_in_offset[i - 1] + buffer_indegree[i - 1];
       buffer_out_offset[i] = buffer_out_offset[i - 1] + buffer_outdegree[i - 1];
