@@ -147,6 +147,7 @@ class MutableCSRGraph : public Serializable {
       LOG_INFO("init new data structure for graph");
       out_edges_base_new_ = new VertexID[num_outgoing_edges_new];
       out_offset_base_new_[0] = 0;
+      // TODO: use runner do this parallel
       for (int i = 1; i < metadata_->num_vertices; i++) {
         out_offset_base_new_[i] =
             out_offset_base_new_[i - 1] + out_degree_base_new_[i - 1];
