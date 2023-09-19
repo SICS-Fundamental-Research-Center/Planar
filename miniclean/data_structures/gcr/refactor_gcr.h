@@ -12,16 +12,21 @@ class GCR {
   using StarRule = std::vector<PathRule*>;
   using VariablePredicate =
       sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
-  // Each tuple contains:
-  //   - the first element is the path pattern id (in the star pattern).
-  //   - the second element is the vertex id (in the path pattern).
-  //   - the third element is the predicate.
-  using ConcreteVariablePredicate =
-      std::pair<std::tuple<uint8_t, uint8_t, VariablePredicate>,
-                std::tuple<uint8_t, uint8_t, VariablePredicate>>;
-  using ConcreteConsequence =
-      std::pair<std::tuple<uint8_t, uint8_t, VariablePredicate>,
-                std::tuple<uint8_t, uint8_t, VariablePredicate>>;
+  // VariablePredicate:
+  //  - first: localtion info.
+  //    - first: lhs
+  //      - first: path index
+  //      - second: vertex index
+  //    - second: rhs
+  //      - first: path index
+  //      - second: vertex index
+  //  - second: predicate.
+  using ConcreteVariablePredicate = std::pair<
+      std::pair<std::pair<uint8_t, uint8_t>, std::pair<uint8_t, uint8_t>>,
+      VariablePredicate>;
+  using ConcreteConsequence = std::pair<
+      std::pair<std::pair<uint8_t, uint8_t>, std::pair<uint8_t, uint8_t>>,
+      VariablePredicate>;
 
  public:
   GCR(StarRule left_star, StarRule right_star)
