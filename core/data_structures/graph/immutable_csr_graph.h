@@ -33,6 +33,7 @@ class ImmutableCSRGraph : public Serializable {
   using GraphID = sics::graph::core::common::GraphID;
   using VertexID = sics::graph::core::common::VertexID;
   using VertexLabel = sics::graph::core::common::VertexLabel;
+  using EdgeIndex = sics::graph::core::common::EdgeIndex;
 
  public:
   explicit ImmutableCSRGraph(SubgraphMetadata metadata)
@@ -79,15 +80,15 @@ class ImmutableCSRGraph : public Serializable {
 
   void set_gid(GraphID gid) { gid_ = gid; }
   void set_num_vertices(VertexID val) { num_vertices_ = val; }
-  void set_num_incoming_edges(VertexID val) { num_incoming_edges_ = val; }
-  void set_num_outgoing_edges(VertexID val) { num_outgoing_edges_ = val; }
+  void set_num_incoming_edges(EdgeIndex val) { num_incoming_edges_ = val; }
+  void set_num_outgoing_edges(EdgeIndex val) { num_outgoing_edges_ = val; }
   void set_max_vid(const VertexID val) { max_vid_ = val; }
   void set_min_vid(const VertexID val) { min_vid_ = val; }
 
   GraphID get_gid() const { return gid_; }
   VertexID get_num_vertices() const { return num_vertices_; }
-  VertexID get_num_incoming_edges() const { return num_incoming_edges_; }
-  VertexID get_num_outgoing_edges() const { return num_outgoing_edges_; }
+  EdgeIndex get_num_incoming_edges() const { return num_incoming_edges_; }
+  EdgeIndex get_num_outgoing_edges() const { return num_outgoing_edges_; }
   VertexID get_max_vid() const { return max_vid_; }
   VertexID get_min_vid() const { return min_vid_; }
 
@@ -174,8 +175,8 @@ class ImmutableCSRGraph : public Serializable {
 
   GraphID gid_ = 0;
   VertexID num_vertices_ = 0;
-  VertexID num_incoming_edges_ = 0;
-  VertexID num_outgoing_edges_ = 0;
+  EdgeIndex num_incoming_edges_ = 0;
+  EdgeIndex num_outgoing_edges_ = 0;
   VertexID max_vid_ = 0;
   VertexID min_vid_ = 0;
 
