@@ -16,8 +16,7 @@ using std::filesystem::exists;
 
 void GraphFormatConverter::WriteSubgraph(
     const std::vector<std::vector<Vertex>>& vertex_buckets,
-    const GraphMetadata& graph_metadata,
-    StoreStrategy store_strategy) {
+    const GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -53,9 +52,10 @@ void GraphFormatConverter::WriteSubgraph(
     auto buffer_outdegree = new VertexID[num_vertices]();
 
     for (unsigned int i = 0; i < parallelism; i++) {
-      auto task = std::bind([&, i, parallelism]() {
+      auto task = std::bind([&, i]() {
         for (VertexID j = i; j < num_vertices; j += parallelism) {
           buffer_globalid[j] = bucket.at(j).vid;
+          is_in_graph.SetBit(bucket.at(j).vid);
           buffer_globalid2index[bucket.at(j).vid] = j;
           buffer_indegree[j] = bucket.at(j).indegree;
           buffer_outdegree[j] = bucket.at(j).outdegree;
@@ -76,8 +76,8 @@ void GraphFormatConverter::WriteSubgraph(
     delete[] buffer_globalid;
 
     // Compute offset for each vertex.
-    auto buffer_in_offset = new VertexID[num_vertices]();
-    auto buffer_out_offset = new VertexID[num_vertices]();
+    auto buffer_in_offset = new EdgeIndex[num_vertices]();
+    auto buffer_out_offset = new EdgeIndex[num_vertices]();
     for (VertexID i = 1; i < num_vertices; i++) {
       buffer_in_offset[i] = buffer_in_offset[i - 1] + buffer_indegree[i - 1];
       buffer_out_offset[i] = buffer_out_offset[i - 1] + buffer_outdegree[i - 1];

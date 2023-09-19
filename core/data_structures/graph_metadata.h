@@ -15,12 +15,13 @@ namespace sics::graph::core::data_structures {
 struct SubgraphMetadata {
   using GraphID = sics::graph::core::common::GraphID;
   using VertexID = sics::graph::core::common::VertexID;
+  using EdgeIndex = sics::graph::core::common::EdgeIndex;
 
   // Subgraph Metadata
   GraphID gid;
-  size_t num_vertices;
-  size_t num_incoming_edges;
-  size_t num_outgoing_edges;
+  VertexID num_vertices;
+  EdgeIndex num_incoming_edges;
+  EdgeIndex num_outgoing_edges;
   VertexID max_vid;
   VertexID min_vid;
 };
@@ -29,6 +30,7 @@ struct SubgraphMetadata {
 class GraphMetadata {
   using GraphID = sics::graph::core::common::GraphID;
   using VertexID = sics::graph::core::common::VertexID;
+  using EdgeIndex = sics::graph::core::common::EdgeIndex;
 
  public:
   GraphMetadata() = default;
@@ -46,7 +48,7 @@ class GraphMetadata {
     num_subgraphs_ = num_subgraphs;
   }
   VertexID get_num_vertices() const { return num_vertices_; }
-  size_t get_num_edges() const { return num_edges_; }
+  EdgeIndex get_num_edges() const { return num_edges_; }
   GraphID get_num_subgraphs() const { return num_subgraphs_; }
   VertexID get_min_vid() const { return min_vid_; }
   VertexID get_max_vid() const { return max_vid_; }
@@ -75,7 +77,7 @@ class GraphMetadata {
 
  private:
   VertexID num_vertices_;
-  size_t num_edges_;
+  EdgeIndex num_edges_;
   VertexID max_vid_;
   VertexID min_vid_;
   VertexID count_border_vertices_;
