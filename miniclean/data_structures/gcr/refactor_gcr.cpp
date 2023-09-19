@@ -21,8 +21,8 @@ size_t GCR::CountPreconditions() const {
   return count;
 }
 
-bool GCR::IsCompatibleWithVariablePredicates(
-    const ConcreteVariablePredicate& variable_predicate) const {
+bool GCR::IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
+                           bool consider_consequence) const {
   uint8_t left_path_index = variable_predicate.first.first.first;
   uint8_t left_vertex_index = variable_predicate.first.first.second;
   uint8_t right_path_index = variable_predicate.first.second.first;
@@ -42,6 +42,19 @@ bool GCR::IsCompatibleWithVariablePredicates(
     }
   }
 
+  if (consider_consequence) {
+    // Check Consequence.
+    uint8_t consequence_left_path_index = consequence_.first.first.first;
+    uint8_t consequence_left_vertex_index = consequence_.first.first.second;
+    uint8_t consequence_right_path_index = consequence_.first.second.first;
+    uint8_t consequence_right_vertex_index = consequence_.first.second.second;
+    if ((left_path_index == consequence_left_path_index &&
+         left_vertex_index == consequence_left_vertex_index) ||
+        (right_path_index == consequence_right_path_index &&
+         right_vertex_index == consequence_right_vertex_index)) {
+      return false;
+    }
+  }
   return true;
 }
 

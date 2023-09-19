@@ -367,6 +367,8 @@ void RuleMiner::MineGCRs() {
 void RuleMiner::ExtendGCR(const GCR& gcr, size_t start_pattern_id,
                           size_t start_rule_id, VertexLabel left_center_label,
                           VertexLabel right_center_label) {
+  if (gcr.CountPreconditions() >= max_predicate_num_) return;
+
   for (size_t i = start_pattern_id; i < path_rules_.size(); i++) {
     if (std::get<0>(path_patterns_[i][0]) != left_center_label ||
         std::get<0>(path_patterns_[i][0]) != right_center_label) {

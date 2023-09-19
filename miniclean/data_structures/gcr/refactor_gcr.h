@@ -37,6 +37,14 @@ class GCR {
     variable_predicates_.push_back(variable_predicate);
   }
 
+  bool PopVariablePredicateFromBack() {
+    if (!variable_predicates_.empty()) {
+      variable_predicates_.pop_back();
+      return true;
+    }
+    return false;
+  }
+
   void set_consequence(ConcreteConsequence consequence) {
     consequence_ = consequence;
   }
@@ -51,13 +59,23 @@ class GCR {
 
   const ConcreteConsequence& get_consequence() const { return consequence_; }
 
+  ConcreteVariablePredicate ConcretizeVariablePredicate(
+      const VariablePredicate& variable_predicate, uint8_t left_path_index,
+      uint8_t left_vertex_index, uint8_t right_path_index,
+      uint8_t right_vertex_index) const {
+    return std::make_pair(
+        std::make_pair(std::make_pair(left_path_index, left_vertex_index),
+                       std::make_pair(right_path_index, right_vertex_index)),
+        variable_predicate);
+  }
+
   std::pair<size_t, size_t> ComputeMatchAndSupport() const;
 
   // Return the number of precondition predicates.
   size_t CountPreconditions() const;
 
-  bool IsCompatibleWithVariablePredicates(
-      const ConcreteVariablePredicate& variable_predicate) const;
+  bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
+                        bool consider_consequence) const;
 
  private:
   StarRule left_star_;
