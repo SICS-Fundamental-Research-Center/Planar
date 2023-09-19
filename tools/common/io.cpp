@@ -16,8 +16,7 @@ using std::filesystem::exists;
 
 void GraphFormatConverter::WriteSubgraph(
     const std::vector<std::vector<Vertex>>& vertex_buckets,
-    const GraphMetadata& graph_metadata,
-    StoreStrategy store_strategy) {
+    const GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -53,9 +52,10 @@ void GraphFormatConverter::WriteSubgraph(
     auto buffer_outdegree = new VertexID[num_vertices]();
 
     for (unsigned int i = 0; i < parallelism; i++) {
-      auto task = std::bind([&, i, parallelism]() {
+      auto task = std::bind([&, i]() {
         for (VertexID j = i; j < num_vertices; j += parallelism) {
           buffer_globalid[j] = bucket.at(j).vid;
+          is_in_graph.SetBit(bucket.at(j).vid);
           buffer_globalid2index[bucket.at(j).vid] = j;
           buffer_indegree[j] = bucket.at(j).indegree;
           buffer_outdegree[j] = bucket.at(j).outdegree;
@@ -154,6 +154,7 @@ void GraphFormatConverter::WriteSubgraph(
               for (VertexID nbr_i = 0; nbr_i < bucket.at(j).outdegree;
                    nbr_i++) {
                 if (!is_in_graph.GetBit(bucket.at(j).outgoing_edges[nbr_i])) {
+                  LOG_INFO(bucket.at(j).outgoing_edges[nbr_i]);
                   border_vertices.SetBit(bucket.at(j).vid);
                   break;
                 }
@@ -186,6 +187,7 @@ void GraphFormatConverter::WriteSubgraph(
     thread_pool.SubmitSync(task_package);
     task_package.clear();
 
+    LOG_INFO("X");
     // Write bitmap that indicate whether a vertex has outgoing edges.
     src_map_file.write(reinterpret_cast<char*>(src_map.GetDataBasePointer()),
                        ((src_map.size() >> 6) + 1) * sizeof(uint64_t));
