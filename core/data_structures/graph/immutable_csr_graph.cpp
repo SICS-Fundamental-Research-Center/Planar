@@ -81,16 +81,16 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
   if (metadata_.num_incoming_edges != 0) {
     SetInDegreeBuffer(
         reinterpret_cast<VertexID*>(buf_graph_base_pointer_ + start_indegree));
-    SetInOffsetBuffer(
-        reinterpret_cast<VertexID*>(buf_graph_base_pointer_ + start_in_offset));
+    SetInOffsetBuffer(reinterpret_cast<EdgeIndex*>(buf_graph_base_pointer_ +
+                                                   start_in_offset));
     SetIncomingEdgesBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer_ +
                                                        start_incoming_edges));
   }
   if (metadata_.num_outgoing_edges != 0) {
     SetOutDegreeBuffer(
         reinterpret_cast<VertexID*>(buf_graph_base_pointer_ + start_outdegree));
-    SetOutOffsetBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer_ +
-                                                   start_out_offset));
+    SetOutOffsetBuffer(reinterpret_cast<EdgeIndex*>(buf_graph_base_pointer_ +
+                                                    start_out_offset));
     SetOutgoingEdgesBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer_ +
                                                        start_outgoing_edges));
   }
