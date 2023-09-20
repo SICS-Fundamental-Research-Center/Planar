@@ -216,7 +216,7 @@ void PathMatcher::PathMatchRecur(const PathPattern& path_pattern,
                                  std::list<std::vector<VertexID>>* results) {
   // Return condition.
   if (match_position == path_pattern.size()) {
-    for (VertexID candidate : candidates) {
+    for (const VertexID& candidate : candidates) {
       partial_results->push_back(candidate);
       results->push_back(*partial_results);
       partial_results->pop_back();
@@ -224,7 +224,7 @@ void PathMatcher::PathMatchRecur(const PathPattern& path_pattern,
     return;
   }
 
-  for (VertexID candidate : candidates) {
+  for (const VertexID& candidate : candidates) {
     // Scan the out-edges of the candidate.
     VertexID cand_out_degree =
         miniclean_csr_graph_->GetOutDegreeByLocalID(candidate);
@@ -239,7 +239,7 @@ void PathMatcher::PathMatchRecur(const PathPattern& path_pattern,
           miniclean_csr_graph_->GetOutgoingEdgeLabelsByLocalID(candidate)[i];
       bool continue_flag = false;
       // Check whether cycle exists.
-      for (VertexID vid : *partial_results) {
+      for (const VertexID& vid : *partial_results) {
         if (vid == out_vertex_id) {
           continue_flag = true;
           break;

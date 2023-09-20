@@ -156,10 +156,10 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
 
   // Reserve space for constant predicates
   constant_predicates_.reserve(constant_predicate_nodes.size());
-  for (const auto constant_predicate_node : constant_predicate_nodes) {
+  for (const auto& constant_predicate_node : constant_predicate_nodes) {
     VertexLabel vertex_label = static_cast<VertexLabel>(
         std::stoi(constant_predicate_node.first.as<std::string>()));
-    // Check if this label `has existed.
+    // Check if this label has existed.
     if (constant_predicates_.find(vertex_label) != constant_predicates_.end()) {
       LOG_WARN("Duplicated vertex label for constant predicate: ",
                vertex_label);
@@ -167,7 +167,7 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
       constant_predicates_[vertex_label].reserve(
           constant_predicate_node.second.size());
     }
-    for (const auto node : constant_predicate_node.second) {
+    for (const auto& node : constant_predicate_node.second) {
       VertexAttributeID attribute_id = static_cast<VertexAttributeID>(
           std::stoi(node.first.as<std::string>()));
       // Check if this attribute id has existed.
@@ -181,6 +181,14 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
       }
     }
   }
+
+  YAML::Node variable_predicate_nodes = predicate_nodes["VariablePredicates"];
+  variable_predicates_ =
+      variable_predicate_nodes.as<std::vector<VariablePredicate>>();
+
+  YAML::Node consequence_predicate_nodes = predicate_nodes["Consequence"];
+  consequence_predicates_ =
+      consequence_predicate_nodes.as<std::vector<VariablePredicate>>();
 }
 
 void RuleMiner::LoadIndexMetadata(const std::string& index_metadata_path) {
@@ -193,6 +201,194 @@ void RuleMiner::LoadIndexMetadata(const std::string& index_metadata_path) {
   }
 
   index_metadata_ = index_metadata_node.as<IndexMetadata>();
+}
+
+void RuleMiner::InitPathRuleUnits() {
+  size_t num_vertex = graph_->get_num_vertices();
+  const auto& attribute_metadata = index_metadata_.get_attribute_metadata();
+  // Initialize path rule unit container.
+  //   1. Initialize the container.
+  path_rule_unit_container_.resize(path_patterns_.size());
+  for (size_t i = 0; i < path_rule_unit_container_.size(); i++) {
+    // The extra one is for the case that the path rule has no constant
+    // predicate.
+    path_rule_unit_container_[i].resize(path_patterns_[i].size() + 1);
+    path_rule_unit_container_[i][0].resize(1);
+    path_rule_unit_container_[i][0][0].resize(1);
+    path_rule_unit_container_[i][0][0][0].resize(1);
+    for (size_t j = 1; j < path_rule_unit_container_[i].size(); j++) {
+      VertexLabel label = std::get<0>(path_patterns_[i][j - 1]);
+      if (attribute_metadata.find(label) != attribute_metadata.end()) {
+        path_rule_unit_container_[i][j].resize(
+            attribute_metadata.at(label).size());
+        for (size_t k = 0; k < path_rule_unit_container_[i][j].size(); k++) {
+          // TODO (bai-wenchao): this is a dangurous implementation, we need to
+          // make sure whether attribute_metadata[label] range from 0 to n.
+          path_rule_unit_container_[i][j][k].resize(
+              attribute_metadata.at(label)[k].second);
+          for (size_t l = 0; l < path_rule_unit_container_[i][j][k].size();
+               l++) {
+            // TODO (bai-wenchao): `2` is the number of operator types.
+            path_rule_unit_container_[i][j][k][l].resize(2);
+          }
+        }
+      }
+    }
+  }
+  //   2. Initialize the rule unit.
+  path_rules_.resize(path_patterns_.size());
+  for (size_t i = 0; i < path_rule_unit_container_.size(); i++) {
+    PathRule path_rule(path_patterns_[i], num_vertex);
+    path_rule.InitBitmap(path_instances_[i], graph_);
+    // TODO (bai-wenchao): check the support.
+    if (path_rule.CountOneBits() <= 0) {
+      continue;
+    }
+    LOG_INFO("Pattern ID: ", i, " count: ", path_rule.CountOneBits());
+    path_rule_unit_container_[i][0][0][0][0] = path_rule;
+    path_rules_[i].push_back(path_rule);
+    for (size_t j = 1; j < path_rule_unit_container_[i].size(); j++) {
+      VertexLabel label = std::get<0>(path_patterns_[i][j - 1]);
+      for (const auto& predicate_pair : constant_predicates_[label]) {
+        VertexAttributeID attribute_id = predicate_pair.first;
+        for (const auto& predicate : predicate_pair.second) {
+          path_rule.AddConstantPredicate(j - 1, predicate);
+          path_rule.InitBitmap(path_instances_[i], graph_);
+          // TODO (bai-wenchao): check support.
+          if (path_rule.CountOneBits() <= 0) {
+            bool pop_status = path_rule.PopConstantPredicate();
+            if (!pop_status) {
+              LOG_FATAL("Failed to pop constant predicate.");
+            }
+            continue;
+          }
+          LOG_INFO("Pattern ID: ", i, " count: ", path_rule.CountOneBits(),
+                   " index: ", j, "");
+          for (const auto& carried_predicate :
+               path_rule.get_constant_predicates()) {
+            LOG_INFO("Predicate: ", carried_predicate.first, " ",
+                     carried_predicate.second.get_vertex_label(), " ",
+                     carried_predicate.second.get_vertex_attribute_id(), " ",
+                     carried_predicate.second.get_operator_type(), " ",
+                     carried_predicate.second.get_constant_value());
+          }
+          path_rule_unit_container_[i][j][attribute_id]
+                                   [predicate.get_constant_value()]
+                                   [predicate.get_operator_type()] = path_rule;
+          path_rules_[i].push_back(path_rule);
+          bool pop_status = path_rule.PopConstantPredicate();
+          if (!pop_status) {
+            LOG_FATAL("Failed to pop constant predicate.");
+          }
+        }
+      }
+    }
+    ExtendPathRules(i);
+  }
+}
+
+void RuleMiner::ExtendPathRules(size_t pattern_id) {
+  size_t num_unit = path_rules_[pattern_id].size();
+  size_t begin_from = 0;
+  size_t offset = num_unit;
+  bool should_continue = true;
+  while (should_continue) {
+    should_continue = false;
+    size_t inner_offset = 0;
+    for (size_t j = 0; j < num_unit; j++) {
+      for (size_t k = begin_from; k < offset; k++) {
+        PathRule path_rule_cp(path_rules_[pattern_id][k]);
+        bool should_compose = path_rule_cp.ComposeWith(
+            path_rules_[pattern_id][j], max_predicate_num_);
+        should_continue = should_continue || should_compose;
+        LOG_INFO("Compose status: ", should_continue);
+        if (should_compose) {
+          // TODO (bai-wenchao): check support.
+          if (path_rule_cp.CountOneBits() <= 0) {
+            continue;
+          }
+          LOG_INFO("[compose stage] Pattern ID: ", pattern_id,
+                   " count: ", path_rule_cp.CountOneBits(), " j: ", j,
+                   " k: ", k);
+          for (const auto& carried_predicate :
+               path_rule_cp.get_constant_predicates()) {
+            LOG_INFO("Predicate: ", carried_predicate.first, " ",
+                     carried_predicate.second.get_vertex_label(), " ",
+                     carried_predicate.second.get_vertex_attribute_id(), " ",
+                     carried_predicate.second.get_operator_type(), " ",
+                     carried_predicate.second.get_constant_value());
+          }
+          path_rules_[pattern_id].push_back(path_rule_cp);
+          inner_offset += 1;
+        }
+      }
+    }
+    begin_from += offset;
+    offset = inner_offset;
+  }
+}
+
+void RuleMiner::MineGCRs() {
+  gcr_factory_ = GCRFactory(consequence_predicates_, variable_predicates_,
+                            max_predicate_num_);
+  // Enumerate all star pattern pairs.
+  for (size_t i = 0; i < path_rules_.size(); i++) {
+    for (size_t j = i; j < path_rules_.size(); j++) {
+      VertexLabel left_label = std::get<0>(path_patterns_[i][0]);
+      VertexLabel right_label = std::get<0>(path_patterns_[j][0]);
+      // Enumerate all GCRs
+      for (size_t k = 0; k < path_rules_[i].size(); k++) {
+        for (size_t l = k; k < path_rules_[j].size(); l++) {
+          StarRule left_star = {&path_rules_[i][k]};
+          StarRule right_star = {&path_rules_[j][l]};
+          // Initialize the GCR: assign consequence predicate and variable
+          // predicates.
+          GCR gcr(left_star, right_star);
+          std::vector<GCR> init_gcrs = gcr_factory_.InitializeGCRs(gcr);
+
+          for (const auto& init_gcr : init_gcrs) {
+            // Check the support and match of `init_gcr`.
+            std::pair<size_t, size_t> support_and_match =
+                init_gcr.ComputeMatchAndSupport();
+            // If the match is less than the threshold, continue.
+
+            // If the support is higher than the threshold, add it to the
+            // verified GCRs than continue.
+
+            // Otherwise, extend the GCR.
+            ExtendGCR(init_gcr, j, l, left_label, right_label);
+          }
+        }
+      }
+    }
+  }
+}
+
+void RuleMiner::ExtendGCR(const GCR& gcr, size_t start_pattern_id,
+                          size_t start_rule_id, VertexLabel left_center_label,
+                          VertexLabel right_center_label) {
+  for (size_t i = start_pattern_id; i < path_rules_.size(); i++) {
+    if (std::get<0>(path_patterns_[i][0]) != left_center_label ||
+        std::get<0>(path_patterns_[i][0]) != right_center_label) {
+      continue;
+    }
+    for (size_t j = start_rule_id; j < path_rules_[i].size(); j++) {
+      std::vector<GCR> extended_gcrs =
+          gcr_factory_.MergeAndCompleteGCRs(gcr, path_rules_[i][j]);
+      for (const auto& extended_gcr : extended_gcrs) {
+        // Check the support and match of `extended_gcr`.
+        std::pair<size_t, size_t> support_and_match =
+            extended_gcr.ComputeMatchAndSupport();
+        // If the match is less than the threshold, continue.
+
+        // If the support is higher than the threshold, add it to the verified
+        // GCRs than continue.
+
+        // Otherwise, extend the GCR.
+        ExtendGCR(extended_gcr, i, j, left_center_label, right_center_label);
+      }
+    }
+  }
 }
 
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor

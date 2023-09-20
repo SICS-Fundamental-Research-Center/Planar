@@ -42,6 +42,8 @@ class WCCApp : public apis::PlanarAppBase<CSRGraph> {
 
   void PointJumpIncEval(VertexID id);
 
+  void WriteMinAuxiliary(VertexID id, VertexData data);
+
  private:
   std::unordered_map<VertexID, VertexID> id_to_p_;
   std::mutex mtx_;

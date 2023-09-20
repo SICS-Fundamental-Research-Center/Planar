@@ -19,9 +19,10 @@ class MutableCSRGraphTest : public ::testing::Test {
 
 TEST_F(MutableCSRGraphTest, ConstructorTest) {
   auto subgraphmetadata = data_structures::SubgraphMetadata();
-  auto a = data_structures::graph::MutableCSRGraph<int, int>(&subgraphmetadata);
-  auto c =
-      std::make_unique<MutableCSRGraphTest::MutableCSRGraph>(&subgraphmetadata);
+  auto a =
+      data_structures::graph::MutableCSRGraph<int, int>(&subgraphmetadata, 10);
+  auto c = std::make_unique<MutableCSRGraphTest::MutableCSRGraph>(
+      &subgraphmetadata, 10);
 }
 
 }  // namespace sics::graph::core::test
