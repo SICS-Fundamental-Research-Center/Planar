@@ -72,8 +72,8 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
             new VertexID[num_inedges_by_vid[j]]();
         buffer_csr_vertices[j].outgoing_edges =
             new VertexID[num_outedges_by_vid[j]]();
-        WriteAdd(&count_in_edges, (EdgeIndex) buffer_csr_vertices[j].indegree);
-        WriteAdd(&count_out_edges, (EdgeIndex) buffer_csr_vertices[j].outdegree);
+        WriteAdd(&count_in_edges, (EdgeIndex)buffer_csr_vertices[j].indegree);
+        WriteAdd(&count_out_edges, (EdgeIndex)buffer_csr_vertices[j].outdegree);
       }
     });
     task_package.push_back(task);
@@ -82,7 +82,6 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
   task_package.clear();
   delete[] num_inedges_by_vid;
   delete[] num_outedges_by_vid;
-  LOG_INFO("count_out_edges: ", count_out_edges);
 
   VertexID* offset_in_edges = new VertexID[aligned_max_vid]();
   VertexID* offset_out_edges = new VertexID[aligned_max_vid]();
@@ -143,16 +142,17 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
           memcpy(buffer_in_edges + buffer_in_offset[vid_map[j]],
                  buffer_csr_vertices[j].incoming_edges,
                  buffer_csr_vertices[j].indegree * sizeof(VertexID));
-          std::sort(buffer_in_edges + buffer_in_offset[j],
-                    buffer_in_edges + buffer_in_offset[j] + buffer_indegree[j]);
+          std::sort(buffer_in_edges + buffer_in_offset[vid_map[j]],
+                    buffer_in_edges + buffer_in_offset[vid_map[j]] +
+                        buffer_indegree[vid_map[j]]);
         }
         if (buffer_csr_vertices[j].outdegree != 0) {
           memcpy(buffer_out_edges + buffer_out_offset[vid_map[j]],
                  buffer_csr_vertices[j].outgoing_edges,
                  buffer_csr_vertices[j].outdegree * sizeof(VertexID));
-          std::sort(
-              buffer_out_edges + buffer_out_offset[j],
-              buffer_out_edges + buffer_out_offset[j] + buffer_outdegree[j]);
+          std::sort(buffer_out_edges + buffer_out_offset[vid_map[j]],
+                    buffer_out_edges + buffer_out_offset[vid_map[j]] +
+                        buffer_outdegree[vid_map[j]]);
         }
       }
     });
