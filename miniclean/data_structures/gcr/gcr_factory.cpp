@@ -8,20 +8,19 @@ using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
 
 std::vector<GCR> GCRFactory::InitializeGCRs(const GCR& gcr) {
   std::vector<GCR> gcrs;
-  GCR new_gcr = gcr;
   // Check number of preconditions.
   if (gcr.CountPreconditions() > max_predicate_num_ - 1) {
     LOG_WARN("GCRFactory::InitializeGCRs: too many preconditions.");
     return gcrs;
   }
+  std::vector<ConcreteVariablePredicate> predicates;
   // Assign consequence.
   for (const auto& consequence : consequence_predicates_) {
-    std::vector<ConcreteVariablePredicate> predicates;
     ConcretizeVariablePredicates(gcr, consequence, &predicates, false);
-    for (const auto& predicate : predicates) {
-      new_gcr.set_consequence(predicate);
-      gcrs.push_back(new_gcr);
-    }
+  }
+  gcrs.resize(predicates.size(), gcr);
+  for (size_t i = 0; i < predicates.size(); i++) {
+    gcrs[i].set_consequence(predicates[i]);
   }
   // Assign variable predicates.
   for (const auto& variable : variable_predicates_) {

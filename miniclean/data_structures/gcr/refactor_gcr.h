@@ -32,7 +32,7 @@ class GCR {
     return false;
   }
 
-  void set_consequence(ConcreteVariablePredicate consequence) {
+  void set_consequence(const ConcreteVariablePredicate& consequence) {
     consequence_ = consequence;
   }
 
