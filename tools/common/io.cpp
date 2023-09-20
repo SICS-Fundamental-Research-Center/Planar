@@ -358,7 +358,7 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
         reinterpret_cast<char*>(csr_graph.GetGloablIDBasePointer()),
         sizeof(VertexID) * csr_graph.get_num_vertices());
 
-    //  Write subgraph metadata.
+    // Write subgraph metadata.
     switch (store_strategy) {
       case kOutgoingOnly:
         subgraph_metadata_vec.push_back(
