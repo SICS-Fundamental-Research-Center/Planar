@@ -38,10 +38,10 @@ class MutableCSRGraph : public Serializable {
         vertex_id_by_local_index_(nullptr),
         out_degree_base_(nullptr),
         out_offset_base_(nullptr),
-        out_edges_base_(nullptr) {
-    parallelism_ = common::Configurations::Get()->parallelism;
-    task_package_factor_ = common::Configurations::Get()->task_package_factor;
-  }
+        out_edges_base_(nullptr),
+        parallelism_(common::Configurations::Get()->parallelism),
+        task_package_factor_(
+            common::Configurations::Get()->task_package_factor) {}
 
   ~MutableCSRGraph() override = default;
 
@@ -222,6 +222,7 @@ class MutableCSRGraph : public Serializable {
       //      }
       common::TaskPackage tasks;
       VertexIndex begin_index = 0, end_index = 0;
+      // TODO: delete count
       int count = 0;
       for (; begin_index < metadata_->num_vertices;) {
         end_index += task_size;
@@ -445,8 +446,8 @@ class MutableCSRGraph : public Serializable {
 
   std::string status_;
   size_t num_all_vertices_;
-  uint32_t parallelism_;
-  uint32_t task_package_factor_;
+  const uint32_t parallelism_;
+  const uint32_t task_package_factor_;
 };
 
 typedef MutableCSRGraph<common::Uint32VertexDataType,

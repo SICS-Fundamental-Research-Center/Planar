@@ -35,7 +35,13 @@ class PlanarAppBase : public PIE {
   using EdgeIndex = common::EdgeIndex;
 
  public:
-  PlanarAppBase() = default;
+  PlanarAppBase()
+      : runner_(nullptr),
+        update_store_(nullptr),
+        graph_(nullptr),
+        parallelism_(common::Configurations::Get()->parallelism),
+        task_package_factor_(
+            common::Configurations::Get()->task_package_factor) {}
   // TODO: add UpdateStore as a parameter, so that PEval, IncEval and Assemble
   //  can access global messages in it.
   PlanarAppBase(
@@ -44,10 +50,10 @@ class PlanarAppBase : public PIE {
       data_structures::Serializable* graph)
       : runner_(runner),
         update_store_(update_store),
-        graph_(static_cast<GraphType*>(graph)) {
-    parallelism_ = common::Configurations::Get()->parallelism;
-    task_package_factor_ = common::Configurations::Get()->task_package_factor;
-  }
+        graph_(static_cast<GraphType*>(graph)),
+        parallelism_(common::Configurations::Get()->parallelism),
+        task_package_factor_(
+            common::Configurations::Get()->task_package_factor) {}
 
   ~PlanarAppBase() override = default;
 
@@ -56,8 +62,6 @@ class PlanarAppBase : public PIE {
       update_stores::BspUpdateStore<VertexData, EdgeData>* update_store) {
     runner_ = runner;
     update_store_ = update_store;
-    parallelism_ = common::Configurations::Get()->parallelism;
-    task_package_factor_ = common::Configurations::Get()->task_package_factor;
   }
 
   virtual void SetRuntimeGraph(GraphType* graph) { graph_ = graph; }
@@ -178,8 +182,8 @@ class PlanarAppBase : public PIE {
   GraphType* graph_;
 
   // configs
-  uint32_t parallelism_;
-  uint32_t task_package_factor_;
+  const uint32_t parallelism_;
+  const uint32_t task_package_factor_;
 
   // TODO: add UpdateStore as a member here.
 };
