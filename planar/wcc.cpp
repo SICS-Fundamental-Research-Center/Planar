@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->in_memory = FLAGS_in_memory;
   core::common::Configurations::GetMutable()->task_package_factor =
       FLAGS_task_package_factor;
-
+  LOG_INFO("System begin");
   core::planar_system::Planar<core::apps::WCCApp> system(
       core::common::Configurations::Get()->root_path);
   system.Start();
