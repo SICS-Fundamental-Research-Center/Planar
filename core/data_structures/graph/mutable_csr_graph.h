@@ -139,9 +139,7 @@ class MutableCSRGraph : public Serializable {
   void UpdateOutOffsetBaseNew(common::TaskRunner* runner) {
     LOG_INFO("out_offset_base_new update begin!");
     // TODO: change simple logic
-    size_t align_vertices_num =
-        ceil((double) metadata_->num_vertices / parallelism_) * parallelism_;
-    auto step = align_vertices_num / parallelism_;
+    uint32_t step = ceil((double) metadata_->num_vertices / parallelism_);
     VertexIndex b1 = 0, e1 = 0;
     {
       common::TaskPackage pre_tasks;
@@ -202,14 +200,7 @@ class MutableCSRGraph : public Serializable {
   }
 
   void MutateGraphEdge(common::TaskRunner* runner) {
-    LOG_INFO("Mutate graph edge");
-    size_t task_num = parallelism_ * task_package_factor_;
-    auto aligned_vid =
-        ceil((double)metadata_->num_vertices / task_num) * task_num;
-    uint32_t task_size = aligned_vid / task_num;
-
-    task_size = task_size < 2 ? 2 : task_size;
-    LOGF_INFO("task size {}", task_size);
+    LOG_INFO("Mutate graph edge begin");
     // Check left edges in subgraph.
     size_t num_outgoing_edges_new =
         metadata_->num_outgoing_edges - edge_delete_bitmap_.Count();
@@ -223,11 +214,13 @@ class MutableCSRGraph : public Serializable {
       //                  vertex_id_by_local_index_[i], out_degree_base_new_[i],
       //                  out_offset_base_new_[i]);
       //      }
+      size_t task_num = parallelism_ * task_package_factor_;
+      uint32_t task_size = ceil((double)metadata_->num_vertices / task_num);
+      task_size = task_size < 2 ? 2 : task_size;
+      LOGF_INFO("task size {}", task_size);
       common::TaskPackage tasks;
       tasks.reserve(task_num);
       VertexIndex begin_index = 0, end_index = 0;
-      // TODO: delete count
-      int count = 0;
       for (; begin_index < metadata_->num_vertices;) {
         end_index += task_size;
         if (end_index > metadata_->num_vertices) {
@@ -246,9 +239,7 @@ class MutableCSRGraph : public Serializable {
         });
         tasks.push_back(task);
         begin_index = end_index;
-        count++;
       }
-      LOGF_INFO("task count: {}", count);
       runner->SubmitSync(tasks);
       // tear down degree and offset buffer
       LOG_INFO("tear down old data structure for graph");

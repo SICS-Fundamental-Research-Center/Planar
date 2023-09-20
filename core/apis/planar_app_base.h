@@ -78,7 +78,7 @@ class PlanarAppBase : public PIE {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
         end_index = graph_->GetVertexNums();
-      auto task = [vertex_func, this, begin_index, end_index]() {
+      auto task = [&vertex_func, this, begin_index, end_index]() {
         for (VertexIndex idx = begin_index; idx < end_index; idx++) {
           vertex_func(graph_->GetVertexIDByIndex(idx));
         }
@@ -142,7 +142,7 @@ class PlanarAppBase : public PIE {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
         end_index = graph_->GetVertexNums();
-      auto task = [this, edge_del_func, begin_index, end_index]() {
+      auto task = [&edge_del_func, this, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
           auto degree = graph_->GetOutDegreeByIndex(i);
           if (degree != 0) {
@@ -169,8 +169,7 @@ class PlanarAppBase : public PIE {
 
   uint32_t GetTaskSize(VertexID max_vid) const {
     auto task_num = parallelism_ * task_package_factor_;
-    auto aligned_vid = ceil((double)max_vid / task_num) * task_num;
-    uint32_t task_size = aligned_vid / parallelism_ / task_package_factor_;
+    uint32_t task_size = ceil((double) max_vid / task_num);
     return task_size < 2 ? 2 : task_size;
   }
 
