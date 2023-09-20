@@ -42,6 +42,8 @@ class GraphFormatConverter {
       std::filesystem::create_directory(output_root_path + "/bitmap");
     if (!std::filesystem::exists(output_root_path + "/bitmap/src_map"))
       std::filesystem::create_directory(output_root_path + "/bitmap/src_map");
+    if (!std::filesystem::exists(output_root_path + "/index"))
+      std::filesystem::create_directory(output_root_path + "/index");
     if (!std::filesystem::exists(output_root_path + "/bitmap/is_in_graph"))
       std::filesystem::create_directory(output_root_path +
                                         "/bitmap/is_in_graph");

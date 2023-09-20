@@ -46,6 +46,7 @@ class Planar {
   ~Planar() = default;
 
   void Start() {
+    LOG_INFO("start components!");
     loader_->Start();
     discharger_->Start();
     executer_->Start();

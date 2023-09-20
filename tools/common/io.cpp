@@ -232,16 +232,17 @@ void GraphFormatConverter::WriteSubgraph(
     // Write subgraph metadata.
     switch (store_strategy) {
       case kOutgoingOnly:
-        subgraph_metadata_vec.push_back(
-            {gid, num_vertices, 0, count_out_edges, max_vid, min_vid});
+        subgraph_metadata_vec.push_back({gid, (VertexID)num_vertices, 0,
+                                         count_out_edges, max_vid, min_vid});
         break;
       case kIncomingOnly:
         subgraph_metadata_vec.push_back(
-            {gid, num_vertices, count_in_edges, 0, max_vid, min_vid});
+            {gid, (VertexID)num_vertices, count_in_edges, 0, max_vid, min_vid});
         break;
       case kUnconstrained:
-        subgraph_metadata_vec.push_back({gid, num_vertices, count_in_edges,
-                                         count_out_edges, max_vid, min_vid});
+        subgraph_metadata_vec.push_back({gid, (VertexID)num_vertices,
+                                         count_in_edges, count_out_edges,
+                                         max_vid, min_vid});
         break;
       case kUndefinedStrategy:
         LOG_FATAL("Store_strategy is undefined");
