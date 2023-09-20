@@ -45,8 +45,8 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
         auto e = edges.get_edge_by_index(j);
         visited.SetBit(e.src);
         visited.SetBit(e.dst);
-        WriteAdd(num_inedges_by_vid + e.dst, (VertexID)1);
-        WriteAdd(num_outedges_by_vid + e.src, (VertexID)1);
+        WriteAdd(num_inedges_by_vid + e.dst, (VertexID) 1);
+        WriteAdd(num_outedges_by_vid + e.src, (VertexID) 1);
         WriteMin(&min_vid, e.src);
         WriteMin(&min_vid, e.dst);
       }
@@ -72,8 +72,8 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
             new VertexID[num_inedges_by_vid[j]]();
         buffer_csr_vertices[j].outgoing_edges =
             new VertexID[num_outedges_by_vid[j]]();
-        WriteAdd(&count_in_edges, (EdgeIndex)buffer_csr_vertices[j].indegree);
-        WriteAdd(&count_out_edges, (EdgeIndex)buffer_csr_vertices[j].outdegree);
+        WriteAdd(&count_in_edges, (EdgeIndex) buffer_csr_vertices[j].indegree);
+        WriteAdd(&count_out_edges, (EdgeIndex) buffer_csr_vertices[j].outdegree);
       }
     });
     task_package.push_back(task);
