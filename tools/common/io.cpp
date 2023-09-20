@@ -3,6 +3,7 @@
 namespace sics::graph::tools::common {
 
 using sics::graph::core::common::Bitmap;
+using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
@@ -15,8 +16,7 @@ using std::filesystem::exists;
 
 void GraphFormatConverter::WriteSubgraph(
     const std::vector<std::vector<Vertex>>& vertex_buckets,
-    const GraphMetadata& graph_metadata,
-    StoreStrategy store_strategy) {
+    const GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -42,7 +42,7 @@ void GraphFormatConverter::WriteSubgraph(
     std::ofstream is_in_graph_file(output_root_path_ + "bitmap/is_in_graph/" +
                                    std::to_string(gid) + ".bin");
 
-    size_t count_in_edges = 0, count_out_edges = 0;
+    EdgeIndex count_in_edges = 0, count_out_edges = 0;
     auto num_vertices = bucket.size();
     VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
     Bitmap src_map(num_vertices), is_in_graph(aligned_max_vid);
@@ -52,14 +52,15 @@ void GraphFormatConverter::WriteSubgraph(
     auto buffer_outdegree = new VertexID[num_vertices]();
 
     for (unsigned int i = 0; i < parallelism; i++) {
-      auto task = std::bind([&, i, parallelism]() {
+      auto task = std::bind([&, i]() {
         for (VertexID j = i; j < num_vertices; j += parallelism) {
           buffer_globalid[j] = bucket.at(j).vid;
+          is_in_graph.SetBit(bucket.at(j).vid);
           buffer_globalid2index[bucket.at(j).vid] = j;
           buffer_indegree[j] = bucket.at(j).indegree;
           buffer_outdegree[j] = bucket.at(j).outdegree;
-          WriteAdd(&count_out_edges, (size_t)bucket.at(j).outdegree);
-          WriteAdd(&count_in_edges, (size_t)bucket.at(j).indegree);
+          WriteAdd(&count_out_edges, (EdgeIndex)bucket.at(j).outdegree);
+          WriteAdd(&count_in_edges, (EdgeIndex)bucket.at(j).indegree);
           WriteMin(&min_vid, buffer_globalid[j]);
           WriteMax(&max_vid, buffer_globalid[j]);
         }
@@ -75,8 +76,8 @@ void GraphFormatConverter::WriteSubgraph(
     delete[] buffer_globalid;
 
     // Compute offset for each vertex.
-    auto buffer_in_offset = new VertexID[num_vertices]();
-    auto buffer_out_offset = new VertexID[num_vertices]();
+    auto buffer_in_offset = new EdgeIndex[num_vertices]();
+    auto buffer_out_offset = new EdgeIndex[num_vertices]();
     for (VertexID i = 1; i < num_vertices; i++) {
       buffer_in_offset[i] = buffer_in_offset[i - 1] + buffer_indegree[i - 1];
       buffer_out_offset[i] = buffer_out_offset[i - 1] + buffer_outdegree[i - 1];
@@ -269,6 +270,7 @@ void GraphFormatConverter::WriteSubgraph(
   out_node["GraphMetadata"]["num_edges"] = graph_metadata.get_num_edges();
   out_node["GraphMetadata"]["max_vid"] = graph_metadata.get_max_vid();
   out_node["GraphMetadata"]["min_vid"] = graph_metadata.get_min_vid();
+  out_node["GraphMetadata"]["count_border_vertices"] = border_vertices.Count();
   out_node["GraphMetadata"]["num_subgraphs"] =
       graph_metadata.get_num_subgraphs();
   out_node["GraphMetadata"]["subgraphs"] = subgraph_metadata_vec;
@@ -286,7 +288,7 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
   auto task_package = TaskPackage();
   task_package.reserve(parallelism);
 
-  VertexID n_subgraphs = graph_metadata.get_num_subgraphs();
+  GraphID n_subgraphs = graph_metadata.get_num_subgraphs();
 
   std::vector<SubgraphMetadata> subgraph_metadata_vec;
   std::ofstream out_meta_file(output_root_path_ + "meta.yaml");
@@ -456,6 +458,7 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
   border_vertices_file.write(
       reinterpret_cast<char*>(border_vertices.GetDataBasePointer()),
       ((border_vertices.size() >> 6) + 1) * sizeof(uint64_t));
+
   border_vertices_file.close();
 
   // Write metadata
@@ -464,6 +467,7 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
   out_node["GraphMetadata"]["num_edges"] = graph_metadata.get_num_edges();
   out_node["GraphMetadata"]["max_vid"] = graph_metadata.get_max_vid();
   out_node["GraphMetadata"]["min_vid"] = graph_metadata.get_min_vid();
+  out_node["GraphMetadata"]["count_border_vertices"] = border_vertices.Count();
   out_node["GraphMetadata"]["num_subgraphs"] = subgraph_metadata_vec.size();
   out_node["GraphMetadata"]["subgraphs"] = subgraph_metadata_vec;
   out_meta_file << out_node << std::endl;
