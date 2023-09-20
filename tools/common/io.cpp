@@ -59,8 +59,8 @@ void GraphFormatConverter::WriteSubgraph(
           buffer_globalid2index[bucket.at(j).vid] = j;
           buffer_indegree[j] = bucket.at(j).indegree;
           buffer_outdegree[j] = bucket.at(j).outdegree;
-          WriteAdd(&count_out_edges, (EdgeIndex)bucket.at(j).outdegree);
-          WriteAdd(&count_in_edges, (EdgeIndex)bucket.at(j).indegree);
+          WriteAdd(&count_out_edges, (EdgeIndex) bucket.at(j).outdegree);
+          WriteAdd(&count_in_edges, (EdgeIndex) bucket.at(j).indegree);
           WriteMin(&min_vid, buffer_globalid[j]);
           WriteMax(&max_vid, buffer_globalid[j]);
         }
@@ -89,13 +89,13 @@ void GraphFormatConverter::WriteSubgraph(
         out_data_file.write(reinterpret_cast<char*>(buffer_outdegree),
                             sizeof(VertexID) * num_vertices);
         out_data_file.write(reinterpret_cast<char*>(buffer_out_offset),
-                            sizeof(VertexID) * num_vertices);
+                            sizeof(EdgeIndex) * num_vertices);
         break;
       case kIncomingOnly:
         out_data_file.write(reinterpret_cast<char*>(buffer_indegree),
                             sizeof(VertexID) * num_vertices);
         out_data_file.write(reinterpret_cast<char*>(buffer_in_offset),
-                            sizeof(VertexID) * num_vertices);
+                            sizeof(EdgeIndex) * num_vertices);
         break;
       case kUnconstrained:
         out_data_file.write(reinterpret_cast<char*>(buffer_indegree),
@@ -103,9 +103,9 @@ void GraphFormatConverter::WriteSubgraph(
         out_data_file.write(reinterpret_cast<char*>(buffer_outdegree),
                             sizeof(VertexID) * num_vertices);
         out_data_file.write(reinterpret_cast<char*>(buffer_in_offset),
-                            sizeof(VertexID) * num_vertices);
+                            sizeof(EdgeIndex) * num_vertices);
         out_data_file.write(reinterpret_cast<char*>(buffer_out_offset),
-                            sizeof(VertexID) * num_vertices);
+                            sizeof(EdgeIndex) * num_vertices);
         break;
       case kUndefinedStrategy:
         LOG_FATAL("Store_strategy is undefined");
@@ -371,7 +371,7 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
             sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
             reinterpret_cast<char*>(csr_graph.GetOutOffsetBasePointer()),
-            sizeof(VertexID) * csr_graph.get_num_vertices());
+            sizeof(EdgeIndex) * csr_graph.get_num_vertices());
         out_data_file.write(
             reinterpret_cast<char*>(csr_graph.GetOutgoingEdgesBasePointer()),
             sizeof(VertexID) * csr_graph.get_num_outgoing_edges());
@@ -386,7 +386,7 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
             sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
             reinterpret_cast<char*>(csr_graph.GetInOffsetBasePointer()),
-            sizeof(VertexID) * csr_graph.get_num_vertices());
+            sizeof(EdgeIndex) * csr_graph.get_num_vertices());
         out_data_file.write(
             reinterpret_cast<char*>(csr_graph.GetIncomingEdgesBasePointer()),
             sizeof(VertexID) * csr_graph.get_num_incoming_edges());
@@ -400,10 +400,10 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
             sizeof(VertexID) * csr_graph.get_num_vertices());
         out_data_file.write(
             reinterpret_cast<char*>(csr_graph.GetInOffsetBasePointer()),
-            sizeof(VertexID) * csr_graph.get_num_vertices());
+            sizeof(EdgeIndex) * csr_graph.get_num_vertices());
         out_data_file.write(
             reinterpret_cast<char*>(csr_graph.GetOutOffsetBasePointer()),
-            sizeof(VertexID) * csr_graph.get_num_vertices());
+            sizeof(EdgeIndex) * csr_graph.get_num_vertices());
         out_data_file.write(
             reinterpret_cast<char*>(csr_graph.GetIncomingEdgesBasePointer()),
             sizeof(VertexID) * csr_graph.get_num_outgoing_edges());

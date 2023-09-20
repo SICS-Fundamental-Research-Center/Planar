@@ -63,16 +63,18 @@ class ImmutableCSRGraph : public Serializable {
          << ", outdegree: " << u.outdegree << "===" << std::endl;
       if (u.indegree != 0) {
         ss << "    Incoming edges: ";
-        for (VertexID i = 0; i < u.indegree; i++) ss << u.incoming_edges[i] << ",";
+        for (VertexID i = 0; i < u.indegree; i++)
+          ss << u.incoming_edges[i] << ",";
         ss << std::endl << std::endl;
       }
       if (u.outdegree != 0) {
         ss << "    Outgoing edges: ";
-        for (VertexID i = 0; i < u.outdegree; i++) ss << u.outgoing_edges[i] << ",";
+        for (VertexID i = 0; i < u.outdegree; i++)
+          ss << u.outgoing_edges[i] << ",";
         ss << std::endl << std::endl;
       }
       ss << "****************************************" << std::endl;
-      std::string s =  ss.str();
+      std::string s = ss.str();
 
       LOG_INFO(s);
     }
@@ -101,8 +103,10 @@ class ImmutableCSRGraph : public Serializable {
   void SetOutDegreeBuffer(VertexID* buffer) {
     outdegree_base_pointer_ = buffer;
   }
-  void SetInOffsetBuffer(VertexID* buffer) { in_offset_base_pointer_ = buffer; }
-  void SetOutOffsetBuffer(VertexID* buffer) {
+  void SetInOffsetBuffer(EdgeIndex* buffer) {
+    in_offset_base_pointer_ = buffer;
+  }
+  void SetOutOffsetBuffer(EdgeIndex* buffer) {
     out_offset_base_pointer_ = buffer;
   }
   void SetIncomingEdgesBuffer(VertexID* buffer) {
@@ -121,8 +125,8 @@ class ImmutableCSRGraph : public Serializable {
   }
   VertexID* GetInDegreeBasePointer() { return indegree_base_pointer_; }
   VertexID* GetOutDegreeBasePointer() { return outdegree_base_pointer_; }
-  VertexID* GetInOffsetBasePointer() { return in_offset_base_pointer_; }
-  VertexID* GetOutOffsetBasePointer() { return out_offset_base_pointer_; }
+  EdgeIndex* GetInOffsetBasePointer() { return in_offset_base_pointer_; }
+  EdgeIndex* GetOutOffsetBasePointer() { return out_offset_base_pointer_; }
   VertexID* GetIncomingEdgesBasePointer() {
     return incoming_edges_base_pointer_;
   }
@@ -190,8 +194,8 @@ class ImmutableCSRGraph : public Serializable {
   VertexID* outgoing_edges_base_pointer_;
   VertexID* indegree_base_pointer_;
   VertexID* outdegree_base_pointer_;
-  VertexID* in_offset_base_pointer_;
-  VertexID* out_offset_base_pointer_;
+  EdgeIndex* in_offset_base_pointer_;
+  EdgeIndex* out_offset_base_pointer_;
   VertexLabel* vertex_label_base_pointer_;
 };
 
