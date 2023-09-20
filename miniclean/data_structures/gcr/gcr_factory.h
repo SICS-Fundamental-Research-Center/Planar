@@ -15,9 +15,8 @@ class GCRFactory {
   using GCR = sics::graph::miniclean::data_structures::gcr::refactor::GCR;
   using VariablePredicate =
       sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
-  using ConcreteVariablePredicate = std::pair<
-      std::pair<std::pair<uint8_t, uint8_t>, std::pair<uint8_t, uint8_t>>,
-      VariablePredicate>;
+  using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::
+      gcr::refactor::ConcreteVariablePredicate;
 
  public:
   GCRFactory() = default;
@@ -32,7 +31,7 @@ class GCRFactory {
   //   - assign consequence
   //   - assign variable predicates
   // The input GCR only carries constant predicates.
-  std::vector<GCR> InitializeGCRs(GCR& gcr);
+  std::vector<GCR> InitializeGCRs(const GCR& gcr);
 
   // This function aims to extend GCRs:
   //   - merge the path_rule into the GCR

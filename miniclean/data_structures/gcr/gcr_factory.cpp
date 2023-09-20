@@ -2,18 +2,13 @@
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
-using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
 using GCR = sics::graph::miniclean::data_structures::gcr::refactor::GCR;
 using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
-using VariablePredicate =
-    sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
-using ConcreteVariablePredicate = std::pair<
-    std::pair<std::pair<uint8_t, uint8_t>, std::pair<uint8_t, uint8_t>>,
-    VariablePredicate>;
 
-std::vector<GCR> GCRFactory::InitializeGCRs(GCR& gcr) {
+std::vector<GCR> GCRFactory::InitializeGCRs(const GCR& gcr) {
   std::vector<GCR> gcrs;
+  GCR new_gcr = gcr;
   // Check number of preconditions.
   if (gcr.CountPreconditions() > max_predicate_num_ - 1) {
     LOG_WARN("GCRFactory::InitializeGCRs: too many preconditions.");
@@ -24,8 +19,8 @@ std::vector<GCR> GCRFactory::InitializeGCRs(GCR& gcr) {
     std::vector<ConcreteVariablePredicate> predicates;
     ConcretizeVariablePredicates(gcr, consequence, &predicates, false);
     for (const auto& predicate : predicates) {
-      gcr.set_consequence(predicate);
-      gcrs.push_back(gcr);
+      new_gcr.set_consequence(predicate);
+      gcrs.push_back(new_gcr);
     }
   }
   // Assign variable predicates.
@@ -63,9 +58,11 @@ void GCRFactory::ConcretizeVariablePredicates(
           if (std::get<0>(gcr.get_right_star()[j]->get_path_pattern()[l]) !=
               rhs_label)
             continue;
-          if (gcr.IsCompatibleWith(gcr.ConcretizeVariablePredicate(
-                                       variable_predicate, i, k, j, l),
-                                   consider_consequence)) {
+          const auto& concrete_vpredicate =
+              gcr.ConcretizeVariablePredicate(variable_predicate, i, k, j, l);
+          bool compatible_status =
+              gcr.IsCompatibleWith(concrete_vpredicate, consider_consequence);
+          if (compatible_status) {
             predicates->push_back(gcr.ConcretizeVariablePredicate(
                 variable_predicate, i, k, j, l));
           }
@@ -88,7 +85,7 @@ void GCRFactory::ExtendVariablePredicates(
     ExtendVariablePredicates(new_gcr, predicates, i + 1, gcrs);
     bool pop_status = new_gcr.PopVariablePredicateFromBack();
     if (!pop_status) {
-      LOG_ERROR("GCRFactory::ExtendVariablePredicates: pop failed.");
+      LOG_FATAL("GCRFactory::ExtendVariablePredicates: pop failed.");
     }
   }
 }
