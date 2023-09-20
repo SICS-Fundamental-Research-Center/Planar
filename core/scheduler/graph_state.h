@@ -34,7 +34,29 @@ struct GraphState {
     return subgraph_storage_state_.at(gid);
   }
 
-  void UpdateSubgraphState(common::GraphID gid, StorageStateType type) {
+  void SetOnDiskToSerialized(common::GraphID gid) {
+    subgraph_storage_state_.at(gid) = Serialized;
+  }
+
+  void SetSerializedToDeserialized(common::GraphID gid) {
+    subgraph_storage_state_.at(gid) = Deserialized;
+  }
+
+  void SetDeserializedToComputed(common::GraphID gid) {
+    subgraph_storage_state_.at(gid) = Computed;
+    current_round_pending_.at(gid) = false;
+  }
+
+  void SetComputedToSerialized(common::GraphID gid) {
+    subgraph_storage_state_.at(gid) = Serialized;
+  }
+
+  void SetSerializedToOnDisk(common::GraphID gid) {
+    subgraph_storage_state_.at(gid) = OnDisk;
+    subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
+  }
+
+  void UpdateSubgraphState2(common::GraphID gid, StorageStateType type) {
     subgraph_storage_state_.at(gid) = type;
     subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
     current_round_pending_.at(gid) = false;
@@ -52,7 +74,11 @@ struct GraphState {
     subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
   }
 
-  void SyncRoundState() { current_round_pending_.swap(next_round_pending_); }
+  void SyncCurrentRoundPending() {
+    for (int i = 0; i < num_subgraphs_; i++) {
+      current_round_pending_.at(i) = true;
+    }
+  }
 
   // graph handlers
   data_structures::Serialized* GetSubgraphSerialized(common::GraphID gid) {

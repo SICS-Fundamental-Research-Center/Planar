@@ -96,8 +96,8 @@ class PlanarAppBase : public PIE {
       auto task = std::bind([&, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
           for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
-            LOGF_INFO("edge_func: {}, {}", graph_->GetVertexIDByIndex(i),
-                      graph_->GetOneOutEdge(i, j));
+//            LOGF_INFO("edge_func: {}, {}", graph_->GetVertexIDByIndex(i),
+//                      graph_->GetOneOutEdge(i, j));
             edge_func(graph_->GetVertexIDByIndex(i),
                       graph_->GetOneOutEdge(i, j));
           }
@@ -125,10 +125,10 @@ class PlanarAppBase : public PIE {
       auto task = std::bind([&, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
           for (VertexIndex j = 0; j < graph_->GetOutDegreeByIndex(i); j++) {
-            LOGF_INFO("edge_del_func: {}, {}, {}",
-                      graph_->GetVertexIDByIndex(i),
-                      graph_->GetOneOutEdge(i, j),
-                      graph_->GetOutOffsetByIndex(i) + j);
+//            LOGF_INFO("edge_del_func: {}, {}, {}",
+//                      graph_->GetVertexIDByIndex(i),
+//                      graph_->GetOneOutEdge(i, j),
+//                      graph_->GetOutOffsetByIndex(i) + j);
             edge_del_func(graph_->GetVertexIDByIndex(i),
                           graph_->GetOneOutEdge(i, j),
                           graph_->GetOutOffsetByIndex(i) + j);
