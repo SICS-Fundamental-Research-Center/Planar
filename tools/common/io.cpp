@@ -59,8 +59,8 @@ void GraphFormatConverter::WriteSubgraph(
           buffer_globalid2index[bucket.at(j).vid] = j;
           buffer_indegree[j] = bucket.at(j).indegree;
           buffer_outdegree[j] = bucket.at(j).outdegree;
-          WriteAdd(&count_out_edges, (EdgeIndex)bucket.at(j).outdegree);
-          WriteAdd(&count_in_edges, (EdgeIndex)bucket.at(j).indegree);
+          WriteAdd(&count_out_edges, (EdgeIndex) bucket.at(j).outdegree);
+          WriteAdd(&count_in_edges, (EdgeIndex) bucket.at(j).indegree);
           WriteMin(&min_vid, buffer_globalid[j]);
           WriteMax(&max_vid, buffer_globalid[j]);
         }
@@ -143,9 +143,6 @@ void GraphFormatConverter::WriteSubgraph(
     thread_pool.SubmitSync(task_package);
     task_package.clear();
 
-    for (size_t i = 0; i < num_vertices; i++) {
-      LOG_INFO(buffer_out_offset[i]);
-    }
     delete[] buffer_in_offset;
     delete[] buffer_out_offset;
 
