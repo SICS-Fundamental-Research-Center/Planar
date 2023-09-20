@@ -25,6 +25,7 @@ void MutableCSRReader::Read(scheduler::ReadMessage* message,
 
   Serialized* graph_serialized = new SerializedMuatbleCSRGraph();
   std::vector<OwnedBuffer> buffers;
+  buffers.reserve(6);
   ReadMetaInfoFromBin(file_path, message->num_vertices, &buffers);
   ReadSingleBufferFromBin(label_path, &buffers);
   ReadSingleBufferFromBin(in_graph_bitmap_path, &buffers);

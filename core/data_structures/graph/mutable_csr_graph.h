@@ -138,12 +138,14 @@ class MutableCSRGraph : public Serializable {
 
   void UpdateOutOffsetBaseNew(common::TaskRunner* runner) {
     LOG_INFO("out_offset_base_new update begin!");
+    // TODO: change simple logic
     size_t align_vertices_num =
-        ceil((double)metadata_->num_vertices / parallelism_) * parallelism_;
+        ceil((double) metadata_->num_vertices / parallelism_) * parallelism_;
     auto step = align_vertices_num / parallelism_;
     VertexIndex b1 = 0, e1 = 0;
     {
       common::TaskPackage pre_tasks;
+      pre_tasks.reserve(parallelism_);
       for (uint32_t i = 0; i < parallelism_; i++) {
         b1 = i * step;
         if (b1 + step > metadata_->num_vertices) {
@@ -176,6 +178,7 @@ class MutableCSRGraph : public Serializable {
     }
     {
       common::TaskPackage fix_tasks;
+      fix_tasks.reserve(parallelism_);
       b1 = 0;
       e1 = 0;
       for (uint32_t i = 0; i < parallelism_; i++) {
@@ -221,6 +224,7 @@ class MutableCSRGraph : public Serializable {
       //                  out_offset_base_new_[i]);
       //      }
       common::TaskPackage tasks;
+      tasks.reserve(task_num);
       VertexIndex begin_index = 0, end_index = 0;
       // TODO: delete count
       int count = 0;
