@@ -40,7 +40,7 @@ class MutableCSRGraph : public Serializable {
         out_offset_base_(nullptr),
         out_edges_base_(nullptr) {
     parallelism_ = common::Configurations::Get()->parallelism;
-    max_task_package_ = common::Configurations::Get()->max_task_package;
+    max_task_package_ = common::Configurations::Get()->task_package_factor;
   }
 
   ~MutableCSRGraph() override = default;

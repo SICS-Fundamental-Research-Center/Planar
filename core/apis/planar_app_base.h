@@ -44,7 +44,10 @@ class PlanarAppBase : public PIE {
       data_structures::Serializable* graph)
       : runner_(runner),
         update_store_(update_store),
-        graph_(static_cast<GraphType*>(graph)) {}
+        graph_(static_cast<GraphType*>(graph)) {
+    parallelism_ = common::Configurations::Get()->parallelism;
+    task_package_factor_ = common::Configurations::Get()->task_package_factor;
+  }
 
   ~PlanarAppBase() override = default;
 
@@ -63,12 +66,13 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelVertexDo is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
+    tasks.reserve(parallelism_ * task_package_factor_);
     VertexIndex begin_index = 0, end_index = 0;
     for (; begin_index < graph_->GetVertexNums();) {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
         end_index = graph_->GetVertexNums();
-      auto task = [this, vertex_func, begin_index, end_index]() {
+      auto task = [&vertex_func, this, begin_index, end_index]() {
         for (VertexIndex idx = begin_index; idx < end_index; idx++) {
           vertex_func(graph_->GetVertexIDByIndex(idx));
         }
@@ -88,13 +92,14 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelEdgeDo is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
+    tasks.reserve(parallelism_ * task_package_factor_);
     int count = 0;
     VertexIndex begin_index = 0, end_index = 0;
     for (; begin_index < graph_->GetVertexNums();) {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
         end_index = graph_->GetVertexNums();
-      auto task = [this, edge_func, begin_index, end_index]() {
+      auto task = [&edge_func, this, begin_index, end_index]() {
         for (VertexIndex i = begin_index; i < end_index; i++) {
           auto degree = graph_->GetOutDegreeByIndex(i);
           if (degree != 0) {
@@ -156,8 +161,8 @@ class PlanarAppBase : public PIE {
   }
 
   uint32_t GetTaskSize(VertexID max_vid) const {
-    uint32_t task_size =
-        max_vid / common::Configurations::Get()->max_task_package;
+    auto aligned_vid = ceil((double)max_vid / parallelism_) * parallelism_;
+    uint32_t task_size = aligned_vid / parallelism_ / task_package_factor_;
     return task_size < 2 ? 2 : task_size;
   }
 
@@ -167,6 +172,10 @@ class PlanarAppBase : public PIE {
   update_stores::BspUpdateStore<VertexData, EdgeData>* update_store_;
 
   GraphType* graph_;
+
+  // configs
+  uint32_t parallelism_;
+  uint32_t task_package_factor_;
 
   // TODO: add UpdateStore as a member here.
 };

@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->parallelism = FLAGS_p;
   core::common::Configurations::GetMutable()->edge_mutate = true;
   core::common::Configurations::GetMutable()->in_memory = FLAGS_in_memory;
-  core::common::Configurations::GetMutable()->max_task_package = 50 * FLAGS_p;
+  core::common::Configurations::GetMutable()->task_package_factor = 50 * FLAGS_p;
 
   core::planar_system::Planar<core::apps::WCCApp> system(
       core::common::Configurations::Get()->root_path);
