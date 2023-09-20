@@ -120,8 +120,8 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
     vid_map[i] = vid;
     vid++;
   }
-  auto buffer_in_offset = new VertexID[edges.get_metadata().num_vertices]();
-  auto buffer_out_offset = new VertexID[edges.get_metadata().num_vertices]();
+  auto buffer_in_offset = new EdgeIndex[edges.get_metadata().num_vertices]();
+  auto buffer_out_offset = new EdgeIndex[edges.get_metadata().num_vertices]();
 
   LOG_INFO("Compute offset for each vertex.");
   for (VertexID i = 1; i < edges.get_metadata().num_vertices; i++) {
