@@ -73,13 +73,13 @@ void MiniCleanCSRGraph::ParseSubgraphCSR(
   SetInDegreeBuffer(
       reinterpret_cast<VertexID*>(buf_graph_base_pointer + start_indegree));
   SetInOffsetBuffer(
-      reinterpret_cast<VertexID*>(buf_graph_base_pointer + start_in_offset));
+      reinterpret_cast<EdgeIndex*>(buf_graph_base_pointer + start_in_offset));
   SetIncomingEdgesBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer +
                                                      start_incoming_edges));
   SetOutDegreeBuffer(
       reinterpret_cast<VertexID*>(buf_graph_base_pointer + start_outdegree));
   SetOutOffsetBuffer(
-      reinterpret_cast<VertexID*>(buf_graph_base_pointer + start_out_offset));
+      reinterpret_cast<EdgeIndex*>(buf_graph_base_pointer + start_out_offset));
   SetOutgoingEdgesBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer +
                                                      start_outgoing_edges));
 }

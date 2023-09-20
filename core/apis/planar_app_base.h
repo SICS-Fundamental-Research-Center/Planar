@@ -56,6 +56,8 @@ class PlanarAppBase : public PIE {
       update_stores::BspUpdateStore<VertexData, EdgeData>* update_store) {
     runner_ = runner;
     update_store_ = update_store;
+    parallelism_ = common::Configurations::Get()->parallelism;
+    task_package_factor_ = common::Configurations::Get()->task_package_factor;
   }
 
   virtual void SetRuntimeGraph(GraphType* graph) { graph_ = graph; }
@@ -72,7 +74,7 @@ class PlanarAppBase : public PIE {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
         end_index = graph_->GetVertexNums();
-      auto task = [&vertex_func, this, begin_index, end_index]() {
+      auto task = [vertex_func, this, begin_index, end_index]() {
         for (VertexIndex idx = begin_index; idx < end_index; idx++) {
           vertex_func(graph_->GetVertexIDByIndex(idx));
         }
@@ -80,6 +82,7 @@ class PlanarAppBase : public PIE {
       tasks.push_back(task);
       begin_index = end_index;
     }
+    LOGF_INFO("task_size: {}, num tasks: {}", task_size, tasks.size());
     runner_->SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
     graph_->SyncVertexData();
@@ -161,7 +164,8 @@ class PlanarAppBase : public PIE {
   }
 
   uint32_t GetTaskSize(VertexID max_vid) const {
-    auto aligned_vid = ceil((double)max_vid / parallelism_) * parallelism_;
+    auto task_num = parallelism_ * task_package_factor_;
+    auto aligned_vid = ceil((double)max_vid / task_num) * task_num;
     uint32_t task_size = aligned_vid / parallelism_ / task_package_factor_;
     return task_size < 2 ? 2 : task_size;
   }

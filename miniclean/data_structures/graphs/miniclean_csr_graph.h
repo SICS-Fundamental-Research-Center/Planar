@@ -30,6 +30,7 @@ class MiniCleanCSRGraph
       sics::graph::miniclean::common::VertexAttributeValue;
   using VertexID = sics::graph::miniclean::common::VertexID;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+  using EdgeIndex = sics::graph::core::common::EdgeIndex;
 
  public:
   explicit MiniCleanCSRGraph(SubgraphMetadata metadata)

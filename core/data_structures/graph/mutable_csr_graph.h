@@ -40,7 +40,7 @@ class MutableCSRGraph : public Serializable {
         out_offset_base_(nullptr),
         out_edges_base_(nullptr) {
     parallelism_ = common::Configurations::Get()->parallelism;
-    max_task_package_ = common::Configurations::Get()->task_package_factor;
+    task_package_factor_ = common::Configurations::Get()->task_package_factor;
   }
 
   ~MutableCSRGraph() override = default;
@@ -200,7 +200,11 @@ class MutableCSRGraph : public Serializable {
 
   void MutateGraphEdge(common::TaskRunner* runner) {
     LOG_INFO("Mutate graph edge");
-    uint32_t task_size = metadata_->num_vertices / max_task_package_;
+    size_t task_num = parallelism_ * task_package_factor_;
+    auto aligned_vid =
+        ceil((double)metadata_->num_vertices / task_num) * task_num;
+    uint32_t task_size = aligned_vid / task_num;
+
     task_size = task_size < 2 ? 2 : task_size;
     LOGF_INFO("task size {}", task_size);
     // Check left edges in subgraph.
@@ -442,7 +446,7 @@ class MutableCSRGraph : public Serializable {
   std::string status_;
   size_t num_all_vertices_;
   uint32_t parallelism_;
-  uint32_t max_task_package_;
+  uint32_t task_package_factor_;
 };
 
 typedef MutableCSRGraph<common::Uint32VertexDataType,
