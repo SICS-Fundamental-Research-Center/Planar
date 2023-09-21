@@ -15,6 +15,7 @@ struct GraphState {
  public:
   typedef enum {
     OnDisk = 1,
+    Reading,
     Serialized,
     Deserialized,
     Computed,
@@ -36,6 +37,14 @@ struct GraphState {
   }
 
   void SetOnDiskToSerialized(common::GraphID gid) {
+    subgraph_storage_state_.at(gid) = Serialized;
+  }
+
+  void SetOnDiskToReading(common::GraphID gid) {
+    subgraph_storage_state_.at(gid) = Reading;
+  }
+
+  void SetReadingToSerialized(common::GraphID gid) {
     subgraph_storage_state_.at(gid) = Serialized;
   }
 

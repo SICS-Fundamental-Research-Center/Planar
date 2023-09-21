@@ -2,7 +2,7 @@
 
 namespace sics::graph::core::data_structures {
 
-// TODO: initialize GraphMetadata by item not copy construction
+
 GraphMetadata::GraphMetadata(const std::string& graph_metadata_path)
     : data_root_path_(graph_metadata_path) {
   YAML::Node metadata_node;

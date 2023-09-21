@@ -16,6 +16,13 @@ void Scheduler::Start() {
         graph_state_.NewSerializedMutableCSRGraph(first_read_message.graph_id);
     first_read_message.round = 0;
     graph_state_.subgraph_limits_--;
+    auto read_size =
+        graph_metadata_info_.GetSubgraphSize(first_read_message.graph_id);
+    if (memory_left_size_ - read_size < 0) {
+      LOG_FATAL("read size is too large, memory is not enough!");
+    }
+    memory_left_size_ -= read_size;
+    graph_state_.SetOnDiskToReading(first_read_message.graph_id);
     message_hub_.get_reader_queue()->Push(first_read_message);
     while (running) {
       Message resp = message_hub_.GetResponse();
@@ -60,7 +67,7 @@ void Scheduler::Start() {
 
 bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
   // read finish, to execute the loaded graph
-  graph_state_.SetOnDiskToSerialized(read_resp.graph_id);
+  graph_state_.SetReadingToSerialized(read_resp.graph_id);
 
   // read graph need deserialize first
   // check current round subgraph and send it to executer to Deserialization.
@@ -177,6 +184,8 @@ bool Scheduler::WriteMessageResponseAndCheckTerminate(
   graph_state_.subgraph_limits_++;
   graph_state_.SetSerializedToOnDisk(write_resp.graph_id);
   graph_state_.ReleaseSubgraphSerialized(write_resp.graph_id);
+  auto write_size = graph_metadata_info_.GetSubgraphSize(write_resp.graph_id);
+  memory_left_size_ += write_size;
   // Read next subgraph if permitted
   TryReadNextGraph();
   return true;
@@ -186,16 +195,24 @@ bool Scheduler::WriteMessageResponseAndCheckTerminate(
 
 // try to read a graph from disk into memory if memory_limit is permitted
 bool Scheduler::TryReadNextGraph(bool sync) {
-  if (graph_state_.subgraph_limits_ > 0) {
+  //  if (graph_state_.subgraph_limits_ > 0) {
+  if (memory_left_size_ > 0) {
     auto next_graph_id = GetNextReadGraphInCurrentRound();
     ReadMessage read_message;
     if (next_graph_id != INVALID_GRAPH_ID) {
+      auto read_size = graph_metadata_info_.GetSubgraphSize(next_graph_id);
+      if (memory_left_size_ - read_size < 0) {
+        // Memory is not enough, return.
+        return false;
+      }
+      memory_left_size_ -= read_size;
       read_message.graph_id = next_graph_id;
       read_message.num_vertices =
-          graph_metadata_info_.GetSubgraphNumVertices(read_message.graph_id);
-      read_message.round = graph_state_.GetSubgraphRound(read_message.graph_id);
+          graph_metadata_info_.GetSubgraphNumVertices(next_graph_id);
+      read_message.round = graph_state_.GetSubgraphRound(next_graph_id);
       read_message.response_serialized =
           graph_state_.NewSerializedMutableCSRGraph(next_graph_id);
+      graph_state_.SetOnDiskToReading(next_graph_id);
       message_hub_.get_reader_queue()->Push(read_message);
     } else {
       // check next round graph which can be read, if not just skip
@@ -204,6 +221,12 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       }
       auto next_gid_next_round = GetNextReadGraphInNextRound();
       if (next_gid_next_round != INVALID_GRAPH_ID) {
+        auto read_size =
+            graph_metadata_info_.GetSubgraphSize(next_gid_next_round);
+        if (memory_left_size_ - read_size < 0) {
+          return false;
+        }
+        memory_left_size_ -= read_size;
         read_message.graph_id = next_gid_next_round;
         read_message.num_vertices =
             graph_metadata_info_.GetSubgraphNumVertices(read_message.graph_id);
@@ -260,8 +283,7 @@ void Scheduler::SetRuntimeGraph(common::GraphID gid) {
 common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
   for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
-        graph_state_.subgraph_storage_state_.at(gid) ==
-            GraphState::StorageStateType::OnDisk) {
+        graph_state_.subgraph_storage_state_.at(gid) == GraphState::OnDisk) {
       return gid;
     }
   }
@@ -288,6 +310,19 @@ common::GraphID Scheduler::GetNextReadGraphInNextRound() const {
     }
   }
   return INVALID_GRAPH_ID;
+}
+
+bool Scheduler::IsCurrentRoundFinish() const {
+  for (int i = 0; i < graph_metadata_info_.get_num_subgraphs(); i++) {
+    if (graph_state_.current_round_pending_.at(i)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Scheduler::IsSystemStop() const {
+  return IsCurrentRoundFinish() && !update_store_->IsActive();
 }
 
 }  // namespace sics::graph::core::scheduler

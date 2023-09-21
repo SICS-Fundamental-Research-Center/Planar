@@ -73,8 +73,8 @@ class GraphMetadata {
     return subgraph_metadata_vec_.at(gid).num_vertices;
   }
 
-  void UpdateNumOutgoingEdges(common::GraphID gid, size_t num_outgoing_edges) {
-    subgraph_metadata_vec_.at(gid).num_outgoing_edges = num_outgoing_edges;
+  size_t GetSubgraphSize(common::GraphID gid) const {
+    return subgraph_size_.at(gid);
   }
 
  private:

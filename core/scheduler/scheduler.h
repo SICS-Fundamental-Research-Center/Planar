@@ -73,15 +73,10 @@ class Scheduler {
 
   common::GraphID GetNextReadGraphInNextRound() const;
 
-  bool IsCurrentRoundFinish() {
-    return GetNextReadGraphInCurrentRound() == INVALID_GRAPH_ID;
-  }
+  bool IsCurrentRoundFinish() const;
 
-  bool IsSystemStop() {
-    // If current and next round both have no graph to read, system stop.
-    return (GetNextReadGraphInCurrentRound() == INVALID_GRAPH_ID) &&
-           !update_store_->IsActive();
-  }
+  // If current and next round both have no graph to read, system stop.
+  bool IsSystemStop() const;
 
   void ReleaseAllGraph();
 
