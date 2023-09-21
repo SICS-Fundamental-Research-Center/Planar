@@ -32,6 +32,14 @@ class GCR {
     return false;
   }
 
+  void AddPathRuleToLeftStar(PathRule* const path_rule) {
+    left_star_.push_back(path_rule);
+  }
+
+  void AddPathRuleToRigthStar(PathRule* const path_rule) {
+    right_star_.push_back(path_rule);
+  }
+
   void set_consequence(const ConcreteVariablePredicate& consequence) {
     consequence_ = consequence;
   }

@@ -30,6 +30,9 @@ bool GCR::IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
 
   // Check Variable Predicates.
   for (const auto& predicate : variable_predicates_) {
+    if (&predicate == nullptr) {
+      LOG_INFO("GCR::IsCompatibleWith: predicate is nullptr.");
+    }
     uint8_t predicate_left_path_index = predicate.get_left_path_index();
     uint8_t predicate_left_vertex_index = predicate.get_left_vertex_index();
     uint8_t predicate_right_path_index = predicate.get_right_path_index();
