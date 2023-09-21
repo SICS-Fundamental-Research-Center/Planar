@@ -23,7 +23,7 @@ void MutableCSRReader::Read(scheduler::ReadMessage* message,
   std::string index_path =
       root_path_ + "index/" + std::to_string(message->graph_id) + ".bin";
 
-  Serialized* graph_serialized = new SerializedMuatbleCSRGraph();
+  Serialized* graph_serialized = message->response_serialized;
   std::vector<OwnedBuffer> buffers;
   buffers.reserve(6);
   ReadMetaInfoFromBin(file_path, message->num_vertices, &buffers);
@@ -33,8 +33,6 @@ void MutableCSRReader::Read(scheduler::ReadMessage* message,
   ReadSingleBufferFromBin(index_path, &buffers);
 
   graph_serialized->ReceiveBuffers(std::move(buffers));
-
-  message->response_serialized = graph_serialized;
 }
 
 void MutableCSRReader::ReadMetaInfoFromBin(const std::string& path,

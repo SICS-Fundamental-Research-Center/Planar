@@ -34,7 +34,7 @@ class Executor : public Component {
     // first stop the task_runner, then stop the Executor thread
     thread_->join();
     if (in_memory_time_) {
-      LOGF_INFO("========== In memory time: {}s ==========",
+      LOGF_INFO("========== In memory time: {} s ==========",
                std::chrono::duration<double>(end_time_ - start_time_).count());
     }
   }

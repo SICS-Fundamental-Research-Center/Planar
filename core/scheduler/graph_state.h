@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "common/types.h"
+#include "data_structures/graph/serialized_mutable_csr_graph.h"
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
 
@@ -89,6 +90,13 @@ struct GraphState {
     return graphs_.at(gid).get();
   }
 
+  data_structures::Serialized* NewSerializedMutableCSRGraph(
+      common::GraphID gid) {
+    serialized_.at(gid) =
+        std::make_unique<data_structures::graph::SerializedMutableCSRGraph>();
+    return serialized_.at(gid).get();
+  }
+
   void SetSubgraphSerialized(
       common::GraphID gid,
       std::unique_ptr<data_structures::Serialized> serialized) {
@@ -118,8 +126,9 @@ struct GraphState {
 
   // memory size and graph size
   // TODO: memory size should be set by gflags
+  std::vector<size_t> subgraph_size_;
   const size_t memory_size_;
-  size_t subgraph_limits = 1;
+  size_t subgraph_limits_ = 1;
 
  private:
   std::vector<std::unique_ptr<data_structures::Serialized>> serialized_;

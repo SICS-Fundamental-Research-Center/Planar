@@ -23,7 +23,7 @@ class MutableCSRGraph : public Serializable {
   using VertexID = common::VertexID;
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
-  using VertexDegree = uint32_t;
+  using VertexDegree = common::VertexDegree;
   using SerializedMutableCSRGraph =
       data_structures::graph::SerializedMutableCSRGraph;
 

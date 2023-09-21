@@ -12,8 +12,10 @@ void Scheduler::Start() {
     first_read_message.num_vertices =
         graph_metadata_info_.GetSubgraphNumVertices(
             first_read_message.graph_id);
+    first_read_message.response_serialized =
+        graph_state_.NewSerializedMutableCSRGraph(first_read_message.graph_id);
     first_read_message.round = 0;
-    graph_state_.subgraph_limits--;
+    graph_state_.subgraph_limits_--;
     message_hub_.get_reader_queue()->Push(first_read_message);
     while (running) {
       Message resp = message_hub_.GetResponse();
@@ -73,9 +75,7 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
     execute_message.execute_type = ExecuteType::kDeserialize;
     message_hub_.get_executor_queue()->Push(execute_message);
   } else {
-    graph_state_.SetSubgraphSerialized(
-        read_resp.graph_id, std::unique_ptr<data_structures::Serialized>(
-                                read_resp.response_serialized));
+    // TODO: do something when load next round subgraph
   }
   TryReadNextGraph();
   return true;
@@ -114,7 +114,7 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
     }
     case ExecuteType::kSerialize: {
       graph_state_.SetComputedToSerialized(execute_resp.graph_id);
-
+      graph_state_.ReleaseSubgraph(execute_resp.graph_id);
       // Check if current round finish.
       if (IsCurrentRoundFinish()) {
         if (IsSystemStop()) {
@@ -128,11 +128,14 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
           return false;
         } else {
           // This sync maybe replaced by borderVertex check.
+          auto active = update_store_->GetActiveCount();
           graph_state_.SyncCurrentRoundPending();
           update_store_->Sync();
           current_round_++;
-          LOGF_INFO(" ============ Current Round: {} ============ ",
-                    current_round_);
+          LOGF_INFO(
+              " ============ Current Round: {}, Active vertex left: {} "
+              "============ ",
+              current_round_, active);
 
           WriteMessage write_message;
           write_message.graph_id = execute_resp.graph_id;
@@ -171,8 +174,9 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
 bool Scheduler::WriteMessageResponseAndCheckTerminate(
     const WriteMessage& write_resp) {
   // Update subgraph state.
-  graph_state_.subgraph_limits++;
+  graph_state_.subgraph_limits_++;
   graph_state_.SetSerializedToOnDisk(write_resp.graph_id);
+  graph_state_.ReleaseSubgraphSerialized(write_resp.graph_id);
   // Read next subgraph if permitted
   TryReadNextGraph();
   return true;
@@ -182,7 +186,7 @@ bool Scheduler::WriteMessageResponseAndCheckTerminate(
 
 // try to read a graph from disk into memory if memory_limit is permitted
 bool Scheduler::TryReadNextGraph(bool sync) {
-  if (graph_state_.subgraph_limits > 0) {
+  if (graph_state_.subgraph_limits_ > 0) {
     auto next_graph_id = GetNextReadGraphInCurrentRound();
     ReadMessage read_message;
     if (next_graph_id != INVALID_GRAPH_ID) {
@@ -190,6 +194,8 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       read_message.num_vertices =
           graph_metadata_info_.GetSubgraphNumVertices(read_message.graph_id);
       read_message.round = graph_state_.GetSubgraphRound(read_message.graph_id);
+      read_message.response_serialized =
+          graph_state_.NewSerializedMutableCSRGraph(next_graph_id);
       message_hub_.get_reader_queue()->Push(read_message);
     } else {
       // check next round graph which can be read, if not just skip
@@ -203,13 +209,15 @@ bool Scheduler::TryReadNextGraph(bool sync) {
             graph_metadata_info_.GetSubgraphNumVertices(read_message.graph_id);
         read_message.round =
             graph_state_.GetSubgraphRound(read_message.graph_id);
+        read_message.response_serialized =
+            graph_state_.NewSerializedMutableCSRGraph(next_gid_next_round);
         message_hub_.get_reader_queue()->Push(read_message);
       } else {
         // no graph can be read, terminate system
         return false;
       }
     }
-    graph_state_.subgraph_limits--;
+    graph_state_.subgraph_limits_--;
   }
   return true;
 }
@@ -229,9 +237,10 @@ Scheduler::CreateSerializableGraph(common::GraphID graph_id) {
   }
 }
 
+// release all graphs in memory. not write back to disk. just release memory.
 void Scheduler::ReleaseAllGraph() {
   for (int i = 0; i < graph_state_.num_subgraphs_; i++) {
-    // TODO: write back all graphs in memory
+    //    graph_state_.
   }
 }
 

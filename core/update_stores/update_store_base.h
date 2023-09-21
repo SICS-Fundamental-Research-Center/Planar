@@ -11,6 +11,8 @@ class UpdateStoreBase {
 
   // synchronize the data of global read and global write
   virtual void Sync(){};
+
+  virtual size_t GetActiveCount() const { return 0; };
 };
 
 }  // namespace sics::graph::core::update_stores

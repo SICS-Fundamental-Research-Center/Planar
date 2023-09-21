@@ -23,7 +23,9 @@ class Scheduler {
   Scheduler(const std::string& root_path)
       : graph_metadata_info_(root_path),
         current_round_(0),
-        graph_state_(graph_metadata_info_.get_num_subgraphs()) {}
+        graph_state_(graph_metadata_info_.get_num_subgraphs()) {
+    memory_left_size_ = common::Configurations::Get()->memory_size;
+  }
 
   virtual ~Scheduler() = default;
 
@@ -101,6 +103,8 @@ class Scheduler {
   apis::PIE* app_;
 
   std::unique_ptr<std::thread> thread_;
+
+  size_t memory_left_size_ = 0;
 };
 
 }  // namespace sics::graph::core::scheduler

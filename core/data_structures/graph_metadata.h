@@ -7,16 +7,16 @@
 #include <string>
 #include <vector>
 
+#include "common/config.h"
 #include "common/types.h"
 #include "util/logging.h"
 
 namespace sics::graph::core::data_structures {
 
 struct SubgraphMetadata {
-  using GraphID = sics::graph::core::common::GraphID;
-  using VertexID = sics::graph::core::common::VertexID;
-  using EdgeIndex = sics::graph::core::common::EdgeIndex;
-
+  using GraphID = common::GraphID;
+  using VertexID = common::VertexID;
+  using EdgeIndex = common::EdgeIndex;
   // Subgraph Metadata
   GraphID gid;
   VertexID num_vertices;
@@ -28,9 +28,11 @@ struct SubgraphMetadata {
 
 // TODO: change class to struct
 class GraphMetadata {
-  using GraphID = sics::graph::core::common::GraphID;
-  using VertexID = sics::graph::core::common::VertexID;
-  using EdgeIndex = sics::graph::core::common::EdgeIndex;
+  using GraphID = common::GraphID;
+  using VertexID = common::VertexID;
+  using VertexDegree = common::VertexDegree;
+  using VertexIndex = common::VertexIndex;
+  using EdgeIndex = common::EdgeIndex;
 
  public:
   GraphMetadata() = default;
@@ -76,6 +78,34 @@ class GraphMetadata {
   }
 
  private:
+  void InitSubgraphSize() {
+    for (int gid = 0; gid < num_subgraphs_; ++gid) {
+      auto& subgraph = subgraph_metadata_vec_.at(gid);
+      size_t size = 0;
+      size +=
+          (subgraph.num_vertices * sizeof(VertexID)) >> 20;  // global_id size
+      size +=
+          (subgraph.num_vertices * sizeof(VertexDegree)) >> 20;   // degree size
+      size += (subgraph.num_vertices * sizeof(EdgeIndex)) >> 20;  // offset size
+      size +=
+          (subgraph.num_outgoing_edges * sizeof(VertexID)) >> 20;  // edges size
+      size += (subgraph.num_vertices * vertex_data_size_ * 2) >>
+              20;                                           // vertex data size
+      size += (num_vertices_ * sizeof(VertexIndex)) >> 20;  // index size
+      size += num_vertices_ >> 23;            // is_in_graph bitmap size
+      size += (subgraph.num_vertices) >> 23;  // is_src_or_dst bitmap size
+
+      if (common::Configurations::Get()->edge_mutate) {
+        size += (subgraph.num_vertices * sizeof(VertexDegree)) >> 20;
+        size += (subgraph.num_vertices * sizeof(EdgeIndex)) >> 20;
+        size += (subgraph.num_outgoing_edges * sizeof(VertexID)) >> 20;
+        size += subgraph.num_outgoing_edges >> 23;
+      }
+      subgraph_size_.push_back(size + 1);
+    }
+  }
+
+ private:
   VertexID num_vertices_;
   EdgeIndex num_edges_;
   VertexID max_vid_;
@@ -85,6 +115,11 @@ class GraphMetadata {
   std::vector<std::vector<int>> dependency_matrix_;
   std::string data_root_path_;
   std::vector<SubgraphMetadata> subgraph_metadata_vec_;
+  // size of subgraph in MB
+  std::vector<size_t> subgraph_size_;
+
+  // configs
+  uint32_t vertex_data_size_ = 4;
 };
 
 }  // namespace sics::graph::core::data_structures

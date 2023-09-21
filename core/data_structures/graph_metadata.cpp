@@ -12,6 +12,8 @@ GraphMetadata::GraphMetadata(const std::string& graph_metadata_path)
   } catch (YAML::BadFile& e) {
     LOG_ERROR("meta.yaml file read failed! ", e.msg);
   }
+  vertex_data_size_ = common::Configurations::Get()->vertex_data_size;
+  InitSubgraphSize();
 }
 
 }  // namespace sics::graph::core::data_structures

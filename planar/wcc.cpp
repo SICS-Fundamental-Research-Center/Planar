@@ -19,6 +19,9 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->in_memory = FLAGS_in_memory;
   core::common::Configurations::GetMutable()->task_package_factor =
       FLAGS_task_package_factor;
+  core::common::Configurations::GetMutable()->vertex_data_size =
+      sizeof(core::apps::WCCApp::VertexData);
+
   LOG_INFO("System begin");
   core::planar_system::Planar<core::apps::WCCApp> system(
       core::common::Configurations::Get()->root_path);

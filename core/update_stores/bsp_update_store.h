@@ -94,6 +94,8 @@ class BspUpdateStore : public UpdateStoreBase {
     }
   }
 
+  size_t GetActiveCount() const override { return active_count_; }
+
  private:
   void ReadBorderVertexBitmap(const std::string& root_path) {
     std::ifstream file(root_path + "bitmap/border_vertices.bin",
