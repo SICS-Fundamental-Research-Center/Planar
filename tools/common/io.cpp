@@ -484,6 +484,10 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
       }
     }
   }
+  dependency_matrix_file.write(reinterpret_cast<char*>(dependency_matrix),
+                          (n_subgraphs * n_subgraphs) * sizeof(VertexID));
+  dependency_matrix_file.close();
+
   LOG_INFO("Dependency matrix");
   for (size_t i = 0; i < n_subgraphs; i++) {
     for (size_t j = 0; j < n_subgraphs; j++) {
@@ -491,10 +495,6 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
     }
     std::cout << std::endl;
   }
-
-  dependency_matrix.write(reinterpret_cast<char*>(dependency_matrix),
-                          (n_subgraphs * n_subgraphs) * sizeof(VertexID));
-  dependency_matrix.close();
 
   delete[] dependency_matrix;
   for (size_t i = 0; i < n_subgraphs; i++) delete is_in_graph_array[i];
