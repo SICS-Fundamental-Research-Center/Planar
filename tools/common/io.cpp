@@ -478,9 +478,6 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
         if (is_in_graph_array[j]->GetBit(e.src)) {
           WriteAdd(&dependency_matrix[i * n_subgraphs + j], (VertexID)1);
         }
-        if (is_in_graph_array[j]->GetBit(e.dst)) {
-          WriteAdd(&dependency_matrix[i * n_subgraphs + j], (VertexID)1);
-        }
       }
     }
   }
