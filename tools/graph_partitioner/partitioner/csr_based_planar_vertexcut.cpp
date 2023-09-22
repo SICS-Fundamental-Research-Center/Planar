@@ -62,9 +62,9 @@ void CSRBasedPlanarVertexCutPartitioner::RunPartitioner() {
   serializable_csr.Deserialize(thread_pool, std::move(serialized_csr));
   serializable_csr.ShowGraph();
 
-  auto&& out = SortBFSBranch(serializable_csr.get_num_outgoing_edges() / 128,
-                             serializable_csr);
-  LOG_INFO(out.size());
+  auto&& out = SortBFSBranch(
+      ceil((double)serializable_csr.get_num_outgoing_edges() / 128.0),
+      serializable_csr);
 
   Redistributing(n_partitions_, &out);
 
@@ -86,7 +86,6 @@ void CSRBasedPlanarVertexCutPartitioner::RunPartitioner() {
   new_graph_metadata.set_min_vid(graph_metadata.get_min_vid());
 
   LOG_INFO("Writing the subgraphs to disk");
-  LOG_INFO(edge_buckets.size());
   graph_format_converter.WriteSubgraph(edge_buckets, new_graph_metadata,
                                        store_strategy_);
 }
@@ -102,7 +101,7 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
 
   // Loop until the rest of edges less than the given upper bound.
   Bitmap visited(graph.get_num_vertices());
-  Bitmap global_visited(graph.get_num_vertices());
+  Bitmap global_visited(graph.get_max_vid());
 
   std::list<std::list<Edge>> out;
   size_t count = 0;
@@ -123,7 +122,12 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
     thread_pool.SubmitSync(task_package);
     task_package.clear();
 
-    LOG_INFO(root);
+    if (MAX_VERTEX_ID == root) {
+      break;
+    } else {
+      visited.SetBit(root);
+    }
+
     // Get the unvisited one hop neighbors of the root and store them at
     // active_vertices_for_each_branch, where each neighbor of root is a new
     // branch.
@@ -134,47 +138,38 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
 
     size_t res_vertices = u.outdegree;
     for (VertexID i = 0; i < u.outdegree; i++) {
-      auto nbr_visited = false;
-      if (visited.GetBit(u.outgoing_edges[i])) {
-        nbr_visited = true;
-      }
-      visited.SetBit(u.outgoing_edges[i]);
-      if (!nbr_visited) {
-        LOG_INFO(u.vid, " ,",u.outgoing_edges[i], " is unvisited.");
+      if (!visited.GetBit(u.outgoing_edges[i])) {
         active_vertices_for_each_branch[i].emplace_back(u.outgoing_edges[i]);
+        visited.SetBit(u.outgoing_edges[i]);
       }
+      Edge e = {u.vid, u.outgoing_edges[i]};
+      new_branches[i].emplace_back(e);
     }
 
     // BFS traversal, one level at a time.
     LOG_INFO("BFS traversal, one level at a time.");
     std::mutex mtx;
     while (res_vertices != 0) {
-      LOG_INFO("res: ", res_vertices, " ", minimum_n_edges_of_a_branch);
+      // LOG_INFO("res: ", res_vertices, " ", minimum_n_edges_of_a_branch);
       res_vertices = 0;
       for (unsigned int i = 0; i < parallelism; i++) {
-        auto task = std::bind([&, i, parallelism]() {
+        auto task = std::bind([&, i]() {
           for (VertexID j = i; j < u.outdegree; j += parallelism) {
             if (active_vertices_for_each_branch[j].empty()) continue;
             auto active_vertex_id = active_vertices_for_each_branch[j].front();
             active_vertices_for_each_branch[j].pop_front();
             auto v = graph.GetVertexByLocalID(active_vertex_id);
             for (VertexID k = 0; k < v.outdegree; k++) {
-              auto nbr_visited = false;
               {
                 std::lock_guard<std::mutex> lock(mtx);
-                if (visited.GetBit(v.outgoing_edges[k])) {
-                  nbr_visited = true;
-                } else {
+                if (!visited.GetBit(v.outgoing_edges[k])) {
                   visited.SetBit(v.outgoing_edges[k]);
+                  active_vertices_for_each_branch[j].emplace_back(
+                      v.outgoing_edges[k]);
                 }
               }
               Edge e = {v.vid, v.outgoing_edges[k]};
               new_branches[j].emplace_back(e);
-              LOG_INFO("emplace", e.src, " -> ", e.dst);
-              if (!nbr_visited) {
-                active_vertices_for_each_branch[j].emplace_back(
-                    v.outgoing_edges[k]);
-              }
             }
           }
         });
@@ -183,11 +178,8 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
       thread_pool.SubmitSync(task_package);
       task_package.clear();
 
-      for (VertexID i = 0; i < u.outdegree; i++){
-
+      for (VertexID i = 0; i < u.outdegree; i++) {
         res_vertices += active_vertices_for_each_branch[i].size();
-
-        LOG_INFO(u.vid, " ");
       }
     }
     delete[] active_vertices_for_each_branch;
@@ -199,18 +191,21 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
 
   std::list<Edge> res_branch;
   std::mutex mtx;
+  LOG_INFO("num_vertices: ", graph.get_num_vertices(),
+           ", COUNT: ", visited.Count());
   for (unsigned int i = 0; i < parallelism; i++) {
-    auto task = std::bind([&, i, parallelism]() {
-      std::lock_guard<std::mutex> lock(mtx);
+    auto task = std::bind([&, i]() {
       for (VertexID j = i; j < graph.get_num_vertices(); j += parallelism) {
-        {
-          if (visited.GetBit(j)) continue;
-          visited.SetBit(j);
-        }
+        if (visited.GetBit(j)) continue;
+        visited.SetBit(j);
         auto res_u = graph.GetVertexByLocalID(j);
         for (size_t k = 0; k < res_u.outdegree; k++) {
           Edge e = {res_u.vid, res_u.outgoing_edges[k]};
-          res_branch.emplace_back(e);
+          LOG_INFO("emplace", e.src, "->", e.dst);
+          {
+            std::lock_guard<std::mutex> lock(mtx);
+            res_branch.emplace_back(e);
+          }
         }
       }
     });
@@ -219,13 +214,12 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  // LOG_INFO("BRANCH SIZE: ", res_branch.size());
   count += res_branch.size();
   out.emplace_back(res_branch);
 
   LOG_INFO("total edges: ", count);
   LOG_INFO("origin branches: ", out.size());
-  LOG_INFO("visited Count", visited.Count());
+  LOG_INFO("visited Count: ", visited.Count());
   // Sort the branches by the number of edges.
   out.sort([](const auto& l, const auto& r) { return l.size() < r.size(); });
   return out;
@@ -236,7 +230,7 @@ void CSRBasedPlanarVertexCutPartitioner::Redistributing(
     std::list<std::list<Edge>>* sorted_list_of_branches) {
   LOG_INFO("Redistribution.");
   VertexID n_new_branches = MAX_VERTEX_ID;
-  while (n_new_branches > expected_n_of_branches) {
+  while (n_new_branches >= expected_n_of_branches * 2) {
     n_new_branches = ceil(sorted_list_of_branches->size() / 2.0);
     LOG_INFO("n_branches: ", n_new_branches,
              " expected branches: ", expected_n_of_branches);
@@ -263,6 +257,14 @@ void CSRBasedPlanarVertexCutPartitioner::Redistributing(
         count++;
       }
     }
+  }
+  sorted_list_of_branches->sort(
+      [](const auto& l, const auto& r) { return l.size() < r.size(); });
+  while (sorted_list_of_branches->size() > expected_n_of_branches) {
+    auto branch = sorted_list_of_branches->back();
+    sorted_list_of_branches->pop_back();
+    auto iter_rbegin = sorted_list_of_branches->rbegin();
+    iter_rbegin->splice(iter_rbegin->end(), branch);
   }
 }
 
@@ -318,17 +320,14 @@ std::vector<Edges> CSRBasedPlanarVertexCutPartitioner::ConvertListofEdge2Edges(
   delete[] max_vid_per_edgelist;
   delete[] n_edges_per_edgelist;
   br_i = 0;
-  LOG_INFO("X");
   for (const auto& branch : list_of_branches) {
     size_t index = 0;
-    LOG_INFO(vec_edges[br_i].get_metadata().num_edges);
     auto buffer_edges = vec_edges[br_i].get_base_ptr();
     std::for_each(
         branch.begin(), branch.end(),
         [&index, &buffer_edges, &br_i](auto& e) { buffer_edges[index++] = e; });
     br_i++;
   }
-  LOG_INFO("X");
 
   return vec_edges;
 }
