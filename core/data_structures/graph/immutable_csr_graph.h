@@ -125,8 +125,10 @@ class ImmutableCSRGraph : public Serializable {
   }
   VertexID* GetInDegreeBasePointer() { return indegree_base_pointer_; }
   VertexID* GetOutDegreeBasePointer() { return outdegree_base_pointer_; }
-  EdgeIndex* GetInOffsetBasePointer() { return in_offset_base_pointer_; }
-  EdgeIndex* GetOutOffsetBasePointer() { return out_offset_base_pointer_; }
+  EdgeIndex* GetInOffsetBasePointer() const { return in_offset_base_pointer_; }
+  EdgeIndex* GetOutOffsetBasePointer() const {
+    return out_offset_base_pointer_;
+  }
   VertexID* GetIncomingEdgesBasePointer() {
     return incoming_edges_base_pointer_;
   }

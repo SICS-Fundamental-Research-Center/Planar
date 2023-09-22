@@ -40,8 +40,8 @@ class MutableCSRReader : public Reader {
                            common::VertexCount num_vertices,
                            std::vector<OwnedBuffer>* buffers);
 
-  void ReadLabelInfoFromBin(const std::string& path,
-                            std::vector<OwnedBuffer>* buffers);
+  void ReadSingleBufferFromBin(const std::string& path,
+                               std::vector<OwnedBuffer>* buffers);
 
  private:
   const std::string root_path_;

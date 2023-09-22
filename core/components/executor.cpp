@@ -24,7 +24,9 @@ void Executor::Start() {
         }
         case scheduler::ExecuteType::kPEval:
           LOGF_INFO("Executor: PEval graph {}", message.graph_id);
+          if (in_memory_time_) start_time_ = std::chrono::system_clock::now();
           message.app->PEval();
+          if (in_memory_time_) end_time_ = std::chrono::system_clock::now();
           break;
         case scheduler::ExecuteType::kIncEval:
           LOGF_INFO("Executor: kIncEval graph {}", message.graph_id);
