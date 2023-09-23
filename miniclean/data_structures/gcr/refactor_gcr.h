@@ -40,11 +40,11 @@ class GCR {
     return false;
   }
 
-  void AddPathRuleToLeftStar(PathRule* const path_rule) {
+  void AddPathRuleToLeftStar(PathRule* path_rule) {
     left_star_.push_back(path_rule);
   }
 
-  void AddPathRuleToRigthStar(PathRule* const path_rule) {
+  void AddPathRuleToRigthStar(PathRule* path_rule) {
     right_star_.push_back(path_rule);
   }
 
