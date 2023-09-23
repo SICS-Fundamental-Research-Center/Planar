@@ -84,8 +84,8 @@ class RuleMiner {
   std::vector<GCR> varified_gcrs_;
   GCRFactory gcr_factory_;
 
-  uint8_t max_predicate_num_ = 3;
-  uint8_t max_path_num_ = 2;
+  const int max_predicate_num_ = 3;
+  const int max_path_num_ = 2;
 };
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor
 
