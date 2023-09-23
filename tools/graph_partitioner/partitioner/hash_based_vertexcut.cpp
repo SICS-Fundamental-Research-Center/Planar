@@ -171,15 +171,6 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   task_package.clear();
   delete[] bucket_offset;
 
-  // Write dependency_matrix
-  for(size_t i = 0; i < n_subgraphs; i++) {
-    for(size_t j =0; j < ; j++){
-
-    }
-  }
-
-
-
   // Write the subgraphs to disk
   GraphFormatConverter graph_format_converter(output_path_);
   GraphMetadata graph_metadata;
