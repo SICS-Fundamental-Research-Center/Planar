@@ -143,7 +143,7 @@ void WCCApp::PointJumpIncEval(VertexID id) {
   // is not in graph
   VertexData parent_id = graph_->ReadLocalVertexDataByID(id);
   if (!graph_->IsInGraph(parent_id)) {
-    std::lock_guard<std::mutex> grd(mtx_);
+    //    std::lock_guard<std::mutex> grd(mtx_);
     if (id_to_p_.find(parent_id) != id_to_p_.end())
       if (graph_->WriteMinVertexDataByID(id, id_to_p_[parent_id])) {
         update_store_->WriteMin(id, id_to_p_[parent_id]);
