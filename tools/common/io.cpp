@@ -43,7 +43,7 @@ void GraphFormatConverter::WriteSubgraph(
                                    std::to_string(gid) + ".bin");
 
     EdgeIndex count_in_edges = 0, count_out_edges = 0;
-    auto num_vertices = bucket.size();
+    VertexID num_vertices = bucket.size();
     VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
     Bitmap src_map(num_vertices), is_in_graph(aligned_max_vid);
 
@@ -298,9 +298,8 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
   auto aligned_max_vid = (((graph_metadata.get_max_vid() + 1) >> 6) << 6) + 64;
   auto frequency_of_vertices = new int[aligned_max_vid]();
   Bitmap border_vertices(aligned_max_vid);
-  std::vector<Bitmap*> is_in_graph_vec;
-  auto is_in_graph_array = new Bitmap*[n_subgraphs]();
-  is_in_graph_vec.reserve(n_subgraphs);
+  std::vector<Bitmap> is_in_graph_vec;
+  is_in_graph_vec.resize(n_subgraphs);
 
   for (GraphID gid = 0; gid < n_subgraphs; gid++) {
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
@@ -314,7 +313,6 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
 
     auto bucket = edge_buckets.at(gid);
     ImmutableCSRGraph csr_graph(gid);
-
     util::format_converter::Edgelist2CSR(bucket, store_strategy, &csr_graph);
 
     auto buffer_globalid2index = new VertexID[aligned_max_vid]();
@@ -338,15 +336,13 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
     index_file.close();
 
     Bitmap src_map(csr_graph.get_num_vertices());
-    is_in_graph_array[gid] = new Bitmap(csr_graph.get_num_vertices());
-    auto is_in_graph = is_in_graph_array[gid];
-
+    is_in_graph_vec.at(gid).Init(csr_graph.get_num_vertices());
     for (unsigned int i = 0; i < parallelism; i++) {
       auto task = std::bind([&, i]() {
         for (VertexID j = i; j < csr_graph.get_num_vertices();
              j += parallelism) {
           if (csr_graph.GetOutDegreeByLocalID(j) > 0) src_map.SetBit(j);
-          is_in_graph->SetBit(csr_graph.GetGlobalIDByLocalID(j));
+          is_in_graph_vec.at(gid).SetBit(csr_graph.GetGlobalIDByLocalID(j));
           WriteAdd(frequency_of_vertices + csr_graph.GetGlobalIDByLocalID(j),
                    1);
         }
@@ -435,8 +431,8 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
     src_map_file.write(reinterpret_cast<char*>(src_map.GetDataBasePointer()),
                        ((src_map.size() >> 6) + 1) * sizeof(uint64_t));
     is_in_graph_file.write(
-        reinterpret_cast<char*>(is_in_graph->GetDataBasePointer()),
-        ((is_in_graph->size() >> 6) + 1) * sizeof(uint64_t));
+        reinterpret_cast<char*>(is_in_graph_vec.at(gid).GetDataBasePointer()),
+        ((is_in_graph_vec.at(gid).size() >> 6) + 1) * sizeof(uint64_t));
 
     out_data_file.close();
     out_label_file.close();
@@ -461,7 +457,6 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
   border_vertices_file.write(
       reinterpret_cast<char*>(border_vertices.GetDataBasePointer()),
       ((border_vertices.size() >> 6) + 1) * sizeof(uint64_t));
-
   border_vertices_file.close();
 
   // Write dependency matrix.
@@ -472,20 +467,24 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
       if (i == j) continue;
       for (size_t k = 0; k < bucket.get_metadata().num_edges; k++) {
         auto e = bucket.get_edge_by_index(k);
-        if (is_in_graph_array[j]->GetBit(e.src)) {
+        if (is_in_graph_vec[j].GetBit(e.src)) {
           WriteAdd(&dependency_matrix[i * n_subgraphs + j], (VertexID)1);
         }
       }
     }
   }
 
+  for (GraphID i = 0; i < n_subgraphs; i++) {
+    for (GraphID j = 0; j < n_subgraphs; j++) {
+      std::cout << dependency_matrix[i * n_subgraphs + j] << ",";
+    }
+    std::cout << std::endl;
+  }
   //  Write dependency matrix.
   dependency_matrix_file.write(reinterpret_cast<char*>(dependency_matrix),
                                (n_subgraphs * n_subgraphs) * sizeof(VertexID));
   dependency_matrix_file.close();
   delete[] dependency_matrix;
-  for (size_t i = 0; i < n_subgraphs; i++) delete is_in_graph_array[i];
-  delete[] is_in_graph_array;
 
   //  Write metadata.
   YAML::Node out_node;
