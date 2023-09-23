@@ -81,8 +81,12 @@ class VariablePredicate {
   VertexAttributeID get_lhs_attribute_id() const { return lhs_attribute_id_; }
   VertexAttributeID get_rhs_attribute_id() const { return rhs_attribute_id_; }
   OperatorType get_operator_type() const { return operator_type_; }
-  std::pair<size_t, size_t> get_left_attr_range() const { return left_attr_range_; }
-  std::pair<size_t, size_t> get_right_attr_range() const { return right_attr_range_; }
+  std::pair<size_t, size_t> get_left_attr_range() const {
+    return left_attr_range_;
+  }
+  std::pair<size_t, size_t> get_right_attr_range() const {
+    return right_attr_range_;
+  }
 
   void set_lhs_label(VertexLabel lhs_label) { lhs_label_ = lhs_label; }
   void set_rhs_label(VertexLabel rhs_label) { rhs_label_ = rhs_label; }
@@ -113,6 +117,10 @@ class VariablePredicate {
 };
 
 class ConcreteVariablePredicate {
+ private:
+  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+
  public:
   ConcreteVariablePredicate() = default;
   ConcreteVariablePredicate(VariablePredicate variable_predicate,
@@ -132,6 +140,17 @@ class ConcreteVariablePredicate {
   uint8_t get_left_vertex_index() const { return left_vertex_index_; }
   uint8_t get_right_path_index() const { return right_path_index_; }
   uint8_t get_right_vertex_index() const { return right_vertex_index_; }
+
+  VertexAttributeID get_left_attribute_id() const {
+    return variable_predicate_.get_lhs_attribute_id();
+  }
+  VertexAttributeID get_right_attribute_id() const {
+    return variable_predicate_.get_rhs_attribute_id();
+  }
+
+  OperatorType get_operator_type() const {
+    return variable_predicate_.get_operator_type();
+  }
 
  private:
   VariablePredicate variable_predicate_;
