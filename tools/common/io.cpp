@@ -59,8 +59,8 @@ void GraphFormatConverter::WriteSubgraph(
           buffer_globalid2index[bucket.at(j).vid] = j;
           buffer_indegree[j] = bucket.at(j).indegree;
           buffer_outdegree[j] = bucket.at(j).outdegree;
-          WriteAdd(&count_out_edges, (EdgeIndex) bucket.at(j).outdegree);
-          WriteAdd(&count_in_edges, (EdgeIndex) bucket.at(j).indegree);
+          WriteAdd(&count_out_edges, (EdgeIndex)bucket.at(j).outdegree);
+          WriteAdd(&count_in_edges, (EdgeIndex)bucket.at(j).indegree);
           WriteMin(&min_vid, buffer_globalid[j]);
           WriteMax(&max_vid, buffer_globalid[j]);
         }
@@ -338,8 +338,8 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
     Bitmap src_map(csr_graph.get_num_vertices());
     is_in_graph_vec.at(gid).Init(csr_graph.get_num_vertices());
     for (unsigned int i = 0; i < parallelism; i++) {
-      auto task = std::bind([i, &csr_graph, &src_map, &is_in_graph_vec,
-                             &frequency_of_vertices]() {
+      auto task = std::bind([gid, i, parallelism, &csr_graph, &src_map,
+                             &is_in_graph_vec, &frequency_of_vertices]() {
         for (VertexID j = i; j < csr_graph.get_num_vertices();
              j += parallelism) {
           if (csr_graph.GetOutDegreeByLocalID(j) > 0) src_map.SetBit(j);
