@@ -338,11 +338,8 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
     index_file.close();
 
     Bitmap src_map(csr_graph.get_num_vertices());
-    // Bitmap is_in_graph(csr_graph.get_num_vertices());
-    // auto p_is_in_graph
     is_in_graph_array[gid] = new Bitmap(csr_graph.get_num_vertices());
     auto is_in_graph = is_in_graph_array[gid];
-    // is_in_graph_vec.push_back((p_is_in_graph));
 
     for (unsigned int i = 0; i < parallelism; i++) {
       auto task = std::bind([&, i]() {
@@ -364,7 +361,7 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
         reinterpret_cast<char*>(csr_graph.GetGloablIDBasePointer()),
         sizeof(VertexID) * csr_graph.get_num_vertices());
 
-    //  Write subgraph metadata.
+    // Write subgraph metadata.
     switch (store_strategy) {
       case kOutgoingOnly:
         subgraph_metadata_vec.push_back(
@@ -481,22 +478,16 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
       }
     }
   }
+
+  //  Write dependency matrix.
   dependency_matrix_file.write(reinterpret_cast<char*>(dependency_matrix),
-                          (n_subgraphs * n_subgraphs) * sizeof(VertexID));
+                               (n_subgraphs * n_subgraphs) * sizeof(VertexID));
   dependency_matrix_file.close();
-
-  LOG_INFO("Dependency matrix");
-  for (size_t i = 0; i < n_subgraphs; i++) {
-    for (size_t j = 0; j < n_subgraphs; j++) {
-      std::cout << dependency_matrix[i * n_subgraphs + j] << ", ";
-    }
-    std::cout << std::endl;
-  }
-
   delete[] dependency_matrix;
   for (size_t i = 0; i < n_subgraphs; i++) delete is_in_graph_array[i];
   delete[] is_in_graph_array;
-  //  Write metadata
+
+  //  Write metadata.
   YAML::Node out_node;
   out_node["GraphMetadata"]["num_vertices"] = graph_metadata.get_num_vertices();
   out_node["GraphMetadata"]["num_edges"] = graph_metadata.get_num_edges();
