@@ -18,7 +18,7 @@ bool GCRFactory::InitializeGCRs(const GCR& gcr, bool added_to_left_star,
     ConcretizeVariablePredicates(gcr, consequence, added_to_left_star, false,
                                  &c_predicates);
   }
-  size_t prev_size = complete_gcrs->size();
+  const size_t prev_size = complete_gcrs->size();
   complete_gcrs->resize(prev_size + c_predicates.size(), gcr);
   for (size_t i = 0; i < c_predicates.size(); i++) {
     complete_gcrs->at(prev_size + i).set_consequence(c_predicates[i]);

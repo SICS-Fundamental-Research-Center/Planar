@@ -42,7 +42,7 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
 
   // Consider the variable predicates:
   std::vector<std::vector<std::pair<size_t, size_t>>> var_pred_instances =
-      ComuteVariablePredicateInstances();
+      ComputeVariablePredicateInstances();
   for (const auto& var_pred_instance : var_pred_instances) {
     StarBitmap left_bitmap_copy = left_bitmap;
     StarBitmap right_bitmap_copy = right_bitmap;
@@ -169,7 +169,7 @@ bool GCR::PathMatching(PathPattern path_pattern, MiniCleanCSRGraph* graph,
 }
 
 std::vector<std::vector<std::pair<size_t, size_t>>>
-GCR::ComuteVariablePredicateInstances() const {
+GCR::ComputeVariablePredicateInstances() const {
   std::vector<std::vector<std::pair<size_t, size_t>>> value_pair_vec;
   value_pair_vec.reserve(variable_predicates_.size() + 1);
   size_t var_pred_instances_size = 1;

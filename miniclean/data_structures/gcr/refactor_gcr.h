@@ -92,7 +92,7 @@ class GCR {
 
  private:
   std::vector<std::vector<std::pair<size_t, size_t>>>
-  ComuteVariablePredicateInstances() const;
+  ComputeVariablePredicateInstances() const;
   void EnumerateVariablePredicateInstances(
       std::vector<std::vector<std::pair<size_t, size_t>>>& value_pair_vec,
       size_t variable_predicate_index,

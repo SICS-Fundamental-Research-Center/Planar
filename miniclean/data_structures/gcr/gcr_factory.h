@@ -42,6 +42,10 @@ class GCRFactory {
                             std::vector<GCR>* complete_gcrs);
 
  private:
+  // This function aims to concretize variable predicates.
+  // The concrete predicates are stored in `predicates`.
+  // The function returns true if the concretization is successful.
+  //   (i.e., size of `predicates` is greater than 0)
   bool ConcretizeVariablePredicates(
       const GCR& gcr, const VariablePredicate& variable_predicate,
       bool added_to_left_star, bool consider_consequence,

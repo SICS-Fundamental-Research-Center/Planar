@@ -99,10 +99,10 @@ class VariablePredicate {
   void set_operator_type(OperatorType operator_type) {
     operator_type_ = operator_type;
   }
-  void set_left_attr_range(std::pair<size_t, size_t> left_attr_range) {
+  void set_left_attr_range(const std::pair<size_t, size_t> left_attr_range) {
     left_attr_range_ = left_attr_range;
   }
-  void set_right_attr_range(std::pair<size_t, size_t> right_attr_range) {
+  void set_right_attr_range(const std::pair<size_t, size_t> right_attr_range) {
     right_attr_range_ = right_attr_range;
   }
 
