@@ -22,6 +22,8 @@ class CSRBasedPlanarVertexCutPartitioner : public PartitionerBase {
   using ImmutableCSRGraph =
       sics::graph::core::data_structures::graph::ImmutableCSRGraph;
 
+  std::list<VertexID> members;
+
  public:
   CSRBasedPlanarVertexCutPartitioner(const std::string& input_path,
                                      const std::string& output_path,
@@ -48,6 +50,10 @@ class CSRBasedPlanarVertexCutPartitioner : public PartitionerBase {
   std::list<std::list<Edge>> SortBFSBranch(size_t minimum_n_edges_of_a_branch,
                                            const ImmutableCSRGraph& graph);
 
+  void BigGraphSortBFSBranch(size_t maximum_n_vertices_of_a_branch,
+                             size_t minimum_n_vertices_of_a_branch,
+                             const ImmutableCSRGraph& graph);
+
   // @DESCRIPTION
   // Redistributing() aim at (1) merging small branches into one and (2)
   // redistributing border vertices.
@@ -59,6 +65,9 @@ class CSRBasedPlanarVertexCutPartitioner : public PartitionerBase {
   // merged_branches: List of merged branches.
   void Redistributing(GraphID expected_n_branches,
                       std::list<std::list<Edge>>* list_of_branches);
+
+  void Redistributing(GraphID expected_n_branches,
+                      std::list<std::list<VertexID>>* list_of_branches);
 
   // @DESCRIPTION
   // ConvertListofEdge2Edges() convert list of list of edges to Edges.
