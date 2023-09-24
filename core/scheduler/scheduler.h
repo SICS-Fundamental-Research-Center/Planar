@@ -64,8 +64,8 @@ class Scheduler {
   // in current round or next round
   bool TryReadNextGraph(bool sync = false);
 
-  std::unique_ptr<data_structures::Serializable> CreateSerializableGraph(
-      common::GraphID graph_id);
+  void CreateSerializableGraph(common::GraphID graph_id);
+  data_structures::Serialized* CreateSerialized(common::GraphID graph_id);
 
   common::GraphID GetNextReadGraphInCurrentRound() const;
 
@@ -97,6 +97,8 @@ class Scheduler {
   common::TaskRunner* executor_task_runner_;
   apis::PIE* app_;
 
+  // mark if the executor is running
+  bool is_executor_running_ = false;
   std::unique_ptr<std::thread> thread_;
 
   size_t memory_left_size_ = 0;

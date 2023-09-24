@@ -13,7 +13,7 @@ void Scheduler::Start() {
         graph_metadata_info_.GetSubgraphNumVertices(
             first_read_message.graph_id);
     first_read_message.response_serialized =
-        graph_state_.NewSerializedMutableCSRGraph(first_read_message.graph_id);
+        CreateSerialized(first_read_message.graph_id);
     first_read_message.round = 0;
     graph_state_.subgraph_limits_--;
     auto read_size =
@@ -72,15 +72,19 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
   // read graph need deserialize first
   // check current round subgraph and send it to executer to Deserialization.
   if (graph_state_.GetSubgraphRound(read_resp.graph_id) == current_round_) {
-    ExecuteMessage execute_message;
-    execute_message.graph_id = read_resp.graph_id;
-    execute_message.serialized = read_resp.response_serialized;
-    std::unique_ptr<data_structures::Serializable> serializable_graph =
-        CreateSerializableGraph(read_resp.graph_id);
-    graph_state_.SetSubGraph(read_resp.graph_id, std::move(serializable_graph));
-    execute_message.graph = graph_state_.GetSubgraph(read_resp.graph_id);
-    execute_message.execute_type = ExecuteType::kDeserialize;
-    message_hub_.get_executor_queue()->Push(execute_message);
+    // When executor is working.
+    if (!is_executor_running_) {
+      ExecuteMessage execute_message;
+      execute_message.graph_id = read_resp.graph_id;
+      execute_message.serialized = read_resp.response_serialized;
+      CreateSerializableGraph(read_resp.graph_id);
+      execute_message.graph = graph_state_.GetSubgraph(read_resp.graph_id);
+      execute_message.execute_type = ExecuteType::kDeserialize;
+      is_executor_running_ = true;
+      message_hub_.get_executor_queue()->Push(execute_message);
+    } else {
+      // When executor is running, do nothing, wait for executor finish.
+    }
   } else {
     // TODO: do something when load next round subgraph
   }
@@ -90,7 +94,8 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
 
 bool Scheduler::ExecuteMessageResponseAndWrite(
     const ExecuteMessage& execute_resp) {
-  // execute finish, to write back the graph
+  // Execute finish, decide next executor work.
+  is_executor_running_ = false;
   switch (execute_resp.execute_type) {
     case ExecuteType::kDeserialize: {
       graph_state_.SetSerializedToDeserialized(execute_resp.graph_id);
@@ -130,8 +135,8 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
           write_message.serialized = execute_resp.serialized;
           message_hub_.get_writer_queue()->Push(write_message);
 
-          // Release other graphs in memory, write back to disk.
-          ReleaseAllGraph();
+          // TODO: Just release memory of serialized graph, not write back.
+          //          ReleaseAllGraph();
           return false;
         } else {
           // This sync maybe replaced by borderVertex check.
@@ -155,11 +160,24 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
         if (false) {
           // stay in memory with StorageStateType::Deserialized
         } else {
-          // write back to disk
+          // first write back to disk
           WriteMessage write_message;
           write_message.graph_id = execute_resp.graph_id;
           write_message.serialized = execute_resp.serialized;
           message_hub_.get_writer_queue()->Push(write_message);
+          // second execute next ready subgraph if exist
+          auto next_execute_gid = GetNextExecuteGraph();
+          if (next_execute_gid != INVALID_GRAPH_ID) {
+            ExecuteMessage execute_message;
+            execute_message.graph_id = next_execute_gid;
+            execute_message.serialized =
+                graph_state_.GetSubgraphSerialized(next_execute_gid);
+            CreateSerializableGraph(next_execute_gid);
+            execute_message.graph = graph_state_.GetSubgraph(next_execute_gid);
+            execute_message.execute_type = ExecuteType::kDeserialize;
+            is_executor_running_ = true;
+            message_hub_.get_executor_queue()->Push(execute_message);
+          }
         }
       }
       // Check border vertex and dependency matrix, mark active subgraph in
@@ -210,8 +228,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       read_message.num_vertices =
           graph_metadata_info_.GetSubgraphNumVertices(next_graph_id);
       read_message.round = graph_state_.GetSubgraphRound(next_graph_id);
-      read_message.response_serialized =
-          graph_state_.NewSerializedMutableCSRGraph(next_graph_id);
+      read_message.response_serialized = CreateSerialized(next_graph_id);
       graph_state_.SetOnDiskToReading(next_graph_id);
       message_hub_.get_reader_queue()->Push(read_message);
     } else {
@@ -233,7 +250,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
         read_message.round =
             graph_state_.GetSubgraphRound(read_message.graph_id);
         read_message.response_serialized =
-            graph_state_.NewSerializedMutableCSRGraph(next_gid_next_round);
+            CreateSerialized(next_gid_next_round);
         message_hub_.get_reader_queue()->Push(read_message);
       } else {
         // no graph can be read, terminate system
@@ -245,25 +262,33 @@ bool Scheduler::TryReadNextGraph(bool sync) {
   return true;
 }
 
-std::unique_ptr<data_structures::Serializable>
-Scheduler::CreateSerializableGraph(common::GraphID graph_id) {
+void Scheduler::CreateSerializableGraph(common::GraphID graph_id) {
   if (common::Configurations::Get()->vertex_data_type ==
       common::VertexDataType::kVertexDataTypeUInt32) {
-    return std::make_unique<MutableCSRGraphUInt32>(
-        graph_metadata_info_.GetSubgraphMetadataPtr(graph_id),
-        graph_metadata_info_.get_num_vertices());
-
+    std::unique_ptr<data_structures::Serializable> serializable_graph =
+        std::make_unique<MutableCSRGraphUInt32>(
+            graph_metadata_info_.GetSubgraphMetadataPtr(graph_id),
+            graph_metadata_info_.get_num_vertices());
+    graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
   } else {
-    return std::make_unique<MutableCSRGraphUInt16>(
-        graph_metadata_info_.GetSubgraphMetadataPtr(graph_id),
-        graph_metadata_info_.get_num_vertices());
+    std::unique_ptr<data_structures::Serializable> serializable_graph =
+        std::make_unique<MutableCSRGraphUInt16>(
+            graph_metadata_info_.GetSubgraphMetadataPtr(graph_id),
+            graph_metadata_info_.get_num_vertices());
+    graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
   }
+}
+
+data_structures::Serialized* Scheduler::CreateSerialized(
+    common::GraphID graph_id) {
+  return graph_state_.NewSerializedMutableCSRGraph(graph_id);
 }
 
 // release all graphs in memory. not write back to disk. just release memory.
 void Scheduler::ReleaseAllGraph() {
   for (int i = 0; i < graph_state_.num_subgraphs_; i++) {
-    //    graph_state_.
+    if (graph_state_.subgraph_storage_state_.at(i) == GraphState::Serialized)
+      graph_state_.ReleaseSubgraphSerialized(i);
   }
 }
 
@@ -294,7 +319,7 @@ common::GraphID Scheduler::GetNextExecuteGraph() const {
   for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
-            GraphState::StorageStateType::Deserialized) {
+            GraphState::StorageStateType::Serialized) {
       return gid;
     }
   }

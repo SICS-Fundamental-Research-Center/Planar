@@ -35,16 +35,19 @@ class Executor : public Component {
     thread_->join();
     if (in_memory_time_) {
       LOGF_INFO("========== In memory time: {} s ==========",
-               std::chrono::duration<double>(end_time_ - start_time_).count());
+                std::chrono::duration<double>(end_time_ - start_time_).count());
     }
   }
 
   common::TaskRunner* GetTaskRunner() { return &task_runner_; }
 
+  bool GetWorking() const { return working; }
+
  private:
   scheduler::ExecutorQueue* execute_q_;
   scheduler::ResponseQueue* response_q_;
 
+  bool working = false;
   std::unique_ptr<std::thread> thread_;
   common::ThreadPool task_runner_;
 
