@@ -41,7 +41,7 @@ class MutableCSRReader : public Reader {
                            std::vector<OwnedBuffer>* buffers);
 
   void ReadSingleBufferFromBin(const std::string& path,
-                            std::vector<OwnedBuffer>* buffers);
+                               std::vector<OwnedBuffer>* buffers);
 
  private:
   const std::string root_path_;

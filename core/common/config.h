@@ -35,7 +35,7 @@ class Configurations {
 
   Configurations(const Configurations& rhs) = delete;
   Configurations& operator=(const Configurations& rhs) = delete;
-  uint32_t max_task_package = 100;
+  uint32_t task_package_factor = 100;
   uint32_t parallelism = 1;
   PartitionType partition_type = VertexCut;
   std::string root_path = "/testfile";

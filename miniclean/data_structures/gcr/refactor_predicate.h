@@ -97,6 +97,35 @@ class VariablePredicate {
   VertexAttributeID rhs_attribute_id_;
   OperatorType operator_type_;
 };
+
+class ConcreteVariablePredicate {
+ public:
+  ConcreteVariablePredicate() = default;
+  ConcreteVariablePredicate(VariablePredicate variable_predicate,
+                            uint8_t left_path_index, uint8_t left_vertex_index,
+                            uint8_t right_path_index,
+                            uint8_t right_vertex_index)
+      : variable_predicate_(variable_predicate),
+        left_path_index_(left_path_index),
+        left_vertex_index_(left_vertex_index),
+        right_path_index_(right_path_index),
+        right_vertex_index_(right_vertex_index) {}
+
+  VariablePredicate get_variable_predicate() const {
+    return variable_predicate_;
+  }
+  uint8_t get_left_path_index() const { return left_path_index_; }
+  uint8_t get_left_vertex_index() const { return left_vertex_index_; }
+  uint8_t get_right_path_index() const { return right_path_index_; }
+  uint8_t get_right_vertex_index() const { return right_vertex_index_; }
+
+ private:
+  VariablePredicate variable_predicate_;
+  uint8_t left_path_index_;
+  uint8_t left_vertex_index_;
+  uint8_t right_path_index_;
+  uint8_t right_vertex_index_;
+};
 }  // namespace sics::graph::miniclean::data_structures::gcr::refactor
 
 namespace YAML {

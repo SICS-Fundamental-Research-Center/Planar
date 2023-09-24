@@ -40,6 +40,7 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
 
   size_t offset = 0,
          vertices_buffer_size = sizeof(VertexID) * metadata_.num_vertices,
+         offset_buffer_size = sizeof(EdgeIndex) * metadata_.num_vertices,
          incoming_edges_buffer_size =
              sizeof(VertexID) * metadata_.num_incoming_edges;
 
@@ -51,9 +52,9 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
     start_outdegree = offset;
     offset += vertices_buffer_size;
     start_in_offset = offset;
-    offset += vertices_buffer_size;
+    offset += offset_buffer_size;
     start_out_offset = offset;
-    offset += vertices_buffer_size;
+    offset += offset_buffer_size;
     start_incoming_edges = offset;
     offset += incoming_edges_buffer_size;
     start_outgoing_edges = offset;
@@ -63,7 +64,7 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
     start_outdegree = offset;
     offset += vertices_buffer_size;
     start_out_offset = offset;
-    offset += vertices_buffer_size;
+    offset += offset_buffer_size;
     start_outgoing_edges = offset;
   } else if (metadata_.num_incoming_edges != 0) {
     start_globalid = offset;
@@ -71,7 +72,7 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
     start_indegree = offset;
     offset += vertices_buffer_size;
     start_in_offset = offset;
-    offset += vertices_buffer_size;
+    offset += offset_buffer_size;
     start_incoming_edges = offset;
   }
 
@@ -81,16 +82,16 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
   if (metadata_.num_incoming_edges != 0) {
     SetInDegreeBuffer(
         reinterpret_cast<VertexID*>(buf_graph_base_pointer_ + start_indegree));
-    SetInOffsetBuffer(
-        reinterpret_cast<VertexID*>(buf_graph_base_pointer_ + start_in_offset));
+    SetInOffsetBuffer(reinterpret_cast<EdgeIndex*>(buf_graph_base_pointer_ +
+                                                   start_in_offset));
     SetIncomingEdgesBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer_ +
                                                        start_incoming_edges));
   }
   if (metadata_.num_outgoing_edges != 0) {
     SetOutDegreeBuffer(
         reinterpret_cast<VertexID*>(buf_graph_base_pointer_ + start_outdegree));
-    SetOutOffsetBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer_ +
-                                                   start_out_offset));
+    SetOutOffsetBuffer(reinterpret_cast<EdgeIndex*>(buf_graph_base_pointer_ +
+                                                    start_out_offset));
     SetOutgoingEdgesBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer_ +
                                                        start_outgoing_edges));
   }

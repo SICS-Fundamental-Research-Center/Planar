@@ -15,6 +15,8 @@ class GCRFactory {
   using GCR = sics::graph::miniclean::data_structures::gcr::refactor::GCR;
   using VariablePredicate =
       sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
+  using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::
+      gcr::refactor::ConcreteVariablePredicate;
 
  public:
   GCRFactory() = default;
@@ -29,15 +31,26 @@ class GCRFactory {
   //   - assign consequence
   //   - assign variable predicates
   // The input GCR only carries constant predicates.
-  std::vector<GCR> InitializeGCRs(const GCR& gcr);
+  bool InitializeGCRs(const GCR& gcr, bool added_to_left_star,
+                      std::vector<GCR>* complete_gcrs);
 
   // This function aims to extend GCRs:
   //   - merge the path_rule into the GCR
   //   - assign consequence predicates
-  std::vector<GCR> MergeAndCompleteGCRs(const GCR& gcr,
-                                        const PathRule& path_rule);
+  bool MergeAndCompleteGCRs(const GCR& gcr, PathRule* path_rule,
+                            size_t max_path_num,
+                            std::vector<GCR>* complete_gcrs);
 
  private:
+  bool ConcretizeVariablePredicates(
+      const GCR& gcr, const VariablePredicate& variable_predicate,
+      bool added_to_left_star, bool consider_consequence,
+      std::vector<ConcreteVariablePredicate>* predicates) const;
+
+  void ExtendVariablePredicates(
+      const GCR& gcr, std::vector<ConcreteVariablePredicate>& predicates,
+      size_t start_id, std::vector<GCR>* gcrs) const;
+
   std::vector<VariablePredicate> consequence_predicates_;
   std::vector<VariablePredicate> variable_predicates_;
   size_t max_predicate_num_;

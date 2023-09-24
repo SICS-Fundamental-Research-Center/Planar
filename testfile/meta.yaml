@@ -3,6 +3,7 @@ GraphMetadata:
   num_edges: 100
   max_vid: 57
   min_vid: 0
+  count_border_vertices: 12
   num_subgraphs: 2
   subgraphs:
     - gid: 0

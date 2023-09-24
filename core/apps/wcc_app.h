@@ -11,6 +11,7 @@ namespace sics::graph::core::apps {
 using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 
 class WCCApp : public apis::PlanarAppBase<CSRGraph> {
+  using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
   using VertexID = common::VertexID;
 
@@ -32,6 +33,7 @@ class WCCApp : public apis::PlanarAppBase<CSRGraph> {
   void Init(VertexID id);
 
   void Graft(VertexID src_id, VertexID dst_id);
+  void Graft2(VertexID src_id, VertexID dst_id);
 
   void PointJump(VertexID src_id);
 

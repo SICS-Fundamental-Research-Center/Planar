@@ -156,7 +156,8 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
     metadata.set_num_edges(node["num_edges"].as<size_t>());
     metadata.set_max_vid(node["max_vid"].as<VertexID>());
     metadata.set_min_vid(node["min_vid"].as<VertexID>());
-    metadata.set_min_vid(node["count_border_vertices"].as<VertexID>());
+    metadata.set_count_border_vertices(
+        node["count_border_vertices"].as<VertexID>());
     metadata.set_count_border_vertices(
         node["count_border_vertices"].as<VertexID>());
     metadata.set_num_subgraphs(node["num_subgraphs"].as<size_t>());

@@ -12,19 +12,11 @@ class GCR {
   using StarRule = std::vector<PathRule*>;
   using VariablePredicate =
       sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
-  // Each tuple contains:
-  //   - the first element is the path pattern id (in the star pattern).
-  //   - the second element is the vertex id (in the path pattern).
-  //   - the third element is the predicate.
-  using ConcreteVariablePredicate =
-      std::pair<std::tuple<uint8_t, uint8_t, VariablePredicate>,
-                std::tuple<uint8_t, uint8_t, VariablePredicate>>;
-  using ConcreteConsequence =
-      std::pair<std::tuple<uint8_t, uint8_t, VariablePredicate>,
-                std::tuple<uint8_t, uint8_t, VariablePredicate>>;
+  using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::
+      gcr::refactor::ConcreteVariablePredicate;
 
  public:
-  GCR(StarRule left_star, StarRule right_star)
+  GCR(const StarRule& left_star, const StarRule& right_star)
       : left_star_(left_star), right_star_(right_star) {}
 
   void AddVariablePredicateToBack(
@@ -32,7 +24,23 @@ class GCR {
     variable_predicates_.push_back(variable_predicate);
   }
 
-  void set_consequence(ConcreteConsequence consequence) {
+  bool PopVariablePredicateFromBack() {
+    if (!variable_predicates_.empty()) {
+      variable_predicates_.pop_back();
+      return true;
+    }
+    return false;
+  }
+
+  void AddPathRuleToLeftStar(PathRule* path_rule) {
+    left_star_.push_back(path_rule);
+  }
+
+  void AddPathRuleToRigthStar(PathRule* path_rule) {
+    right_star_.push_back(path_rule);
+  }
+
+  void set_consequence(const ConcreteVariablePredicate& consequence) {
     consequence_ = consequence;
   }
 
@@ -44,16 +52,34 @@ class GCR {
     return variable_predicates_;
   }
 
-  const ConcreteConsequence& get_consequence() const { return consequence_; }
+  const ConcreteVariablePredicate& get_consequence() const {
+    return consequence_;
+  }
+
+  ConcreteVariablePredicate ConcretizeVariablePredicate(
+      const VariablePredicate& variable_predicate, uint8_t left_path_index,
+      uint8_t left_vertex_index, uint8_t right_path_index,
+      uint8_t right_vertex_index) const {
+    ConcreteVariablePredicate concrete_variable_predicate(
+        variable_predicate, left_path_index, left_vertex_index,
+        right_path_index, right_vertex_index);
+    return concrete_variable_predicate;
+  }
 
   std::pair<size_t, size_t> ComputeMatchAndSupport() const;
+
+  // Return the number of precondition predicates.
+  size_t CountPreconditions() const;
+
+  bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
+                        bool consider_consequence) const;
 
  private:
   StarRule left_star_;
   StarRule right_star_;
 
   std::vector<ConcreteVariablePredicate> variable_predicates_;
-  ConcreteConsequence consequence_;
+  ConcreteVariablePredicate consequence_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr::refactor
