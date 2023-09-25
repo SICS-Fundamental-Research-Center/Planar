@@ -306,13 +306,18 @@ class MutableCSRGraph : public Serializable {
 
   bool IsBorderVertex(VertexID id) const { return true; }
 
+  // all read and write methods are for basic type vertex data now
+
   // this will be used when VertexData is basic num type
   VertexData ReadLocalVertexDataByID(VertexID id) const {
     auto index = index_by_global_id_[id];
     return vertex_data_read_base_[index];
   }
 
-  // all read and write methods are for basic type vertex data now
+  bool WriteMaxReadDataByID(VertexID id, VertexData data_new) {
+    auto index = index_by_global_id_[id];
+    return util::atomic::WriteMax(&vertex_data_read_base_[index], data_new);
+  }
 
   // write the min value in local vertex data of vertex id
   // @return: true for global message update, or local message update only
@@ -328,6 +333,12 @@ class MutableCSRGraph : public Serializable {
     auto index = index_by_global_id_[id];
     vertex_data_write_base_[index] = data_new;
     return true;
+  }
+
+  // TOOD: maybe used later
+  VertexData* GetWriteDataByID(VertexID id) {
+    auto index = index_by_global_id_[id];
+    return vertex_data_write_base_ + index;
   }
 
   void DeleteEdge(VertexID id, EdgeIndex edge_index) {
