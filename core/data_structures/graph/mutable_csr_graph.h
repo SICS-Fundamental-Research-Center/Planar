@@ -284,6 +284,11 @@ class MutableCSRGraph : public Serializable {
     return out_degree_base_[index];
   }
 
+  VertexDegree GetOutDegreeByID(VertexID id) const {
+    auto index = index_by_global_id_[id];
+    return out_degree_base_[index];
+  }
+
   EdgeIndex GetOutOffsetByIndex(VertexIndex index) const {
     return out_offset_base_[index];
   }
@@ -296,6 +301,11 @@ class MutableCSRGraph : public Serializable {
   // fetch all out edges of vertex by index i
   VertexID* GetOutEdgesByIndex(VertexIndex i) const {
     return out_edges_base_ + out_offset_base_[i];
+  }
+
+  VertexID* GetOutEdgesByID(VertexID id) {
+    auto index = index_by_global_id_[id];
+    return out_edges_base_ + out_offset_base_[index];
   }
 
   VertexData* GetVertxDataByIndex(VertexIndex index) const {

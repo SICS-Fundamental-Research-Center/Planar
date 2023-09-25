@@ -10,6 +10,9 @@ namespace sics::graph::core::apps {
 using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 
 class MstApp : public apis::PlanarAppBase<CSRGraph> {
+  using VertexID = common::VertexID;
+  using EdgeIndex = common::EdgeIndex;
+
  public:
   using VertexData = CSRGraph::VertexData;
   using EdgeData = CSRGraph::EdgeData;
@@ -25,6 +28,15 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
   void Assemble() final;
 
  private:
+  void Init(VertexID id);
+
+  void Graft(VertexID src_id);
+
+  void MessagePassing(VertexID id);
+
+  void PointJump(VertexID id);
+
+  void Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx);
 };
 
 }  // namespace sics::graph::core::apps

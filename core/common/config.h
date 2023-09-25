@@ -17,6 +17,15 @@ enum PartitionType {
   PlanarCut,
 };
 
+enum ApplicationType {
+  WCC = 1,
+  Coloring,
+  Sssp,
+  MST,
+  RandomWalk,
+  PageRank,
+};
+
 class Configurations {
  public:
   static const Configurations* Get() {
@@ -44,6 +53,7 @@ class Configurations {
   bool in_memory = false;
   uint32_t vertex_data_size = 4;
   size_t memory_size = 64 * 1024;
+  ApplicationType application = WCC;
 
  private:
   Configurations() = default;
