@@ -33,6 +33,7 @@ TEST_F(GraphMetadataTest, NodeStructureRead) {
   EXPECT_EQ(graph_metadata.get_num_edges(), 100);
   EXPECT_EQ(graph_metadata.get_max_vid(), 57);
   EXPECT_EQ(graph_metadata.get_min_vid(), 0);
+  EXPECT_EQ(graph_metadata.get_count_border_vertices(), 12);
   EXPECT_EQ(graph_metadata.get_num_subgraphs(), 2);
   std::vector<std::vector<int>> result_subgraph_metadata = {
       {0, 32, 87, 0, 47, 0}, {1, 26, 31, 0, 57, 5}};
