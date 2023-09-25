@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 #include <memory>
 
@@ -47,6 +48,7 @@ class Planar {
 
   void Start() {
     LOG_INFO("start components!");
+    start_time_ = std::chrono::system_clock::now();
     loader_->Start();
     discharger_->Start();
     executer_->Start();
@@ -54,6 +56,9 @@ class Planar {
 
     scheduler_->Stop();
     Stop();
+    end_time_ = std::chrono::system_clock::now();
+    LOGF_INFO(" =========== Hole Runtime: {} s ===========",
+             std::chrono::duration<double>(end_time_ - start_time_).count());
   }
 
   void Stop() {
@@ -72,6 +77,10 @@ class Planar {
   std::unique_ptr<components::Loader<io::MutableCSRReader>> loader_;
   std::unique_ptr<components::Discharger<io::MutableCSRWriter>> discharger_;
   std::unique_ptr<components::Executor> executer_;
+
+  // time
+  std::chrono::time_point<std::chrono::system_clock> start_time_;
+  std::chrono::time_point<std::chrono::system_clock> end_time_;
 };
 
 }  // namespace sics::graph::core::planar_system

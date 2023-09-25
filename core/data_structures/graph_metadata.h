@@ -7,16 +7,16 @@
 #include <string>
 #include <vector>
 
+#include "common/config.h"
 #include "common/types.h"
 #include "util/logging.h"
 
 namespace sics::graph::core::data_structures {
 
 struct SubgraphMetadata {
-  using GraphID = sics::graph::core::common::GraphID;
-  using VertexID = sics::graph::core::common::VertexID;
-  using EdgeIndex = sics::graph::core::common::EdgeIndex;
-
+  using GraphID = common::GraphID;
+  using VertexID = common::VertexID;
+  using EdgeIndex = common::EdgeIndex;
   // Subgraph Metadata
   GraphID gid;
   VertexID num_vertices;
@@ -28,9 +28,11 @@ struct SubgraphMetadata {
 
 // TODO: change class to struct
 class GraphMetadata {
-  using GraphID = sics::graph::core::common::GraphID;
-  using VertexID = sics::graph::core::common::VertexID;
-  using EdgeIndex = sics::graph::core::common::EdgeIndex;
+  using GraphID = common::GraphID;
+  using VertexID = common::VertexID;
+  using VertexDegree = common::VertexDegree;
+  using VertexIndex = common::VertexIndex;
+  using EdgeIndex = common::EdgeIndex;
 
  public:
   GraphMetadata() = default;
@@ -71,8 +73,43 @@ class GraphMetadata {
     return subgraph_metadata_vec_.at(gid).num_vertices;
   }
 
-  void UpdateNumOutgoingEdges(common::GraphID gid, size_t num_outgoing_edges) {
-    subgraph_metadata_vec_.at(gid).num_outgoing_edges = num_outgoing_edges;
+  size_t GetSubgraphSize(common::GraphID gid) const {
+    return subgraph_size_.at(gid);
+  }
+
+ private:
+  void InitSubgraphSize() {
+    for (int gid = 0; gid < num_subgraphs_; ++gid) {
+      auto& subgraph = subgraph_metadata_vec_.at(gid);
+      auto size_vertex_id = (subgraph.num_vertices * sizeof(VertexID)) >> 20;
+      auto size_out_degree =
+          (subgraph.num_vertices * sizeof(VertexDegree)) >> 20;
+      auto size_out_offset = (subgraph.num_vertices * sizeof(EdgeIndex)) >> 20;
+      auto size_out_edges =
+          (subgraph.num_outgoing_edges * sizeof(VertexID)) >> 20;
+      auto size_vertex_data =
+          (subgraph.num_vertices * vertex_data_size_ * 2) >> 20;
+      auto size_index = (num_vertices_ * sizeof(VertexIndex)) >> 20;
+      auto size_is_in_graph_bitmap = num_vertices_ >> 23;
+      auto size_is_src_or_dst_bitmap = (subgraph.num_vertices) >> 23;
+
+      auto size_total = size_vertex_id + size_out_degree + size_out_offset +
+                        size_out_edges + size_vertex_data + size_index +
+                        size_is_in_graph_bitmap + size_is_src_or_dst_bitmap;
+
+      if (common::Configurations::Get()->edge_mutate) {
+        auto size_out_degree_new =
+            (subgraph.num_vertices * sizeof(VertexDegree)) >> 20;
+        auto size_out_offset_new =
+            (subgraph.num_vertices * sizeof(EdgeIndex)) >> 20;
+        auto size_out_edges_new =
+            (subgraph.num_outgoing_edges * sizeof(VertexID)) >> 20;
+        auto size_egdes_dellete_bitmap = subgraph.num_outgoing_edges >> 23;
+        size_total += size_out_degree_new + size_out_offset_new +
+                      size_out_edges_new + size_egdes_dellete_bitmap;
+      }
+      subgraph_size_.push_back(size_total + 1);
+    }
   }
 
  private:
@@ -85,6 +122,11 @@ class GraphMetadata {
   std::vector<std::vector<int>> dependency_matrix_;
   std::string data_root_path_;
   std::vector<SubgraphMetadata> subgraph_metadata_vec_;
+  // size of subgraph in MB
+  std::vector<size_t> subgraph_size_;
+
+  // configs
+  uint32_t vertex_data_size_ = 4;
 };
 
 }  // namespace sics::graph::core::data_structures

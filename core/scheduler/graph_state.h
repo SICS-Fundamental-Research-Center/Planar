@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "common/types.h"
+#include "data_structures/graph/serialized_mutable_csr_graph.h"
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
 
@@ -14,14 +15,16 @@ struct GraphState {
  public:
   typedef enum {
     OnDisk = 1,
+    Reading,
     Serialized,
     Deserialized,
     Computed,
   } StorageStateType;
 
   GraphState() : memory_size_(64 * 1024){};
-  GraphState(size_t num_subgraphs, size_t memory_size = 64 * 1024)
-      : num_subgraphs_(num_subgraphs), memory_size_(memory_size) {
+  GraphState(size_t num_subgraphs)
+      : num_subgraphs_(num_subgraphs),
+        memory_size_(common::Configurations::Get()->memory_size) {
     subgraph_round_.resize(num_subgraphs, 0);
     subgraph_storage_state_.resize(num_subgraphs, OnDisk);
     serialized_.resize(num_subgraphs);
@@ -35,6 +38,14 @@ struct GraphState {
   }
 
   void SetOnDiskToSerialized(common::GraphID gid) {
+    subgraph_storage_state_.at(gid) = Serialized;
+  }
+
+  void SetOnDiskToReading(common::GraphID gid) {
+    subgraph_storage_state_.at(gid) = Reading;
+  }
+
+  void SetReadingToSerialized(common::GraphID gid) {
     subgraph_storage_state_.at(gid) = Serialized;
   }
 
@@ -89,6 +100,13 @@ struct GraphState {
     return graphs_.at(gid).get();
   }
 
+  data_structures::Serialized* NewSerializedMutableCSRGraph(
+      common::GraphID gid) {
+    serialized_.at(gid) =
+        std::make_unique<data_structures::graph::SerializedMutableCSRGraph>();
+    return serialized_.at(gid).get();
+  }
+
   void SetSubgraphSerialized(
       common::GraphID gid,
       std::unique_ptr<data_structures::Serialized> serialized) {
@@ -118,8 +136,9 @@ struct GraphState {
 
   // memory size and graph size
   // TODO: memory size should be set by gflags
+  std::vector<size_t> subgraph_size_;
   const size_t memory_size_;
-  size_t subgraph_limits = 1;
+  size_t subgraph_limits_ = 1;
 
  private:
   std::vector<std::unique_ptr<data_structures::Serialized>> serialized_;

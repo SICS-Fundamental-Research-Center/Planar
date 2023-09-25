@@ -42,6 +42,8 @@ class Configurations {
   VertexDataType vertex_data_type = kVertexDataTypeUInt32;
   bool edge_mutate = false;
   bool in_memory = false;
+  uint32_t vertex_data_size = 4;
+  size_t memory_size = 64 * 1024;
 
  private:
   Configurations() = default;
