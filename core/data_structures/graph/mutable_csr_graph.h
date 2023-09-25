@@ -139,7 +139,7 @@ class MutableCSRGraph : public Serializable {
   void UpdateOutOffsetBaseNew(common::TaskRunner* runner) {
     LOG_INFO("out_offset_base_new update begin!");
     // TODO: change simple logic
-    uint32_t step = ceil((double) metadata_->num_vertices / parallelism_);
+    uint32_t step = ceil((double)metadata_->num_vertices / parallelism_);
     VertexIndex b1 = 0, e1 = 0;
     {
       common::TaskPackage pre_tasks;
@@ -441,7 +441,7 @@ class MutableCSRGraph : public Serializable {
 
   std::string status_;
   size_t num_all_vertices_;
-  const uint32_t parallelism_;
+  uint32_t parallelism_;  // use change variable for test
   const uint32_t task_package_factor_;
 };
 
