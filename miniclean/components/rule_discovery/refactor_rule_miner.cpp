@@ -238,7 +238,7 @@ void RuleMiner::InitPathRuleUnits() {
   //   2. Initialize the rule unit.
   path_rules_.resize(path_patterns_.size());
   for (size_t i = 0; i < path_rule_unit_container_.size(); i++) {
-    PathRule path_rule(path_patterns_[i], num_vertex);
+    PathRule path_rule(path_patterns_[i], i, num_vertex);
     path_rule.InitBitmap(path_instances_[i], graph_);
     // TODO (bai-wenchao): check the support.
     if (path_rule.CountOneBits() <= 0) {
@@ -357,7 +357,11 @@ void RuleMiner::MineGCRs() {
           for (const auto& init_gcr : init_gcrs) {
             // Check the support and match of `init_gcr`.
             std::pair<size_t, size_t> support_and_match =
-                init_gcr.ComputeMatchAndSupport();
+                init_gcr.ComputeMatchAndSupport(graph_,
+                                                path_rule_unit_container_);
+
+            LOG_INFO("Support: ", support_and_match.first,
+                     " Match: ", support_and_match.second);
             // If the match is less than the threshold, continue.
 
             // If the support is higher than the threshold, add it to the
@@ -389,7 +393,10 @@ void RuleMiner::ExtendGCR(const GCR& gcr, size_t start_pattern_id,
       for (const auto& extended_gcr : extended_gcrs) {
         // Check the support and match of `extended_gcr`.
         std::pair<size_t, size_t> support_and_match =
-            extended_gcr.ComputeMatchAndSupport();
+            extended_gcr.ComputeMatchAndSupport(graph_,
+                                                path_rule_unit_container_);
+        LOG_INFO("Support: ", support_and_match.first,
+                 " Match: ", support_and_match.second);
         // If the match is less than the threshold, continue.
 
         // If the support is higher than the threshold, add it to the verified

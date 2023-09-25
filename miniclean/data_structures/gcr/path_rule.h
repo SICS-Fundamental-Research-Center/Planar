@@ -28,10 +28,13 @@ class PathRule {
 
  public:
   PathRule() = default;
-  PathRule(PathPattern path_pattern, size_t map_size)
-      : path_pattern_(path_pattern), star_bitmap_(map_size) {}
+  PathRule(PathPattern path_pattern, size_t path_pattern_id, size_t map_size)
+      : path_pattern_(path_pattern),
+        path_pattern_id_(path_pattern_id),
+        star_bitmap_(map_size) {}
   PathRule(const PathRule& other)
       : path_pattern_(other.path_pattern_),
+        path_pattern_id_(other.path_pattern_id_),
         star_bitmap_(other.star_bitmap_),
         constant_predicates_(other.constant_predicates_) {}
 
@@ -57,13 +60,18 @@ class PathRule {
 
   const PathPattern& get_path_pattern() const { return path_pattern_; }
 
+  size_t get_path_pattern_id() const { return path_pattern_id_; }
+
   const std::vector<std::pair<uint8_t, ConstantPredicate>>&
   get_constant_predicates() const {
     return constant_predicates_;
   }
 
+  const StarBitmap& get_star_bitmap() const { return star_bitmap_; }
+
  private:
   PathPattern path_pattern_;
+  size_t path_pattern_id_;
 
   // The first element is the index of vertex in the pattern;
   // The second element the constant predicate.
