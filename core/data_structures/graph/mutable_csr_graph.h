@@ -23,7 +23,7 @@ class MutableCSRGraph : public Serializable {
   using VertexID = common::VertexID;
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
-  using VertexDegree = uint32_t;
+  using VertexDegree = common::VertexDegree;
   using SerializedMutableCSRGraph =
       data_structures::graph::SerializedMutableCSRGraph;
 
@@ -387,6 +387,7 @@ class MutableCSRGraph : public Serializable {
   }
 
   void LogIsIngraphInfo() {
+    LOG_INFO("Is in graph bitmap info:");
     for (size_t i = 0; i < num_all_vertices_; i++) {
       LOGF_INFO("Vertex id: {}, is_in_graph: {}", i,
                 is_in_graph_bitmap_.GetBit(i));

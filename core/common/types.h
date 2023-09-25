@@ -13,6 +13,7 @@ typedef uint32_t GraphID;  // uint32_t: 0 ~ 4,294,967,295
 typedef uint32_t VertexID;
 typedef uint32_t VertexIndex;
 typedef uint32_t VertexLabel;
+typedef uint32_t VertexDegree;
 typedef uint32_t VertexCount;
 typedef uint64_t EdgeIndex;
 

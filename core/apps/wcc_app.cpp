@@ -59,21 +59,22 @@ void WCCApp::IncEval() {
   //  update_store_->LogGlobalMessage();
   //  graph_->LogIsIngraphInfo();
   ParallelVertexDo(message_passing);
+  LOG_INFO("message passing finished");
   //  graph_->LogVertexData();
   //  update_store_->LogGlobalMessage();
 
   ParallelVertexDo(point_jump_inc_eval);
+  LOG_INFO("point_jump increment finished");
   //  graph_->LogVertexData();
   //  update_store_->LogGlobalMessage();
 
-  //  graph_->set_status("IncEval");
+  graph_->set_status("IncEval");
 }
 
 void WCCApp::Assemble() { graph_->set_status("Assemble"); }
 
 void WCCApp::Init(VertexID id) { graph_->WriteVertexDataByID(id, id); }
 
-// TODO: maybe update_store_ can check bitmap first when write_min
 void WCCApp::Graft(VertexID src_id, VertexID dst_id) {
   VertexID src_parent_id = graph_->ReadLocalVertexDataByID(src_id);
   VertexID dst_parent_id = graph_->ReadLocalVertexDataByID(dst_id);
@@ -142,7 +143,7 @@ void WCCApp::PointJumpIncEval(VertexID id) {
   // is not in graph
   VertexData parent_id = graph_->ReadLocalVertexDataByID(id);
   if (!graph_->IsInGraph(parent_id)) {
-    std::lock_guard<std::mutex> grd(mtx_);
+    //    std::lock_guard<std::mutex> grd(mtx_);
     if (id_to_p_.find(parent_id) != id_to_p_.end())
       if (graph_->WriteMinVertexDataByID(id, id_to_p_[parent_id])) {
         update_store_->WriteMin(id, id_to_p_[parent_id]);

@@ -23,7 +23,9 @@ class Scheduler {
   Scheduler(const std::string& root_path)
       : graph_metadata_info_(root_path),
         current_round_(0),
-        graph_state_(graph_metadata_info_.get_num_subgraphs()) {}
+        graph_state_(graph_metadata_info_.get_num_subgraphs()) {
+    memory_left_size_ = common::Configurations::Get()->memory_size;
+  }
 
   virtual ~Scheduler() = default;
 
@@ -62,8 +64,8 @@ class Scheduler {
   // in current round or next round
   bool TryReadNextGraph(bool sync = false);
 
-  std::unique_ptr<data_structures::Serializable> CreateSerializableGraph(
-      common::GraphID graph_id);
+  void CreateSerializableGraph(common::GraphID graph_id);
+  data_structures::Serialized* CreateSerialized(common::GraphID graph_id);
 
   common::GraphID GetNextReadGraphInCurrentRound() const;
 
@@ -71,15 +73,10 @@ class Scheduler {
 
   common::GraphID GetNextReadGraphInNextRound() const;
 
-  bool IsCurrentRoundFinish() {
-    return GetNextReadGraphInCurrentRound() == INVALID_GRAPH_ID;
-  }
+  bool IsCurrentRoundFinish() const;
 
-  bool IsSystemStop() {
-    // If current and next round both have no graph to read, system stop.
-    return (GetNextReadGraphInCurrentRound() == INVALID_GRAPH_ID) &&
-           !update_store_->IsActive();
-  }
+  // If current and next round both have no graph to read, system stop.
+  bool IsSystemStop() const;
 
   void ReleaseAllGraph();
 
@@ -100,7 +97,11 @@ class Scheduler {
   common::TaskRunner* executor_task_runner_;
   apis::PIE* app_;
 
+  // mark if the executor is running
+  bool is_executor_running_ = false;
   std::unique_ptr<std::thread> thread_;
+
+  size_t memory_left_size_ = 0;
 };
 
 }  // namespace sics::graph::core::scheduler
