@@ -710,12 +710,12 @@ CSRBasedPlanarVertexCutPartitioner::ConvertListofVertex2Edges(
   // Set bitmap;
   for (auto& branch : list_of_branches) {
     Bitmap is_in_branch(graph.get_max_vid());
-    std::for_each(std::execution::par, branch.begin(), branch.end(),
-                  [&is_root_of_branch, &graph, &is_in_branch](auto& vid) {
-                    is_in_branch.SetBit(vid);
-                  }
+   // std::for_each(std::execution::par, branch.begin(), branch.end(),
+   //               [&is_root_of_branch, &graph, &is_in_branch](auto& vid) {
+   //                 is_in_branch.SetBit(vid);
+   //               }
 
-    );
+   // );
 
     // auto const result = std::this_thread::sync_wait(s);
 
