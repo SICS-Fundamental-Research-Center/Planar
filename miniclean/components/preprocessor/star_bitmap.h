@@ -27,14 +27,28 @@ class StarBitmap {
     star_bitmap_[WORD_OFFSET(index)].set(BIT_OFFSET(index));
   }
 
+  void ResetBit(size_t index) {
+    star_bitmap_[WORD_OFFSET(index)].reset(BIT_OFFSET(index));
+  }
+
   bool TestBit(size_t index) {
     return star_bitmap_[WORD_OFFSET(index)].test(BIT_OFFSET(index));
   }
 
-  void MergeWith(StarBitmap& other) {
+  size_t get_bitset_num() const { return star_bitmap_.size(); }
+
+  size_t get_bitset_count(size_t i) const { return star_bitmap_.at(i).count(); }
+
+  size_t get_map_size() const { return map_size_; }
+
+  bool MergeWith(const StarBitmap& other) {
+    if (other.get_bitset_num() != get_bitset_num()) {
+      return false;
+    }
     for (size_t i = 0; i < star_bitmap_.size(); ++i) {
       star_bitmap_[i] &= other.star_bitmap_[i];
     }
+    return true;
   }
 
   size_t CountOneBits() {

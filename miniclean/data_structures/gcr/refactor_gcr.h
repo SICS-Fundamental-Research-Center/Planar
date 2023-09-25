@@ -3,6 +3,7 @@
 
 #include "miniclean/data_structures/gcr/path_rule.h"
 #include "miniclean/data_structures/gcr/refactor_predicate.h"
+#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 namespace sics::graph::miniclean::data_structures::gcr::refactor {
 
@@ -14,6 +15,13 @@ class GCR {
       sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
   using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::
       gcr::refactor::ConcreteVariablePredicate;
+  using StarBitmap =
+      sics::graph::miniclean::components::preprocessor::StarBitmap;
+  using MiniCleanCSRGraph =
+      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+  using PathPattern = sics::graph::miniclean::common::PathPattern;
+  using PathRuleUnitContainer =
+      std::vector<std::vector<std::vector<std::vector<std::vector<PathRule>>>>>;
 
  public:
   GCR(const StarRule& left_star, const StarRule& right_star)
@@ -66,7 +74,9 @@ class GCR {
     return concrete_variable_predicate;
   }
 
-  std::pair<size_t, size_t> ComputeMatchAndSupport() const;
+  std::pair<size_t, size_t> ComputeMatchAndSupport(
+      MiniCleanCSRGraph* graph,
+      PathRuleUnitContainer& path_rule_unit_container) const;
 
   // Return the number of precondition predicates.
   size_t CountPreconditions() const;
@@ -74,7 +84,30 @@ class GCR {
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
                         bool consider_consequence) const;
 
+  void StarRuleCheck(StarRule star_rule, MiniCleanCSRGraph* graph,
+                     StarBitmap* star_bitmap) const;
+
+  bool PathMatching(PathPattern path_pattern, MiniCleanCSRGraph* graph,
+                    size_t vertex_id, size_t edge_id) const;
+
  private:
+  std::vector<std::vector<std::pair<size_t, size_t>>>
+  ComputeVariablePredicateInstances() const;
+  void EnumerateVariablePredicateInstances(
+      std::vector<std::vector<std::pair<size_t, size_t>>>& value_pair_vec,
+      size_t variable_predicate_index,
+      std::vector<std::pair<size_t, size_t>>& current_value_pair_vec,
+      std::vector<std::vector<std::pair<size_t, size_t>>>* var_pred_instances)
+      const;
+  std::vector<std::pair<size_t, size_t>> ComputeAttributeValuePair(
+      const ConcreteVariablePredicate& variable_predicate) const;
+  void UpdateBitmapByVariablePredicate(ConcreteVariablePredicate predicate,
+                                       size_t left_attribute_value,
+                                       size_t right_attribute_value,
+                                       PathRuleUnitContainer& container,
+                                       StarBitmap* left_bitmap,
+                                       StarBitmap* right_bitmap) const;
+
   StarRule left_star_;
   StarRule right_star_;
 
