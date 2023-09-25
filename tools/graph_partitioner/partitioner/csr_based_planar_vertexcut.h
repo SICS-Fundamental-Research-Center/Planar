@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "core/common/bitmap.h"
 #include "core/common/types.h"
 #include "core/data_structures/graph/immutable_csr_graph.h"
 #include "tools/common/data_structures.h"
@@ -16,6 +17,7 @@ class CSRBasedPlanarVertexCutPartitioner : public PartitionerBase {
   using StoreStrategy = sics::graph::tools::common::StoreStrategy;
   using Edges = sics::graph::tools::common::Edges;
   using Edge = sics::graph::tools::common::Edge;
+  using Bitmap = sics::graph::core::common::Bitmap;
   using VertexID = sics::graph::core::common::VertexID;
   using GraphID = sics::graph::core::common::GraphID;
   using EdgelistMetadata = sics::graph::tools::common::EdgelistMetadata;
@@ -49,10 +51,13 @@ class CSRBasedPlanarVertexCutPartitioner : public PartitionerBase {
   // ImmutableCSRGraph: The graph to be partitioned.
   std::list<std::list<Edge>> SortBFSBranch(size_t minimum_n_edges_of_a_branch,
                                            const ImmutableCSRGraph& graph);
+  std::list<std::list<Edge>> MergedSortBFSBranch(
+      size_t minimum_n_edges_of_a_branch, const ImmutableCSRGraph& graph);
 
-  void BigGraphSortBFSBranch(size_t maximum_n_vertices_of_a_branch,
-                             size_t minimum_n_vertices_of_a_branch,
-                             const ImmutableCSRGraph& graph);
+  std::list<std::list<VertexID>> BigGraphSortBFSBranch(
+      size_t maximum_n_vertices_of_a_branch,
+      size_t minimum_n_vertices_of_a_branch, const ImmutableCSRGraph& graph,
+      Bitmap* is_root_of_branch);
 
   // @DESCRIPTION
   // Redistributing() aim at (1) merging small branches into one and (2)
@@ -77,6 +82,10 @@ class CSRBasedPlanarVertexCutPartitioner : public PartitionerBase {
   // a vector of Edges instances, .i.e. Edgelist Graph.
   std::vector<Edges> ConvertListofEdge2Edges(
       const std::list<std::list<Edge>>& list_of_branches);
+
+  std::vector<Edges> ConvertListofVertex2Edges(
+      std::list<std::list<VertexID>>& list_of_branches,
+      const Bitmap& is_root_of_branch, const ImmutableCSRGraph& graph);
 };
 
 }  // namespace sics::graph::tools::partitioner
