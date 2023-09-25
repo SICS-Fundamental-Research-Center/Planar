@@ -5,7 +5,6 @@ void Executor::Start() {
   thread_ = std::make_unique<std::thread>([this]() {
     while (true) {
       scheduler::ExecuteMessage message = execute_q_->PopOrWait();
-      working = true;
       if (message.terminated) {
         LOG_INFO("*** Executor is signaled termination ***");
         break;
@@ -40,7 +39,6 @@ void Executor::Start() {
           break;
       }
       LOGF_INFO("Executor completes executing subgraph {}", message.graph_id);
-      working = false;
       response_q_->Push(scheduler::Message(message));
     }
   });

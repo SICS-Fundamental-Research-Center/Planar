@@ -41,13 +41,10 @@ class Executor : public Component {
 
   common::TaskRunner* GetTaskRunner() { return &task_runner_; }
 
-  bool GetWorking() const { return working; }
-
  private:
   scheduler::ExecutorQueue* execute_q_;
   scheduler::ResponseQueue* response_q_;
 
-  bool working = false;
   std::unique_ptr<std::thread> thread_;
   common::ThreadPool task_runner_;
 
