@@ -57,14 +57,15 @@ void MiniCleanCSRGraph::ParseSubgraphCSR(
            start_outgoing_edges = 0;
 
   size_t vertices_buffer_size = sizeof(VertexID) * num_vertices_,
-         incoming_edges_buffer_size = sizeof(VertexID) * num_incoming_edges_;
+         incoming_edges_buffer_size = sizeof(VertexID) * num_incoming_edges_,
+         edges_buffer_size = sizeof(EdgeIndex) * num_vertices_;
 
   start_globalid = 0;
   start_indegree = start_globalid + vertices_buffer_size;
   start_outdegree = start_indegree + vertices_buffer_size;
   start_in_offset = start_outdegree + vertices_buffer_size;
-  start_out_offset = start_in_offset + vertices_buffer_size;
-  start_incoming_edges = start_out_offset + vertices_buffer_size;
+  start_out_offset = start_in_offset + edges_buffer_size;
+  start_incoming_edges = start_out_offset + edges_buffer_size;
   start_outgoing_edges = start_incoming_edges + incoming_edges_buffer_size;
 
   // Initialize base pointers.
