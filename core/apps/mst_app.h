@@ -20,8 +20,11 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
   explicit MstApp(
       common::TaskRunner* runner,
       update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
-      data_structures::Serializable* graph);
-  ~MstApp() override = default;
+      data_structures::Serializable* graph)
+      : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {
+    min_out_edge_id_ = new VertexData[update_store_->GetMessageCount()];
+  }
+  ~MstApp() override { delete[] min_out_edge_id_; };
 
   void PEval() final;
   void IncEval() final;
@@ -30,6 +33,8 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
  private:
   void Init(VertexID id);
 
+  void FindMinEdge(VertexID id);
+
   void Graft(VertexID src_id);
 
   void MessagePassing(VertexID id);
@@ -37,6 +42,9 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
   void PointJump(VertexID id);
 
   void Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx);
+
+ private:
+  VertexData* min_out_edge_id_;
 };
 
 }  // namespace sics::graph::core::apps
