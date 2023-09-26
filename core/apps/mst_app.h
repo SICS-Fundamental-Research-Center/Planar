@@ -4,6 +4,7 @@
 #include "apis/planar_app_base.h"
 #include "common/types.h"
 #include "data_structures/graph/mutable_csr_graph.h"
+#include "util/atomic.h"
 
 namespace sics::graph::core::apps {
 
@@ -23,6 +24,7 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
       data_structures::Serializable* graph)
       : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {
     min_out_edge_id_ = new VertexData[update_store_->GetMessageCount()];
+    // TODO: Init all min_out_edges_id_ = max vid.
   }
   ~MstApp() override { delete[] min_out_edge_id_; };
 
@@ -42,6 +44,8 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
   void PointJump(VertexID id);
 
   void Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx);
+
+  void UpdateMinEdge(VertexID id);
 
  private:
   VertexData* min_out_edge_id_;
