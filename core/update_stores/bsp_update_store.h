@@ -23,12 +23,31 @@ class BspUpdateStore : public UpdateStoreBase {
   explicit BspUpdateStore(const std::string& root_path,
                           common::VertexCount vertex_num)
       : message_count_(vertex_num) {
+    application_type_ = common::Configurations::Get()->application;
     read_data_ = new VertexData[message_count_];
     write_data_ = new VertexData[message_count_];
-    for (int i = 0; i < vertex_num; i++) {
-      read_data_[i] = i;
-      write_data_[i] = i;
+
+    switch (application_type_) {
+      case common::ApplicationType::WCC: {
+        for (uint32_t i = 0; i < vertex_num; i++) {
+          read_data_[i] = i;
+          write_data_[i] = i;
+        }
+        break;
+      }
+      case common::ApplicationType::Coloring: {
+        for (uint32_t i = 0; i < vertex_num; i++) {
+          read_data_[i] = 0;
+          write_data_[i] = 0;
+        }
+        break;
+      }
+      default: {
+        LOG_FATAL("Application type not supported");
+        break;
+      }
     }
+
     ReadBorderVertexBitmap(root_path);
   }
 
@@ -141,6 +160,9 @@ class BspUpdateStore : public UpdateStoreBase {
   common::Bitmap border_vertex_bitmap_;
 
   size_t active_count_ = 0;
+
+  // configs
+  common::ApplicationType application_type_;
 };
 
 typedef BspUpdateStore<common::Uint32VertexDataType,

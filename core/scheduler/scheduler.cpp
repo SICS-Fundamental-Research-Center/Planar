@@ -81,6 +81,8 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
       execute_message.graph = graph_state_.GetSubgraph(read_resp.graph_id);
       execute_message.execute_type = ExecuteType::kDeserialize;
       is_executor_running_ = true;
+      LOGF_INFO("read finished, deserialize and execute the read graph {}",
+                read_resp.graph_id);
       message_hub_.get_executor_queue()->Push(execute_message);
     } else {
       // When executor is running, do nothing, wait for executor finish.
@@ -95,7 +97,7 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
 bool Scheduler::ExecuteMessageResponseAndWrite(
     const ExecuteMessage& execute_resp) {
   // Execute finish, decide next executor work.
-  is_executor_running_ = false;
+  //  is_executor_running_ = false;
   switch (execute_resp.execute_type) {
     case ExecuteType::kDeserialize: {
       graph_state_.SetSerializedToDeserialized(execute_resp.graph_id);
@@ -153,6 +155,7 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
           write_message.graph_id = execute_resp.graph_id;
           write_message.serialized = execute_resp.serialized;
           message_hub_.get_writer_queue()->Push(write_message);
+          is_executor_running_ = false;
         }
       } else {
         // Write back to disk or save in memory.
@@ -177,6 +180,8 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
             execute_message.execute_type = ExecuteType::kDeserialize;
             is_executor_running_ = true;
             message_hub_.get_executor_queue()->Push(execute_message);
+          } else {
+            is_executor_running_ = false;
           }
         }
       }

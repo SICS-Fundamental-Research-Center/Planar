@@ -17,8 +17,10 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->in_memory = FLAGS_in_memory;
   core::common::Configurations::GetMutable()->task_package_factor =
       FLAGS_task_package_factor;
-  core::common::Configurations::GetMutable()->vertex_data_type =
-      core::common::VertexDataType::kVertexDataTypeUInt16;
+  core::common::Configurations::GetMutable()->vertex_data_size =
+      sizeof(core::apps::ColoringApp::VertexData);
+  core::common::Configurations::GetMutable()->application =
+      core::common::ApplicationType::Coloring;
 
   LOG_INFO("System begin");
   core::planar_system::Planar<core::apps::ColoringApp> system(
