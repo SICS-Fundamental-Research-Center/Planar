@@ -35,9 +35,9 @@ class ColoringApp : public apis::PlanarAppBase<CSRGraph> {
                update_stores::BspUpdateStore<VertexData, EdgeData>*
                    update_store) override {
     apis::PlanarAppBase<CSRGraph>::AppInit(runner, update_store);
-    bitmap_.Init(update_store->GetMessageCount());
-    bitmap_.Fill();
+    //    bitmap_.Init(update_store->GetMessageCount());
     srand(0);
+    max_round_ = common::Configurations::Get()->rand_max;
   }
 
   void PEval() final;
@@ -64,6 +64,9 @@ class ColoringApp : public apis::PlanarAppBase<CSRGraph> {
  private:
   int active_ = 0;
   common::Bitmap bitmap_;
+
+  // configs
+  uint32_t max_round_ = 10000;
 };
 
 }  // namespace sics::graph::core::apps

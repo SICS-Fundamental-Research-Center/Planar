@@ -35,16 +35,15 @@ void ColoringApp::IncEval() {
     this->ColorEdge(src_id, dst_id);
   };
   auto color_vertex = [this](VertexID id) { this->ColorVertex(id); };
-  bitmap_.Clear();
   //  graph_->LogVertexData();
   ParallelVertexDo(message_passing);
-  LOGF_INFO("message passing finished, active: {}", bitmap_.Count());
+  LOGF_INFO("message passing finished, active: {}", active_);
   //  graph_->LogVertexData();
 
-  while (bitmap_.Count() != 0) {
+  while (active_ != 0) {
     //    ParallelEdgeDo(color_edge);
     ParallelVertexDo(color_vertex);
-    LOGF_INFO("coloring finished, active: {}", bitmap_.Count());
+    LOGF_INFO("coloring finished, active: {}", active_);
     //    graph_->LogVertexData();
   }
 }
@@ -111,6 +110,6 @@ void ColoringApp::ColorVertex(VertexID id) {
   }
 }
 
-int ColoringApp::GetRandomNumber() { return (rand() % 10000) + 1; }
+int ColoringApp::GetRandomNumber() { return (rand() % max_round_) + 1; }
 
 }  // namespace sics::graph::core::apps
