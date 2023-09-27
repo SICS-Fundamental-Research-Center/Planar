@@ -2,6 +2,7 @@
 #define SICS_GRAPH_SYSTEMS_TOOLS_PARTITIONER_H_
 
 #include "tools/common/types.h"
+#include <string>
 
 namespace sics::graph::tools::partitioner {
 
@@ -12,8 +13,7 @@ class PartitionerBase {
   using StoreStrategy = sics::graph::tools::common::StoreStrategy;
 
  public:
-  PartitionerBase(const std::string& input_path,
-                  const std::string& output_path,
+  PartitionerBase(const std::string& input_path, const std::string& output_path,
                   StoreStrategy store_strategy)
       : input_path_(input_path),
         output_path_(output_path),
@@ -21,6 +21,9 @@ class PartitionerBase {
 
   // This function will submit the partitioning task.
   virtual void RunPartitioner() = 0;
+
+ private:
+  // virtual void GenerateDependencyMatrix() = 0;
 
  protected:
   const std::string input_path_;

@@ -75,17 +75,17 @@ void CSRBasedPlanarVertexCutPartitioner::RunPartitioner() {
       ceil((double)serializable_csr.get_num_outgoing_edges() / 30),
       serializable_csr);
   size_t c = 0;
-  //while (out.size() > 0) {
-  //  auto&& branch = out.front();
-  //  out.pop_front();
-  //  LOG_INFO(branch.size());
-  //  c += branch.size();
-  //}
-  //LOG_INFO(c);
-  // auto&& out = BigGraphSortBFSBranch(
-  //     ceil((double)serializable_csr.get_num_vertices() / 4),
-  //     ceil((double)serializable_csr.get_num_vertices() / 10),
-  //     serializable_csr, &is_root_of_branch);
+  // while (out.size() > 0) {
+  //   auto&& branch = out.front();
+  //   out.pop_front();
+  //   LOG_INFO(branch.size());
+  //   c += branch.size();
+  // }
+  // LOG_INFO(c);
+  //  auto&& out = BigGraphSortBFSBranch(
+  //      ceil((double)serializable_csr.get_num_vertices() / 4),
+  //      ceil((double)serializable_csr.get_num_vertices() / 10),
+  //      serializable_csr, &is_root_of_branch);
 
   // auto&& out = SortBFSBranch(
   //     ceil((double)serializable_csr.get_num_outgoing_edges() / 128.0),
@@ -101,8 +101,10 @@ void CSRBasedPlanarVertexCutPartitioner::RunPartitioner() {
   for (size_t i = 0; i < edge_buckets.size(); i++) {
     auto edges = edge_buckets[i];
     LOG_INFO("num_edges: ", edges.get_metadata().num_edges,
-             "num_vertices: ", edges.get_metadata().num_vertices);
+             " num_vertices: ", edges.get_metadata().num_vertices);
   }
+
+  out.clear();
 
   // Write the subgraphs to disk
   GraphFormatConverter graph_format_converter(output_path_);
@@ -534,14 +536,20 @@ CSRBasedPlanarVertexCutPartitioner::MergedSortBFSBranch(
           for (VertexID j = i; j < graph.get_num_vertices(); j += parallelism) {
             if (!in_frontier.GetBit(j)) continue;
             auto v = graph.GetVertexByLocalID(j);
+            // for (VertexID k = 0; k < v.outdegree; k++) {
+            // onst auto n_iter = 100 > v.outdegree ? v.outdegree : 100;
             for (VertexID k = 0; k < v.outdegree; k++) {
+              // if (j % 100 == 0)
+              //   LOG_INFO(" vid: ", v.vid, " k: ", k, " /", v.outdegree);
+              // if (j % 100 == 1)
+              //   LOG_INFO(" vid: ", v.vid, " k: ", k, " /", v.outdegree);
               if (!vertex_visited.GetBit(v.outgoing_edges[k])) {
                 out_frontier.SetBit(v.outgoing_edges[k]);
+                vertex_visited.SetBit(v.outgoing_edges[k]);
               }
               auto e_offset = graph.GetOutOffsetByLocalID(v.vid) + k;
               branch_id_for_each_edge[e_offset] = j % n_branches;
               edge_visited.SetBit(e_offset);
-              vertex_visited.SetBit(v.outgoing_edges[k]);
             }
           }
         });
@@ -550,7 +558,7 @@ CSRBasedPlanarVertexCutPartitioner::MergedSortBFSBranch(
       thread_pool.SubmitSync(task_package);
       task_package.clear();
       in_frontier.Clear();
-      LOG_INFO("in", in_frontier.Count(), "out", out_frontier.Count());
+      LOG_INFO("Active: ", out_frontier.Count());
       std::swap(in_frontier, out_frontier);
     }
 
@@ -580,7 +588,7 @@ CSRBasedPlanarVertexCutPartitioner::MergedSortBFSBranch(
   thread_pool.SubmitSync(task_package);
   task_package.clear();
 
-  LOG_INFO(edge_visited.Count(), "edges visited");
+  LOG_INFO(edge_visited.Count(), " edges visited");
 
   std::vector<std::list<Edge>> vec_branches;
   vec_branches.resize(n_branches);
@@ -611,7 +619,7 @@ CSRBasedPlanarVertexCutPartitioner::MergedSortBFSBranch(
       out.emplace_back(std::move(vec_branches[i]));
   }
 
-  LOG_INFO(c);
+  LOG_INFO("finished ", c, " edges ");
   delete[] branch_id_for_each_edge;
   return out;
 }
@@ -634,7 +642,7 @@ void CSRBasedPlanarVertexCutPartitioner::Redistributing(
       while (count < n_new_branches) {
         auto branch = sorted_list_of_branches->back();
         sorted_list_of_branches->pop_back();
-        iter_begin->splice(iter_begin->end(), branch);
+        iter_begin->splice(iter_begin->end(), std::move(branch));
         iter_begin++;
         count++;
       }
@@ -643,20 +651,20 @@ void CSRBasedPlanarVertexCutPartitioner::Redistributing(
       while (count < n_new_branches - 1) {
         auto branch = sorted_list_of_branches->back();
         sorted_list_of_branches->pop_back();
-        iter_begin->splice(iter_begin->end(), branch);
+        iter_begin->splice(iter_begin->end(), std::move(branch));
         iter_begin++;
         count++;
       }
     }
   }
-  //sorted_list_of_branches->sort(
-  //    [](const auto& l, const auto& r) { return l.size() < r.size(); });
-  //while (sorted_list_of_branches->size() > expected_n_of_branches) {
-  //  auto branch = sorted_list_of_branches->back();
-  //  sorted_list_of_branches->pop_back();
-  //  auto iter_rbegin = sorted_list_of_branches->rbegin();
-  //  iter_rbegin->splice(iter_rbegin->end(), branch);
-  //}
+  // sorted_list_of_branches->sort(
+  //     [](const auto& l, const auto& r) { return l.size() < r.size(); });
+  // while (sorted_list_of_branches->size() > expected_n_of_branches) {
+  //   auto branch = sorted_list_of_branches->back();
+  //   sorted_list_of_branches->pop_back();
+  //   auto iter_rbegin = sorted_list_of_branches->rbegin();
+  //   iter_rbegin->splice(iter_rbegin->end(), branch);
+  // }
 }
 
 void CSRBasedPlanarVertexCutPartitioner::Redistributing(

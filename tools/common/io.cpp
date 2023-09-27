@@ -59,8 +59,8 @@ void GraphFormatConverter::WriteSubgraph(
           buffer_globalid2index[bucket.at(j).vid] = j;
           buffer_indegree[j] = bucket.at(j).indegree;
           buffer_outdegree[j] = bucket.at(j).outdegree;
-          WriteAdd(&count_out_edges, (EdgeIndex) bucket.at(j).outdegree);
-          WriteAdd(&count_in_edges, (EdgeIndex) bucket.at(j).indegree);
+          WriteAdd(&count_out_edges, (EdgeIndex)bucket.at(j).outdegree);
+          WriteAdd(&count_in_edges, (EdgeIndex)bucket.at(j).indegree);
           WriteMin(&min_vid, buffer_globalid[j]);
           WriteMax(&max_vid, buffer_globalid[j]);
         }
@@ -473,6 +473,12 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
         }
       }
     }
+  }
+  for (GraphID i = 0; i < n_subgraphs; i++) {
+    for (GraphID j = 0; j < n_subgraphs; j++) {
+      std::cout << dependency_matrix[i * n_subgraphs + j] << ",";
+    }
+    std::cout << std::endl;
   }
 
   //  Write dependency matrix.
