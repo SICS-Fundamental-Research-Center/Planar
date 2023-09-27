@@ -16,7 +16,6 @@ void ColoringApp::PEval() {
   //  graph_->LogGraphInfo();
   //  update_store_->LogGlobalMessage();
   active_ = 1;
-  int round = 0;
   while (active_) {
     active_ = 0;
     //    ParallelEdgeDo(color_edge);
@@ -24,9 +23,9 @@ void ColoringApp::PEval() {
     LOGF_INFO("coloring finished, active: {}", active_);
     //    graph_->LogVertexData();
     //    update_store_->LogGlobalMessage();
-    round++;
+    round_++;
   }
-  LOG_INFO("PEval finished, round: {}", round);
+  LOGF_INFO("PEval finished, round: {}", round_);
 }
 
 void ColoringApp::IncEval() {
@@ -36,16 +35,20 @@ void ColoringApp::IncEval() {
   };
   auto color_vertex = [this](VertexID id) { this->ColorVertex(id); };
   //  graph_->LogVertexData();
+  active_ = 0;
   ParallelVertexDo(message_passing);
   LOGF_INFO("message passing finished, active: {}", active_);
   //  graph_->LogVertexData();
 
   while (active_ != 0) {
+    active_ = 0;
     //    ParallelEdgeDo(color_edge);
     ParallelVertexDo(color_vertex);
     LOGF_INFO("coloring finished, active: {}", active_);
     //    graph_->LogVertexData();
+    round_++;
   }
+  LOGF_INFO("IncEval finished, round: {}", round_);
 }
 
 void ColoringApp::Assemble() {}
@@ -97,8 +100,8 @@ void ColoringApp::ColorVertex(VertexID id) {
         VertexData dst_data = graph_->ReadLocalVertexDataByID(dst_id);
         if (src_data == dst_data) {
           flag = true;
-          graph_->WriteMaxReadDataByIDWithoutAtomic(
-              id, src_data + GetRandomNumber());
+          graph_->WriteReadDataByIDWithoutAtomic(id,
+                                                 src_data + GetRandomNumber());
         }
       }
     }

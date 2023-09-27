@@ -333,7 +333,7 @@ class MutableCSRGraph : public Serializable {
     return util::atomic::WriteMax(&vertex_data_read_base_[index], data_new);
   }
 
-  void WriteMaxReadDataByIDWithoutAtomic(VertexID id, VertexData data_new) {
+  void WriteReadDataByIDWithoutAtomic(VertexID id, VertexData data_new) {
     auto index = index_by_global_id_[id];
     vertex_data_read_base_[index] = data_new;
   }

@@ -26,9 +26,7 @@ class ColoringApp : public apis::PlanarAppBase<CSRGraph> {
       common::TaskRunner* runner,
       update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
       data_structures::Serializable* graph)
-      : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {
-    bitmap_.Init(update_store_->GetMessageCount());
-  }
+      : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {}
   ~ColoringApp() override = default;
 
   void AppInit(common::TaskRunner* runner,
@@ -63,8 +61,8 @@ class ColoringApp : public apis::PlanarAppBase<CSRGraph> {
 
  private:
   int active_ = 0;
-  common::Bitmap bitmap_;
-
+  //  common::Bitmap bitmap_;
+  int round_ = 0;
   // configs
   uint32_t max_round_ = 10000;
 };
