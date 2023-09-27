@@ -7,7 +7,9 @@ DEFINE_string(i, "/testfile", "graph files root path");
 DEFINE_uint32(p, 1, "parallelism");
 DEFINE_uint32(task_package_factor, 50, "task package factor");
 DEFINE_bool(in_memory, false, "in memory mode");
-DEFINE_uint32(rand_max, 10000, "rand max");
+DEFINE_uint32(rand_max, 100, "rand max");
+
+// web-sk rand_max = 100
 
 using namespace sics::graph;
 
