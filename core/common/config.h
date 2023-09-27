@@ -54,6 +54,7 @@ class Configurations {
   uint32_t vertex_data_size = 4;
   size_t memory_size = 64 * 1024;
   ApplicationType application = WCC;
+  uint32_t rand_max = 10000;
 
  private:
   Configurations() = default;

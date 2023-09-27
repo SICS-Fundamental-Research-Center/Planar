@@ -111,12 +111,6 @@ void ColoringApp::ColorVertex(VertexID id) {
   }
 }
 
-int ColoringApp::GetRandomNumber() {
-  std::random_device rd;   // 随机数种子
-  std::mt19937 rng(rd());  // 使用随机数种子创建随机数引擎
-  std::uniform_int_distribution<int> uni(1, 10);  // 定义整数分布范围为1~10
-
-  return uni(rng);  // 生成随机数
-}
+int ColoringApp::GetRandomNumber() { return (rand() % 10000) + 1; }
 
 }  // namespace sics::graph::core::apps

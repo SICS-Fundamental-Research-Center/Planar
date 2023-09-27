@@ -7,6 +7,7 @@ DEFINE_string(i, "/testfile", "graph files root path");
 DEFINE_uint32(p, 1, "parallelism");
 DEFINE_uint32(task_package_factor, 50, "task package factor");
 DEFINE_bool(in_memory, false, "in memory mode");
+DEFINE_uint32(rand_max, 10000, "rand max");
 
 using namespace sics::graph;
 
@@ -21,6 +22,7 @@ int main(int argc, char** argv) {
       sizeof(core::apps::ColoringApp::VertexData);
   core::common::Configurations::GetMutable()->application =
       core::common::ApplicationType::Coloring;
+  core::common::Configurations::GetMutable()->rand_max = FLAGS_rand_max;
 
   LOG_INFO("System begin");
   core::planar_system::Planar<core::apps::ColoringApp> system(

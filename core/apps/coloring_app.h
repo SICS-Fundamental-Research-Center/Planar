@@ -1,6 +1,7 @@
 #ifndef GRAPH_SYSTEMS_CORE_APPS_COLORING_APP_H_
 #define GRAPH_SYSTEMS_CORE_APPS_COLORING_APP_H_
 
+#include <cstdlib>
 #include <random>
 
 #include "apis/planar_app_base.h"
@@ -36,6 +37,7 @@ class ColoringApp : public apis::PlanarAppBase<CSRGraph> {
     apis::PlanarAppBase<CSRGraph>::AppInit(runner, update_store);
     bitmap_.Init(update_store->GetMessageCount());
     bitmap_.Fill();
+    srand(0);
   }
 
   void PEval() final;
