@@ -135,7 +135,6 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   delete[] size_per_bucket;
 
   auto bucket_offset = new EdgeIndex[n_partitions_]();
-  LOG_INFO("XXX");
 
   std::mutex mtx;
   for (unsigned int i = 0; i < parallelism; i++) {

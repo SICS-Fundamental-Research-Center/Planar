@@ -83,8 +83,8 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
   delete[] num_inedges_by_vid;
   delete[] num_outedges_by_vid;
 
-  VertexID* offset_in_edges = new VertexID[aligned_max_vid]();
-  VertexID* offset_out_edges = new VertexID[aligned_max_vid]();
+  EdgeIndex* offset_in_edges = new EdgeIndex[aligned_max_vid]();
+  EdgeIndex* offset_out_edges = new EdgeIndex[aligned_max_vid]();
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
       for (EdgeIndex j = i; j < edges.get_metadata().num_edges;
@@ -116,6 +116,10 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
     buffer_globalid[vid] = buffer_csr_vertices[i].vid;
     buffer_indegree[vid] = buffer_csr_vertices[i].indegree;
     buffer_outdegree[vid] = buffer_csr_vertices[i].outdegree;
+    for (size_t i = 0; i < 100; i++) {
+      LOG_INFO(vid, " in: ", buffer_indegree[vid],
+               " out: ", buffer_outdegree[vid]);
+    }
     vid_map[i] = vid;
     vid++;
   }
@@ -141,7 +145,7 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
       for (VertexID j = i; j < aligned_max_vid; j += parallelism) {
         if (!visited.GetBit(j)) continue;
         if (buffer_csr_vertices[j].indegree != 0) {
-          //LOG_INFO(vid_map[j], " ", buffer_csr_vertices[j].indegree);
+          // LOG_INFO(vid_map[j], " ", buffer_csr_vertices[j].indegree);
           memcpy(buffer_in_edges + buffer_in_offset[vid_map[j]],
                  buffer_csr_vertices[j].incoming_edges,
                  buffer_csr_vertices[j].indegree * sizeof(VertexID));

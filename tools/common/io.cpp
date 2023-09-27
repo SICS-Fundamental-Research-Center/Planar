@@ -57,6 +57,9 @@ void GraphFormatConverter::WriteSubgraph(
           buffer_globalid[j] = bucket.at(j).vid;
           is_in_graph.SetBit(bucket.at(j).vid);
           buffer_globalid2index[bucket.at(j).vid] = j;
+          if(j < 10){
+            LOG_INFO(j, " ", bucket.at(j).indegree );
+          }
           buffer_indegree[j] = bucket.at(j).indegree;
           buffer_outdegree[j] = bucket.at(j).outdegree;
           WriteAdd(&count_out_edges, (EdgeIndex)bucket.at(j).outdegree);
@@ -81,6 +84,13 @@ void GraphFormatConverter::WriteSubgraph(
     for (VertexID i = 1; i < num_vertices; i++) {
       buffer_in_offset[i] = buffer_in_offset[i - 1] + buffer_indegree[i - 1];
       buffer_out_offset[i] = buffer_out_offset[i - 1] + buffer_outdegree[i - 1];
+    }
+
+    for (size_t i = 0; i < 10; i++) {
+      LOG_INFO(i, " ", buffer_outdegree[i]);
+    }
+    for (size_t i = 0; i < 10; i++) {
+      LOG_INFO(i, " ", buffer_indegree[i]);
     }
 
     // Save degree buffer and offset buffer.
@@ -358,6 +368,11 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
         reinterpret_cast<char*>(csr_graph.GetGloablIDBasePointer()),
         sizeof(VertexID) * csr_graph.get_num_vertices());
 
+    auto outdegree_buffer = csr_graph.GetOutDegreeBasePointer();
+    for (size_t i = 0; i < 100; i++) {
+      LOG_INFO(i, " ", outdegree_buffer[i]);
+    }
+    auto indegree_buffer = csr_graph.GetInDegreeBasePointer();
     // Write subgraph metadata.
     switch (store_strategy) {
       case kOutgoingOnly:
