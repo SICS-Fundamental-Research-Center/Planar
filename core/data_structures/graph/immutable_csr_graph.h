@@ -63,14 +63,14 @@ class ImmutableCSRGraph : public Serializable {
          << ", outdegree: " << u.outdegree << "===" << std::endl;
       if (u.indegree != 0) {
         ss << "    Incoming edges: ";
-        // for (VertexID i = 0; i < u.indegree; i++)
-        for (VertexID i = 0; i < 10; i++) ss << u.incoming_edges[i] << ",";
+        for (VertexID i = 0; i < u.indegree; i++)
+          ss << u.incoming_edges[i] << ",";
         ss << std::endl << std::endl;
       }
       if (u.outdegree != 0) {
         ss << "    Outgoing edges: ";
-        // for (VertexID i = 0; i < u.outdegree; i++)
-        for (VertexID i = 0; i < 10; i++) ss << u.outgoing_edges[i] << ",";
+        for (VertexID i = 0; i < u.outdegree; i++)
+          ss << u.outgoing_edges[i] << ",";
         ss << std::endl << std::endl;
       }
       ss << "****************************************" << std::endl;

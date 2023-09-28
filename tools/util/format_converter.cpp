@@ -45,8 +45,8 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
         auto e = edges.get_edge_by_index(j);
         visited.SetBit(e.src);
         visited.SetBit(e.dst);
-        WriteAdd(num_inedges_by_vid + e.dst, (VertexID)1);
-        WriteAdd(num_outedges_by_vid + e.src, (VertexID)1);
+        WriteAdd(num_inedges_by_vid + e.dst, (VertexID) 1);
+        WriteAdd(num_outedges_by_vid + e.src, (VertexID) 1);
         WriteMin(&min_vid, e.src);
         WriteMin(&min_vid, e.dst);
       }

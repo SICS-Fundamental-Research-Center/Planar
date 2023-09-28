@@ -7,13 +7,13 @@
 // USAGE: graph-convert --convert_mode=[options] -i <input file path> -o <output
 // file path> --sep=[separator]
 
-#include <gflags/gflags.h>
-#include <yaml-cpp/yaml.h>
-
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <type_traits>
+
+#include <gflags/gflags.h>
+#include <yaml-cpp/yaml.h>
 
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"

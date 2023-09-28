@@ -101,7 +101,7 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
         }
         bitmap_vec.at(bid).SetBit(e.src);
         bitmap_vec.at(bid).SetBit(e.dst);
-        WriteAdd(size_per_bucket + bid, (EdgeIndex)1);
+        WriteAdd(size_per_bucket + bid, (EdgeIndex) 1);
         WriteMax(max_vid_per_bucket + bid, e.src);
         WriteMax(max_vid_per_bucket + bid, e.dst);
         WriteMax(&max_vid, e.src);
@@ -174,8 +174,6 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
                                        store_strategy_);
   input_stream.close();
   LOG_INFO("Finished writing the subgraphs to disk");
-
-  LOG_INFO("Generate Dependency Matrix.");
 }
 
 }  // namespace sics::graph::tools::partitioner

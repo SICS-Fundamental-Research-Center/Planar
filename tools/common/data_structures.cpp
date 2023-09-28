@@ -50,7 +50,7 @@ VertexID Edges::GetVertexWithMaximumDegree() {
         auto src = get_src_by_index(j);
         sics::graph::core::util::atomic::WriteAdd(outdegree_by_vid + src,
                                                   (VertexID)1);
-        //std::lock_guard<std::mutex> lck(mtx);
+        std::lock_guard<std::mutex> lck(mtx);
         if (sics::graph::core::util::atomic::WriteMax(&max_outdegree,
                                                       outdegree_by_vid[src])) {
           vid_with_maximum_degree = src;
