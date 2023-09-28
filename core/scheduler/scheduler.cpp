@@ -224,7 +224,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
     ReadMessage read_message;
     if (next_graph_id != INVALID_GRAPH_ID) {
       auto read_size = graph_metadata_info_.GetSubgraphSize(next_graph_id);
-      if (memory_left_size_ - read_size < 0) {
+      if (memory_left_size_ < read_size) {
         // Memory is not enough, return.
         return false;
       }
@@ -245,7 +245,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       if (next_gid_next_round != INVALID_GRAPH_ID) {
         auto read_size =
             graph_metadata_info_.GetSubgraphSize(next_gid_next_round);
-        if (memory_left_size_ - read_size < 0) {
+        if (memory_left_size_ < read_size) {
           return false;
         }
         memory_left_size_ -= read_size;
