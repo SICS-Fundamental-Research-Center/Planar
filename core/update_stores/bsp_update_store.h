@@ -83,7 +83,7 @@ class BspUpdateStore : public UpdateStoreBase {
     return true;
   }
 
-  bool WriteMin(VertexID vid, VertexData vdata_new) {
+  bool WriteMinBorderVertex(VertexID vid, VertexData vdata_new) {
     if (vid >= message_count_) {
       return false;
     }
@@ -92,6 +92,17 @@ class BspUpdateStore : public UpdateStoreBase {
         active_count_++;
         return true;
       }
+    }
+    return false;
+  }
+
+  bool WriteMin(VertexID id, VertexData new_data) {
+    if (id >= message_count_) {
+      return false;
+    }
+    if (util::atomic::WriteMin(write_data_ + id, new_data)) {
+      active_count_++;
+      return true;
     }
     return false;
   }

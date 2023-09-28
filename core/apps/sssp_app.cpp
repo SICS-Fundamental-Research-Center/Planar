@@ -44,7 +44,7 @@ void SsspApp::Assemble() {}
 void SsspApp::Init(VertexID id) {
   if (id == 0) {
     graph_->WriteVertexDataByID(id, 0);
-    update_store_->WriteMin(id, 0);
+    update_store_->WriteMinBorderVertex(id, 0);
     active_.SetBit(id);
   } else {
     graph_->WriteVertexDataByID(id, SSSP_INFINITY);
@@ -61,7 +61,7 @@ void SsspApp::Relax(VertexID id) {
       auto dst_id = edges[i];
       if (current_distance < graph_->ReadLocalVertexDataByID(dst_id)) {
         if (graph_->WriteMinVertexDataByID(dst_id, current_distance)) {
-          update_store_->WriteMin(dst_id, current_distance);
+          update_store_->WriteMinBorderVertex(dst_id, current_distance);
           active_next_round_.SetBit(dst_id);
         }
       }

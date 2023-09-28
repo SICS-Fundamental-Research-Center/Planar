@@ -6,6 +6,8 @@
 #include "data_structures/graph/mutable_csr_graph.h"
 #include "util/atomic.h"
 
+#define MST_INVALID_VID 0xffffffff
+
 namespace sics::graph::core::apps {
 
 using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
@@ -30,9 +32,8 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
                    update_store) override {
     apis::PlanarAppBase<CSRGraph>::AppInit(runner, update_store);
     min_out_edge_id_ = new VertexData[update_store->GetMessageCount()];
-    // TODO: init value of min_out_edge_id_ to be invalid
     for (int i = 0; i < update_store->GetMessageCount(); i++) {
-      min_out_edge_id_[i] = std::numeric_limits<VertexData>::max();
+      min_out_edge_id_[i] = MST_INVALID_VID;
     }
   }
 
@@ -55,10 +56,16 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
 
   void UpdateMinEdge(VertexID id);
 
+  void PointJumpInc(VertexID id);
+
   void LogMinOutEdgeId();
+
+  void WriteMinAuxiliary(VertexID id, VertexData data);
 
  private:
   VertexData* min_out_edge_id_;
+  std::unordered_map<VertexID, VertexID> id_to_p_;
+  std::mutex mtx_;
 };
 
 }  // namespace sics::graph::core::apps
