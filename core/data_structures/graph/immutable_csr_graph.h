@@ -120,7 +120,7 @@ class ImmutableCSRGraph : public Serializable {
   }
 
   uint8_t* GetGraphBuffer() { return buf_graph_base_pointer_; }
-  VertexID* GetGloablIDBasePointer() {
+  VertexID* GetGloablIDBasePointer() const {
     return globalid_by_localid_base_pointer_;
   }
   VertexID* GetInDegreeBasePointer() const { return indegree_base_pointer_; }

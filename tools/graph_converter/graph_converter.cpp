@@ -94,8 +94,8 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
     std::stringstream ss_line(line);
     while (getline(ss_line, vid_str, *sep.c_str())) {
       VertexID vid = stoll(vid_str);
-      sics::graph::core::util::atomic::WriteMax(&max_vid, (VertexID) vid);
-      *(buffer_edges + index++) = vid;
+      sics::graph::core::util::atomic::WriteMax(&max_vid, vid);
+      buffer_edges[index++] = vid;
     }
   }
   content.clear();
@@ -106,7 +106,7 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   Bitmap bitmap(aligned_max_vid);
 
   // Compute the mapping between origin vid to compressed vid.
-  for (index = 0; index < n_edges * 2; index++) {
+  for (EdgeIndex index = 0; index < n_edges * 2; index++) {
     if (!bitmap.GetBit(buffer_edges[index])) {
       bitmap.SetBit(buffer_edges[index]);
       vid_map[buffer_edges[index]] = compressed_vid++;
