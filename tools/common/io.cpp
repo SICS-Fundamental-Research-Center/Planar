@@ -474,12 +474,6 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
       }
     }
   }
-  for (GraphID i = 0; i < n_subgraphs; i++) {
-    for (GraphID j = 0; j < n_subgraphs; j++) {
-      std::cout << dependency_matrix[i * n_subgraphs + j] << ",";
-    }
-    std::cout << std::endl;
-  }
 
   //  Write dependency matrix.
   dependency_matrix_file.write(reinterpret_cast<char*>(dependency_matrix),
