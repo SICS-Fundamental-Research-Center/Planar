@@ -44,6 +44,7 @@ void SsspApp::Assemble() {}
 void SsspApp::Init(VertexID id) {
   if (id == 0) {
     graph_->WriteVertexDataByID(id, 0);
+    update_store_->WriteMin(id, 0);
     active_.SetBit(id);
   } else {
     graph_->WriteVertexDataByID(id, SSSP_INFINITY);

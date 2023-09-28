@@ -4,9 +4,6 @@ namespace sics::graph::core::apps {
 
 void ColoringApp::PEval() {
   auto init = [this](VertexID id) { this->Init(id); };
-  auto color_edge = [this](VertexID src_id, VertexID dst_id) {
-    this->ColorEdge(src_id, dst_id);
-  };
   auto color_vertex = [this](VertexID id) { this->ColorVertex(id); };
 
   //  graph_->LogVertexData();
@@ -30,9 +27,6 @@ void ColoringApp::PEval() {
 
 void ColoringApp::IncEval() {
   auto message_passing = [this](VertexID id) { this->MessagePassing(id); };
-  auto color_edge = [this](VertexID src_id, VertexID dst_id) {
-    this->ColorEdge(src_id, dst_id);
-  };
   auto color_vertex = [this](VertexID id) { this->ColorVertex(id); };
   //  graph_->LogVertexData();
   active_ = 0;

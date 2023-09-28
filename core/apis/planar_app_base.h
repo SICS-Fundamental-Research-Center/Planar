@@ -102,7 +102,7 @@ class PlanarAppBase : public PIE {
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
     tasks.reserve(parallelism_ * task_package_factor_);
-    VertexIndex begin_index = 0, end = graph_->GetVertexNums();
+    VertexIndex end = graph_->GetVertexNums();
     for (int i = 0; i < parallelism_; i++) {
       auto index = end - 1 - i;
       auto task = [&vertex_func, this, index]() {
