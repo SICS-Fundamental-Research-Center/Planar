@@ -63,14 +63,14 @@ class ImmutableCSRGraph : public Serializable {
          << ", outdegree: " << u.outdegree << "===" << std::endl;
       if (u.indegree != 0) {
         ss << "    Incoming edges: ";
-        for (VertexID i = 0; i < u.indegree; i++)
-          ss << u.incoming_edges[i] << ",";
+        // for (VertexID i = 0; i < u.indegree; i++)
+        for (VertexID i = 0; i < 10; i++) ss << u.incoming_edges[i] << ",";
         ss << std::endl << std::endl;
       }
       if (u.outdegree != 0) {
         ss << "    Outgoing edges: ";
-        for (VertexID i = 0; i < u.outdegree; i++)
-          ss << u.outgoing_edges[i] << ",";
+        // for (VertexID i = 0; i < u.outdegree; i++)
+        for (VertexID i = 0; i < 10; i++) ss << u.outgoing_edges[i] << ",";
         ss << std::endl << std::endl;
       }
       ss << "****************************************" << std::endl;
@@ -123,11 +123,13 @@ class ImmutableCSRGraph : public Serializable {
   VertexID* GetGloablIDBasePointer() {
     return globalid_by_localid_base_pointer_;
   }
-  VertexID* GetInDegreeBasePointer() { return indegree_base_pointer_; }
-  VertexID* GetOutDegreeBasePointer() { return outdegree_base_pointer_; }
-  EdgeIndex* GetInOffsetBasePointer() { return in_offset_base_pointer_; }
-  EdgeIndex* GetOutOffsetBasePointer() { return out_offset_base_pointer_; }
-  VertexID* GetIncomingEdgesBasePointer() {
+  VertexID* GetInDegreeBasePointer() const { return indegree_base_pointer_; }
+  VertexID* GetOutDegreeBasePointer() const { return outdegree_base_pointer_; }
+  EdgeIndex* GetInOffsetBasePointer() const { return in_offset_base_pointer_; }
+  EdgeIndex* GetOutOffsetBasePointer() const {
+    return out_offset_base_pointer_;
+  }
+  VertexID* GetIncomingEdgesBasePointer() const {
     return incoming_edges_base_pointer_;
   }
   VertexID* GetOutgoingEdgesBasePointer() const {

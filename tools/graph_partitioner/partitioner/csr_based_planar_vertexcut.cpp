@@ -473,6 +473,7 @@ CSRBasedPlanarVertexCutPartitioner::MergedSortBFSBranch(
              graph.get_num_vertices(),
              " number of visited edges: ", edge_visited.Count(), " / ",
              graph.get_num_outgoing_edges());
+    size_t visited_edge_count = edge_visited.Count();
     for (unsigned int i = 0; i < parallelism; i++) {
       auto task = std::bind([i, parallelism, &graph, &max_degree, &root,
                              &vertex_visited]() {
@@ -564,6 +565,9 @@ CSRBasedPlanarVertexCutPartitioner::MergedSortBFSBranch(
 
     if (graph.get_num_outgoing_edges() - edge_visited.Count() <
         minimum_n_edges_of_a_branch)
+      break;
+    if (edge_visited.Count() - visited_edge_count <
+        (graph.get_num_outgoing_edges() * 0.001))
       break;
   }
 

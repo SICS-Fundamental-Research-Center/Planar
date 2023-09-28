@@ -82,9 +82,6 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
     auto task = std::bind([&, i]() {
       for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = buffer_edges[j];
-        if (j < 100) {
-          LOG_INFO(e.src, "->", e.dst);
-        }
         visited.SetBit(e.src);
         visited.SetBit(e.dst);
         WriteAdd(num_inedges_by_vid + e.dst, (VertexID)1);
@@ -110,9 +107,6 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
       for (VertexID j = i; j < aligned_max_vid; j += parallelism) {
         if (!visited.GetBit(j)) continue;
         vertices.at(j).vid = j;
-        if (j < 100) {
-          LOG_INFO(j, " ", num_outedges_by_vid[j], " ", num_inedges_by_vid[j]);
-        }
         vertices.at(j).indegree = num_inedges_by_vid[j];
         vertices.at(j).outdegree = num_outedges_by_vid[j];
         vertices.at(j).incoming_edges = new VertexID[num_inedges_by_vid[j]]();
@@ -165,8 +159,6 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
         if (!visited.GetBit(j)) continue;
         auto gid = GetBucketID(vertices.at(j).vid, n_partitions,
                                edgelist_metadata.num_vertices);
-        if (j < 100)
-          LOG_INFO(vertices.at(j).vid, " ", vertices.at(j).outdegree);
         std::lock_guard<std::mutex> lck(mtx);
         vertex_buckets[gid].emplace_back(std::move(vertices.at(j)));
       }

@@ -84,9 +84,6 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
       for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
-        if (j % 100000000 == 0) {
-          LOG_INFO(j, "/", edgelist_metadata.num_edges);
-        }
         auto e = edges.get_edge_by_index(j);
         VertexID bid;
         switch (store_strategy_) {
@@ -124,9 +121,6 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   for (GraphID i = 0; i < n_partitions_; i++) {
     EdgelistMetadata edgelist_metadata = {
         bitmap_vec.at(i).Count(), size_per_bucket[i], max_vid_per_bucket[i]};
-    LOG_INFO(i, " n_vertices: ", edgelist_metadata.num_vertices,
-             " n_edges: ", edgelist_metadata.num_edges,
-             " max_vid: ", max_vid_per_bucket[i]);
     edgelist_metadata_vec.push_back(edgelist_metadata);
     edge_buckets.emplace_back(Edges(edgelist_metadata));
   }
@@ -155,10 +149,6 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
           default:
             LOG_FATAL("Undefined store strategy.");
         }
-        if ((j % 100000000) == 0)
-          LOG_INFO(j, "/", edgelist_metadata.num_edges,
-                   " offset: ", bucket_offset[bid]);
-        // std::lock_guard<std::mutex> lck(mtx);
         EdgeIndex offset = __sync_fetch_and_add(&bucket_offset[bid], 1);
         auto edges_ptr = edge_buckets[bid].get_base_ptr();
         edges_ptr[offset] = e;
@@ -182,13 +172,10 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   LOG_INFO("Writing the subgraphs to disk");
   graph_format_converter.WriteSubgraph(edge_buckets, graph_metadata,
                                        store_strategy_);
-  LOG_INFO("XXX");
   input_stream.close();
   LOG_INFO("Finished writing the subgraphs to disk");
 
-
   LOG_INFO("Generate Dependency Matrix.");
-
 }
 
 }  // namespace sics::graph::tools::partitioner
