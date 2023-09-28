@@ -111,8 +111,8 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
         vertices.at(j).outdegree = num_outedges_by_vid[j];
         vertices.at(j).incoming_edges = new VertexID[num_inedges_by_vid[j]]();
         vertices.at(j).outgoing_edges = new VertexID[num_outedges_by_vid[j]]();
-        WriteAdd(&count_in_edges, (EdgeIndex)num_inedges_by_vid[j]);
-        WriteAdd(&count_out_edges, (EdgeIndex)num_outedges_by_vid[j]);
+        WriteAdd(&count_in_edges, (EdgeIndex) num_inedges_by_vid[j]);
+        WriteAdd(&count_out_edges, (EdgeIndex) num_outedges_by_vid[j]);
       }
     });
     task_package.push_back(task);

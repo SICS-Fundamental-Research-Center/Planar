@@ -2,6 +2,7 @@
 #define SICS_GRAPH_SYSTEMS_TOOLS_PARTITIONER_H_
 
 #include "tools/common/types.h"
+
 #include <string>
 
 namespace sics::graph::tools::partitioner {

@@ -51,12 +51,12 @@ using sics::graph::tools::common::Edges;
 using sics::graph::tools::common::GraphFormatConverter;
 
 void CSRBasedPlanarVertexCutPartitioner::RunPartitioner() {
-  // TODO (hsiaoko): will submit in next PR.
+  // TODO (hsiaoko): will submit code by next PR.
 }
 
 std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
     size_t minimum_n_edges_of_a_branch, const ImmutableCSRGraph& graph) {
-  // TODO (hsiaoko): will submit in next PR.
+  // TODO (hsiaoko): will submit code by next PR.
   std::list<std::list<Edge>> out;
   return out;
 }
@@ -64,7 +64,7 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
 std::list<std::list<Edge>>
 CSRBasedPlanarVertexCutPartitioner::MergedSortBFSBranch(
     size_t minimum_n_edges_of_a_branch, const ImmutableCSRGraph& graph) {
-  // TODO (hsiaoko): will submit in next PR.
+  // TODO (hsiaoko): will submit code by next PR.
   std::list<std::list<Edge>> out;
   return out;
 }
@@ -72,12 +72,12 @@ CSRBasedPlanarVertexCutPartitioner::MergedSortBFSBranch(
 void CSRBasedPlanarVertexCutPartitioner::Redistributing(
     GraphID expected_n_of_branches,
     std::list<std::list<Edge>>* sorted_list_of_branches) {
-  // TODO (hsiaoko): will submit in next PR.
+  // TODO (hsiaoko): will submit code by next PR.
 }
 
 std::vector<Edges> CSRBasedPlanarVertexCutPartitioner::ConvertListofEdge2Edges(
     const std::list<std::list<Edge>>& list_of_branches) {
-  // TODO (hsiaoko): will submit in next PR.
+  // TODO (hsiaoko): will submit code by next PR.
   std::vector<Edges> vec_edges;
   return vec_edges;
 }
