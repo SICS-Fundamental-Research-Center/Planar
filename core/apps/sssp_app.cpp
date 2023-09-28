@@ -6,17 +6,17 @@ void SsspApp::PEval() {
   auto init = [this](VertexID id) { this->Init(id); };
   auto relax = [this](VertexID id) { this->Relax(id); };
 
-  graph_->LogGraphInfo();
-  graph_->LogVertexData();
+  //  graph_->LogGraphInfo();
+  //  graph_->LogVertexData();
   ParallelVertexDo(init);
   LOG_INFO("init finished");
-  graph_->LogVertexData();
+  //  graph_->LogVertexData();
 
   while (active_.Count() != 0) {
     ParallelVertexDo(relax);
     SyncActive();
     LOGF_INFO("relax finished, active: {}", active_.Count());
-    graph_->LogVertexData();
+    //    graph_->LogVertexData();
   }
 }
 
@@ -25,17 +25,17 @@ void SsspApp::IncEval() {
   auto relax = [this](VertexID id) { this->Relax(id); };
 
   active_.Clear();
-  update_store_->LogGlobalMessage();
-  graph_->LogVertexData();
+  //  update_store_->LogGlobalMessage();
+  //  graph_->LogVertexData();
   ParallelVertexDo(message_passing);
   LOGF_INFO("message passing finished, active: {}", active_.Count());
-  graph_->LogVertexData();
+  //  graph_->LogVertexData();
 
   while (active_.Count() != 0) {
     ParallelVertexDo(relax);
     SyncActive();
     LOGF_INFO("relax finished, active: {}", active_.Count());
-    graph_->LogVertexData();
+    //    graph_->LogVertexData();
   }
 }
 

@@ -28,7 +28,8 @@ class BspUpdateStore : public UpdateStoreBase {
     write_data_ = new VertexData[message_count_];
 
     switch (application_type_) {
-      case common::ApplicationType::WCC: {
+      case common::ApplicationType::WCC:
+      case common::ApplicationType::MST: {
         for (uint32_t i = 0; i < vertex_num; i++) {
           read_data_[i] = i;
           write_data_[i] = i;
@@ -109,6 +110,7 @@ class BspUpdateStore : public UpdateStoreBase {
   }
 
   bool IsActive() override { return active_count_ != 0; }
+  void SetActive() { active_count_ = 1; }
 
   void Sync() override {
     memcpy(read_data_, write_data_, message_count_ * sizeof(VertexData));
@@ -136,8 +138,6 @@ class BspUpdateStore : public UpdateStoreBase {
   }
 
   size_t GetActiveCount() const override { return active_count_; }
-
-  void SetActive() { active_count_ = 1; }
 
  private:
   void ReadBorderVertexBitmap(const std::string& root_path) {

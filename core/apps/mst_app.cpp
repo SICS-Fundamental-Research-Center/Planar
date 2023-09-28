@@ -6,7 +6,13 @@ void MstApp::PEval() {
   auto init = [this](VertexID id) { Init(id); };
   auto find_min_edge = [this](VertexID id) { FindMinEdge(id); };
   ParallelVertexDo(init);
+  LOG_INFO("init finished");
+  graph_->LogVertexData();
+  graph_->LogGraphInfo();
   ParallelVertexDo(find_min_edge);
+  LogMinOutEdgeId();
+  LOG_INFO("find_min_edge finished");
+  update_store_->SetActive();
 }
 
 void MstApp::IncEval() {
@@ -19,10 +25,24 @@ void MstApp::IncEval() {
   auto update_min_edge = [this](VertexID src_id) { UpdateMinEdge(src_id); };
 
   ParallelVertexDo(message_passing);
+  LOG_INFO("message passing finished");
+  graph_->LogVertexData();
+
   ParallelVertexDo(graft);
+  LOG_INFO("graft finished");
+  graph_->LogVertexData();
+
   ParallelVertexDo(point_jump);
+  LOG_INFO("point_jump finished");
+  graph_->LogVertexData();
+
   ParallelEdgeMutateDo(contract);
+  LOG_INFO("contract finished");
+  graph_->LogVertexData();
+
   ParallelVertexDo(update_min_edge);
+  LOG_INFO("update_min_edge finished");
+  graph_->LogVertexData();
 }
 
 void MstApp::Assemble() {}
@@ -104,6 +124,12 @@ void MstApp::UpdateMinEdge(VertexID id) {
       dst_id = edges[i] < dst_id ? edges[i] : dst_id;
     }
     min_out_edge_id_[id] = dst_id;  // No conflict, write directly.
+  }
+}
+
+void MstApp::LogMinOutEdgeId() {
+  for (int i = 0; i < update_store_->GetMessageCount(); i++) {
+    LOGF_INFO("e(v) id: {} -> {}", i, min_out_edge_id_[i]);
   }
 }
 
