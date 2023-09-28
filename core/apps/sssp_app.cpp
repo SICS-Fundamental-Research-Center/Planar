@@ -3,9 +3,20 @@
 namespace sics::graph::core::apps {
 
 void SsspApp::PEval() {
+  auto init = [this](VertexID id) { this->Init(id); };
   auto relax = [this](VertexID id) { this->Relax(id); };
+
+  graph_->LogGraphInfo();
+  graph_->LogVertexData();
+  ParallelVertexDo(init);
+  LOG_INFO("init finished");
+  graph_->LogVertexData();
+
   while (active_.Count() != 0) {
     ParallelVertexDo(relax);
+    SyncActive();
+    LOGF_INFO("relax finished, active: {}", active_.Count());
+    graph_->LogVertexData();
   }
 }
 
@@ -13,10 +24,18 @@ void SsspApp::IncEval() {
   auto message_passing = [this](VertexID id) { this->MessagePassing(id); };
   auto relax = [this](VertexID id) { this->Relax(id); };
 
+  active_.Clear();
+  update_store_->LogGlobalMessage();
+  graph_->LogVertexData();
   ParallelVertexDo(message_passing);
+  LOGF_INFO("message passing finished, active: {}", active_.Count());
+  graph_->LogVertexData();
 
   while (active_.Count() != 0) {
     ParallelVertexDo(relax);
+    SyncActive();
+    LOGF_INFO("relax finished, active: {}", active_.Count());
+    graph_->LogVertexData();
   }
 }
 
@@ -38,20 +57,25 @@ void SsspApp::Relax(VertexID id) {
     auto degree = graph_->GetOutDegreeByID(id);
     auto current_distance = graph_->ReadLocalVertexDataByID(id) + 1;
     for (int i = 0; i < degree; i++) {
-      if (current_distance < graph_->ReadLocalVertexDataByID(edges[i])) {
-        if (graph_->WriteMinVertexDataByID(edges[i], current_distance)) {
-          update_store_->WriteMin(edges[i], current_distance);
-          active_.SetBit(edges[i]);
+      auto dst_id = edges[i];
+      if (current_distance < graph_->ReadLocalVertexDataByID(dst_id)) {
+        if (graph_->WriteMinVertexDataByID(dst_id, current_distance)) {
+          update_store_->WriteMin(dst_id, current_distance);
+          active_next_round_.SetBit(dst_id);
         }
       }
     }
-    active_.ClearBit(id);
   }
 }
 
 void SsspApp::MessagePassing(VertexID id) {
   if (graph_->WriteMinVertexDataByID(id, update_store_->Read(id)))
     active_.SetBit(id);
+}
+
+void SsspApp::SyncActive() {
+  std::swap(active_, active_next_round_);
+  active_next_round_.Clear();
 }
 
 }  // namespace sics::graph::core::apps

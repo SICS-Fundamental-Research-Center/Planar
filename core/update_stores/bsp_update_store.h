@@ -42,6 +42,13 @@ class BspUpdateStore : public UpdateStoreBase {
         }
         break;
       }
+      case common::ApplicationType::Sssp: {
+        for (uint32_t i = 0; i < vertex_num; i++) {
+          read_data_[i] = std::numeric_limits<VertexData>::max();
+          write_data_[i] = std::numeric_limits<VertexData>::max();
+        }
+        break;
+      }
       default: {
         LOG_FATAL("Application type not supported");
         break;
