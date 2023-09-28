@@ -110,6 +110,9 @@ class GraphMetadata {
       }
       subgraph_size_.push_back(size_total + 1);
     }
+    for (int gid = 0; gid < num_subgraphs_; ++gid) {
+      LOGF_INFO("subgraph {} size: {} MB", gid, subgraph_size_.at(gid));
+    }
   }
 
  private:
