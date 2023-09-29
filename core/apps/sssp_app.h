@@ -33,6 +33,7 @@ class SsspApp : public apis::PlanarAppBase<CSRGraph> {
     apis::PlanarAppBase<CSRGraph>::AppInit(runner, update_store);
     active_.Init(update_store->GetMessageCount());
     active_next_round_.Init(update_store->GetMessageCount());
+    source_ = common::Configurations::Get()->source;
   }
 
   ~SsspApp() override = default;
@@ -54,6 +55,7 @@ class SsspApp : public apis::PlanarAppBase<CSRGraph> {
   // TODO: move this bitmap into API to reduce function call stack cost
   common::Bitmap active_;
   common::Bitmap active_next_round_;
+  VertexID source_ = 0;
 };
 
 }  // namespace sics::graph::core::apps

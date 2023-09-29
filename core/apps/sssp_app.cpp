@@ -42,10 +42,11 @@ void SsspApp::IncEval() {
 void SsspApp::Assemble() {}
 
 void SsspApp::Init(VertexID id) {
-  if (id == 0) {
+  if (id == source_) {
     graph_->WriteVertexDataByID(id, 0);
     update_store_->WriteMinBorderVertex(id, 0);
     active_.SetBit(id);
+    LOGF_INFO("source of SSSP: {}", id);
   } else {
     graph_->WriteVertexDataByID(id, SSSP_INFINITY);
   }
