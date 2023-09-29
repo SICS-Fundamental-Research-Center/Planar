@@ -34,67 +34,42 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
   // Fetch the OwnedBuffer object.
   buf_graph_base_pointer_ = buffer_list.front().Get();
 
-  VertexID start_globalid = 0, start_indegree = 0, start_outdegree = 0,
-           start_in_offset = 0, start_out_offset = 0, start_incoming_edges = 0,
-           start_outgoing_edges = 0;
+  SetGlobalIDBuffer(reinterpret_cast<VertexID*>(
+      reinterpret_cast<char*>(buf_graph_base_pointer_)));
 
-  size_t offset = 0,
-         vertices_buffer_size = sizeof(VertexID) * metadata_.num_vertices,
-         offset_buffer_size = sizeof(EdgeIndex) * metadata_.num_vertices,
-         incoming_edges_buffer_size =
-             sizeof(VertexID) * metadata_.num_incoming_edges;
-
-  if (metadata_.num_outgoing_edges != 0 && metadata_.num_incoming_edges != 0) {
-    start_globalid = offset;
-    offset += vertices_buffer_size;
-    start_indegree = offset;
-    offset += vertices_buffer_size;
-    start_outdegree = offset;
-    offset += vertices_buffer_size;
-    start_in_offset = offset;
-    offset += offset_buffer_size;
-    start_out_offset = offset;
-    offset += offset_buffer_size;
-    start_incoming_edges = offset;
-    offset += incoming_edges_buffer_size;
-    start_outgoing_edges = offset;
-  } else if (metadata_.num_outgoing_edges != 0) {
-    start_globalid = offset;
-    offset += vertices_buffer_size;
-    start_outdegree = offset;
-    offset += vertices_buffer_size;
-    start_out_offset = offset;
-    offset += offset_buffer_size;
-    start_outgoing_edges = offset;
-  } else if (metadata_.num_incoming_edges != 0) {
-    start_globalid = offset;
-    offset += vertices_buffer_size;
-    start_indegree = offset;
-    offset += vertices_buffer_size;
-    start_in_offset = offset;
-    offset += offset_buffer_size;
-    start_incoming_edges = offset;
-  }
-
-  SetGlobalIDBuffer(
-      reinterpret_cast<VertexID*>(buf_graph_base_pointer_ + start_globalid));
-
-  if (metadata_.num_incoming_edges != 0) {
+  if (metadata_.num_incoming_edges != 0 && metadata_.num_outgoing_edges != 0) {
     SetInDegreeBuffer(
-        reinterpret_cast<VertexID*>(buf_graph_base_pointer_ + start_indegree));
-    SetInOffsetBuffer(reinterpret_cast<EdgeIndex*>(buf_graph_base_pointer_ +
-                                                   start_in_offset));
-    SetIncomingEdgesBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer_ +
-                                                       start_incoming_edges));
+        reinterpret_cast<VertexID*>(globalid_by_localid_base_pointer_) +
+        metadata_.num_vertices);
+    SetOutDegreeBuffer(reinterpret_cast<VertexID*>(indegree_base_pointer_ +
+                                                   metadata_.num_vertices));
+    SetInOffsetBuffer(reinterpret_cast<EdgeIndex*>(outdegree_base_pointer_ +
+                                                   metadata_.num_vertices));
+    SetOutOffsetBuffer(reinterpret_cast<EdgeIndex*>(in_offset_base_pointer_ +
+                                                    metadata_.num_vertices));
+    SetIncomingEdgesBuffer(reinterpret_cast<VertexID*>(
+        out_offset_base_pointer_ + metadata_.num_vertices));
+    SetOutgoingEdgesBuffer(reinterpret_cast<VertexID*>(
+        incoming_edges_base_pointer_ + metadata_.num_incoming_edges));
+
+  } else if (metadata_.num_incoming_edges != 0) {
+    SetInDegreeBuffer(
+        reinterpret_cast<VertexID*>(globalid_by_localid_base_pointer_) +
+        metadata_.num_vertices);
+    SetInOffsetBuffer(reinterpret_cast<EdgeIndex*>(indegree_base_pointer_ +
+                                                   metadata_.num_vertices));
+    SetIncomingEdgesBuffer(reinterpret_cast<VertexID*>(in_offset_base_pointer_ +
+                                                       metadata_.num_vertices));
+
+  } else if (metadata_.num_outgoing_edges != 0) {
+    SetOutDegreeBuffer(reinterpret_cast<VertexID*>(
+        globalid_by_localid_base_pointer_ + metadata_.num_vertices));
+    SetOutOffsetBuffer(reinterpret_cast<EdgeIndex*>(outdegree_base_pointer_ +
+                                                    metadata_.num_vertices));
+    SetOutgoingEdgesBuffer(reinterpret_cast<VertexID*>(
+        out_offset_base_pointer_ + metadata_.num_vertices));
   }
-  if (metadata_.num_outgoing_edges != 0) {
-    SetOutDegreeBuffer(
-        reinterpret_cast<VertexID*>(buf_graph_base_pointer_ + start_outdegree));
-    SetOutOffsetBuffer(reinterpret_cast<EdgeIndex*>(buf_graph_base_pointer_ +
-                                                    start_out_offset));
-    SetOutgoingEdgesBuffer(reinterpret_cast<VertexID*>(buf_graph_base_pointer_ +
-                                                       start_outgoing_edges));
-  }
+
   gid_ = metadata_.gid;
   num_vertices_ = metadata_.num_vertices;
   num_incoming_edges_ = metadata_.num_incoming_edges;

@@ -43,7 +43,7 @@ void GraphFormatConverter::WriteSubgraph(
                                    std::to_string(gid) + ".bin");
 
     EdgeIndex count_in_edges = 0, count_out_edges = 0;
-    auto num_vertices = bucket.size();
+    VertexID num_vertices = bucket.size();
     VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
     Bitmap src_map(num_vertices), is_in_graph(aligned_max_vid);
 
@@ -208,10 +208,8 @@ void GraphFormatConverter::WriteSubgraph(
       case kUnconstrained:
         out_data_file.write(reinterpret_cast<char*>(buffer_in_edges),
                             sizeof(VertexID) * count_in_edges);
-        out_data_file.write(
-
-            reinterpret_cast<char*>(buffer_out_edges),
-            sizeof(VertexID) * count_out_edges);
+        out_data_file.write(reinterpret_cast<char*>(buffer_out_edges),
+                            sizeof(VertexID) * count_out_edges);
         break;
       case kUndefinedStrategy:
         LOG_FATAL("Store_strategy is undefined");
@@ -232,17 +230,16 @@ void GraphFormatConverter::WriteSubgraph(
     // Write subgraph metadata.
     switch (store_strategy) {
       case kOutgoingOnly:
-        subgraph_metadata_vec.push_back({gid, (VertexID)num_vertices, 0,
-                                         count_out_edges, max_vid, min_vid});
+        subgraph_metadata_vec.push_back(
+            {gid, num_vertices, 0, count_out_edges, max_vid, min_vid});
         break;
       case kIncomingOnly:
         subgraph_metadata_vec.push_back(
-            {gid, (VertexID)num_vertices, count_in_edges, 0, max_vid, min_vid});
+            {gid, num_vertices, count_in_edges, 0, max_vid, min_vid});
         break;
       case kUnconstrained:
-        subgraph_metadata_vec.push_back({gid, (VertexID)num_vertices,
-                                         count_in_edges, count_out_edges,
-                                         max_vid, min_vid});
+        subgraph_metadata_vec.push_back({gid, num_vertices, count_in_edges,
+                                         count_out_edges, max_vid, min_vid});
         break;
       case kUndefinedStrategy:
         LOG_FATAL("Store_strategy is undefined");
@@ -295,24 +292,27 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
   std::ofstream out_meta_file(output_root_path_ + "meta.yaml");
   std::ofstream border_vertices_file(output_root_path_ +
                                      "bitmap/border_vertices.bin");
+  std::ofstream dependency_matrix_file(output_root_path_ +
+                                       "dependency_matrix/dm.bin");
 
   auto aligned_max_vid = (((graph_metadata.get_max_vid() + 1) >> 6) << 6) + 64;
   auto frequency_of_vertices = new int[aligned_max_vid]();
   Bitmap border_vertices(aligned_max_vid);
+  std::vector<Bitmap> is_in_graph_vec;
+  is_in_graph_vec.resize(n_subgraphs);
 
-  for (GraphID i = 0; i < n_subgraphs; i++) {
+  for (GraphID gid = 0; gid < n_subgraphs; gid++) {
     std::ofstream out_data_file(output_root_path_ + "graphs/" +
-                                std::to_string(i) + ".bin");
+                                std::to_string(gid) + ".bin");
     std::ofstream src_map_file(output_root_path_ + "bitmap/src_map/" +
-                               std::to_string(i) + ".bin");
+                               std::to_string(gid) + ".bin");
     std::ofstream is_in_graph_file(output_root_path_ + "bitmap/is_in_graph/" +
-                                   std::to_string(i) + ".bin");
-    std::ofstream index_file(output_root_path_ + "index/" + std::to_string(i) +
-                             ".bin");
+                                   std::to_string(gid) + ".bin");
+    std::ofstream index_file(output_root_path_ + "index/" +
+                             std::to_string(gid) + ".bin");
 
-    auto bucket = edge_buckets.at(i);
-    ImmutableCSRGraph csr_graph(i);
-
+    auto bucket = edge_buckets.at(gid);
+    ImmutableCSRGraph csr_graph(gid);
     util::format_converter::Edgelist2CSR(bucket, store_strategy, &csr_graph);
 
     auto buffer_globalid2index = new VertexID[aligned_max_vid]();
@@ -336,15 +336,14 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
     index_file.close();
 
     Bitmap src_map(csr_graph.get_num_vertices());
-    Bitmap is_in_graph(csr_graph.get_num_vertices());
-
+    is_in_graph_vec.at(gid).Init(csr_graph.get_num_vertices());
     for (unsigned int i = 0; i < parallelism; i++) {
-      auto task = std::bind([i, parallelism, &csr_graph, &src_map, &is_in_graph,
-                             &frequency_of_vertices]() {
+      auto task = std::bind([gid, i, parallelism, &csr_graph, &src_map,
+                             &is_in_graph_vec, &frequency_of_vertices]() {
         for (VertexID j = i; j < csr_graph.get_num_vertices();
              j += parallelism) {
           if (csr_graph.GetOutDegreeByLocalID(j) > 0) src_map.SetBit(j);
-          is_in_graph.SetBit(csr_graph.GetGlobalIDByLocalID(j));
+          is_in_graph_vec.at(gid).SetBit(csr_graph.GetGlobalIDByLocalID(j));
           WriteAdd(frequency_of_vertices + csr_graph.GetGlobalIDByLocalID(j),
                    1);
         }
@@ -433,8 +432,8 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
     src_map_file.write(reinterpret_cast<char*>(src_map.GetDataBasePointer()),
                        ((src_map.size() >> 6) + 1) * sizeof(uint64_t));
     is_in_graph_file.write(
-        reinterpret_cast<char*>(is_in_graph.GetDataBasePointer()),
-        ((is_in_graph.size() >> 6) + 1) * sizeof(uint64_t));
+        reinterpret_cast<char*>(is_in_graph_vec.at(gid).GetDataBasePointer()),
+        ((is_in_graph_vec.at(gid).size() >> 6) + 1) * sizeof(uint64_t));
 
     out_data_file.close();
     out_label_file.close();
@@ -459,10 +458,28 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
   border_vertices_file.write(
       reinterpret_cast<char*>(border_vertices.GetDataBasePointer()),
       ((border_vertices.size() >> 6) + 1) * sizeof(uint64_t));
-
   border_vertices_file.close();
 
-  // Write metadata
+  // Write dependency matrix.
+  auto dependency_matrix = new VertexID[n_subgraphs * n_subgraphs]();
+  for (GraphID i = 0; i < n_subgraphs; i++) {
+    auto bucket = edge_buckets.at(i);
+    for (GraphID j = 0; j < n_subgraphs; j++) {
+      if (i == j) continue;
+      for (size_t k = 0; k < bucket.get_metadata().num_edges; k++) {
+        auto e = bucket.get_edge_by_index(k);
+        if (is_in_graph_vec[j].GetBit(e.src)) {
+          WriteAdd(&dependency_matrix[i * n_subgraphs + j], (VertexID)1);
+        }
+      }
+    }
+  }
+  dependency_matrix_file.write(reinterpret_cast<char*>(dependency_matrix),
+                               (n_subgraphs * n_subgraphs) * sizeof(VertexID));
+  dependency_matrix_file.close();
+  delete[] dependency_matrix;
+
+  //  Write metadata.
   YAML::Node out_node;
   out_node["GraphMetadata"]["num_vertices"] = graph_metadata.get_num_vertices();
   out_node["GraphMetadata"]["num_edges"] = graph_metadata.get_num_edges();

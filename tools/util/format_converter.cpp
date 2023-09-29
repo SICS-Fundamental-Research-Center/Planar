@@ -72,8 +72,8 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
             new VertexID[num_inedges_by_vid[j]]();
         buffer_csr_vertices[j].outgoing_edges =
             new VertexID[num_outedges_by_vid[j]]();
-        WriteAdd(&count_in_edges, (EdgeIndex) buffer_csr_vertices[j].indegree);
-        WriteAdd(&count_out_edges, (EdgeIndex) buffer_csr_vertices[j].outdegree);
+        WriteAdd(&count_in_edges, (EdgeIndex)buffer_csr_vertices[j].indegree);
+        WriteAdd(&count_out_edges, (EdgeIndex)buffer_csr_vertices[j].outdegree);
       }
     });
     task_package.push_back(task);
@@ -83,8 +83,8 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
   delete[] num_inedges_by_vid;
   delete[] num_outedges_by_vid;
 
-  VertexID* offset_in_edges = new VertexID[aligned_max_vid]();
-  VertexID* offset_out_edges = new VertexID[aligned_max_vid]();
+  EdgeIndex* offset_in_edges = new EdgeIndex[aligned_max_vid]();
+  EdgeIndex* offset_out_edges = new EdgeIndex[aligned_max_vid]();
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
       for (EdgeIndex j = i; j < edges.get_metadata().num_edges;

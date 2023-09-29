@@ -7,7 +7,7 @@
 #include "tools/common/yaml_config.h"
 #include "tools/graph_partitioner/partitioner/hash_based_edgecut.h"
 #include "tools/graph_partitioner/partitioner/hash_based_vertexcut.h"
-#include "tools/graph_partitioner/partitioner/planar_vertexcut.h"
+#include "tools/graph_partitioner/partitioner/csr_based_planar_vertexcut.h"
 
 using sics::graph::tools::common::StoreStrategy2Enum;
 using EdgeCutPartitioner =
@@ -15,7 +15,7 @@ using EdgeCutPartitioner =
 using VertexCutPartitioner =
     sics::graph::tools::partitioner::HashBasedVertexCutPartitioner;
 using PlanarVertexCutPartitioner =
-    sics::graph::tools::partitioner::PlanarVertexCutPartitioner;
+    sics::graph::tools::partitioner::CSRBasedPlanarVertexCutPartitioner;
 
 enum Partitioner {
   kHashEdgeCut,  // default
@@ -79,13 +79,13 @@ int main(int argc, char** argv) {
       edgecut_partitioner.RunPartitioner();
       break;
     }
-//    case kPlanarVertexCut: {
-//      PlanarVertexCutPartitioner planar_vertexcut_partitioner(
-//          FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
-//          FLAGS_n_partitions);
-//      planar_vertexcut_partitioner.RunPartitioner();
-//      break;
-//    }
+    case kPlanarVertexCut: {
+      PlanarVertexCutPartitioner planar_vertexcut_partitioner(
+          FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
+          FLAGS_n_partitions);
+      planar_vertexcut_partitioner.RunPartitioner();
+      break;
+    }
     case kHybridCut:
       // TODO (hsaioko): Add HyrbidCut partitioner.
       break;

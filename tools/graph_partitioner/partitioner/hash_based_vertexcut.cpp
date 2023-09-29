@@ -19,6 +19,7 @@ namespace sics::graph::tools::partitioner {
 using folly::ConcurrentHashMap;
 using folly::hash::fnv64_append_byte;
 using sics::graph::core::common::Bitmap;
+using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::common::VertexLabel;
@@ -66,9 +67,10 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   input_stream.read(reinterpret_cast<char*>(buffer_edges),
                     sizeof(Edge) * edgelist_metadata.num_edges);
   Edges edges(edgelist_metadata, reinterpret_cast<Edge*>(buffer_edges));
+  // edges.SortBySrc();
 
   // Precompute the size of each edge bucket.
-  auto size_per_bucket = new VertexID[n_partitions_]();
+  auto size_per_bucket = new EdgeIndex[n_partitions_]();
   auto max_vid_per_bucket = new VertexID[n_partitions_]();
   auto min_vid_per_bucket = new VertexID[n_partitions_]();
 
@@ -81,7 +83,7 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
 
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
-      for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
+      for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = edges.get_edge_by_index(j);
         VertexID bid;
         switch (store_strategy_) {
@@ -99,7 +101,7 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
         }
         bitmap_vec.at(bid).SetBit(e.src);
         bitmap_vec.at(bid).SetBit(e.dst);
-        WriteAdd(size_per_bucket + bid, (VertexID)1);
+        WriteAdd(size_per_bucket + bid, (EdgeIndex) 1);
         WriteMax(max_vid_per_bucket + bid, e.src);
         WriteMax(max_vid_per_bucket + bid, e.dst);
         WriteMax(&max_vid, e.src);
@@ -116,10 +118,9 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   std::vector<EdgelistMetadata> edgelist_metadata_vec;
   std::vector<Edges> edge_buckets;
 
-  for (size_t i = 0; i < n_partitions_; i++) {
-    EdgelistMetadata edgelist_metadata = {(VertexID)(bitmap_vec.at(i).Count()),
-                                          size_per_bucket[i],
-                                          max_vid_per_bucket[i]};
+  for (GraphID i = 0; i < n_partitions_; i++) {
+    EdgelistMetadata edgelist_metadata = {
+        bitmap_vec.at(i).Count(), size_per_bucket[i], max_vid_per_bucket[i]};
     edgelist_metadata_vec.push_back(edgelist_metadata);
     edge_buckets.emplace_back(Edges(edgelist_metadata));
   }
@@ -127,12 +128,12 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   delete[] min_vid_per_bucket;
   delete[] size_per_bucket;
 
-  auto bucket_offset = new VertexID[n_partitions_]();
+  auto bucket_offset = new EdgeIndex[n_partitions_]();
 
   std::mutex mtx;
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
-      for (VertexID j = i; j < edgelist_metadata.num_edges; j += parallelism) {
+      for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = edges.get_edge_by_index(j);
         VertexID bid;
         switch (store_strategy_) {
@@ -148,8 +149,7 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
           default:
             LOG_FATAL("Undefined store strategy.");
         }
-        std::lock_guard<std::mutex> lck(mtx);
-        auto offset = __sync_fetch_and_add(&bucket_offset[bid], 1);
+        EdgeIndex offset = __sync_fetch_and_add(&bucket_offset[bid], 1);
         auto edges_ptr = edge_buckets[bid].get_base_ptr();
         edges_ptr[offset] = e;
       }

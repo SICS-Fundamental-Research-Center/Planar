@@ -3,6 +3,8 @@
 
 #include "tools/common/types.h"
 
+#include <string>
+
 namespace sics::graph::tools::partitioner {
 
 // This class defines the Partitioner interface, which is used to partition a
