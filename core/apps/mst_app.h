@@ -48,6 +48,8 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
 
   void Graft(VertexID src_id);
 
+  void PrepareMinOutEdgeFirst(VertexID id);
+
   void MessagePassing(VertexID id);
 
   void PointJump(VertexID id);
@@ -61,6 +63,8 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
   void LogMinOutEdgeId();
 
   void WriteMinAuxiliary(VertexID id, VertexData data);
+
+  VertexID ReadAuxiliary(VertexID id);
 
  private:
   VertexData* min_out_edge_id_;

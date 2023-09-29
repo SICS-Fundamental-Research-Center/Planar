@@ -18,7 +18,7 @@ void Scheduler::Start() {
     graph_state_.subgraph_limits_--;
     auto read_size =
         graph_metadata_info_.GetSubgraphSize(first_read_message.graph_id);
-    if (memory_left_size_ - read_size < 0) {
+    if (memory_left_size_ < read_size) {
       LOG_FATAL("read size is too large, memory is not enough!");
     }
     memory_left_size_ -= read_size;

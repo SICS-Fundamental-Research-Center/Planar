@@ -17,6 +17,9 @@ void MstApp::PEval() {
 
 void MstApp::IncEval() {
   auto message_passing = [this](VertexID id) { MessagePassing(id); };
+  auto prepare_min_out_edge_first = [this](VertexID id) {
+    PrepareMinOutEdgeFirst(id);
+  };
   auto graft = [this](VertexID src_id) { Graft(src_id); };
   auto point_jump = [this](VertexID id) { PointJump(id); };
   auto contract = [this](VertexID src_id, VertexID dst_id, EdgeIndex idx) {
@@ -41,6 +44,9 @@ void MstApp::IncEval() {
       //      graph_->LogGraphInfo();
       graph_->LogEdges();
       LogMinOutEdgeId();
+      ParallelVertexDo(prepare_min_out_edge_first);
+      LOG_INFO("prepare min_out_edge first finished");
+
       ParallelVertexDo(graft);
       LOG_INFO("graft finished");
       graph_->LogVertexData();
@@ -79,6 +85,22 @@ void MstApp::FindMinEdge(VertexID id) {
   }
 }
 
+void MstApp::PrepareMinOutEdgeFirst(VertexID id) {
+  auto dst_id = min_out_edge_id_[id];
+  if ((dst_id != MST_INVALID_VID) && (!graph_->IsInGraph(dst_id))) {
+    auto parent_id = graph_->ReadLocalVertexDataByID(id);
+    if (graph_->IsInGraph(parent_id)) {
+      if (dst_id < parent_id)
+        if (graph_->WriteMinVertexDataByID(parent_id, dst_id))
+          update_store_->WriteMinBorderVertex(parent_id, dst_id);
+    } else {
+      if (dst_id < parent_id) {
+        graph_->WriteMinVertexDataByID(id, dst_id);
+      }
+    }
+  }
+}
+
 void MstApp::MessagePassing(VertexID id) {
   if (update_store_->Read(id) < graph_->ReadLocalVertexDataByID(id)) {
     auto parent_id = graph_->ReadLocalVertexDataByID(id);
@@ -95,41 +117,67 @@ void MstApp::MessagePassing(VertexID id) {
 void MstApp::Graft(VertexID src_id) {
   //  auto parent_id = graph_->ReadLocalVertexDataByID(src_id);
   //  if (parent_id == src_id) {
+  auto src_parent_id = graph_->ReadLocalVertexDataByID(src_id);
   auto dst_id = min_out_edge_id_[src_id];
   if (dst_id != MST_INVALID_VID) {
     if (graph_->IsInGraph(dst_id)) {
-      auto src_parent_id = graph_->ReadLocalVertexDataByID(src_id);
       auto dst_parent_id = graph_->ReadLocalVertexDataByID(dst_id);
-      if (src_parent_id < dst_parent_id) {
-        if (graph_->WriteMinVertexDataByID(dst_parent_id, src_parent_id))
-          update_store_->WriteMinBorderVertex(dst_parent_id, src_parent_id);
+      auto src = src_parent_id < dst_parent_id ? src_parent_id : dst_parent_id;
+      auto dst = src_parent_id < dst_parent_id ? dst_parent_id : src_parent_id;
+      if (graph_->IsInGraph(dst)) {
+        if (graph_->WriteMinVertexDataByID(dst, src))
+          update_store_->WriteMinBorderVertex(dst, src);
       } else {
-        if (graph_->WriteMinVertexDataByID(src_parent_id, dst_parent_id))
-          update_store_->WriteMinBorderVertex(src_parent_id, dst_parent_id);
+        if (graph_->WriteMinVertexDataByID(dst_id, src))
+          update_store_->WriteMinBorderVertex(dst_id, src);
       }
     } else {
-      // not in graph dst_id
-      auto src_parent_id = graph_->ReadLocalVertexDataByID(src_id);
       if (dst_id < src_parent_id) {
-        if (graph_->WriteMinVertexDataByID(src_parent_id, dst_id))
-          update_store_->WriteMinBorderVertex(src_parent_id, dst_id);
+        if (graph_->IsInGraph(src_parent_id)) {
+          if (graph_->WriteMinVertexDataByID(src_parent_id, dst_id))
+            update_store_->WriteMinBorderVertex(src_parent_id, dst_id);
+        } else {
+          if (graph_->WriteMinVertexDataByID(src_id, dst_id)) {
+            update_store_->WriteMinBorderVertex(src_id, dst_id);
+          }
+        }
       }
     }
+    //  }
   }
-  //  }
 }
-
+//      if (graph_->IsInGraph(dst_id)) {
+//        if (src_id < dst_id) {
+//          if (graph_->WriteMinVertexDataByID(dst_id, src_id))
+//            update_store_->WriteMinBorderVertex(dst_id, src_id);
+//        } else {
+//          if (graph_->WriteMinVertexDataByID(src_id, dst_id))
+//            update_store_->WriteMinBorderVertex(src_id, dst_id);
+//        }
+//      } else {
+//        if (src_id < dst_id) {
+//          // dst_id is not in graph.
+//          WriteMinAuxiliary(dst_id, src_id);
+//        } else {
+//          if (graph_->WriteMinVertexDataByID(dst_id, src_id))
+//            update_store_->WriteMinBorderVertex(dst_id, src_id);
+//        }
+//      }
 void MstApp::PointJump(VertexID id) {
   VertexData parent_id = graph_->ReadLocalVertexDataByID(id);
-  if (graph_->IsInGraph(parent_id) &&
-      parent_id != graph_->ReadLocalVertexDataByID(parent_id)) {
-    while (parent_id != graph_->ReadLocalVertexDataByID(parent_id)) {
-      parent_id = graph_->ReadLocalVertexDataByID(parent_id);
-      if (!graph_->IsInGraph(parent_id)) break;
+  while (true) {
+    VertexData tmp;
+    if (graph_->IsInGraph(parent_id)) {
+      tmp = graph_->ReadLocalVertexDataByID(parent_id);
+      if (tmp == parent_id) break;
+    } else {
+      tmp = ReadAuxiliary(parent_id);
+      if (parent_id == MAX_VERTEX_ID) break;
     }
-    if (graph_->WriteMinVertexDataByID(id, parent_id)) {
-      update_store_->WriteMinBorderVertex(id, parent_id);
-    }
+    parent_id = tmp;
+  }
+  if (graph_->WriteMinVertexDataByID(id, parent_id)) {
+    update_store_->WriteMinBorderVertex(id, parent_id);
   }
 }
 
@@ -184,6 +232,14 @@ void MstApp::WriteMinAuxiliary(VertexID id, VertexData data) {
     if (id_to_p_[id] > data) {
       id_to_p_[id] = data;
     }
+  }
+}
+
+common::VertexID MstApp::ReadAuxiliary(VertexID id) {
+  if (id_to_p_.find(id) != id_to_p_.end()) {
+    return id_to_p_[id];
+  } else {
+    return MAX_VERTEX_ID;
   }
 }
 
