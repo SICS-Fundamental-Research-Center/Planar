@@ -15,7 +15,7 @@ void SsspApp::PEval() {
   while (active_.Count() != 0) {
     ParallelVertexDo(relax);
     SyncActive();
-    LOGF_INFO("relax finished, active: {}", active_.Count());
+    //    LOGF_INFO("relax finished, active: {}", active_.Count());
     //    graph_->LogVertexData();
   }
 }
@@ -34,7 +34,7 @@ void SsspApp::IncEval() {
   while (active_.Count() != 0) {
     ParallelVertexDo(relax);
     SyncActive();
-    LOGF_INFO("relax finished, active: {}", active_.Count());
+    //    LOGF_INFO("relax finished, active: {}", active_.Count());
     //    graph_->LogVertexData();
   }
 }
@@ -77,7 +77,7 @@ void SsspApp::MessagePassing(VertexID id) {
 
 void SsspApp::SyncActive() {
   std::swap(active_, active_next_round_);
-  active_next_round_.Clear();
+  active_next_round_.Init(update_store_->GetMessageCount());
 }
 
 }  // namespace sics::graph::core::apps
