@@ -9,7 +9,7 @@ void SsspApp::PEval() {
   //  graph_->LogGraphInfo();
   //  graph_->LogVertexData();
   ParallelVertexDo(init);
-  LOG_INFO("init finished");
+  LOGF_INFO("init finished, active: {}", active_.Count());
   //  graph_->LogVertexData();
 
   while (active_.Count() != 0) {
