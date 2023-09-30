@@ -36,11 +36,13 @@ class CSRBasedPlanarVertexCutPartitioner : public PartitionerBase {
 
   void RunPartitioner() override;
 
+  void RunPartitioner(bool biggraph);
+
  private:
   const GraphID n_partitions_;
 
   // @DESCRIPTION
-  // Decompose the largest branch into a disjoint set of branches, It returns
+  // Decompose the largest branch into a disjoint set of branches. It returns
   // the number of new branches and corresponding branches data as well.
   // @ASSUMPTION
   // We require that vid of inputted graph have been compacted. i.e.
@@ -51,9 +53,16 @@ class CSRBasedPlanarVertexCutPartitioner : public PartitionerBase {
   // ImmutableCSRGraph: The graph to be partitioned.
   std::list<std::list<Edge>> SortBFSBranch(size_t minimum_n_edges_of_a_branch,
                                            const ImmutableCSRGraph& graph);
-  std::list<std::list<Edge>> MergedSortBFSBranch(
-      size_t minimum_n_edges_of_a_branch, const ImmutableCSRGraph& graph);
 
+  // @DESCRIPTION
+  // Decompose the largest branch into a disjoint set of branches. The different
+  // is that it turns to hash-based vertex-cut partitioner when there are too
+  // many of unvisited edges in a BFS iteration.
+  // @PARAMETERS
+  // minimum_n_edges_of_a_branch: Minimum number of edges in a branch.
+  // ImmutableCSRGraph: The graph to be partitioned.
+  std::list<std::list<Edge>> BigGraphSortBFSBranch(
+      size_t minimum_n_edges_of_a_branch, const ImmutableCSRGraph& graph);
 
   // @DESCRIPTION
   // Redistributing() aim at (1) merging small branches into one and (2)
