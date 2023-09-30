@@ -19,6 +19,7 @@ $ ./bin/tools/graph_partitioner -partitioner [options] -i [input path] -o [outpu
 General options of partitioner:
 * hashedgecut - Using hash-based edgecut partitioner.
 * hashvertexcut - Using hash-based vertexcut partitioner.
+* planarvertexcut - Using branch decomposition-based vertexcut partitioner. It is used as the default partitioner of the Planar system. We strongly suggest to used -biggraph command if the graph is too large.
 
 General options of store strategy:
 * incoming_only - store incoming edges for each vertex.
