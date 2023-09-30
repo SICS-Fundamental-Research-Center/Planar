@@ -18,7 +18,7 @@ void Scheduler::Start() {
     graph_state_.subgraph_limits_--;
     auto read_size =
         graph_metadata_info_.GetSubgraphSize(first_read_message.graph_id);
-    if (memory_left_size_ - read_size < 0) {
+    if (memory_left_size_ < read_size) {
       LOG_FATAL("read size is too large, memory is not enough!");
     }
     memory_left_size_ -= read_size;
@@ -81,6 +81,8 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
       execute_message.graph = graph_state_.GetSubgraph(read_resp.graph_id);
       execute_message.execute_type = ExecuteType::kDeserialize;
       is_executor_running_ = true;
+      LOGF_INFO("read finished, deserialize and execute the read graph {}",
+                read_resp.graph_id);
       message_hub_.get_executor_queue()->Push(execute_message);
     } else {
       // When executor is running, do nothing, wait for executor finish.
@@ -95,7 +97,7 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
 bool Scheduler::ExecuteMessageResponseAndWrite(
     const ExecuteMessage& execute_resp) {
   // Execute finish, decide next executor work.
-  is_executor_running_ = false;
+  //  is_executor_running_ = false;
   switch (execute_resp.execute_type) {
     case ExecuteType::kDeserialize: {
       graph_state_.SetSerializedToDeserialized(execute_resp.graph_id);
@@ -153,6 +155,7 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
           write_message.graph_id = execute_resp.graph_id;
           write_message.serialized = execute_resp.serialized;
           message_hub_.get_writer_queue()->Push(write_message);
+          is_executor_running_ = false;
         }
       } else {
         // Write back to disk or save in memory.
@@ -177,6 +180,8 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
             execute_message.execute_type = ExecuteType::kDeserialize;
             is_executor_running_ = true;
             message_hub_.get_executor_queue()->Push(execute_message);
+          } else {
+            is_executor_running_ = false;
           }
         }
       }
@@ -219,7 +224,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
     ReadMessage read_message;
     if (next_graph_id != INVALID_GRAPH_ID) {
       auto read_size = graph_metadata_info_.GetSubgraphSize(next_graph_id);
-      if (memory_left_size_ - read_size < 0) {
+      if (memory_left_size_ < read_size) {
         // Memory is not enough, return.
         return false;
       }
@@ -240,7 +245,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       if (next_gid_next_round != INVALID_GRAPH_ID) {
         auto read_size =
             graph_metadata_info_.GetSubgraphSize(next_gid_next_round);
-        if (memory_left_size_ - read_size < 0) {
+        if (memory_left_size_ < read_size) {
           return false;
         }
         memory_left_size_ -= read_size;
@@ -319,7 +324,8 @@ common::GraphID Scheduler::GetNextExecuteGraph() const {
   for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
-            GraphState::StorageStateType::Serialized) {
+            GraphState::StorageStateType::Serialized &&
+        graph_state_.subgraph_round_.at(gid) == current_round_) {
       return gid;
     }
   }

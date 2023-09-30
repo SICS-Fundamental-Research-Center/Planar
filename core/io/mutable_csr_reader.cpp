@@ -14,6 +14,8 @@ void MutableCSRReader::Read(scheduler::ReadMessage* message,
       root_path_ + "label/" + std::to_string(message->graph_id) + ".bin";
   if (common::Configurations::Get()->edge_mutate && message->round != 0) {
     file_path += ".new";
+  }
+  if (message->round != 0) {
     label_path += ".new";
   }
   std::string in_graph_bitmap_path = root_path_ + "bitmap/is_in_graph/" +

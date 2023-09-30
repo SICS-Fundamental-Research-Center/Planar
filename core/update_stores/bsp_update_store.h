@@ -23,12 +23,39 @@ class BspUpdateStore : public UpdateStoreBase {
   explicit BspUpdateStore(const std::string& root_path,
                           common::VertexCount vertex_num)
       : message_count_(vertex_num) {
+    application_type_ = common::Configurations::Get()->application;
     read_data_ = new VertexData[message_count_];
     write_data_ = new VertexData[message_count_];
-    for (int i = 0; i < vertex_num; i++) {
-      read_data_[i] = i;
-      write_data_[i] = i;
+
+    switch (application_type_) {
+      case common::ApplicationType::WCC:
+      case common::ApplicationType::MST: {
+        for (uint32_t i = 0; i < vertex_num; i++) {
+          read_data_[i] = i;
+          write_data_[i] = i;
+        }
+        break;
+      }
+      case common::ApplicationType::Coloring: {
+        for (uint32_t i = 0; i < vertex_num; i++) {
+          read_data_[i] = 0;
+          write_data_[i] = 0;
+        }
+        break;
+      }
+      case common::ApplicationType::Sssp: {
+        for (uint32_t i = 0; i < vertex_num; i++) {
+          read_data_[i] = std::numeric_limits<VertexData>::max();
+          write_data_[i] = std::numeric_limits<VertexData>::max();
+        }
+        break;
+      }
+      default: {
+        LOG_FATAL("Application type not supported");
+        break;
+      }
     }
+
     ReadBorderVertexBitmap(root_path);
   }
 
@@ -56,7 +83,7 @@ class BspUpdateStore : public UpdateStoreBase {
     return true;
   }
 
-  bool WriteMin(VertexID vid, VertexData vdata_new) {
+  bool WriteMinBorderVertex(VertexID vid, VertexData vdata_new) {
     if (vid >= message_count_) {
       return false;
     }
@@ -65,6 +92,17 @@ class BspUpdateStore : public UpdateStoreBase {
         active_count_++;
         return true;
       }
+    }
+    return false;
+  }
+
+  bool WriteMin(VertexID id, VertexData new_data) {
+    if (id >= message_count_) {
+      return false;
+    }
+    if (util::atomic::WriteMin(write_data_ + id, new_data)) {
+      active_count_++;
+      return true;
     }
     return false;
   }
@@ -83,10 +121,18 @@ class BspUpdateStore : public UpdateStoreBase {
   }
 
   bool IsActive() override { return active_count_ != 0; }
+  void SetActive() { active_count_ = 1; }
 
   void Sync() override {
     memcpy(read_data_, write_data_, message_count_ * sizeof(VertexData));
     active_count_ = 0;
+  }
+
+  bool IsBorderVertex(VertexID vid) {
+    if (vid >= message_count_) {
+      LOG_FATAL("Read out of bound");
+    }
+    return border_vertex_bitmap_.GetBit(vid);
   }
 
   uint32_t GetMessageCount() { return message_count_; }
@@ -111,8 +157,6 @@ class BspUpdateStore : public UpdateStoreBase {
 
   size_t GetActiveCount() const override { return active_count_; }
 
-  void SetActive() { active_count_ = 1; }
-
  private:
   void ReadBorderVertexBitmap(const std::string& root_path) {
     std::ifstream file(root_path + "bitmap/border_vertices.bin",
@@ -133,6 +177,8 @@ class BspUpdateStore : public UpdateStoreBase {
     file.close();
   }
 
+  void InitMemorySize() {}
+
  private:
   VertexData* read_data_;
   VertexData* write_data_;
@@ -141,6 +187,11 @@ class BspUpdateStore : public UpdateStoreBase {
   common::Bitmap border_vertex_bitmap_;
 
   size_t active_count_ = 0;
+
+  size_t memory_size = 0;
+
+  // configs
+  common::ApplicationType application_type_;
 };
 
 typedef BspUpdateStore<common::Uint32VertexDataType,
