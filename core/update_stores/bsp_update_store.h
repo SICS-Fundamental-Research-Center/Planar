@@ -128,6 +128,13 @@ class BspUpdateStore : public UpdateStoreBase {
     active_count_ = 0;
   }
 
+  bool IsBorderVertex(VertexID vid) {
+    if (vid >= message_count_) {
+      LOG_FATAL("Read out of bound");
+    }
+    return border_vertex_bitmap_.GetBit(vid);
+  }
+
   uint32_t GetMessageCount() { return message_count_; }
 
   void LogBorderVertexInfo() {
@@ -170,6 +177,8 @@ class BspUpdateStore : public UpdateStoreBase {
     file.close();
   }
 
+  void InitMemorySize() {}
+
  private:
   VertexData* read_data_;
   VertexData* write_data_;
@@ -178,6 +187,8 @@ class BspUpdateStore : public UpdateStoreBase {
   common::Bitmap border_vertex_bitmap_;
 
   size_t active_count_ = 0;
+
+  size_t memory_size = 0;
 
   // configs
   common::ApplicationType application_type_;

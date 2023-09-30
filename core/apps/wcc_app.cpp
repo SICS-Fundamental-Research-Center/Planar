@@ -126,14 +126,16 @@ void WCCApp::Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
 }
 
 void WCCApp::MessagePassing(VertexID id) {
-  if (update_store_->Read(id) < graph_->ReadLocalVertexDataByID(id)) {
-    VertexData parent_id = graph_->ReadLocalVertexDataByID(id);
-    VertexData new_data = update_store_->Read(id);
-    if (!graph_->IsInGraph(parent_id)) {
-      WriteMinAuxiliary(parent_id, new_data);
-    } else {
-      if (graph_->WriteMinVertexDataByID(parent_id, new_data)) {
-        update_store_->WriteMinBorderVertex(parent_id, new_data);
+  if (update_store_->IsBorderVertex(id)) {
+    if (update_store_->Read(id) < graph_->ReadLocalVertexDataByID(id)) {
+      VertexData parent_id = graph_->ReadLocalVertexDataByID(id);
+      VertexData new_data = update_store_->Read(id);
+      if (!graph_->IsInGraph(parent_id)) {
+        WriteMinAuxiliary(parent_id, new_data);
+      } else {
+        if (graph_->WriteMinVertexDataByID(parent_id, new_data)) {
+          update_store_->WriteMinBorderVertex(parent_id, new_data);
+        }
       }
     }
   }
