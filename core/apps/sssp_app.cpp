@@ -15,7 +15,7 @@ void SsspApp::PEval() {
   while (active_.Count() != 0) {
     ParallelVertexDo(relax);
     SyncActive();
-    //    LOGF_INFO("relax finished, active: {}", active_.Count());
+    LOGF_INFO("relax finished, active: {}", active_.Count());
     //    graph_->LogVertexData();
   }
 }
@@ -34,7 +34,7 @@ void SsspApp::IncEval() {
   while (active_.Count() != 0) {
     ParallelVertexDo(relax);
     SyncActive();
-    //    LOGF_INFO("relax finished, active: {}", active_.Count());
+    LOGF_INFO("relax finished, active: {}", active_.Count());
     //    graph_->LogVertexData();
   }
 }

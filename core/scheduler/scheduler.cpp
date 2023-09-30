@@ -324,7 +324,8 @@ common::GraphID Scheduler::GetNextExecuteGraph() const {
   for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
-            GraphState::StorageStateType::Serialized) {
+            GraphState::StorageStateType::Serialized &&
+        graph_state_.subgraph_round_.at(gid) == current_round_) {
       return gid;
     }
   }
