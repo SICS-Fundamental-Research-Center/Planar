@@ -80,10 +80,10 @@ void WCCApp::Graft(VertexID src_id, VertexID dst_id) {
   VertexID dst_parent_id = graph_->ReadLocalVertexDataByID(dst_id);
   if (src_parent_id < dst_parent_id) {
     if (graph_->WriteMinVertexDataByID(dst_parent_id, src_parent_id))
-      update_store_->WriteMin(dst_parent_id, src_parent_id);
+      update_store_->WriteMinBorderVertex(dst_parent_id, src_parent_id);
   } else if (src_parent_id > dst_parent_id) {
     if (graph_->WriteMinVertexDataByID(src_parent_id, dst_parent_id))
-      update_store_->WriteMin(src_parent_id, dst_parent_id);
+      update_store_->WriteMinBorderVertex(src_parent_id, dst_parent_id);
   }
 }
 
@@ -97,12 +97,12 @@ void WCCApp::Graft2(VertexID src_id, VertexID dst_id) {
     auto data_new = graph_->vertex_data_read_base_
                         [graph_->index_by_global_id_[src_parent_id]];
     if (graph_->WriteMinVertexDataByID(dst_parent_id, data_new))
-      update_store_->WriteMin(dst_parent_id, data_new);
+      update_store_->WriteMinBorderVertex(dst_parent_id, data_new);
   } else if (src_parent_id > dst_parent_id) {
     auto data_new = graph_->vertex_data_read_base_
                         [graph_->index_by_global_id_[dst_parent_id]];
     if (graph_->WriteMinVertexDataByID(src_parent_id, data_new))
-      update_store_->WriteMin(src_parent_id, data_new);
+      update_store_->WriteMinBorderVertex(src_parent_id, data_new);
   }
 }
 
@@ -113,7 +113,7 @@ void WCCApp::PointJump(VertexID src_id) {
       parent_id = graph_->ReadLocalVertexDataByID(parent_id);
     }
     if (graph_->WriteMinVertexDataByID(src_id, parent_id)) {
-      update_store_->WriteMin(src_id, parent_id);
+      update_store_->WriteMinBorderVertex(src_id, parent_id);
     }
   }
 }
@@ -126,14 +126,16 @@ void WCCApp::Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
 }
 
 void WCCApp::MessagePassing(VertexID id) {
-  if (update_store_->Read(id) < graph_->ReadLocalVertexDataByID(id)) {
-    VertexData parent_id = graph_->ReadLocalVertexDataByID(id);
-    VertexData new_data = update_store_->Read(id);
-    if (!graph_->IsInGraph(parent_id)) {
-      WriteMinAuxiliary(parent_id, new_data);
-    } else {
-      if (graph_->WriteMinVertexDataByID(parent_id, new_data)) {
-        update_store_->WriteMin(parent_id, new_data);
+  if (update_store_->IsBorderVertex(id)) {
+    if (update_store_->Read(id) < graph_->ReadLocalVertexDataByID(id)) {
+      VertexData parent_id = graph_->ReadLocalVertexDataByID(id);
+      VertexData new_data = update_store_->Read(id);
+      if (!graph_->IsInGraph(parent_id)) {
+        WriteMinAuxiliary(parent_id, new_data);
+      } else {
+        if (graph_->WriteMinVertexDataByID(parent_id, new_data)) {
+          update_store_->WriteMinBorderVertex(parent_id, new_data);
+        }
       }
     }
   }
@@ -146,13 +148,13 @@ void WCCApp::PointJumpIncEval(VertexID id) {
     //    std::lock_guard<std::mutex> grd(mtx_);
     if (id_to_p_.find(parent_id) != id_to_p_.end())
       if (graph_->WriteMinVertexDataByID(id, id_to_p_[parent_id])) {
-        update_store_->WriteMin(id, id_to_p_[parent_id]);
+        update_store_->WriteMinBorderVertex(id, id_to_p_[parent_id]);
       }
   } else {
     auto tmp = graph_->ReadLocalVertexDataByID(parent_id);
     if (tmp != parent_id) {
       if (graph_->WriteMinVertexDataByID(id, tmp)) {
-        update_store_->WriteMin(id, tmp);
+        update_store_->WriteMinBorderVertex(id, tmp);
       }
     }
   }

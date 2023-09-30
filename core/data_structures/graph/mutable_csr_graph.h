@@ -130,10 +130,14 @@ class MutableCSRGraph : public Serializable {
     }
   }
 
+  common::GraphID GetGraphID() const override { return metadata_->gid; }
+
   // methods for sync data
-  void SyncVertexData() {
-    memcpy(vertex_data_read_base_, vertex_data_write_base_,
-           sizeof(VertexData) * metadata_->num_vertices);
+  void SyncVertexData(bool use_read_data_only = false) {
+    if (!use_read_data_only) {
+      memcpy(vertex_data_read_base_, vertex_data_write_base_,
+             sizeof(VertexData) * metadata_->num_vertices);
+    }
   }
 
   void UpdateOutOffsetBaseNew(common::TaskRunner* runner) {
@@ -327,6 +331,11 @@ class MutableCSRGraph : public Serializable {
   bool WriteMaxReadDataByID(VertexID id, VertexData data_new) {
     auto index = index_by_global_id_[id];
     return util::atomic::WriteMax(&vertex_data_read_base_[index], data_new);
+  }
+
+  void WriteReadDataByIDWithoutAtomic(VertexID id, VertexData data_new) {
+    auto index = index_by_global_id_[id];
+    vertex_data_read_base_[index] = data_new;
   }
 
   // write the min value in local vertex data of vertex id

@@ -84,7 +84,7 @@ class Bitmap {
 
   void Clear() {
     size_t bm_size = WORD_OFFSET(size_);
-    for (size_t i = 0; i <= bm_size; i++) data_[i] = 0;
+    for (size_t i = 0; i <= bm_size; i++) data_[i] &= 0;
   }
 
   bool IsEmpty() const {

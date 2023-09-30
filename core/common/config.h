@@ -54,6 +54,10 @@ class Configurations {
   uint32_t vertex_data_size = 4;
   size_t memory_size = 64 * 1024;
   ApplicationType application = WCC;
+  // for coloring
+  uint32_t rand_max = 10000;
+  // for sssp
+  uint32_t source = 0;
 
  private:
   Configurations() = default;

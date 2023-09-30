@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "common/multithreading/task_runner.h"
+#include "common/types.h"
 #include "data_structures/serialized.h"
 
 namespace sics::graph::core::data_structures {
@@ -25,6 +26,8 @@ class Serializable {
   // This function will submit the deserialization task to the given TaskRunner
   virtual void Deserialize(const common::TaskRunner& runner,
                            std::unique_ptr<Serialized>&& serialized) = 0;
+
+  virtual common::GraphID GetGraphID() const { return INVALID_GRAPH_ID; };
 };
 
 }  // namespace sics::graph::core::data_structures
