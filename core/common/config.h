@@ -58,6 +58,8 @@ class Configurations {
   uint32_t rand_max = 10000;
   // for sssp
   uint32_t source = 0;
+  // for mst
+  bool fast = false;
 
  private:
   Configurations() = default;

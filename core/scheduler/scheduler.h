@@ -80,7 +80,9 @@ class Scheduler {
 
   void ReleaseAllGraph();
 
-  void SetRuntimeGraph(common::GraphID gid);
+  void SetAppRuntimeGraph(common::GraphID gid);
+
+  void SetAppRound(int round);
 
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.

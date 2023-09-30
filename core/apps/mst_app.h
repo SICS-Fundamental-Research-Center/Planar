@@ -35,6 +35,8 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
     for (int i = 0; i < update_store->GetMessageCount(); i++) {
       min_out_edge_id_[i] = MST_INVALID_VID;
     }
+    find_min_edge_bitmap_.Init(update_store->GetMessageCount());
+    fast_ = common::Configurations::Get()->fast;
   }
 
   void PEval() final;
@@ -70,6 +72,10 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
   VertexData* min_out_edge_id_;
   std::unordered_map<VertexID, VertexID> id_to_p_;
   std::mutex mtx_;
+  common::Bitmap find_min_edge_bitmap_;
+
+  // configs
+  bool fast_ = false;
 };
 
 }  // namespace sics::graph::core::apps

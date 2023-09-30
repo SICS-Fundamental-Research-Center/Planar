@@ -110,7 +110,8 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
       } else {
         execute_message.execute_type = ExecuteType::kIncEval;
       }
-      SetRuntimeGraph(execute_message.graph_id);
+      SetAppRuntimeGraph(execute_message.graph_id);
+      SetAppRound(current_round_);
       execute_message.app = app_;
       message_hub_.get_executor_queue()->Push(execute_message);
       break;
@@ -297,7 +298,7 @@ void Scheduler::ReleaseAllGraph() {
   }
 }
 
-void Scheduler::SetRuntimeGraph(common::GraphID gid) {
+void Scheduler::SetAppRuntimeGraph(common::GraphID gid) {
   if (common::Configurations::Get()->vertex_data_type ==
       common::VertexDataType::kVertexDataTypeUInt32) {
     auto app = dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt32>*>(app_);
@@ -307,6 +308,17 @@ void Scheduler::SetRuntimeGraph(common::GraphID gid) {
     auto app = dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt16>*>(app_);
     app->SetRuntimeGraph(
         dynamic_cast<MutableCSRGraphUInt16*>(graph_state_.GetSubgraph(gid)));
+  }
+}
+
+void Scheduler::SetAppRound(int round) {
+  if (common::Configurations::Get()->vertex_data_type ==
+      common::VertexDataType::kVertexDataTypeUInt32) {
+    auto app = dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt32>*>(app_);
+    app->SetRound(round);
+  } else {
+    auto app = dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt16>*>(app_);
+    app->SetRound(round);
   }
 }
 

@@ -66,6 +66,8 @@ class PlanarAppBase : public PIE {
     update_store_ = update_store;
   }
 
+  virtual void SetRound(int round) { round_ = round; }
+
   virtual void SetRuntimeGraph(GraphType* graph) { graph_ = graph; }
 
  protected:
@@ -88,8 +90,8 @@ class PlanarAppBase : public PIE {
       tasks.push_back(task);
       begin_index = end_index;
     }
-    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}", task_size,
-              tasks.size());
+    //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}", task_size,
+    //              tasks.size());
     runner_->SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
     graph_->SyncVertexData(app_type_ == common::Coloring);
@@ -113,8 +115,9 @@ class PlanarAppBase : public PIE {
       };
       tasks.push_back(task);
     }
-    LOGF_INFO("ParallelVertexDoStep task_size: {}, num tasks: {}", task_size,
-              tasks.size());
+    //    LOGF_INFO("ParallelVertexDoStep task_size: {}, num tasks: {}",
+    //    task_size,
+    //              tasks.size());
     runner_->SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
     graph_->SyncVertexData(app_type_ == common::Coloring);
@@ -152,8 +155,9 @@ class PlanarAppBase : public PIE {
       begin_index = end_index;
       count++;
     }
-    LOGF_INFO("task_size: {}, num tasks: {}. left edges: {}", task_size, count,
-              graph_->GetOutEdgeNums());
+    //    LOGF_INFO("task_size: {}, num tasks: {}. left edges: {}", task_size,
+    //    count,
+    //              graph_->GetOutEdgeNums());
     runner_->SubmitSync(tasks);
     graph_->SyncVertexData(app_type_ == common::Coloring);
     LOG_DEBUG("ParallelEdgeDo is done");
@@ -207,6 +211,8 @@ class PlanarAppBase : public PIE {
   update_stores::BspUpdateStore<VertexData, EdgeData>* update_store_;
 
   GraphType* graph_;
+
+  int round_ = 0;
 
   // configs
   const uint32_t parallelism_;

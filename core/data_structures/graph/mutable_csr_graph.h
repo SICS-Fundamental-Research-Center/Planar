@@ -141,7 +141,7 @@ class MutableCSRGraph : public Serializable {
   }
 
   void UpdateOutOffsetBaseNew(common::TaskRunner* runner) {
-    LOG_INFO("out_offset_base_new update begin!");
+    //    LOG_INFO("out_offset_base_new update begin!");
     // TODO: change simple logic
     uint32_t step = ceil((double)metadata_->num_vertices / parallelism_);
     VertexIndex b1 = 0, e1 = 0;
@@ -200,7 +200,7 @@ class MutableCSRGraph : public Serializable {
       }
       runner->SubmitSync(fix_tasks);
     }
-    LOG_INFO("out_offset_base_new update finish!");
+    //    LOG_INFO("out_offset_base_new update finish!");
   }
 
   void MutateGraphEdge(common::TaskRunner* runner) {
@@ -210,7 +210,7 @@ class MutableCSRGraph : public Serializable {
         metadata_->num_outgoing_edges - edge_delete_bitmap_.Count();
     // compute out_offset
     if (num_outgoing_edges_new != 0) {
-      LOG_INFO("init new data structure for graph");
+      //      LOG_INFO("init new data structure for graph");
       out_edges_base_new_ = new VertexID[num_outgoing_edges_new];
       UpdateOutOffsetBaseNew(runner);
       //      for (int i = 0; i < metadata_->num_vertices; i++) {
@@ -221,7 +221,7 @@ class MutableCSRGraph : public Serializable {
       size_t task_num = parallelism_ * task_package_factor_;
       uint32_t task_size = ceil((double)metadata_->num_vertices / task_num);
       task_size = task_size < 2 ? 2 : task_size;
-      LOGF_INFO("task size {}", task_size);
+      //      LOGF_INFO("task size {}", task_size);
       common::TaskPackage tasks;
       tasks.reserve(task_num);
       VertexIndex begin_index = 0, end_index = 0;
@@ -246,7 +246,7 @@ class MutableCSRGraph : public Serializable {
       }
       runner->SubmitSync(tasks);
       // tear down degree and offset buffer
-      LOG_INFO("tear down old data structure for graph");
+      //      LOG_INFO("tear down old data structure for graph");
       memcpy(out_degree_base_, out_degree_base_new_,
              sizeof(VertexDegree) * metadata_->num_vertices);
       memcpy(out_offset_base_, out_offset_base_new_,
