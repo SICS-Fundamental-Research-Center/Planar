@@ -115,6 +115,10 @@ class GraphMetadata {
     }
   }
 
+  void UpdateSubgraphSize() {
+    //TODO:
+  }
+
  private:
   VertexID num_vertices_;
   EdgeIndex num_edges_;
