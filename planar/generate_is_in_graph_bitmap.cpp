@@ -44,6 +44,11 @@ int main(int argc, char** argv) {
     is_in_graph_file.write(
         (char*)(is_in_graph_bitmap.GetDataBasePointer()),
         ((is_in_graph_bitmap.size() >> 6) + 1) * sizeof(uint64_t));
+    if (!is_in_graph_file) {
+      LOG_FATAL("Error opening bin file: ", is_in_graph_path.c_str());
+    }
+    meta_file.close();
+    is_in_graph_file.close();
   }
 
   return 0;
