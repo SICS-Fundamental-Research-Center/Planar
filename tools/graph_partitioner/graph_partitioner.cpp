@@ -5,9 +5,9 @@
 #include "core/common/multithreading/thread_pool.h"
 #include "core/util/logging.h"
 #include "tools/common/yaml_config.h"
+#include "tools/graph_partitioner/partitioner/csr_based_planar_vertexcut.h"
 #include "tools/graph_partitioner/partitioner/hash_based_edgecut.h"
 #include "tools/graph_partitioner/partitioner/hash_based_vertexcut.h"
-#include "tools/graph_partitioner/partitioner/planar_vertexcut.h"
 
 using sics::graph::tools::common::StoreStrategy2Enum;
 using EdgeCutPartitioner =
@@ -15,7 +15,7 @@ using EdgeCutPartitioner =
 using VertexCutPartitioner =
     sics::graph::tools::partitioner::HashBasedVertexCutPartitioner;
 using PlanarVertexCutPartitioner =
-    sics::graph::tools::partitioner::PlanarVertexCutPartitioner;
+    sics::graph::tools::partitioner::CSRBasedPlanarVertexCutPartitioner;
 
 enum Partitioner {
   kHashEdgeCut,  // default
@@ -46,6 +46,7 @@ DEFINE_uint64(n_partitions, 1, "the number of partitions");
 DEFINE_string(store_strategy, "unconstrained",
               "graph-systems adopted three strategies to store edges: "
               "kUnconstrained, incoming, and outgoing.");
+DEFINE_bool(biggraph, false, "for big graphs.");
 
 int main(int argc, char** argv) {
   gflags::SetUsageMessage(
@@ -79,13 +80,13 @@ int main(int argc, char** argv) {
       edgecut_partitioner.RunPartitioner();
       break;
     }
-//    case kPlanarVertexCut: {
-//      PlanarVertexCutPartitioner planar_vertexcut_partitioner(
-//          FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
-//          FLAGS_n_partitions);
-//      planar_vertexcut_partitioner.RunPartitioner();
-//      break;
-//    }
+    case kPlanarVertexCut: {
+      PlanarVertexCutPartitioner planar_vertexcut_partitioner(
+          FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
+          FLAGS_n_partitions);
+      planar_vertexcut_partitioner.RunPartitioner(FLAGS_biggraph);
+      break;
+    }
     case kHybridCut:
       // TODO (hsaioko): Add HyrbidCut partitioner.
       break;

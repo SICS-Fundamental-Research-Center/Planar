@@ -1,9 +1,9 @@
 #include "tools/graph_partitioner/partitioner/hash_based_edgecut.h"
 
-#include <folly/hash/Hash.h>
-
 #include <filesystem>
 #include <string>
+
+#include <folly/hash/Hash.h>
 
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"
@@ -84,8 +84,8 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
         auto e = buffer_edges[j];
         visited.SetBit(e.src);
         visited.SetBit(e.dst);
-        WriteAdd(num_inedges_by_vid + e.dst, (VertexID)1);
-        WriteAdd(num_outedges_by_vid + e.src, (VertexID)1);
+        WriteAdd(num_inedges_by_vid + e.dst, (VertexID) 1);
+        WriteAdd(num_outedges_by_vid + e.src, (VertexID) 1);
         WriteMax(&max_vid, e.src);
         WriteMax(&max_vid, e.dst);
         WriteMin(&min_vid, e.src);
@@ -155,8 +155,8 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   // Fill buckets.
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism, n_partitions = n_partitions_]() {
-      for (VertexID j = i; j < edgelist_metadata.num_vertices;
-           j += parallelism) {
+      for (VertexID j = i; j < aligned_max_vid; j += parallelism) {
+        if (!visited.GetBit(j)) continue;
         auto gid = GetBucketID(vertices.at(j).vid, n_partitions,
                                edgelist_metadata.num_vertices);
         std::lock_guard<std::mutex> lck(mtx);
