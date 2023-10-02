@@ -57,6 +57,7 @@ class BspUpdateStore : public UpdateStoreBase {
     }
 
     ReadBorderVertexBitmap(root_path);
+    InitMemorySize();
   }
 
   ~BspUpdateStore() {
@@ -157,6 +158,8 @@ class BspUpdateStore : public UpdateStoreBase {
 
   size_t GetActiveCount() const override { return active_count_; }
 
+  size_t GetMemorySize() const override { return memory_size_; }
+
  private:
   void ReadBorderVertexBitmap(const std::string& root_path) {
     std::ifstream file(root_path + "bitmap/border_vertices.bin",
@@ -177,7 +180,12 @@ class BspUpdateStore : public UpdateStoreBase {
     file.close();
   }
 
-  void InitMemorySize() {}
+  void InitMemorySize() {
+    auto global_messgeage_size =
+        (sizeof(VertexData) * message_count_ * 2) >> 20;
+    auto border_vertex_bitmap_size = message_count_ >> 23;
+    memory_size_ = global_messgeage_size + border_vertex_bitmap_size + 1;
+  }
 
  private:
   VertexData* read_data_;
@@ -188,7 +196,7 @@ class BspUpdateStore : public UpdateStoreBase {
 
   size_t active_count_ = 0;
 
-  size_t memory_size = 0;
+  size_t memory_size_ = 0;
 
   // configs
   common::ApplicationType application_type_;

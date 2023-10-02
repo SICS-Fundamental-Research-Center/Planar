@@ -113,7 +113,8 @@ class MutableCSRGraph : public Serializable {
         metadata_->num_vertices,
         (uint64_t*)(graph_serialized_->GetCSRBuffer()->at(4).Get()));
     // If graph is mutable, malloc corresponding structure used in computing.
-    if (common::Configurations::Get()->edge_mutate) {
+    if (common::Configurations::Get()->edge_mutate &&
+        metadata_->num_outgoing_edges != 0) {
       out_degree_base_new_ = new VertexDegree[metadata_->num_vertices];
       memcpy(out_degree_base_new_, out_degree_base_,
              sizeof(VertexDegree) * metadata_->num_vertices);

@@ -77,6 +77,42 @@ class GraphMetadata {
     return subgraph_size_.at(gid);
   }
 
+  void UpdateSubgraphSize(common::GraphID gid) {
+    auto& subgraph = subgraph_metadata_vec_.at(gid);
+    auto size_vertex_id = (subgraph.num_vertices * sizeof(VertexID)) >> 20;
+    auto size_out_degree = (subgraph.num_vertices * sizeof(VertexDegree)) >> 20;
+    auto size_out_offset = (subgraph.num_vertices * sizeof(EdgeIndex)) >> 20;
+    auto size_out_edges =
+        (subgraph.num_outgoing_edges * sizeof(VertexID)) >> 20;
+    auto size_vertex_data =
+        (subgraph.num_vertices * vertex_data_size_ * 2) >> 20;
+    auto size_index = (num_vertices_ * sizeof(VertexIndex)) >> 20;
+    auto size_is_in_graph_bitmap = num_vertices_ >> 23;
+    auto size_is_src_or_dst_bitmap = (subgraph.num_vertices) >> 23;
+
+    auto size_total = size_vertex_id + size_out_degree + size_out_offset +
+                      size_out_edges + size_vertex_data + size_index +
+                      size_is_in_graph_bitmap + size_is_src_or_dst_bitmap;
+
+    if (common::Configurations::Get()->edge_mutate &&
+        subgraph.num_outgoing_edges != 0) {
+      auto size_out_degree_new =
+          (subgraph.num_vertices * sizeof(VertexDegree)) >> 20;
+      auto size_out_offset_new =
+          (subgraph.num_vertices * sizeof(EdgeIndex)) >> 20;
+      auto size_out_edges_new =
+          (subgraph.num_outgoing_edges * sizeof(VertexID)) >> 20;
+      auto size_egdes_dellete_bitmap = subgraph.num_outgoing_edges >> 23;
+
+      size_total += size_out_degree_new + size_out_offset_new +
+                    size_out_edges_new + size_egdes_dellete_bitmap;
+    }
+    if ((size_total + 1) == subgraph_size_.at(gid)) return;
+    LOGF_INFO("memory size changed for graph {}, from {}MB to {}MB", gid,
+              subgraph_size_.at(gid), size_total + 1);
+    subgraph_size_.at(gid) = size_total + 1;
+  }
+
  private:
   void InitSubgraphSize() {
     for (int gid = 0; gid < num_subgraphs_; ++gid) {
@@ -113,10 +149,6 @@ class GraphMetadata {
     for (int gid = 0; gid < num_subgraphs_; ++gid) {
       LOGF_INFO("subgraph {} size: {} MB", gid, subgraph_size_.at(gid));
     }
-  }
-
-  void UpdateSubgraphSize() {
-    //TODO:
   }
 
  private:

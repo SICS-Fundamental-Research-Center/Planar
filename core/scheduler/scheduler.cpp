@@ -4,6 +4,9 @@ namespace sics::graph::core::scheduler {
 
 void Scheduler::Start() {
   thread_ = std::make_unique<std::thread>([this]() {
+    auto update_store_size = update_store_->GetMemorySize();
+    memory_left_size_ -= update_store_size;
+    LOGF_INFO("global memory size: {} MB", memory_left_size_);
     LOGF_INFO(" ============ Current Round: {} ============ ", current_round_);
     bool running = true;
     // init round 0 loaded graph
@@ -21,6 +24,9 @@ void Scheduler::Start() {
     if (memory_left_size_ < read_size) {
       LOG_FATAL("read size is too large, memory is not enough!");
     }
+    LOGF_INFO("read graph {} size: {}. *** Memory size now: {}, after: {} ***",
+              first_read_message.graph_id, read_size, memory_left_size_,
+              memory_left_size_ - read_size);
     memory_left_size_ -= read_size;
     graph_state_.SetOnDiskToReading(first_read_message.graph_id);
     message_hub_.get_reader_queue()->Push(first_read_message);
@@ -209,7 +215,13 @@ bool Scheduler::WriteMessageResponseAndCheckTerminate(
   graph_state_.SetSerializedToOnDisk(write_resp.graph_id);
   graph_state_.ReleaseSubgraphSerialized(write_resp.graph_id);
   auto write_size = graph_metadata_info_.GetSubgraphSize(write_resp.graph_id);
+  LOGF_INFO(
+      "Release subgraph: {}, size: {}. *** Memory size now: {}, after: {} ***",
+      write_resp.graph_id, write_size, memory_left_size_,
+      memory_left_size_ + write_size);
   memory_left_size_ += write_size;
+  // update subgraph size in memory
+  graph_metadata_info_.UpdateSubgraphSize(write_resp.graph_id);
   // Read next subgraph if permitted
   TryReadNextGraph();
   return true;
@@ -229,6 +241,9 @@ bool Scheduler::TryReadNextGraph(bool sync) {
         // Memory is not enough, return.
         return false;
       }
+      LOGF_INFO(
+          "To read subgraph {}. *** Memory size now: {}, after read: {} ***",
+          next_graph_id, memory_left_size_, memory_left_size_ - read_size);
       memory_left_size_ -= read_size;
       read_message.graph_id = next_graph_id;
       read_message.num_vertices =
@@ -249,6 +264,10 @@ bool Scheduler::TryReadNextGraph(bool sync) {
         if (memory_left_size_ < read_size) {
           return false;
         }
+        LOGF_INFO(
+            "To read subgraph {}. *** Memory size now: {}, after read: {} ***",
+            next_gid_next_round, memory_left_size_,
+            memory_left_size_ - read_size);
         memory_left_size_ -= read_size;
         read_message.graph_id = next_gid_next_round;
         read_message.num_vertices =
