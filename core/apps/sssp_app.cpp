@@ -13,9 +13,15 @@ void SsspApp::PEval() {
   //  graph_->LogVertexData();
 
   while (active_.Count() != 0) {
-    ParallelVertexDo(relax);
+    ParallelVertexDoWithActive(relax);
     SyncActive();
     LOGF_INFO("relax finished, active: {}", active_.Count());
+    //    if (active_.Count() <= 10) {
+    ////      LogActive();
+    //      flag = true;
+    //    } else {
+    //      flag = false;
+    //    }
     //    graph_->LogVertexData();
   }
 }
@@ -30,11 +36,18 @@ void SsspApp::IncEval() {
   ParallelVertexDo(message_passing);
   LOGF_INFO("message passing finished, active: {}", active_.Count());
   //  graph_->LogVertexData();
-
+  //  flag = false;
   while (active_.Count() != 0) {
-    ParallelVertexDo(relax);
+    ParallelVertexDoWithActive(relax);
     SyncActive();
+    auto active = active_.Count();
     LOGF_INFO("relax finished, active: {}", active_.Count());
+    //    if (active <= 10) {
+    //      //      LogActive();
+    //      flag = true;
+    //    } else {
+    //      flag = false;
+    //    }
     //    graph_->LogVertexData();
   }
 }
@@ -53,18 +66,21 @@ void SsspApp::Init(VertexID id) {
 }
 
 void SsspApp::Relax(VertexID id) {
-  if (active_.GetBit(id)) {
-    // push to neighbors
-    auto edges = graph_->GetOutEdgesByID(id);
-    auto degree = graph_->GetOutDegreeByID(id);
-    auto current_distance = graph_->ReadLocalVertexDataByID(id) + 1;
-    for (int i = 0; i < degree; i++) {
-      auto dst_id = edges[i];
-      if (current_distance < graph_->ReadLocalVertexDataByID(dst_id)) {
-        if (graph_->WriteMinVertexDataByID(dst_id, current_distance)) {
-          update_store_->WriteMinBorderVertex(dst_id, current_distance);
-          active_next_round_.SetBit(dst_id);
-        }
+  // push to neighbors
+  auto edges = graph_->GetOutEdgesByID(id);
+  auto degree = graph_->GetOutDegreeByID(id);
+  auto current_distance = graph_->ReadLocalVertexDataByID(id) + 1;
+  for (int i = 0; i < degree; i++) {
+    auto dst_id = edges[i];
+    auto data = graph_->ReadLocalVertexDataByID(dst_id);
+    if (current_distance < data) {
+      if (graph_->WriteMinVertexDataByID(dst_id, current_distance)) {
+        update_store_->WriteMinBorderVertex(dst_id, current_distance);
+        active_next_.SetBit(dst_id);
+        //          if (flag)
+        //            LOGF_INFO(" === do this relax = {} -> {}, distance {},
+        //            dst {}", id,
+        //                      dst_id, current_distance, data);
       }
     }
   }
@@ -75,9 +91,29 @@ void SsspApp::MessagePassing(VertexID id) {
     active_.SetBit(id);
 }
 
-void SsspApp::SyncActive() {
-  std::swap(active_, active_next_round_);
-  active_next_round_.Init(update_store_->GetMessageCount());
+void SsspApp::LogActive() {
+  for (int i = 0; i < active_.size(); i++) {
+    if (active_.GetBit(i)) {
+      VertexData tmp = graph_->ReadLocalVertexDataByID(i);
+      auto edges = graph_->GetOutEdgesByID(i);
+      std::string edges_str = "";
+      for (int j = 0; j < graph_->GetOutDegreeByID(i); j++) {
+        //        auto edges2 = graph_->GetOutEdgesByID(edges[j]);
+        //        std::string tmp2 = "";
+        //        for (int k = 0; k < graph_->GetOutDegreeByID(edges[j]); k++) {
+        //          auto data2 = graph_->ReadLocalVertexDataByID(edges2[k]);
+        //          tmp2 += std::to_string(edges2[k]) + ":" +
+        //          std::to_string(data2) + " ";
+        //        }
+        //        LOGF_INFO("neighbor {}, outedgse: {}", edges[i], tmp2);
+        auto tmp1 = graph_->ReadLocalVertexDataByID(edges[j]);
+        edges_str +=
+            std::to_string(edges[j]) + ":" + std::to_string(tmp1) + " ";
+      }
+      LOGF_INFO("next round active vertex {}:{}, outedges: {}", i, tmp,
+                edges_str);
+    }
+  }
 }
 
 }  // namespace sics::graph::core::apps

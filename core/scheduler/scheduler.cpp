@@ -157,12 +157,27 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
               " ============ Current Round: {}, Active vertex left: {} "
               "============ ",
               current_round_, active);
+          //          is_executor_running_ = false;
+          //          WriteMessage write_message;
+          //          write_message.graph_id = execute_resp.graph_id;
+          //          write_message.serialized = execute_resp.serialized;
+          //          message_hub_.get_writer_queue()->Push(write_message);
 
-          WriteMessage write_message;
-          write_message.graph_id = execute_resp.graph_id;
-          write_message.serialized = execute_resp.serialized;
-          message_hub_.get_writer_queue()->Push(write_message);
-          is_executor_running_ = false;
+          // Keep the last graph in memory and execute first in next round.
+          graph_state_.SetComputedSerializedToReadSerialized(
+              execute_resp.graph_id);
+          ExecuteMessage execute_message;
+          execute_message.graph_id = execute_resp.graph_id;
+          execute_message.serialized = execute_resp.serialized;
+          CreateSerializableGraph(execute_resp.graph_id);
+          execute_message.graph =
+              graph_state_.GetSubgraph(execute_resp.graph_id);
+          execute_message.execute_type = ExecuteType::kDeserialize;
+          is_executor_running_ = true;
+          LOGF_INFO(
+              "The last graph {} is in memory, deserialize it and execute.",
+              execute_resp.graph_id);
+          message_hub_.get_executor_queue()->Push(execute_message);
         }
       } else {
         // Write back to disk or save in memory.
@@ -341,6 +356,7 @@ void Scheduler::SetAppRound(int round) {
   }
 }
 
+// TODO: Add logic to decide which graph is read first.
 common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
   for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
@@ -351,6 +367,7 @@ common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
   return INVALID_GRAPH_ID;
 }
 
+// TODO: Add logic to decide which graph is executed first.
 common::GraphID Scheduler::GetNextExecuteGraph() const {
   for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&

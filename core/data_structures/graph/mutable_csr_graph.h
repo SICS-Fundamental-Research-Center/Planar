@@ -206,7 +206,7 @@ class MutableCSRGraph : public Serializable {
   }
 
   void MutateGraphEdge(common::TaskRunner* runner) {
-    LOG_INFO("Mutate graph edge begin");
+    //    LOG_INFO("Mutate graph edge begin");
     // Check left edges in subgraph.
     size_t num_outgoing_edges_new =
         metadata_->num_outgoing_edges - edge_delete_bitmap_.Count();
@@ -274,7 +274,7 @@ class MutableCSRGraph : public Serializable {
       // TODO: whether release bitmap now or in deconstructor
     }
     metadata_->num_outgoing_edges = num_outgoing_edges_new;
-    LOG_INFO("Mutate graph edge done");
+    //    LOG_INFO("Mutate graph edge done");
   }
 
   // methods for vertex info

@@ -64,6 +64,8 @@ class PlanarAppBase : public PIE {
       update_stores::BspUpdateStore<VertexData, EdgeData>* update_store) {
     runner_ = runner;
     update_store_ = update_store;
+    //    active_.Init(update_store->GetMessageCount());
+    //    active_next_.Init(update_store->GetMessageCount());
   }
 
   virtual void SetRound(int round) { round_ = round; }
@@ -85,6 +87,36 @@ class PlanarAppBase : public PIE {
       auto task = [&vertex_func, this, begin_index, end_index]() {
         for (VertexIndex idx = begin_index; idx < end_index; idx++) {
           vertex_func(graph_->GetVertexIDByIndex(idx));
+        }
+      };
+      tasks.push_back(task);
+      begin_index = end_index;
+    }
+    //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}", task_size,
+    //              tasks.size());
+    runner_->SubmitSync(tasks);
+    // TODO: sync of update_store and graph_ vertex data
+    graph_->SyncVertexData(app_type_ == common::Coloring);
+    LOG_DEBUG("ParallelVertexDo is done");
+  }
+
+  void ParallelVertexDoWithActive(
+      const std::function<void(VertexID)>& vertex_func) {
+    LOG_DEBUG("ParallelVertexDo is begin");
+    uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
+    common::TaskPackage tasks;
+    tasks.reserve(parallelism_ * task_package_factor_);
+    VertexIndex begin_index = 0, end_index = 0;
+    for (; begin_index < graph_->GetVertexNums();) {
+      end_index += task_size;
+      if (end_index > graph_->GetVertexNums())
+        end_index = graph_->GetVertexNums();
+      auto task = [&vertex_func, this, begin_index, end_index]() {
+        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
+          auto id = graph_->GetVertexIDByIndex(idx);
+          if (active_.GetBit(id)) {
+            vertex_func(id);
+          }
         }
       };
       tasks.push_back(task);
@@ -205,6 +237,11 @@ class PlanarAppBase : public PIE {
     return task_size < 2 ? 2 : task_size;
   }
 
+  void SyncActive() {
+    std::swap(active_, active_next_);
+    active_next_.Clear();
+  }
+
  protected:
   common::TaskRunner* runner_;
 
@@ -213,6 +250,9 @@ class PlanarAppBase : public PIE {
   GraphType* graph_;
 
   int round_ = 0;
+
+  common::Bitmap active_;
+  common::Bitmap active_next_;
 
   // configs
   const uint32_t parallelism_;
