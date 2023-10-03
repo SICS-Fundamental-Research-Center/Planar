@@ -74,4 +74,22 @@ TEST_F(BitmapTest, CopyAndMoveConstructor) {
   bitmaps.emplace_back(Bitmap(2));
 }
 
+TEST_F(BitmapTest, GetBit64Test) {
+  Bitmap bitmap(64 * 10);
+  bitmap.SetBit(0);
+  bitmap.SetBit(1);
+  bitmap.SetBit(2);
+  bitmap.SetBit(63);
+  bitmap.SetBit(128);
+  bitmap.SetBit(200);
+  EXPECT_EQ(bitmap.GetBit64(0), true);
+  EXPECT_EQ(bitmap.GetBit64(1), true);
+  EXPECT_EQ(bitmap.GetBit64(63), true);
+  EXPECT_EQ(bitmap.GetBit64(64), false);
+  EXPECT_EQ(bitmap.GetBit64(128), true);
+  EXPECT_EQ(bitmap.GetBit64(192), true);
+  EXPECT_EQ(bitmap.GetBit64(193), true);
+  EXPECT_EQ(bitmap.GetBit64(256), false);
+}
+
 }  // namespace sics::graph::core::common

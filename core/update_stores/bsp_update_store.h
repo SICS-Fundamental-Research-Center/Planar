@@ -73,6 +73,13 @@ class BspUpdateStore : public UpdateStoreBase {
     return read_data_[vid];
   }
 
+  VertexData ReadWriteBuffer(VertexID vid) {
+    if (vid >= message_count_) {
+      LOG_FATAL("Read out of bound");
+    }
+    return write_data_[vid];
+  }
+
   bool Write(VertexID vid, VertexData vdata_new) {
     if (vid >= message_count_) {
       return false;

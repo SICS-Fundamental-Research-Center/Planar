@@ -100,7 +100,8 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelVertexDo is done");
   }
 
-  void ParallelVertexDoByIndex(const std::function<void(VertexID)>& vertex_func) {
+  void ParallelVertexDoByIndex(
+      const std::function<void(VertexID)>& vertex_func) {
     LOG_DEBUG("ParallelVertexDoByIndex is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
@@ -129,20 +130,31 @@ class PlanarAppBase : public PIE {
   void ParallelVertexDoWithActive(
       const std::function<void(VertexID)>& vertex_func) {
     LOG_DEBUG("ParallelVertexDoWithActive is begin");
-    uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
+    uint32_t task_size = 64 * 100;
+
     common::TaskPackage tasks;
-    tasks.reserve(parallelism_ * task_package_factor_);
+    tasks.reserve((graph_->GetVertexNums() / 64 / 100) + 1);
     VertexIndex begin_index = 0, end_index = 0;
     for (; begin_index < graph_->GetVertexNums();) {
       end_index += task_size;
       if (end_index > graph_->GetVertexNums())
         end_index = graph_->GetVertexNums();
       auto task = [&vertex_func, this, begin_index, end_index]() {
-        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
-          if (active_.GetBit(idx)) {
-            vertex_func(idx);
+        for (VertexIndex idx = begin_index; idx < end_index;) {
+          if (active_.GetBit64(idx)) {
+            for (int j = 0; j < 64 && (idx + j) < end_index; j++) {
+              if (active_.GetBit(idx + j))
+                vertex_func(graph_->GetVertexIDByIndex(idx + j));
+            }
           }
+          idx += 64;
         }
+        //        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
+        //          auto id = graph_->GetVertexIDByIndex(idx);
+        //          if (active_.GetBit(idx)) {
+        //            vertex_func(id);
+        //          }
+        //        }
       };
       tasks.push_back(task);
       begin_index = end_index;

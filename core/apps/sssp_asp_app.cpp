@@ -1,8 +1,8 @@
-#include "apps/sssp_app.h"
+#include "apps/sssp_asp_app.h"
 
 namespace sics::graph::core::apps {
 
-void SsspApp::PEval() {
+void SsspAspApp::PEval() {
   auto init = [this](VertexID id) { this->Init(id); };
   auto relax = [this](VertexID id) { this->Relax(id); };
 
@@ -30,7 +30,7 @@ void SsspApp::PEval() {
   }
 }
 
-void SsspApp::IncEval() {
+void SsspAspApp::IncEval() {
   auto message_passing = [this](VertexID id) { this->MessagePassing(id); };
   auto relax = [this](VertexID id) { this->Relax(id); };
   active_.Init(graph_->GetVertexNums());
@@ -58,9 +58,9 @@ void SsspApp::IncEval() {
   }
 }
 
-void SsspApp::Assemble() {}
+void SsspAspApp::Assemble() {}
 
-void SsspApp::Init(VertexID id) {
+void SsspAspApp::Init(VertexID id) {
   if (id == source_) {
     graph_->WriteVertexDataByID(id, 0);
     update_store_->WriteMinBorderVertex(id, 0);
@@ -71,11 +71,11 @@ void SsspApp::Init(VertexID id) {
   }
 }
 
-void SsspApp::Relax(VertexID id) {
+void SsspAspApp::Relax(VertexID id) {
   // push to neighbors
-//  if () {
-//
-//  }
+  //  if () {
+  //
+  //  }
 
   auto edges = graph_->GetOutEdgesByID(id);
   auto degree = graph_->GetOutDegreeByID(id);
@@ -96,12 +96,12 @@ void SsspApp::Relax(VertexID id) {
   }
 }
 
-void SsspApp::MessagePassing(VertexID id) {
+void SsspAspApp::MessagePassing(VertexID id) {
   if (graph_->WriteMinVertexDataByID(id, update_store_->Read(id)))
     active_.SetBit(graph_->GetVertexIndexByID(id));
 }
 
-void SsspApp::LogActive() {
+void SsspAspApp::LogActive() {
   for (int i = 0; i < active_.size(); i++) {
     if (active_.GetBit(i)) {
       VertexData tmp = graph_->ReadLocalVertexDataByID(i);

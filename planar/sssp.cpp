@@ -1,6 +1,7 @@
 #include <gflags/gflags.h>
 
 #include "core/apps/sssp_app.h"
+#include "core/apps/sssp_asp_app.h"
 #include "core/planar_system.h"
 
 DEFINE_string(i, "/testfile", "graph files root path");
@@ -9,6 +10,7 @@ DEFINE_uint32(task_package_factor, 50, "task package factor");
 DEFINE_bool(in_memory, false, "in memory mode");
 DEFINE_uint32(memory_size, 64, "memory size (GB)");
 DEFINE_uint32(source, 0, "source vertex id");
+DEFINE_bool(asp, false, "debug mode");
 
 using namespace sics::graph;
 
@@ -27,9 +29,15 @@ int main(int argc, char** argv) {
       FLAGS_memory_size * 1024;
   core::common::Configurations::GetMutable()->source = FLAGS_source;
 
-  LOG_INFO("System begin");
-  core::planar_system::Planar<core::apps::SsspApp> system(
-      core::common::Configurations::Get()->root_path);
-  system.Start();
+  if (FLAGS_asp) {
+    core::planar_system::Planar<core::apps::SsspAspApp> system(
+        core::common::Configurations::Get()->root_path);
+    system.Start();
+  } else {
+    LOG_INFO("System begin");
+    core::planar_system::Planar<core::apps::SsspApp> system(
+        core::common::Configurations::Get()->root_path);
+    system.Start();
+  }
   return 0;
 }
