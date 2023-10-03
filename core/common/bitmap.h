@@ -118,6 +118,11 @@ class Bitmap {
     return data_[WORD_OFFSET(i)] & (1ul << BIT_OFFSET(i));
   }
 
+  bool GetBit64(size_t offset) {
+    if (offset > WORD_OFFSET(offset)) return 0;
+    return data_[WORD_OFFSET(offset)];
+  }
+
   void SetBit(size_t i) {
     if (i > size_) return;
     __sync_fetch_and_or(data_ + WORD_OFFSET(i), 1ul << BIT_OFFSET(i));

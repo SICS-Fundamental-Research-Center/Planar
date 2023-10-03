@@ -100,9 +100,35 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelVertexDo is done");
   }
 
+  void ParallelVertexDoByIndex(const std::function<void(VertexID)>& vertex_func) {
+    LOG_DEBUG("ParallelVertexDoByIndex is begin");
+    uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
+    common::TaskPackage tasks;
+    tasks.reserve(parallelism_ * task_package_factor_);
+    VertexIndex begin_index = 0, end_index = 0;
+    for (; begin_index < graph_->GetVertexNums();) {
+      end_index += task_size;
+      if (end_index > graph_->GetVertexNums())
+        end_index = graph_->GetVertexNums();
+      auto task = [&vertex_func, begin_index, end_index]() {
+        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
+          vertex_func(idx);
+        }
+      };
+      tasks.push_back(task);
+      begin_index = end_index;
+    }
+    //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}", task_size,
+    //              tasks.size());
+    runner_->SubmitSync(tasks);
+    // TODO: sync of update_store and graph_ vertex data
+    graph_->SyncVertexData(app_type_ == common::Coloring);
+    LOG_DEBUG("ParallelVertexDoByIndex is done");
+  }
+
   void ParallelVertexDoWithActive(
       const std::function<void(VertexID)>& vertex_func) {
-    LOG_DEBUG("ParallelVertexDo is begin");
+    LOG_DEBUG("ParallelVertexDoWithActive is begin");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
     tasks.reserve(parallelism_ * task_package_factor_);
@@ -113,9 +139,8 @@ class PlanarAppBase : public PIE {
         end_index = graph_->GetVertexNums();
       auto task = [&vertex_func, this, begin_index, end_index]() {
         for (VertexIndex idx = begin_index; idx < end_index; idx++) {
-          auto id = graph_->GetVertexIDByIndex(idx);
-          if (active_.GetBit(id)) {
-            vertex_func(id);
+          if (active_.GetBit(idx)) {
+            vertex_func(idx);
           }
         }
       };
@@ -127,7 +152,7 @@ class PlanarAppBase : public PIE {
     runner_->SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
     graph_->SyncVertexData(app_type_ == common::Coloring);
-    LOG_DEBUG("ParallelVertexDo is done");
+    LOG_DEBUG("ParallelVertexDoWithActive is done");
   }
 
   // Parallel execute vertex_func in task_size chunks.

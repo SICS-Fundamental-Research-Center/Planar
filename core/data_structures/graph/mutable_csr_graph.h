@@ -286,6 +286,10 @@ class MutableCSRGraph : public Serializable {
     return vertex_id_by_local_index_[index];
   }
 
+  VertexIndex GetVertexIndexByID(VertexID id) const {
+    return index_by_global_id_[id];
+  }
+
   VertexDegree GetOutDegreeByIndex(VertexIndex index) const {
     return out_degree_base_[index];
   }

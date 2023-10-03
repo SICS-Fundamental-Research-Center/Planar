@@ -1,11 +1,11 @@
 #include "tools/graph_partitioner/partitioner/csr_based_planar_vertexcut.h"
 
+#include <folly/concurrency/ConcurrentHashMap.h>
+#include <folly/hash/Hash.h>
+
 #include <algorithm>
 #include <filesystem>
 #include <string>
-
-#include <folly/concurrency/ConcurrentHashMap.h>
-#include <folly/hash/Hash.h>
 
 #include "core/common/multithreading/thread_pool.h"
 #include "core/common/types.h"
@@ -19,7 +19,6 @@
 #include <execution>
 #endif
 
-#include "sys/sysinfo.h"
 #include "sys/types.h"
 
 namespace sics::graph::tools::partitioner {
@@ -519,8 +518,8 @@ std::vector<Edges> CSRBasedPlanarVertexCutPartitioner::ConvertListofEdge2Edges(
   std::vector<Edges> vec_edges;
   vec_edges.reserve(list_of_branches.size());
   for (size_t i = 0; i < list_of_branches.size(); i++) {
-    Edges edges(
-        {visited[i].Count(), n_edges_per_edgelist[i], max_vid_per_edgelist[i]});
+    Edges edges({(uint32_t)(visited[i].Count()), n_edges_per_edgelist[i],
+                 max_vid_per_edgelist[i]});
     vec_edges.emplace_back(std::move(edges));
   }
   delete[] max_vid_per_edgelist;
