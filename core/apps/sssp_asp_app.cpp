@@ -73,9 +73,10 @@ void SsspAspApp::Init(VertexID id) {
 
 void SsspAspApp::Relax(VertexID id) {
   // push to neighbors
-  //  if () {
-  //
-  //  }
+  if (update_store_->ReadWriteBuffer(id) <
+      graph_->ReadLocalVertexDataByID(id)) {
+    graph_->WriteMinBothByID(id, update_store_->ReadWriteBuffer(id));
+  }
 
   auto edges = graph_->GetOutEdgesByID(id);
   auto degree = graph_->GetOutDegreeByID(id);

@@ -6,6 +6,8 @@
 #include "common/types.h"
 #include "data_structures/graph/mutable_csr_graph.h"
 
+#define SSSP_INFINITY 0xffffffff
+
 namespace sics::graph::core::apps {
 
 using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;

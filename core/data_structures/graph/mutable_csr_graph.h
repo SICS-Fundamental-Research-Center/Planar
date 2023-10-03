@@ -360,6 +360,17 @@ class MutableCSRGraph : public Serializable {
     return true;
   }
 
+  // write new data into read and write buffer both
+  bool WriteMinBothByID(VertexID id, VertexData data_new) {
+    auto index = index_by_global_id_[id];
+    if (util::atomic::WriteMin(vertex_data_read_base_ + index, data_new)) {
+      vertex_data_write_base_[index] = data_new;
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   // TOOD: maybe used later
   VertexData* GetWriteDataByID(VertexID id) {
     auto index = index_by_global_id_[id];

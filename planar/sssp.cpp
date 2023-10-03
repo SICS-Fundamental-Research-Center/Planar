@@ -30,6 +30,8 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->source = FLAGS_source;
 
   if (FLAGS_asp) {
+    LOG_INFO("use asp sssp");
+    LOG_INFO("System begin");
     core::planar_system::Planar<core::apps::SsspAspApp> system(
         core::common::Configurations::Get()->root_path);
     system.Start();

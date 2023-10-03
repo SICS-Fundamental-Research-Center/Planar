@@ -73,10 +73,6 @@ void SsspApp::Init(VertexID id) {
 
 void SsspApp::Relax(VertexID id) {
   // push to neighbors
-//  if () {
-//
-//  }
-
   auto edges = graph_->GetOutEdgesByID(id);
   auto degree = graph_->GetOutDegreeByID(id);
   auto current_distance = graph_->ReadLocalVertexDataByID(id) + 1;
