@@ -42,7 +42,10 @@ class PlanarAppBase : public PIE {
         parallelism_(common::Configurations::Get()->parallelism),
         task_package_factor_(
             common::Configurations::Get()->task_package_factor),
-        app_type_(common::Configurations::Get()->application) {}
+        app_type_(common::Configurations::Get()->application) {
+    use_readdata_only_ = app_type_ == common::Coloring;
+    LOGF_INFO("vertex data sync: {}", !use_readdata_only_);
+  }
   // TODO: add UpdateStore as a parameter, so that PEval, IncEval and Assemble
   //  can access global messages in it.
   PlanarAppBase(
@@ -55,7 +58,10 @@ class PlanarAppBase : public PIE {
         parallelism_(common::Configurations::Get()->parallelism),
         task_package_factor_(
             common::Configurations::Get()->task_package_factor),
-        app_type_(common::Configurations::Get()->application) {}
+        app_type_(common::Configurations::Get()->application) {
+    use_readdata_only_ = app_type_ == common::Coloring;
+    LOGF_INFO("vertex data sync: {}", !use_readdata_only_);
+  }
 
   ~PlanarAppBase() override = default;
 
@@ -96,7 +102,7 @@ class PlanarAppBase : public PIE {
     //              tasks.size());
     runner_->SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
-    graph_->SyncVertexData(app_type_ == common::Coloring);
+    graph_->SyncVertexData(use_readdata_only_);
     LOG_DEBUG("ParallelVertexDo is done");
   }
 
@@ -123,7 +129,7 @@ class PlanarAppBase : public PIE {
     //              tasks.size());
     runner_->SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
-    graph_->SyncVertexData(app_type_ == common::Coloring);
+    graph_->SyncVertexData(use_readdata_only_);
     LOG_DEBUG("ParallelVertexDoByIndex is done");
   }
 
@@ -163,7 +169,7 @@ class PlanarAppBase : public PIE {
     //              tasks.size());
     runner_->SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
-    graph_->SyncVertexData(app_type_ == common::Coloring);
+    graph_->SyncVertexData(use_readdata_only_);
     LOG_DEBUG("ParallelVertexDoWithActive is done");
   }
 
@@ -189,7 +195,7 @@ class PlanarAppBase : public PIE {
     //              tasks.size());
     runner_->SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
-    graph_->SyncVertexData(app_type_ == common::Coloring);
+    graph_->SyncVertexData(use_readdata_only_);
     LOG_DEBUG("ParallelVertexDoStep is done");
   }
 
@@ -228,7 +234,7 @@ class PlanarAppBase : public PIE {
     //    count,
     //              graph_->GetOutEdgeNums());
     runner_->SubmitSync(tasks);
-    graph_->SyncVertexData(app_type_ == common::Coloring);
+    graph_->SyncVertexData(use_readdata_only_);
     LOG_DEBUG("ParallelEdgeDo is done");
   }
 
@@ -295,6 +301,7 @@ class PlanarAppBase : public PIE {
   const uint32_t parallelism_;
   const uint32_t task_package_factor_;
   const common::ApplicationType app_type_;
+  bool use_readdata_only_ = true;
   // TODO: add UpdateStore as a member here.
 };
 

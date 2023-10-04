@@ -58,6 +58,7 @@ class Configurations {
   uint32_t rand_max = 10000;
   // for sssp
   uint32_t source = 0;
+  bool ASP = false;
   // for mst
   bool fast = false;
 

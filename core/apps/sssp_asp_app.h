@@ -34,6 +34,8 @@ class SsspAspApp : public apis::PlanarAppBase<CSRGraph> {
     //    active_.Init(update_store->GetMessageCount());
     //    active_next_.Init(update_store->GetMessageCount());
     source_ = common::Configurations::Get()->source;
+    use_readdata_only_ = !common::Configurations::Get()->ASP;
+    LOGF_INFO("SSSP ASP mode, vertex data sync: {}", use_readdata_only_);
   }
 
   ~SsspAspApp() override = default;

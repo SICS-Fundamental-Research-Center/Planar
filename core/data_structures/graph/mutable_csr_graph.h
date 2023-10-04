@@ -123,6 +123,10 @@ class MutableCSRGraph : public Serializable {
       // Out_edges_base_new_ buffer is malloc when used. And release in the same
       // function.
       out_edges_base_new_ = nullptr;
+    } else {
+      out_offset_base_new_ = nullptr;
+      out_degree_base_new_ = nullptr;
+      out_edges_base_new_ = nullptr;
     }
     // If partition type is vertex cut, get index_by_global_id_.
     if (common::Configurations::Get()->partition_type ==
