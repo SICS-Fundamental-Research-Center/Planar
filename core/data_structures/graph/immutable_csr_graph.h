@@ -120,19 +120,19 @@ class ImmutableCSRGraph : public Serializable {
   }
 
   uint8_t* GetGraphBuffer() { return buf_graph_base_pointer_; }
-  VertexID* GetGloablIDBasePointer() {
+  VertexID* GetGloablIDBasePointer() const {
     return globalid_by_localid_base_pointer_;
   }
-  VertexID* GetInDegreeBasePointer() { return indegree_base_pointer_; }
-  VertexID* GetOutDegreeBasePointer() { return outdegree_base_pointer_; }
+  VertexID* GetInDegreeBasePointer() const { return indegree_base_pointer_; }
+  VertexID* GetOutDegreeBasePointer() const { return outdegree_base_pointer_; }
   EdgeIndex* GetInOffsetBasePointer() const { return in_offset_base_pointer_; }
   EdgeIndex* GetOutOffsetBasePointer() const {
     return out_offset_base_pointer_;
   }
-  VertexID* GetIncomingEdgesBasePointer() {
+  VertexID* GetIncomingEdgesBasePointer() const {
     return incoming_edges_base_pointer_;
   }
-  VertexID* GetOutgoingEdgesBasePointer() {
+  VertexID* GetOutgoingEdgesBasePointer() const {
     return outgoing_edges_base_pointer_;
   }
 

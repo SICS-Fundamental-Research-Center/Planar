@@ -12,6 +12,7 @@ namespace YAML {
 
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::VertexID;
+using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::data_structures::SubgraphMetadata;
 using sics::graph::tools::common::EdgelistMetadata;
 
@@ -32,8 +33,8 @@ struct convert<EdgelistMetadata> {
       return false;
     }
 
-    metadata.num_vertices = node["num_vertices"].as<size_t>();
-    metadata.num_edges = node["num_edges"].as<size_t>();
+    metadata.num_vertices = node["num_vertices"].as<VertexID>();
+    metadata.num_edges = node["num_edges"].as<EdgeIndex>();
     metadata.max_vid = node["max_vid"].as<VertexID>();
 
     return true;

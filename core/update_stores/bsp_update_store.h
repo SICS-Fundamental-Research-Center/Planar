@@ -69,12 +69,27 @@ class BspUpdateStore : public UpdateStoreBase {
     return false;
   }
 
+  bool WriteMax(VertexID vid, VertexData vdata_new) {
+    if (vid >= message_count_) {
+      return false;
+    }
+    if (border_vertex_bitmap_.GetBit(vid)) {
+      if (util::atomic::WriteMax(write_data_ + vid, vdata_new)) {
+        active_count_++;
+        return true;
+      }
+    }
+    return false;
+  }
+
   bool IsActive() override { return active_count_ != 0; }
 
   void Sync() override {
     memcpy(read_data_, write_data_, message_count_ * sizeof(VertexData));
     active_count_ = 0;
   }
+
+  uint32_t GetMessageCount() { return message_count_; }
 
   void LogBorderVertexInfo() {
     LOG_INFO("Border vertex info:");
@@ -95,6 +110,8 @@ class BspUpdateStore : public UpdateStoreBase {
   }
 
   size_t GetActiveCount() const override { return active_count_; }
+
+  void SetActive() { active_count_ = 1; }
 
  private:
   void ReadBorderVertexBitmap(const std::string& root_path) {
