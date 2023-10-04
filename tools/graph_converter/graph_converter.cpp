@@ -48,6 +48,7 @@ DEFINE_string(store_strategy, "unconstrained",
 DEFINE_string(convert_mode, "", "Conversion mode");
 DEFINE_string(sep, "", "separator to split csv file.");
 DEFINE_bool(read_head, false, "whether to read header of csv.");
+DEFINE_bool(not_reorder_vertices, false, "whether not to reorder vertices.");
 
 // @DESCRIPTION: convert a edgelist graph from csv file to binary file. Here the
 // compression operations is default in ConvertEdgelist.
@@ -117,8 +118,13 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   // Compress vid and buffer graph.
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
-      for (VertexID j = i; j < n_edges * 2; j += parallelism)
-        compressed_buffer_edges[j] = vid_map[buffer_edges[j]];
+      for (VertexID j = i; j < n_edges * 2; j += parallelism) {
+        if (FLAGS_not_reorder_vertices) {
+          compressed_buffer_edges[j] = buffer_edges[j];
+        } else {
+          compressed_buffer_edges[j] = vid_map[buffer_edges[j]];
+        }
+      }
     });
     task_package.push_back(task);
   }
