@@ -43,10 +43,11 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
       for (EdgeIndex j = i; j < edges.get_metadata().num_edges;
            j += parallelism) {
         auto e = edges.get_edge_by_index(j);
+        if (e.src == e.dst) continue;
         visited.SetBit(e.src);
         visited.SetBit(e.dst);
-        WriteAdd(num_inedges_by_vid + e.dst, (VertexID) 1);
-        WriteAdd(num_outedges_by_vid + e.src, (VertexID) 1);
+        WriteAdd(num_inedges_by_vid + e.dst, (VertexID)1);
+        WriteAdd(num_outedges_by_vid + e.src, (VertexID)1);
         WriteMin(&min_vid, e.src);
         WriteMin(&min_vid, e.dst);
       }
@@ -90,6 +91,7 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
       for (EdgeIndex j = i; j < edges.get_metadata().num_edges;
            j += parallelism) {
         auto e = edges.get_edge_by_index(j);
+        if (e.src == e.dst) continue;
         EdgeIndex offset_out = 0, offset_in = 0;
         offset_out = __sync_fetch_and_add(offset_out_edges + e.src, 1);
         offset_in = __sync_fetch_and_add(offset_in_edges + e.dst, 1);
@@ -132,7 +134,7 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
   auto buffer_out_edges = new VertexID[count_out_edges]();
 
   // Fill edges.
-  LOG_INFO("Fill buffer_edges and sort out.");
+  LOG_INFO("Fill buffer_edges.");
   vid = 0;
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
@@ -142,17 +144,11 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
           memcpy(buffer_in_edges + buffer_in_offset[vid_map[j]],
                  buffer_csr_vertices[j].incoming_edges,
                  buffer_csr_vertices[j].indegree * sizeof(VertexID));
-          std::sort(buffer_in_edges + buffer_in_offset[vid_map[j]],
-                    buffer_in_edges + buffer_in_offset[vid_map[j]] +
-                        buffer_indegree[vid_map[j]]);
         }
         if (buffer_csr_vertices[j].outdegree != 0) {
           memcpy(buffer_out_edges + buffer_out_offset[vid_map[j]],
                  buffer_csr_vertices[j].outgoing_edges,
                  buffer_csr_vertices[j].outdegree * sizeof(VertexID));
-          std::sort(buffer_out_edges + buffer_out_offset[vid_map[j]],
-                    buffer_out_edges + buffer_out_offset[vid_map[j]] +
-                        buffer_outdegree[vid_map[j]]);
         }
       }
     });

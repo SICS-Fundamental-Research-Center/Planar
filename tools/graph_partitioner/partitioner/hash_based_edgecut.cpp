@@ -82,6 +82,7 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
     auto task = std::bind([&, i]() {
       for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = buffer_edges[j];
+        if (e.src == e.dst) continue;
         visited.SetBit(e.src);
         visited.SetBit(e.dst);
         WriteAdd(num_inedges_by_vid + e.dst, (VertexID) 1);
@@ -130,6 +131,7 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
     auto task = std::bind([&, i, parallelism]() {
       for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = buffer_edges[j];
+        if (e.src == e.dst) continue;
         auto offset_out = __sync_fetch_and_add(offset_out_edges + e.src, 1);
         auto offset_in = __sync_fetch_and_add(offset_in_edges + e.dst, 1);
         vertices.at(e.src).outgoing_edges[offset_out] = e.dst;

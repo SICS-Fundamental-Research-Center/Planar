@@ -46,6 +46,7 @@ VertexID HashBasedVertexCutPartitioner::GetBucketID(VertexID vid,
 }
 
 void HashBasedVertexCutPartitioner::RunPartitioner() {
+  LOG_INFO("RunPartitioner");
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -85,6 +86,7 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
     auto task = std::bind([&, i, parallelism]() {
       for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = edges.get_edge_by_index(j);
+        if (e.src == e.dst) continue;
         VertexID bid;
         switch (store_strategy_) {
           case kOutgoingOnly:
@@ -135,6 +137,7 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
     auto task = std::bind([&, i, parallelism]() {
       for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = edges.get_edge_by_index(j);
+        if (e.src == e.dst) continue;
         VertexID bid;
         switch (store_strategy_) {
           case kOutgoingOnly:

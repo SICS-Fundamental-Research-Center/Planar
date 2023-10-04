@@ -85,6 +85,7 @@ void TwoDimensionalVertexCutPartitioner::RunPartitioner() {
     auto task = std::bind([&, i, parallelism]() {
       for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = edges.get_edge_by_index(j);
+        if (e.src == e.dst) continue;
         VertexID bid;
         auto bid_x =
             GetBucketID(e.src, n_partitions_, edgelist_metadata.num_vertices);
@@ -128,6 +129,7 @@ void TwoDimensionalVertexCutPartitioner::RunPartitioner() {
     auto task = std::bind([&, i, parallelism]() {
       for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = edges.get_edge_by_index(j);
+        if (e.src == e.dst) continue;
         VertexID bid;
         auto bid_x =
             GetBucketID(e.src, n_partitions_, edgelist_metadata.num_vertices);

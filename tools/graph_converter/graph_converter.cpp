@@ -7,13 +7,13 @@
 // USAGE: graph-convert --convert_mode=[options] -i <input file path> -o <output
 // file path> --sep=[separator]
 
+#include <gflags/gflags.h>
+#include <yaml-cpp/yaml.h>
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <type_traits>
-
-#include <gflags/gflags.h>
-#include <yaml-cpp/yaml.h>
 
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"
@@ -131,6 +131,10 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   // Write binary edgelist
   out_data_file.write(reinterpret_cast<char*>(compressed_buffer_edges),
                       sizeof(VertexID) * 2 * n_edges);
+  for (size_t i = 0; i < n_edges; i++) {
+    LOG_INFO(compressed_buffer_edges[i * 2], " ",
+             compressed_buffer_edges[i * 2 + 1]);
+  }
   delete[] compressed_buffer_edges;
 
   // Write Meta date.
