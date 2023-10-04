@@ -10,7 +10,7 @@ namespace sics::graph::miniclean::common {
 typedef uint8_t GraphID;
 typedef uint32_t VertexID;
 // TODO (bai-wenchao): uint8_t is enough, change the vertex_label format.
-typedef uint32_t VertexLabel;
+typedef uint8_t VertexLabel;
 typedef uint8_t EdgeLabel;
 
 // Pattern Vertex ID:
@@ -45,6 +45,10 @@ typedef std::pair<StarPattern, StarPattern> DualPattern;
 
 #define MAX_VERTEX_ATTRIBUTE_VALUE \
   std::numeric_limits<VertexAttributeValue>::max()
+
+#define MAX_VERTEX_LABEL std::numeric_limits<VertexLabel>::max()
+
+#define MAX_EDGE_LABEL std::numeric_limits<EdgeLabel>::max()
 
 }  // namespace sics::graph::miniclean::common
 
