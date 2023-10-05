@@ -128,6 +128,17 @@ class BspUpdateStore : public UpdateStoreBase {
     return false;
   }
 
+  bool WriteMinEdgeCutVertex(VertexID id, VertexData new_data) {
+    if (id >= message_count_) {
+      return false;
+    }
+    if (util::atomic::WriteMin(write_data_ + id, new_data)) {
+      active_count_++;
+      return true;
+    }
+    return false;
+  }
+
   bool IsActive() override { return active_count_ != 0; }
   void SetActive() { active_count_ = 1; }
 
@@ -160,6 +171,14 @@ class BspUpdateStore : public UpdateStoreBase {
         LOGF_INFO("global message: id({}) -> read: {} write: {}", i,
                   read_data_[i], write_data_[i]);
       }
+    }
+  }
+
+  void LogAllMessage() {
+    LOG_INFO("All Global message info:");
+    for (size_t i = 0; i < message_count_; i++) {
+      LOGF_INFO("global message: id({}) -> read: {} write: {}", i,
+                read_data_[i], write_data_[i]);
     }
   }
 

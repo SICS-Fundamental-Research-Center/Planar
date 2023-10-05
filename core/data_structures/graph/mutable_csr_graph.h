@@ -129,11 +129,8 @@ class MutableCSRGraph : public Serializable {
       out_edges_base_new_ = nullptr;
     }
     // If partition type is vertex cut, get index_by_global_id_.
-    if (common::Configurations::Get()->partition_type ==
-        common::PartitionType::VertexCut) {
-      index_by_global_id_ =
-          (VertexIndex*)(graph_serialized_->GetCSRBuffer()->at(5).Get());
-    }
+    index_by_global_id_ =
+        (VertexIndex*)(graph_serialized_->GetCSRBuffer()->at(5).Get());
   }
 
   common::GraphID GetGraphID() const override { return metadata_->gid; }
@@ -259,6 +256,7 @@ class MutableCSRGraph : public Serializable {
              sizeof(EdgeIndex) * metadata_->num_vertices);
       // change out_edges_buffer to new one
       edge_delete_bitmap_.Clear();
+      //      edge_delete_bitmap_.Init(num_outgoing_edges_new);
       // replace edges buffer of subgraph
       graph_serialized_->GetCSRBuffer()->at(1) =
           OwnedBuffer(sizeof(VertexID) * num_outgoing_edges_new,

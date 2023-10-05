@@ -64,6 +64,7 @@ void Scheduler::Start() {
           break;
       }
     }
+    LOGF_INFO(" ============ Current Round: {} ============ ", current_round_);
     LOG_INFO("*** Scheduler is signaled termination ***");
   });
 }
