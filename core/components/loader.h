@@ -53,6 +53,8 @@ class Loader : public Component {
     thread_->join();
   }
 
+  ReaderType* GetReader() { return &reader_; }
+
  private:
   ReaderType reader_;
 

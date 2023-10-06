@@ -158,8 +158,9 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
               " ============ Current Round: {}, Active vertex left: {} "
               "============ ",
               current_round_, active);
+          LOGF_INFO(" current read input size: {}", loader_->SizeOfReadNow());
           //          is_executor_running_ = false;
-          //          WriteMessage write_message;
+          //          WriteMessage write_message;s
           //          write_message.graph_id = execute_resp.graph_id;
           //          write_message.serialized = execute_resp.serialized;
           //          message_hub_.get_writer_queue()->Push(write_message);

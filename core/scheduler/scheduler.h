@@ -9,6 +9,7 @@
 #include "data_structures/graph/mutable_csr_graph.h"
 #include "data_structures/graph_metadata.h"
 #include "data_structures/serializable.h"
+#include "io/mutable_csr_reader.h"
 #include "scheduler/graph_state.h"
 #include "scheduler/message_hub.h"
 #include "update_stores/update_store_base.h"
@@ -30,10 +31,12 @@ class Scheduler {
   virtual ~Scheduler() = default;
 
   void Init(update_stores::UpdateStoreBase* update_store,
-            common::TaskRunner* task_runner, apis::PIE* app) {
+            common::TaskRunner* task_runner, apis::PIE* app,
+            io::MutableCSRReader* loader) {
     update_store_ = update_store;
     executor_task_runner_ = task_runner;
     app_ = app;
+    loader_ = loader;
   }
 
   int GetCurrentRound() const { return current_round_; }
@@ -98,6 +101,9 @@ class Scheduler {
   update_stores::UpdateStoreBase* update_store_;
   common::TaskRunner* executor_task_runner_;
   apis::PIE* app_;
+
+  // Loader
+  io::MutableCSRReader* loader_ = nullptr;
 
   // mark if the executor is running
   bool is_executor_running_ = false;
