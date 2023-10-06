@@ -18,16 +18,25 @@ void Scheduler::Start() {
     first_read_message.response_serialized =
         CreateSerialized(first_read_message.graph_id);
     first_read_message.round = 0;
-    graph_state_.subgraph_limits_--;
-    auto read_size =
-        graph_metadata_info_.GetSubgraphSize(first_read_message.graph_id);
-    if (memory_left_size_ < read_size) {
-      LOG_FATAL("read size is too large, memory is not enough!");
+
+    if (use_limits_) {
+      limits_--;
+      if (limits_ < 0) {
+        LOG_FATAL("no limits left, error!");
+      }
+    } else {
+      graph_state_.subgraph_limits_--;
+      auto read_size =
+          graph_metadata_info_.GetSubgraphSize(first_read_message.graph_id);
+      if (memory_left_size_ < read_size) {
+        LOG_FATAL("read size is too large, memory is not enough!");
+      }
+      LOGF_INFO(
+          "read graph {} size: {}. *** Memory size now: {}, after: {} ***",
+          first_read_message.graph_id, read_size, memory_left_size_,
+          memory_left_size_ - read_size);
+      memory_left_size_ -= read_size;
     }
-    LOGF_INFO("read graph {} size: {}. *** Memory size now: {}, after: {} ***",
-              first_read_message.graph_id, read_size, memory_left_size_,
-              memory_left_size_ - read_size);
-    memory_left_size_ -= read_size;
     graph_state_.SetOnDiskToReading(first_read_message.graph_id);
     message_hub_.get_reader_queue()->Push(first_read_message);
     while (running) {
@@ -159,27 +168,30 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
               "============ ",
               current_round_, active);
           LOGF_INFO(" current read input size: {}", loader_->SizeOfReadNow());
-          //          is_executor_running_ = false;
-          //          WriteMessage write_message;s
-          //          write_message.graph_id = execute_resp.graph_id;
-          //          write_message.serialized = execute_resp.serialized;
-          //          message_hub_.get_writer_queue()->Push(write_message);
 
-          // Keep the last graph in memory and execute first in next round.
-          graph_state_.SetComputedSerializedToReadSerialized(
-              execute_resp.graph_id);
-          ExecuteMessage execute_message;
-          execute_message.graph_id = execute_resp.graph_id;
-          execute_message.serialized = execute_resp.serialized;
-          CreateSerializableGraph(execute_resp.graph_id);
-          execute_message.graph =
-              graph_state_.GetSubgraph(execute_resp.graph_id);
-          execute_message.execute_type = ExecuteType::kDeserialize;
-          is_executor_running_ = true;
-          LOGF_INFO(
-              "The last graph {} is in memory, deserialize it and execute.",
-              execute_resp.graph_id);
-          message_hub_.get_executor_queue()->Push(execute_message);
+          if (short_cut_) {
+            // Keep the last graph in memory and execute first in next round.
+            graph_state_.SetComputedSerializedToReadSerialized(
+                execute_resp.graph_id);
+            ExecuteMessage execute_message;
+            execute_message.graph_id = execute_resp.graph_id;
+            execute_message.serialized = execute_resp.serialized;
+            CreateSerializableGraph(execute_resp.graph_id);
+            execute_message.graph =
+                graph_state_.GetSubgraph(execute_resp.graph_id);
+            execute_message.execute_type = ExecuteType::kDeserialize;
+            is_executor_running_ = true;
+            LOGF_INFO(
+                "The last graph {} is in memory, deserialize it and execute.",
+                execute_resp.graph_id);
+            message_hub_.get_executor_queue()->Push(execute_message);
+          } else {
+            is_executor_running_ = false;
+            WriteMessage write_message;
+            write_message.graph_id = execute_resp.graph_id;
+            write_message.serialized = execute_resp.serialized;
+            message_hub_.get_writer_queue()->Push(write_message);
+          }
         }
       } else {
         // Write back to disk or save in memory.
@@ -236,7 +248,12 @@ bool Scheduler::WriteMessageResponseAndCheckTerminate(
       "Release subgraph: {}, size: {}. *** Memory size now: {}, after: {} ***",
       write_resp.graph_id, write_size, memory_left_size_,
       memory_left_size_ + write_size);
-  memory_left_size_ += write_size;
+  if (use_limits_) {
+    limits_++;
+    LOGF_INFO("Write back one graph. now limits is {}", limits_);
+  } else {
+    memory_left_size_ += write_size;
+  }
   // update subgraph size in memory
   graph_metadata_info_.UpdateSubgraphSize(write_resp.graph_id);
   // Read next subgraph if permitted
@@ -249,19 +266,31 @@ bool Scheduler::WriteMessageResponseAndCheckTerminate(
 // try to read a graph from disk into memory if memory_limit is permitted
 bool Scheduler::TryReadNextGraph(bool sync) {
   //  if (graph_state_.subgraph_limits_ > 0) {
-  if (memory_left_size_ > 0) {
+  bool read_flag = false;
+  if (use_limits_) {
+    if (limits_ > 0) read_flag = true;
+  } else {
+    if (memory_left_size_ > 0) read_flag = true;
+  }
+  //  if (memory_left_size_ > 0) {
+  if (read_flag) {
     auto next_graph_id = GetNextReadGraphInCurrentRound();
     ReadMessage read_message;
     if (next_graph_id != INVALID_GRAPH_ID) {
-      auto read_size = graph_metadata_info_.GetSubgraphSize(next_graph_id);
-      if (memory_left_size_ < read_size) {
-        // Memory is not enough, return.
-        return false;
+      if (use_limits_) {
+        limits_--;
+        LOGF_INFO("Read on graph. now limits is {}", limits_);
+      } else {
+        auto read_size = graph_metadata_info_.GetSubgraphSize(next_graph_id);
+        if (memory_left_size_ < read_size) {
+          // Memory is not enough, return.
+          return false;
+        }
+        LOGF_INFO(
+            "To read subgraph {}. *** Memory size now: {}, after read: {} ***",
+            next_graph_id, memory_left_size_, memory_left_size_ - read_size);
+        memory_left_size_ -= read_size;
       }
-      LOGF_INFO(
-          "To read subgraph {}. *** Memory size now: {}, after read: {} ***",
-          next_graph_id, memory_left_size_, memory_left_size_ - read_size);
-      memory_left_size_ -= read_size;
       read_message.graph_id = next_graph_id;
       read_message.num_vertices =
           graph_metadata_info_.GetSubgraphNumVertices(next_graph_id);
@@ -276,16 +305,22 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       }
       auto next_gid_next_round = GetNextReadGraphInNextRound();
       if (next_gid_next_round != INVALID_GRAPH_ID) {
-        auto read_size =
-            graph_metadata_info_.GetSubgraphSize(next_gid_next_round);
-        if (memory_left_size_ < read_size) {
-          return false;
+        if (use_limits_) {
+          limits_--;
+          LOGF_INFO("Read on graph. now limits is {}", limits_);
+        } else {
+          auto read_size =
+              graph_metadata_info_.GetSubgraphSize(next_gid_next_round);
+          if (memory_left_size_ < read_size) {
+            return false;
+          }
+          LOGF_INFO(
+              "To read subgraph {}. *** Memory size now: {}, after read: {} "
+              "***",
+              next_gid_next_round, memory_left_size_,
+              memory_left_size_ - read_size);
+          memory_left_size_ -= read_size;
         }
-        LOGF_INFO(
-            "To read subgraph {}. *** Memory size now: {}, after read: {} ***",
-            next_gid_next_round, memory_left_size_,
-            memory_left_size_ - read_size);
-        memory_left_size_ -= read_size;
         read_message.graph_id = next_gid_next_round;
         read_message.num_vertices =
             graph_metadata_info_.GetSubgraphNumVertices(read_message.graph_id);

@@ -12,6 +12,8 @@ DEFINE_bool(in_memory, false, "in memory mode");
 DEFINE_uint32(memory_size, 64, "memory size (GB)");
 DEFINE_uint32(partition, 1,
               "partition type (hashvertex, edgecut, planarcut, 2Dcut)");
+DEFINE_uint32(limits, 0, "subgrah limits for pre read");
+DEFINE_bool(no_short_cut, false, "no short cut");
 
 using namespace sics::graph;
 
@@ -29,6 +31,8 @@ int main(int argc, char** argv) {
       core::common::ApplicationType::WCC;
   core::common::Configurations::GetMutable()->memory_size =
       FLAGS_memory_size * 1024;
+  core::common::Configurations::GetMutable()->limits = FLAGS_limits;
+  core::common::Configurations::GetMutable()->short_cut = !FLAGS_no_short_cut;
 
   if (FLAGS_partition == core::common::PartitionType::EdgeCut) {
     core::common::Configurations::GetMutable()->partition_type =

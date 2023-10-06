@@ -26,6 +26,12 @@ class Scheduler {
         current_round_(0),
         graph_state_(graph_metadata_info_.get_num_subgraphs()) {
     memory_left_size_ = common::Configurations::Get()->memory_size;
+    limits_ = common::Configurations::Get()->limits;
+    use_limits_ = limits_ != 0;
+    LOGF_INFO(
+        "Scheduler create! Use limits for graph pre-fetch, can pre-fetch {}",
+        limits_);
+    short_cut_ = common::Configurations::Get()->short_cut;
   }
 
   virtual ~Scheduler() = default;
@@ -110,6 +116,9 @@ class Scheduler {
   std::unique_ptr<std::thread> thread_;
 
   size_t memory_left_size_ = 0;
+  int limits_ = 0;
+  bool use_limits_ = false;
+  bool short_cut_ = true;
 };
 
 }  // namespace sics::graph::core::scheduler
