@@ -20,32 +20,32 @@ void WCCEdgeCutApp::PEval() {
     this->Contract(src_id, dst_id, edge_index);
   };
   LOG_INFO("PEval begin");
-  update_store_->LogBorderVertexInfo();
-  graph_->LogGraphInfo();
-  graph_->LogEdges();
-  graph_->LogVertexData();
-  graph_->LogIndexInfo();
+  //  update_store_->LogBorderVertexInfo();
+  //  graph_->LogGraphInfo();
+  //  graph_->LogEdges();
+  //  graph_->LogVertexData();
+  //  graph_->LogIndexInfo();
   ParallelVertexDo(init);
-  graph_->LogVertexData();
+  //  graph_->LogVertexData();
   LOG_INFO("init finished");
   auto last = graph_->GetOutEdgeNums();
   while (graph_->GetOutEdgeNums() != 0) {
-    update_store_->LogAllMessage();
+    //    update_store_->LogAllMessage();
     ParallelEdgeDo(graft);
     LOG_INFO("graft finished");
-    graph_->LogVertexData();
-    update_store_->LogAllMessage();
+    //    graph_->LogVertexData();
+    //    update_store_->LogAllMessage();
 
     ParallelVertexDo(point_jump);
     LOG_INFO("pointjump finished");
-    graph_->LogVertexData();
-    update_store_->LogAllMessage();
-    graph_->LogEdges();
+    //    graph_->LogVertexData();
+    //    update_store_->LogAllMessage();
+    //    graph_->LogEdges();
     ParallelEdgeMutateDo(contract);
-    LOG_INFO("contract finished");
-    graph_->LogEdges();
-    graph_->LogGraphInfo();
-    graph_->LogVertexData();
+    LOGF_INFO("contract finished, left edges: {}", graph_->GetOutEdgeNums());
+    //    graph_->LogEdges();
+    //    graph_->LogGraphInfo();
+    //    graph_->LogVertexData();
     if (graph_->GetOutEdgeNums() == last)
       break;
     else
@@ -61,17 +61,16 @@ void WCCEdgeCutApp::IncEval() {
   };
   //  graph_->LogGraphInfo();
   //  graph_->LogVertexData();
-  //  update_store_->LogGlobalMessage();
-  //  graph_->LogIsIngraphInfo();
+  //  update_store_->LogAllMessage();
   ParallelVertexDo(message_passing);
   LOG_INFO("message passing finished");
   //  graph_->LogVertexData();
-  //  update_store_->LogGlobalMessage();
+  //  update_store_->LogAllMessage();
 
   ParallelVertexDo(point_jump_inc_eval);
   LOG_INFO("point_jump increment finished");
   //  graph_->LogVertexData();
-  //  update_store_->LogGlobalMessage();
+  //  update_store_->LogAllMessage();
 
   graph_->set_status("IncEval");
 }
@@ -104,29 +103,34 @@ void WCCEdgeCutApp::PointJump(VertexID src_id) {
     while (parent_id != graph_->ReadLocalVertexDataByID(parent_id)) {
       parent_id = graph_->ReadLocalVertexDataByID(parent_id);
     }
-    if (graph_->WriteMinVertexDataByID(src_id, parent_id)) {
-      update_store_->WriteMinBorderVertex(src_id, parent_id);
+    auto flag = graph_->WriteMinVertexDataByID(src_id, parent_id);
+    if (flag && update_store_->IsBorderVertex(src_id)) {
+      WriteEdgeCutAllBorderOut(src_id, parent_id);
     }
   }
 }
 
 void WCCEdgeCutApp::Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
-  if (graph_->ReadLocalVertexDataByID(src_id) ==
-      graph_->ReadLocalVertexDataByID(dst_id)) {
-    graph_->DeleteEdge(src_id, idx);
+  if (graph_->IsInGraph(dst_id)) {
+    if (graph_->ReadLocalVertexDataByID(src_id) ==
+        graph_->ReadLocalVertexDataByID(dst_id)) {
+      graph_->DeleteEdge(src_id, idx);
+    }
   }
 }
 
 void WCCEdgeCutApp::MessagePassing(VertexID id) {
+  if (id == 3) {
+    LOG_INFO("dawd");
+  }
   if (update_store_->Read(id) < graph_->ReadLocalVertexDataByID(id)) {
     VertexData parent_id = graph_->ReadLocalVertexDataByID(id);
     VertexData new_data = update_store_->Read(id);
     if (!graph_->IsInGraph(parent_id)) {
       WriteMinAuxiliary(parent_id, new_data);
     } else {
-      if (graph_->WriteMinVertexDataByID(parent_id, new_data)) {
-        update_store_->WriteMinBorderVertex(parent_id, new_data);
-      }
+      auto flag = graph_->WriteMinVertexDataByID(parent_id, new_data);
+      WriteEdgeCutAllBorderOut(parent_id, new_data);
     }
   }
 }
@@ -136,16 +140,15 @@ void WCCEdgeCutApp::PointJumpIncEval(VertexID id) {
   VertexData parent_id = graph_->ReadLocalVertexDataByID(id);
   if (!graph_->IsInGraph(parent_id)) {
     //    std::lock_guard<std::mutex> grd(mtx_);
-    if (id_to_p_.find(parent_id) != id_to_p_.end())
-      if (graph_->WriteMinVertexDataByID(id, id_to_p_[parent_id])) {
-        update_store_->WriteMinBorderVertex(id, id_to_p_[parent_id]);
-      }
+    if (id_to_p_.find(parent_id) != id_to_p_.end()) {
+      auto flag = graph_->WriteMinVertexDataByID(id, id_to_p_[parent_id]);
+      WriteEdgeCutAllBorderOut(id, id_to_p_[parent_id]);
+    }
   } else {
     auto tmp = graph_->ReadLocalVertexDataByID(parent_id);
     if (tmp != parent_id) {
-      if (graph_->WriteMinVertexDataByID(id, tmp)) {
-        update_store_->WriteMinBorderVertex(id, tmp);
-      }
+      auto flag = graph_->WriteMinVertexDataByID(id, tmp);
+      WriteEdgeCutAllBorderOut(id, tmp);
     }
   }
 }

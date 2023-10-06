@@ -209,8 +209,12 @@ class MutableCSRGraph : public Serializable {
   void MutateGraphEdge(common::TaskRunner* runner) {
     //    LOG_INFO("Mutate graph edge begin");
     // Check left edges in subgraph.
-    size_t num_outgoing_edges_new =
-        metadata_->num_outgoing_edges - edge_delete_bitmap_.Count();
+    auto del_edges = edge_delete_bitmap_.Count();
+    size_t num_outgoing_edges_new = metadata_->num_outgoing_edges - del_edges;
+    if (metadata_->num_outgoing_edges < del_edges) {
+      LOG_FATAL("delete edges number is more than left, stop!");
+    }
+
     // compute out_offset
     if (num_outgoing_edges_new != 0) {
       //      LOG_INFO("init new data structure for graph");
@@ -256,7 +260,7 @@ class MutableCSRGraph : public Serializable {
              sizeof(EdgeIndex) * metadata_->num_vertices);
       // change out_edges_buffer to new one
       edge_delete_bitmap_.Clear();
-      //      edge_delete_bitmap_.Init(num_outgoing_edges_new);
+      edge_delete_bitmap_.Init(num_outgoing_edges_new);
       // replace edges buffer of subgraph
       graph_serialized_->GetCSRBuffer()->at(1) =
           OwnedBuffer(sizeof(VertexID) * num_outgoing_edges_new,
