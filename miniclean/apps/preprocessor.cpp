@@ -2,22 +2,22 @@
 #include <yaml-cpp/yaml.h>
 
 #include "core/util/logging.h"
-#include "miniclean/components/preprocessor/attribute_bucket.h"
+#include "miniclean/components/preprocessor/index_collection.h"
 
-using AttributeBucket =
-    sics::graph::miniclean::components::preprocessor::AttributeBucket;
+using IndexCollection =
+    sics::graph::miniclean::components::preprocessor::IndexCollection;
 
 DEFINE_string(workspace_path, "", "workspace_path");
 
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  AttributeBucket path_rule_generator;
-  LOG_INFO("Generating path rules...");
-  path_rule_generator.InitCategoricalAttributeBucket(
+  IndexCollection index_collection;
+  LOG_INFO("Generating index...");
+  index_collection.LoadIndexCollection(
       FLAGS_workspace_path + "/path_patterns.yaml",
-      FLAGS_workspace_path + "/attribute/attribute_config.yaml");
-  LOG_INFO("Generating path rule done.");
+      FLAGS_workspace_path + "/attribute_index_config.yaml");
+  LOG_INFO("Generating index done.");
 
   gflags::ShutDownCommandLineFlags();
 
