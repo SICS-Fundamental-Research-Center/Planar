@@ -15,6 +15,7 @@ DEFINE_uint32(partition, 1,
 DEFINE_uint32(limits, 0, "subgrah limits for pre read");
 DEFINE_bool(no_short_cut, false, "no short cut");
 DEFINE_bool(threefour, false, "3/4 partition mode");
+DEFINE_bool(group, false, "group mode");
 
 using namespace sics::graph;
 
@@ -35,6 +36,7 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->limits = FLAGS_limits;
   core::common::Configurations::GetMutable()->short_cut = !FLAGS_no_short_cut;
   core::common::Configurations::GetMutable()->threefour_mode = FLAGS_threefour;
+  core::common::Configurations::GetMutable()->group = FLAGS_group;
 
   if (FLAGS_partition == core::common::PartitionType::EdgeCut) {
     core::common::Configurations::GetMutable()->partition_type =

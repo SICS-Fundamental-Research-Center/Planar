@@ -127,19 +127,36 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
         }
       }
     } else {
-      if (!is_executor_running_) {
-        ExecuteMessage execute_message;
-        execute_message.graph_id = read_resp.graph_id;
-        execute_message.serialized = read_resp.response_serialized;
-        CreateSerializableGraph(read_resp.graph_id);
-        execute_message.graph = graph_state_.GetSubgraph(read_resp.graph_id);
-        execute_message.execute_type = ExecuteType::kDeserialize;
+      if (group_mode_) {
+        GetNextExecuteGroupGraphs();
         is_executor_running_ = true;
-        LOGF_INFO("read finished, deserialize and execute the read graph {}",
-                  read_resp.graph_id);
-        message_hub_.get_executor_queue()->Push(execute_message);
+        for (int i = 0; i < group_num_; i++) {
+          auto gid = group_graphs_.at(i);
+          ExecuteMessage execute_message;
+          execute_message.graph_id = gid;
+          execute_message.serialized = graph_state_.GetSubgraphSerialized(gid);
+          CreateSerializableGraph(gid);
+          execute_message.graph = graph_state_.GetSubgraph(gid);
+          execute_message.execute_type = ExecuteType::kDeserialize;
+          LOGF_INFO("GROUP MODE: deserialize and execute the read graph {}",
+                    gid);
+          message_hub_.get_executor_queue()->Push(execute_message);
+        }
       } else {
-        // When executor is running, do nothing, wait for executor finish.
+        if (!is_executor_running_) {
+          ExecuteMessage execute_message;
+          execute_message.graph_id = read_resp.graph_id;
+          execute_message.serialized = read_resp.response_serialized;
+          CreateSerializableGraph(read_resp.graph_id);
+          execute_message.graph = graph_state_.GetSubgraph(read_resp.graph_id);
+          execute_message.execute_type = ExecuteType::kDeserialize;
+          is_executor_running_ = true;
+          LOGF_INFO("read finished, deserialize and execute the read graph {}",
+                    read_resp.graph_id);
+          message_hub_.get_executor_queue()->Push(execute_message);
+        } else {
+          // When executor is running, do nothing, wait for executor finish.
+        }
       }
     }
   } else {
@@ -485,6 +502,19 @@ common::GraphID Scheduler::GetNextExecuteGraph() const {
     }
   }
   return INVALID_GRAPH_ID;
+}
+
+void Scheduler::GetNextExecuteGroupGraphs() {
+  for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+    if (graph_state_.current_round_pending_.at(gid) &&
+        graph_state_.subgraph_storage_state_.at(gid) ==
+            GraphState::StorageStateType::Serialized &&
+        graph_state_.subgraph_round_.at(gid) == current_round_) {
+      group_graphs_.push_back(gid);
+      group_num_++;
+    }
+  }
+  LOGF_INFO("group graphs num: {}", group_num_);
 }
 
 common::GraphID Scheduler::GetNextReadGraphInNextRound() const {

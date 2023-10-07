@@ -66,6 +66,8 @@ class Configurations {
 
   bool threefour_mode = false;
 
+  bool group = false;
+
  private:
   Configurations() = default;
   inline static Configurations* instance_ = nullptr;

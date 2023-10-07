@@ -32,7 +32,11 @@ class Scheduler {
         "Scheduler create! Use limits for graph pre-fetch, can pre-fetch {}",
         limits_);
     short_cut_ = common::Configurations::Get()->short_cut;
+    // 3/4 mode
     threefour_mode_ = common::Configurations::Get()->threefour_mode;
+    // group mode
+    group_mode_ = common::Configurations::Get()->group;
+    group_graphs_.reserve(graph_metadata_info_.get_num_subgraphs());
   }
 
   virtual ~Scheduler() = default;
@@ -83,6 +87,8 @@ class Scheduler {
 
   common::GraphID GetNextReadGraphInNextRound() const;
 
+  void GetNextExecuteGroupGraphs();
+
   size_t GetLeftPendingGraphNums() const;
 
   bool IsCurrentRoundFinish() const;
@@ -123,6 +129,14 @@ class Scheduler {
   bool use_limits_ = false;
   bool short_cut_ = true;
   bool threefour_mode_ = false;
+
+  // group mode
+  bool group_mode_ = false;
+  int group_num_ = 0;
+  int group_serialized_num_ = 0;
+  int group_deserialized_num_ = 0;
+  std::vector<common::GraphID> group_graphs_;
+
   int to_read_graphs_ = 0;
   int have_read_graphs_ = 0;
   int need_read_graphs_ = 0;
