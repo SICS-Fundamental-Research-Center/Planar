@@ -32,6 +32,7 @@ class Scheduler {
         "Scheduler create! Use limits for graph pre-fetch, can pre-fetch {}",
         limits_);
     short_cut_ = common::Configurations::Get()->short_cut;
+    threefour_mode_ = common::Configurations::Get()->threefour_mode;
   }
 
   virtual ~Scheduler() = default;
@@ -82,6 +83,8 @@ class Scheduler {
 
   common::GraphID GetNextReadGraphInNextRound() const;
 
+  size_t GetLeftPendingGraphNums() const;
+
   bool IsCurrentRoundFinish() const;
 
   // If current and next round both have no graph to read, system stop.
@@ -119,6 +122,10 @@ class Scheduler {
   int limits_ = 0;
   bool use_limits_ = false;
   bool short_cut_ = true;
+  bool threefour_mode_ = false;
+  int to_read_graphs_ = 0;
+  int have_read_graphs_ = 0;
+  int need_read_graphs_ = 0;
 };
 
 }  // namespace sics::graph::core::scheduler
