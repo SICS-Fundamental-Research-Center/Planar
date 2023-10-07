@@ -75,6 +75,7 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   auto num_outedges_by_vid = new VertexID[aligned_max_vid]();
 
   auto visited = Bitmap(aligned_max_vid);
+  Bitmap edges_visited(edgelist_metadata.num_edges);
   VertexID max_vid = 0, min_vid = MAX_VERTEX_ID;
 
   // Compute max_vid, min_vid. And get degree for each vertex.
@@ -82,7 +83,7 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
     auto task = std::bind([&, i]() {
       for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = buffer_edges[j];
-        if (e.src == e.dst) continue;
+        edges_visited.SetBit(j);
         visited.SetBit(e.src);
         visited.SetBit(e.dst);
         WriteAdd(num_inedges_by_vid + e.dst, (VertexID) 1);
@@ -131,7 +132,6 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
     auto task = std::bind([&, i, parallelism]() {
       for (EdgeIndex j = i; j < edgelist_metadata.num_edges; j += parallelism) {
         auto e = buffer_edges[j];
-        if (e.src == e.dst) continue;
         auto offset_out = __sync_fetch_and_add(offset_out_edges + e.src, 1);
         auto offset_in = __sync_fetch_and_add(offset_in_edges + e.dst, 1);
         vertices.at(e.src).outgoing_edges[offset_out] = e.dst;
@@ -154,6 +154,7 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   for (VertexID i = 0; i < n_partitions_; i++)
     vertex_buckets[i].reserve(aligned_max_vid / n_partitions_);
 
+  LOG_INFO(visited.Count());
   // Fill buckets.
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism, n_partitions = n_partitions_]() {
@@ -185,8 +186,8 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   // Write the subgraphs to disk
   GraphFormatConverter graph_format_converter(output_path_);
   GraphMetadata graph_metadata;
-  graph_metadata.set_num_vertices(edgelist_metadata.num_vertices);
-  graph_metadata.set_num_edges(edgelist_metadata.num_edges);
+  graph_metadata.set_num_vertices(visited.Count());
+  graph_metadata.set_num_edges(edges_visited.Count());
   graph_metadata.set_num_subgraphs(n_partitions_);
   graph_metadata.set_max_vid(max_vid);
   graph_metadata.set_min_vid(min_vid);

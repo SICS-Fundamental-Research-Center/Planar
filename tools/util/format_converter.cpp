@@ -43,7 +43,6 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
       for (EdgeIndex j = i; j < edges.get_metadata().num_edges;
            j += parallelism) {
         auto e = edges.get_edge_by_index(j);
-        if (e.src == e.dst) continue;
         visited.SetBit(e.src);
         visited.SetBit(e.dst);
         WriteAdd(num_inedges_by_vid + e.dst, (VertexID)1);
@@ -84,6 +83,7 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
   delete[] num_inedges_by_vid;
   delete[] num_outedges_by_vid;
 
+  LOG_INFO("Fill edges in each vertex.");
   EdgeIndex* offset_in_edges = new EdgeIndex[aligned_max_vid]();
   EdgeIndex* offset_out_edges = new EdgeIndex[aligned_max_vid]();
   for (unsigned int i = 0; i < parallelism; i++) {
@@ -91,7 +91,6 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
       for (EdgeIndex j = i; j < edges.get_metadata().num_edges;
            j += parallelism) {
         auto e = edges.get_edge_by_index(j);
-        if (e.src == e.dst) continue;
         EdgeIndex offset_out = 0, offset_in = 0;
         offset_out = __sync_fetch_and_add(offset_out_edges + e.src, 1);
         offset_in = __sync_fetch_and_add(offset_in_edges + e.dst, 1);
@@ -134,7 +133,7 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
   auto buffer_out_edges = new VertexID[count_out_edges]();
 
   // Fill edges.
-  LOG_INFO("Fill buffer_edges.");
+  LOG_INFO("memcpy to buffer_edges.");
   vid = 0;
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
