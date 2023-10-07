@@ -351,7 +351,6 @@ bool Scheduler::TryReadNextGraph(bool sync) {
   }
   //  if (memory_left_size_ > 0) {
   if (read_flag) {
-    to_read_graphs_--;
     auto next_graph_id = GetNextReadGraphInCurrentRound();
     ReadMessage read_message;
     if (next_graph_id != INVALID_GRAPH_ID) {
@@ -374,6 +373,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
           memory_left_size_ -= read_size;
         }
       }
+      to_read_graphs_--;
       read_message.graph_id = next_graph_id;
       read_message.num_vertices =
           graph_metadata_info_.GetSubgraphNumVertices(next_graph_id);
@@ -382,6 +382,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       graph_state_.SetOnDiskToReading(next_graph_id);
       message_hub_.get_reader_queue()->Push(read_message);
     } else {
+      // TODO: fix this if branch
       // check next round graph which can be read, if not just skip
       if (sync) {
         current_round_++;
