@@ -305,7 +305,7 @@ bool Scheduler::WriteMessageResponseAndCheckTerminate(
       write_resp.graph_id, write_size, memory_left_size_,
       memory_left_size_ + write_size);
   if (threefour_mode_) {
-    LOGF_INFO("Write back one graph");
+    LOG_INFO("Write back one graph");
   } else {
     if (use_limits_) {
       limits_++;
@@ -356,7 +356,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
     ReadMessage read_message;
     if (next_graph_id != INVALID_GRAPH_ID) {
       if (threefour_mode_) {
-        LOGF_INFO("load on more graph");
+        LOG_INFO("load on more graph");
       } else {
         if (use_limits_) {
           limits_--;
@@ -389,7 +389,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       auto next_gid_next_round = GetNextReadGraphInNextRound();
       if (next_gid_next_round != INVALID_GRAPH_ID) {
         if (threefour_mode_) {
-          LOGF_INFO("load on more graph");
+          LOG_INFO("load on more graph");
         } else {
           if (use_limits_) {
             limits_--;
