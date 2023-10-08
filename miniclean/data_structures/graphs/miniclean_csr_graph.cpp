@@ -29,6 +29,10 @@ void MiniCleanCSRGraph::Deserialize(const TaskRunner& runner,
     ParseVertexLabel(*iter++);
   }
   if (iter != csr_buffer.end()) {
+    // Parse vertex label range
+    ParseVertexLabelRange(*iter++);
+  }
+  if (iter != csr_buffer.end()) {
     // Parse out edge label
     ParseOutedgeLabel(*iter++);
   }
@@ -93,6 +97,12 @@ void MiniCleanCSRGraph::ParseVertexLabel(
     const std::vector<OwnedBuffer>& buffer_list) {
   vertex_label_base_pointer_ =
       reinterpret_cast<VertexLabel*>(buffer_list.front().Get());
+}
+
+void MiniCleanCSRGraph::ParseVertexLabelRange(
+    const std::vector<OwnedBuffer>& buffer_list) {
+  vertex_label_range_base_pointer_ =
+      reinterpret_cast<VertexID*>(buffer_list.front().Get());
 }
 
 void MiniCleanCSRGraph::ParseOutedgeLabel(

@@ -14,9 +14,8 @@ int main(int argc, char* argv[]) {
 
   IndexCollection index_collection;
   LOG_INFO("Generating index...");
-  index_collection.LoadIndexCollection(
-      FLAGS_workspace_path + "/path_patterns.yaml",
-      FLAGS_workspace_path + "/attribute_index_config.yaml");
+  index_collection.LoadIndexCollection(FLAGS_workspace_path +
+                                       "/attribute_index_config.yaml");
   LOG_INFO("Generating index done.");
 
   gflags::ShutDownCommandLineFlags();

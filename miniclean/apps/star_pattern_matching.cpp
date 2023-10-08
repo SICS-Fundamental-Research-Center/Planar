@@ -55,42 +55,44 @@ int main(int argc, char* argv[]) {
   PathMatcher path_matcher(&graph);
 
   path_matcher.LoadGraph(FLAGS_workspace_path);
-  // path_matcher.LoadPatterns(FLAGS_i + "/path_patterns.txt");
-  // path_matcher.BuildCandidateSet();
+  path_matcher.LoadPatterns(FLAGS_workspace_path + "/path_patterns.yaml");
+  path_matcher.BuildCandidateSet();
 
-  // auto start = std::chrono::system_clock::now();
-  // // the parallelism should greater than 0 and less than the hardware
-  // // concurrency.
-  // unsigned int parallelism = FLAGS_p;
-  // if (parallelism <= 0) {
-  //   LOG_FATAL("The parallelism should greater than 0.");
-  // }
-  // parallelism = std::min(parallelism, std::thread::hardware_concurrency());
-  // // the number of tasks should equal or greater than parallelism.
-  // unsigned int num_tasks = FLAGS_t;
-  // if (num_tasks <= 0) {
-  //   LOG_FATAL("The number of tasks should greater than 0.");
-  // }
-  // if (num_tasks < parallelism) {
-  //   LOGF_WARN(
-  //       "The number of tasks should equal or greater than parallelism. Set it
-  //       " "to {} instead", parallelism);
-  // }
-  // num_tasks = parallelism;
-  // path_matcher.PathMatching(parallelism, num_tasks);
-  // auto end = std::chrono::system_clock::now();
+  auto start = std::chrono::system_clock::now();
+  // the parallelism should greater than 0 and less than the hardware
+  // concurrency.
+  unsigned int parallelism = FLAGS_p;
+  if (parallelism <= 0) {
+    LOG_FATAL("The parallelism should greater than 0.");
+  }
+  parallelism = std::min(parallelism, std::thread::hardware_concurrency());
+  // the number of tasks should equal or greater than parallelism.
+  unsigned int num_tasks = FLAGS_t;
+  if (num_tasks <= 0) {
+    LOG_FATAL("The number of tasks should greater than 0.");
+  }
+  if (num_tasks < parallelism) {
+    LOG_WARN(
+        "The number of tasks should equal or greater than parallelism. Set it "
+        "to {} instead",
+        parallelism);
+  }
+  num_tasks = parallelism;
+  path_matcher.PathMatching(parallelism, num_tasks);
+  auto end = std::chrono::system_clock::now();
 
-  // auto duration =
-  //     std::chrono::duration_cast<std::chrono::microseconds>(end - start)
-  //         .count() /
-  //     (double)CLOCKS_PER_SEC;
+  auto duration =
+      std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+          .count() /
+      (double)CLOCKS_PER_SEC;
 
-  // LOG_INFO("Path matching time: ", duration, " seconds.");
+  LOG_INFO("Path matching time: ", duration, " seconds.");
 
-  // // Write matched patterns back to disk.
-  // LOG_INFO("Write matched patterns back to disk.");
-  // path_matcher.WriteResultsToPath(FLAGS_i + "/matched_path_patterns");
-  // LOG_INFO("Write matched patterns back to disk done.");
+  // Write matched patterns back to disk.
+  LOG_INFO("Write matched patterns back to disk.");
+  path_matcher.WriteResultsToPath(FLAGS_workspace_path +
+                                  "/matched_path_patterns");
+  LOG_INFO("Write matched patterns back to disk done.");
 
   gflags::ShutDownCommandLineFlags();
   return 0;

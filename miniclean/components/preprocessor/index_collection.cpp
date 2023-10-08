@@ -59,16 +59,8 @@ void VertexAttributeSegment::LoadAttributeBlock(
 }
 
 void IndexCollection::LoadIndexCollection(
-    const std::string& path_pattern_file,
     const std::string& attribute_config_file) {
-  LoadPathPatterns(path_pattern_file);
   LoadVertexAttributeSegment(attribute_config_file);
-}
-
-void IndexCollection::LoadPathPatterns(const std::string& path_pattern_file) {
-  YAML::Node path_pattern_config = YAML::LoadFile(path_pattern_file);
-  YAML::Node path_pattern_node = path_pattern_config["PathPatterns"];
-  path_patterns_ = path_pattern_node.as<std::vector<PathPattern>>();
 }
 
 void IndexCollection::LoadVertexAttributeSegment(

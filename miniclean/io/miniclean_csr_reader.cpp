@@ -10,6 +10,7 @@ void MiniCleanCSRReader::Read(ReadMessage* message, TaskRunner* /* runner */) {
   std::string subgraph_file_path =
       root_path_ + "/graph/graphs/" + subgraph_id_str + ".bin";
   std::string vlabel_file_path = root_path_ + "/vlabel/vlabels.bin";
+  std::string vlabel_range_path = root_path_ + "/vlabel/vlabel_ranges.bin";
   std::string elabel_file_path = root_path_ + "/elabel/out_elabel.bin";
   std::string vattr_file_path = root_path_ + "/attribute/vertex_attribute.bin";
   std::string vattr_offset_path =
@@ -21,6 +22,7 @@ void MiniCleanCSRReader::Read(ReadMessage* message, TaskRunner* /* runner */) {
   try {
     ReadBinFile(subgraph_file_path, dst_object);
     ReadBinFile(vlabel_file_path, dst_object);
+    ReadBinFile(vlabel_range_path, dst_object);
     ReadBinFile(elabel_file_path, dst_object);
     ReadBinFile(vattr_file_path, dst_object);
     ReadBinFile(vattr_offset_path, dst_object);

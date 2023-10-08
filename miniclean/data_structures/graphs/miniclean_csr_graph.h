@@ -44,6 +44,12 @@ class MiniCleanCSRGraph
   VertexLabel* GetVertexLabelBasePointer() const {
     return vertex_label_base_pointer_;
   }
+
+  std::pair<VertexID, VertexID> GetVertexLabelRange(VertexLabel i) const {
+    return std::make_pair(vertex_label_range_base_pointer_[i * 2],
+                          vertex_label_range_base_pointer_[i * 2 + 1]);
+  }
+
   EdgeLabel* GetOutEdgeLabelBasePointer() const {
     return out_edge_label_base_pointer_;
   }
@@ -66,6 +72,7 @@ class MiniCleanCSRGraph
  private:
   void ParseSubgraphCSR(const std::vector<OwnedBuffer>& buffer_list);
   void ParseVertexLabel(const std::vector<OwnedBuffer>& buffer_list);
+  void ParseVertexLabelRange(const std::vector<OwnedBuffer>& buffer_list);
   void ParseOutedgeLabel(const std::vector<OwnedBuffer>& buffer_list);
   void ParseVertexAttribute(const std::vector<OwnedBuffer>& buffer_list);
   void ParseVertexAttributeOffset(const std::vector<OwnedBuffer>& buffer_list);
@@ -73,6 +80,8 @@ class MiniCleanCSRGraph
  private:
   // Vertex labels
   VertexLabel* vertex_label_base_pointer_;
+  // Vertex label ranges
+  VertexID* vertex_label_range_base_pointer_;
   // Out edge labels
   EdgeLabel* out_edge_label_base_pointer_;
   // Vertex attribute offsets
