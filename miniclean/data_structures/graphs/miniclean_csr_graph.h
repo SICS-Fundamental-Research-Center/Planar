@@ -51,7 +51,7 @@ class MiniCleanCSRGraph
   SubgraphMetadata get_metadata() const { return metadata_; }
 
   VertexLabel GetVertexLabelByLocalID(VertexID i) const {
-    return vertex_label_base_pointer_[i * 2 + 1];
+    return vertex_label_base_pointer_[i];
   }
 
   EdgeLabel* GetOutgoingEdgeLabelsByLocalID(VertexID i) const {
@@ -65,9 +65,10 @@ class MiniCleanCSRGraph
 
  private:
   void ParseSubgraphCSR(const std::vector<OwnedBuffer>& buffer_list);
-  void ParseOutedgeLabel(const std::vector<OwnedBuffer>& buffer_list);
   void ParseVertexLabel(const std::vector<OwnedBuffer>& buffer_list);
+  void ParseOutedgeLabel(const std::vector<OwnedBuffer>& buffer_list);
   void ParseVertexAttribute(const std::vector<OwnedBuffer>& buffer_list);
+  void ParseVertexAttributeOffset(const std::vector<OwnedBuffer>& buffer_list);
 
  private:
   // Vertex labels
