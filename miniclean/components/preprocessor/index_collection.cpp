@@ -9,7 +9,6 @@ void VertexAttributeSegment::LoadAttributeBucket(
     const std::vector<std::string>& bucket_size_path_list,
     const std::vector<std::string>& bucket_offset_path_list) {
   AttributeBucket attribute_bucket;
-  attribute_bucket.reserve(attribute_id_list.size());
   for (size_t i = 0; i < attribute_id_list.size(); i++) {
     std::vector<VertexID> bucket;
     std::vector<uint32_t> bucket_size;
@@ -22,7 +21,6 @@ void VertexAttributeSegment::LoadAttributeBucket(
                           bucket_offset);
 
     ValueBucket value_bucket;
-    value_bucket.reserve(bucket_size.size());
     for (size_t j = 0; j < bucket_size.size(); j++) {
       value_bucket.emplace(
           j, std::vector<VertexID>(
@@ -40,7 +38,6 @@ void VertexAttributeSegment::LoadAttributeBlock(
     const std::vector<std::string>& block_path_list,
     const std::vector<std::string>& block_offset_path_list) {
   AttributeBlock attribute_block;
-  attribute_block.reserve(attribute_id_list.size());
   for (size_t i = 0; i < attribute_id_list.size(); i++) {
     std::vector<VertexID> block;
     std::vector<uint32_t> block_offset;
@@ -72,13 +69,6 @@ void IndexCollection::LoadPathPatterns(const std::string& path_pattern_file) {
   YAML::Node path_pattern_config = YAML::LoadFile(path_pattern_file);
   YAML::Node path_pattern_node = path_pattern_config["PathPatterns"];
   path_patterns_ = path_pattern_node.as<std::vector<PathPattern>>();
-}
-
-void IndexCollection::LoadAttributeConfig(
-    const std::string& attribute_config_file) {
-  YAML::Node attribute_config = YAML::LoadFile(attribute_config_file);
-  YAML::Node attribute_config_node = attribute_config["AttributeConfig"];
-  attribute_config_ = attribute_config_node.as<AttributeConfig>();
 }
 
 void IndexCollection::LoadVertexAttributeSegment(

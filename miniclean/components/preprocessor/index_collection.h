@@ -4,8 +4,8 @@
 #include <yaml-cpp/yaml.h>
 
 #include <fstream>
+#include <map>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "core/util/logging.h"
@@ -20,19 +20,13 @@ class VertexAttributeSegment {
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
   using VertexAttributeValue =
       sics::graph::miniclean::common::VertexAttributeValue;
-  using ValueBucket =
-      std::unordered_map<VertexAttributeValue, std::vector<VertexID>>;
+  using ValueBucket = std::map<VertexAttributeValue, std::vector<VertexID>>;
   using ValueBlock = std::vector<std::vector<VertexID>>;
-  using AttributeBucket = std::unordered_map<VertexAttributeID, ValueBucket>;
-  using AttributeBlock = std::unordered_map<VertexAttributeID, ValueBlock>;
+  using AttributeBucket = std::map<VertexAttributeID, ValueBucket>;
+  using AttributeBlock = std::map<VertexAttributeID, ValueBlock>;
 
  public:
   VertexAttributeSegment() = default;
-
-  void Reserve(size_t num_bucket, size_t num_block) {
-    bucket_by_value_.reserve(num_bucket);
-    block_by_range_.reserve(num_block);
-  }
 
   void LoadAttributeBucket(
       VertexLabel vlabel, const std::string& workspace_dir,
@@ -71,7 +65,7 @@ class VertexAttributeSegment {
   //
   // This data structure is useful when the number attribute value is not that
   // large.
-  std::unordered_map<VertexLabel, AttributeBucket> bucket_by_value_;
+  std::map<VertexLabel, AttributeBucket> bucket_by_value_;
 
   // `block by range` is a data structure that stores the vertex with
   // similar attribute values. Two vertices with the same attribute value would
@@ -83,7 +77,7 @@ class VertexAttributeSegment {
   // is very large. By blocking the vertices with similar attribute values, we
   // can reduce the number of intersection operations and reduce the complexity
   // caused by cartesain product.
-  std::unordered_map<VertexLabel, AttributeBlock> block_by_range_;
+  std::map<VertexLabel, AttributeBlock> block_by_range_;
 };
 
 // Path pattern index is a data structure that stores both:
@@ -95,22 +89,9 @@ class PathPatternIndex {
 
 class IndexCollection {
  private:
-  // The first dimension is the vertex label.
-  // The second dimension indicates whether cate attr or val attr.
-  // The third dimension stores the range of the attribute.
-  using AttributeConfig =
-      std::vector<std::vector<std::vector<std::pair<size_t, size_t>>>>;
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using VertexID = sics::graph::miniclean::common::VertexID;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
-  // The first dimension is the path pattern id.
-  // The second dimension is the vertex index within the path pattern.
-  // The third dimension is the attribute id.
-  // The fourth dimension is the attribute value.
-  // The fifth dimension stores the src vertex ids of paths that satisfy the
-  //     pattern and the attribute.
-  using CategoricalAttributeBucket =
-      std::vector<std::vector<std::vector<std::vector<VertexID>>>>;
 
  public:
   IndexCollection() = default;
@@ -123,8 +104,6 @@ class IndexCollection {
   void LoadVertexAttributeSegment(const std::string& vertex_attribute_file);
 
   std::vector<PathPattern> path_patterns_;
-  AttributeConfig attribute_config_;
-  CategoricalAttributeBucket cate_attr_bucket_;
   VertexAttributeSegment vertex_attribute_segment_;
 };
 
@@ -182,7 +161,6 @@ struct convert<VertexAttributeSegment> {
                      VertexAttributeSegment& vertex_attribute_segment) {
     Node bucket_node = node["AttributeBucketConfig"];
     Node block_node = node["AttributeBlockConfig"];
-    vertex_attribute_segment.Reserve(bucket_node.size(), block_node.size());
     // Load bucket.
     for (size_t i = 0; i < bucket_node.size(); i++) {
       VertexLabel vlabel = bucket_node[i]["VertexLabel"].as<VertexLabel>();
