@@ -51,6 +51,7 @@ DEFINE_string(convert_mode, "", "Conversion mode");
 DEFINE_string(sep, "", "separator to split a line of csv file.");
 DEFINE_bool(read_head, false, "whether to read header of csv.");
 DEFINE_bool(biggraph, false, "for big graphs.");
+DEFINE_bool(not_reorder_vertices, false, "whether to reorder vertices.");
 
 // @DESCRIPTION: convert a edgelist graph from csv file to binary file. Here the
 // compression operations is default in ConvertEdgelist.
@@ -119,7 +120,12 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
       for (EdgeIndex j = i; j < n_edges * 2; j += parallelism)
-        compressed_buffer_edges[j] = vid_map[buffer_edges[j]];
+        if (FLAGS_not_reorder_vertices) {
+          compressed_buffer_edges[j] = buffer_edges[j];
+        }
+        else {
+          compressed_buffer_edges[j] = vid_map[buffer_edges[j]];
+        }
     });
     task_package.push_back(task);
   }
@@ -203,7 +209,11 @@ void BigGraphConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
       for (EdgeIndex j = i; j < n_edges * 2; j += parallelism) {
-        compressed_buffer_edges[j] = vid_map[buffer_edges[j]];
+        if (FLAGS_not_reorder_vertices) {
+          compressed_buffer_edges[j] = buffer_edges[j];
+        } else {
+          compressed_buffer_edges[j] = vid_map[buffer_edges[j]];
+        }
       }
     });
     task_package.push_back(task);
