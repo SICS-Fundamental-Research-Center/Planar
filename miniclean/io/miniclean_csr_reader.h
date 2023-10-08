@@ -1,17 +1,17 @@
 #ifndef MINICLEAN_IO_MIINCLEAN_CSR_READER_H_
 #define MINICLEAN_IO_MINICLEAN_CSR_READER_H_
 
+#include <yaml-cpp/yaml.h>
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <list>
-#include <vector>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <utility>
-
-#include <yaml-cpp/yaml.h>
+#include <vector>
 
 #include "core/common/multithreading/task_runner.h"
 #include "core/data_structures/buffer.h"
@@ -41,30 +41,23 @@ class MiniCleanCSRReader : public sics::graph::core::io::Reader {
   explicit MiniCleanCSRReader(const std::string& root_path)
       : root_path_(root_path) {}
 
-  // TODO (bai-wenchao): add a function to read attribute file.
   // read csr of a certain subgraph from ssd
   // workdir structure:
-  //  - dir:{work_dir_}
-  //    - dir:0
-  //      - file:0_data.bin
-  //      - file:0_inedge_label.bin
-  //      - file:0_outedge_label.bin
-  //      - file:0_vertex_label.bin
-  //      - file:0_attr.bin
-  //    - dir:1
-  //      - file:1_data.bin
-  //      - file:1_inedge_label.bin
-  //      - file:1_outedge_label.bin
-  //      - file:1_vertex_label.bin
-  //      - file:1_attr.bin
-  //    - file:csr_global.yaml
+  //  - dir:{root_path_}
+  //    - dir: attribute
+  //      - file: vertex_attribute_offset.bin
+  //      - file: vertex_attribute.bin
+  //    - dir: elabel
+  //      - file: out_elabel.bin
+  //    - dir: graph
+  //      - dir: graphs
+  //        - file: {subgraph_id}.bin
+  //      - file: meta.yaml
+  //    - dir: vlabel
+  //      - file: vlabels.bin
   void Read(ReadMessage* message, TaskRunner* runner = nullptr) override;
 
  private:
-  // read label files
-  void ReadLabel(const std::string& subgraph_folder_path,
-                 Serialized* dst_object);
-
   // read data file
   void ReadBinFile(const std::string& path, Serialized* dst_object);
 
