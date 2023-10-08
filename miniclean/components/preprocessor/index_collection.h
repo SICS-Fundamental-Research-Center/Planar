@@ -84,7 +84,20 @@ class VertexAttributeSegment {
 //   (1) vertex index by path pattern.
 //   (2) pattern instance index by vertex.
 class PathPatternIndex {
-  // TODO: implement this.
+ private:
+  using PathPatternID = sics::graph::miniclean::common::PathPatternID;
+  using VertexID = sics::graph::miniclean::common::VertexID;
+  using PathInstance = std::vector<VertexID>;
+  using PatternInstanceBucket = std::unordered_map<VertexID, std::vector<PathInstance>>;
+  using VertexBucket = std::unordered_map<PathPatternID, std::vector<VertexID>>;
+
+ public:
+  PathPatternIndex() = default;
+  void LoadPathInstances(const std::string& path_instances_path);
+ 
+ private:
+  VertexBucket vertices_by_pattern_id_;
+  PatternInstanceBucket path_instances_by_vertex_id_;
 };
 
 class IndexCollection {
