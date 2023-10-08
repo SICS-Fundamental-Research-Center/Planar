@@ -58,6 +58,10 @@ void VertexAttributeSegment::LoadAttributeBlock(
   block_by_range_.emplace(vlabel, attribute_block);
 }
 
+void PathPatternIndex::BuildPatternInstanceBucket(
+    const std::string& path_instances_path) {
+}
+
 void IndexCollection::LoadIndexCollection(
     const std::string& attribute_config_file) {
   LoadVertexAttributeSegment(attribute_config_file);

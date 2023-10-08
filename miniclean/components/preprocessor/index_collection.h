@@ -93,11 +93,12 @@ class PathPatternIndex {
 
  public:
   PathPatternIndex() = default;
-  void LoadPathInstances(const std::string& path_instances_path);
+  void BuildPatternInstanceBucket(const std::string& path_instances_path);
+  void BuildVertexBucket(PatternInstanceBucket pattern_instance_bucket);
  
  private:
-  VertexBucket vertices_by_pattern_id_;
-  PatternInstanceBucket path_instances_by_vertex_id_;
+  VertexBucket vertex_bucket_;
+  PatternInstanceBucket path_instances_bucket_;
 };
 
 class IndexCollection {
