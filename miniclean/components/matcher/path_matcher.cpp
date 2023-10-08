@@ -166,8 +166,6 @@ void PathMatcher::PathMatching(unsigned int parallelism,
     LOG_INFO("Pattern: ", i, ", Matched results: ", matched_results_[i].size());
   }
 
-  int a;
-
   // Print the execution time and write back time.
   LOG_INFO("Execution time: ", exe_t1 - exe_t0, " seconds.");
   LOG_INFO("Write back time: ", write_back_t1 - write_back_t0, " seconds.");
