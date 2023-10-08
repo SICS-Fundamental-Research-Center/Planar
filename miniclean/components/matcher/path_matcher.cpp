@@ -48,26 +48,14 @@ void PathMatcher::LoadPatterns(const std::string& pattern_path) {
   YAML::Node path_pattern_node = path_pattern_config["PathPatterns"];
   path_patterns_ = path_pattern_node.as<std::vector<PathPattern>>();
 
-  // TODO: Change this hard-coded value.
-  num_label_ = 3;
-
-  // Initialize `vertex_label_to_pattern_id`.
-  vertex_label_to_pattern_id.resize(num_label_);
-  for (size_t i = 0; i < path_patterns_.size(); i++) {
-    VertexLabel start_label = std::get<0>(path_patterns_[i][0]);
-    vertex_label_to_pattern_id[start_label].push_back(i);
-  }
-}
-
-void PathMatcher::BuildCandidateSet() {
-  candidates_.resize(num_label_);
-  VertexLabel* vertex_label = miniclean_csr_graph_->GetVertexLabelBasePointer();
-  for (VertexLabel i = 0; i < num_label_; i++) {
-    std::pair<VertexID, VertexID> vertex_label_range =
-        miniclean_csr_graph_->GetVertexLabelRange(i);
-    for (VertexID j = vertex_label_range.first; j < vertex_label_range.second;
-         j++) {
-      candidates_[i].push_back(j);
+  // Initialize vertex_label_to_pattern_id.
+  for (PathPatternID i = 0; i < path_patterns_.size(); i++) {
+    VertexLabel src_label = std::get<0>(path_patterns_[i][0]);
+    if (vertex_label_to_pattern_id.find(src_label) ==
+        vertex_label_to_pattern_id.end()) {
+      vertex_label_to_pattern_id[src_label] = {i};
+    } else {
+      vertex_label_to_pattern_id[src_label].push_back(i);
     }
   }
 }
@@ -90,8 +78,8 @@ void PathMatcher::GroupTasks(
       for (VertexID j = task_size * i; j < task_size * (i + 1); j++) {
         if (j >= vertex_number) break;
         VertexLabel label = miniclean_csr_graph_->GetVertexLabelByLocalID(j);
-        std::vector<size_t> patterns = vertex_label_to_pattern_id[label];
-        for (size_t k = 0; k < patterns.size(); k++) {
+        std::vector<PathPatternID> patterns = vertex_label_to_pattern_id[label];
+        for (PathPatternID k = 0; k < patterns.size(); k++) {
           (*partial_result_pool)[i].reserve(path_patterns_[patterns[k]].size());
           std::vector<VertexID> init_candidate = {j};
           PathMatchRecur(path_patterns_[patterns[k]], 0, init_candidate,

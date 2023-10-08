@@ -56,7 +56,6 @@ int main(int argc, char* argv[]) {
 
   path_matcher.LoadGraph(FLAGS_workspace_path);
   path_matcher.LoadPatterns(FLAGS_workspace_path + "/path_patterns.yaml");
-  path_matcher.BuildCandidateSet();
 
   auto start = std::chrono::system_clock::now();
   // the parallelism should greater than 0 and less than the hardware
