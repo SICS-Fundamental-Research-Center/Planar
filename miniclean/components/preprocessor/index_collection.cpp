@@ -1,6 +1,15 @@
 #include "miniclean/components/preprocessor/index_collection.h"
 
+#include <algorithm>
+
+#include "core/data_structures/buffer.h"
+#include "core/data_structures/graph_metadata.h"
+#include "miniclean/components/matcher/path_matcher.h"
+
 namespace sics::graph::miniclean::components::preprocessor {
+
+using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
+using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
 
 void VertexAttributeSegment::LoadAttributeBucket(
     VertexLabel vlabel, const std::string& workspace_dir,
@@ -58,13 +67,116 @@ void VertexAttributeSegment::LoadAttributeBlock(
   block_by_range_.emplace(vlabel, attribute_block);
 }
 
-void PathPatternIndex::BuildPatternInstanceBucket(
-    const std::string& path_instances_path) {
+void PathPatternIndex::BuildPathPatternIndex(
+    const std::string& path_instances_path,
+    const std::string& graph_config_path,
+    const std::string& path_pattern_path) {
+  // Load graph config.
+  YAML::Node metadata = YAML::LoadFile(graph_config_path);
+  GraphMetadata graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
+  size_t num_vertices = graph_metadata.get_num_vertices();
+  // Load path patterns.
+  YAML::Node path_pattern_config = YAML::LoadFile(path_pattern_path);
+  YAML::Node path_pattern_node = path_pattern_config["PathPatterns"];
+  std::vector<PathPattern> path_pattern =
+      path_pattern_node.as<std::vector<PathPattern>>();
+
+  // Initialize buckets.
+  path_instances_buckets_by_vertex_id_.resize(num_vertices);
+  for (size_t i = 0; i < num_vertices; i++) {
+    path_instances_buckets_by_vertex_id_[i].resize(path_pattern.size());
+  }
+  vertex_bucket_by_pattern_id_.resize(path_pattern.size());
+
+  // Build buckets.
+  BuildPathInstanceBucket(path_instances_path, path_pattern);
+  BuildVertexBucket(path_instances_buckets_by_vertex_id_);
+}
+
+void PathPatternIndex::BuildPathInstanceBucket(
+    const std::string& path_instances_path,
+    const std::vector<PathPattern>& path_patterns) {
+  for (size_t i = 0; i < path_patterns.size(); i++) {
+    // Open the file.
+    std::ifstream instance_file(
+        path_instances_path + "/" + std::to_string(i) + ".bin",
+        std::ios::binary);
+    if (!instance_file) {
+      LOG_FATAL(
+          "Failed to open path instance file: ",
+          (path_instances_path + "/" + std::to_string(i) + ".bin").c_str());
+    }
+
+    // Get the file size.
+    instance_file.seekg(0, std::ios::end);
+    size_t fileSize = instance_file.tellg();
+    instance_file.seekg(0, std::ios::beg);
+
+    // Create a buffer.
+    OwnedBuffer buffer(fileSize);
+
+    // Read the instances.
+    instance_file.read(reinterpret_cast<char*>(buffer.Get()), fileSize);
+    if (!instance_file) {
+      LOG_FATAL(
+          "Failed to read path instance file: ",
+          (path_instances_path + "/" + std::to_string(i) + ".bin").c_str());
+    }
+
+    // Parse the buffer.
+    size_t pattern_length = path_patterns[i].size();
+    size_t num_instances = fileSize / (pattern_length * sizeof(VertexID));
+    VertexID* instance_buffer = reinterpret_cast<VertexID*>(buffer.Get());
+
+    // Build the bucket.
+    for (size_t j = 0; j < num_instances; j++) {
+      std::vector<VertexID> instance(pattern_length);
+      for (size_t k = 0; k < pattern_length; k++) {
+        instance[k] = instance_buffer[j * pattern_length + k];
+      }
+      VertexID src_vertex_id = instance[0];
+      path_instances_buckets_by_vertex_id_[src_vertex_id][i].push_back(
+          std::move(instance));
+    }
+
+    // Close the file.
+    instance_file.close();
+  }
+}
+
+void PathPatternIndex::BuildVertexBucket(
+    const std::vector<PathInstanceBuckets>&
+        path_instances_buckets_by_vertex_id) {
+  // For each vertex.
+  for (size_t i = 0; i < path_instances_buckets_by_vertex_id.size(); i++) {
+    // For each pattern.
+    for (size_t j = 0; j < path_instances_buckets_by_vertex_id[i].size(); j++) {
+      for (const auto& instance : path_instances_buckets_by_vertex_id[i][j]) {
+        if (instance[0] != i) {
+          LOG_FATAL("Instance[0] != i");
+        }
+        vertex_bucket_by_pattern_id_[j].push_back(instance[0]);
+      }
+    }
+  }
+  // remove redundent vertices.
+  for (size_t i = 0; i < vertex_bucket_by_pattern_id_.size(); i++) {
+    std::sort(vertex_bucket_by_pattern_id_[i].begin(),
+              vertex_bucket_by_pattern_id_[i].end());
+    auto it = std::unique(vertex_bucket_by_pattern_id_[i].begin(),
+                          vertex_bucket_by_pattern_id_[i].end());
+    vertex_bucket_by_pattern_id_[i].erase(
+        it, vertex_bucket_by_pattern_id_[i].end());
+  }
 }
 
 void IndexCollection::LoadIndexCollection(
-    const std::string& attribute_config_file) {
-  LoadVertexAttributeSegment(attribute_config_file);
+    const std::string& vertex_attribute_file,
+    const std::string& path_instance_file, const std::string& graph_config_path,
+    const std::string& path_pattern_path) {
+  LoadVertexAttributeSegment(vertex_attribute_file);
+  LoadPathPatternIndex(path_instance_file, graph_config_path,
+                       path_pattern_path);
 }
 
 void IndexCollection::LoadVertexAttributeSegment(
@@ -72,6 +184,14 @@ void IndexCollection::LoadVertexAttributeSegment(
   YAML::Node vertex_attribute_node = YAML::LoadFile(vertex_attribute_file);
   vertex_attribute_segment_ =
       vertex_attribute_node.as<VertexAttributeSegment>();
+}
+
+void IndexCollection::LoadPathPatternIndex(
+    const std::string& path_instances_path,
+    const std::string& graph_config_path,
+    const std::string& path_pattern_path) {
+  path_pattern_index_.BuildPathPatternIndex(
+      path_instances_path, graph_config_path, path_pattern_path);
 }
 
 }  // namespace sics::graph::miniclean::components::preprocessor

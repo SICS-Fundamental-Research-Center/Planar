@@ -85,20 +85,29 @@ class VertexAttributeSegment {
 //   (2) pattern instance index by vertex.
 class PathPatternIndex {
  private:
+  using PathPattern = sics::graph::miniclean::common::PathPattern;
   using PathPatternID = sics::graph::miniclean::common::PathPatternID;
   using VertexID = sics::graph::miniclean::common::VertexID;
   using PathInstance = std::vector<VertexID>;
-  using PatternInstanceBucket = std::unordered_map<VertexID, std::vector<PathInstance>>;
-  using VertexBucket = std::unordered_map<PathPatternID, std::vector<VertexID>>;
+  using PathInstanceBucket = std::vector<PathInstance>;
+  // `Path Instance Buckets` is a collection of buckets of each pattern
+  // patterns.
+  using PathInstanceBuckets = std::vector<PathInstanceBucket>;
+  using VertexBucket = std::vector<VertexID>;
 
  public:
   PathPatternIndex() = default;
-  void BuildPatternInstanceBucket(const std::string& path_instances_path);
-  void BuildVertexBucket(PatternInstanceBucket pattern_instance_bucket);
- 
+  void BuildPathPatternIndex(const std::string& path_instance_file,
+                             const std::string& graph_config_path,
+                             const std::string& path_pattern_path);
+
  private:
-  VertexBucket vertex_bucket_;
-  PatternInstanceBucket path_instances_bucket_;
+  void BuildPathInstanceBucket(const std::string& path_instance_file,
+                               const std::vector<PathPattern>& path_patterns);
+  void BuildVertexBucket(const std::vector<PathInstanceBuckets>&
+                             path_instances_buckets_by_vertex_id);
+  std::vector<VertexBucket> vertex_bucket_by_pattern_id_;
+  std::vector<PathInstanceBuckets> path_instances_buckets_by_vertex_id_;
 };
 
 class IndexCollection {
@@ -109,13 +118,19 @@ class IndexCollection {
 
  public:
   IndexCollection() = default;
-  void LoadIndexCollection(const std::string& attribute_config_file);
+  void LoadIndexCollection(const std::string& vertex_attribute_file,
+                           const std::string& path_instance_file,
+                           const std::string& graph_config_path,
+                           const std::string& path_pattern_path);
 
  private:
   void LoadVertexAttributeSegment(const std::string& vertex_attribute_file);
+  void LoadPathPatternIndex(const std::string& path_instance_file,
+                            const std::string& graph_config_path,
+                            const std::string& path_pattern_path);
 
-  std::vector<PathPattern> path_patterns_;
   VertexAttributeSegment vertex_attribute_segment_;
+  PathPatternIndex path_pattern_index_;
 };
 
 }  // namespace sics::graph::miniclean::components::preprocessor
