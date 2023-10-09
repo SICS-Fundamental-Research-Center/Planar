@@ -43,6 +43,15 @@ void RuleMiner::LoadGraph(const std::string& graph_path) {
   graph_->Deserialize(thread_pool, std::move(serialized_graph));
 }
 
+void RuleMiner::LoadIndexCollection(const std::string& vertex_attribute_file,
+                                    const std::string& path_instance_file,
+                                    const std::string& graph_config_path,
+                                    const std::string& path_pattern_path) {
+  index_collection_.LoadIndexCollection(vertex_attribute_file,
+                                        path_instance_file, graph_config_path,
+                                        path_pattern_path);
+}
+
 void RuleMiner::LoadPathInstances(const std::string& path_instances_path) {
   if (path_patterns_.empty()) {
     LOG_FATAL("Path patterns are not loaded yet.");

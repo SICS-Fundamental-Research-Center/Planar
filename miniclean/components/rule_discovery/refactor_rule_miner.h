@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "miniclean/common/types.h"
+#include "miniclean/components/preprocessor/index_collection.h"
 #include "miniclean/components/preprocessor/index_metadata.h"
 #include "miniclean/data_structures/gcr/gcr_factory.h"
 #include "miniclean/data_structures/gcr/path_rule.h"
@@ -32,6 +33,8 @@ class RuleMiner {
   using VariablePredicate =
       sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
   using GCRFactory = sics::graph::miniclean::data_structures::gcr::GCRFactory;
+  using IndexCollection =
+      sics::graph::miniclean::components::preprocessor::IndexCollection;
   // The first dimension is the path pattern id.
   // The second dimension is the vertex id (indicates the vertex that carries
   // predicate).
@@ -46,6 +49,10 @@ class RuleMiner {
   RuleMiner(MiniCleanCSRGraph* graph) : graph_(graph) {}
 
   void LoadGraph(const std::string& graph_path);
+  void LoadIndexCollection(const std::string& vertex_attribute_file,
+                           const std::string& path_instance_file,
+                           const std::string& graph_config_path,
+                           const std::string& path_pattern_path);
   void LoadPathInstances(const std::string& path_instances_path);
   // Path rule contains:
   //   - a path pattern
@@ -68,6 +75,8 @@ class RuleMiner {
  private:
   MiniCleanCSRGraph* graph_;
   std::vector<PathPattern> path_patterns_;
+  IndexCollection index_collection_;
+
   std::vector<std::vector<std::vector<VertexID>>> path_instances_;
   std::unordered_map<
       VertexLabel,
