@@ -23,13 +23,31 @@ class MutableGroupCSRGraph : public Serializable {
   MutableGroupCSRGraph() = default;
   ~MutableGroupCSRGraph() override = default;
 
+  void AddSubgraph(MutableCSRGraph<TV, TE>* subgraph) {
+    subgraphs_.emplace_back(subgraph);
+  }
+
   std::unique_ptr<Serialized> Serialize(
-      const common::TaskRunner& runner) override {}
+      const common::TaskRunner& runner) override {
+    LOG_INFO("should not be called!");
+  }
 
   void Deserialize(const common::TaskRunner& runner,
-                   std::unique_ptr<Serialized>&& serialized) override {}
+                   std::unique_ptr<Serialized>&& serialized) override {
+    LOG_INFO("should not be called!");
+  }
 
   // TODO: add corresponding methods
+
+  common::VertexCount GetVertexNums() const {
+    common::VertexCount num_vertices = 0;
+    for (auto& subgraph : subgraphs_) {
+      num_vertices += subgraph.GetVertexNums();
+    }
+    return num_vertices;
+  }
+
+  int GetGroupNums() const { return subgraphs_.size(); }
 
   VertexData ReadLocalVertexDataByID(VertexID id) const {
     for (auto& subgraph : subgraphs_) {
@@ -77,12 +95,16 @@ class MutableGroupCSRGraph : public Serializable {
     }
   }
 
- private:
-  SubgraphMetadata group_metadata_;
-  std::vector<MutableCSRGraph<VertexData, EdgeData>> subgraphs_;
+ public:
+  std::vector<MutableCSRGraph<VertexData, EdgeData>*> subgraphs_;
 };
 
-// TODO: typedef for uint32 and uint16
+typedef MutableGroupCSRGraph<common::Uint32VertexDataType,
+                             common::DefaultEdgeDataType>
+    MutableGroupCSRGraphUInt32;
+typedef MutableGroupCSRGraph<common::Uint16VertexDataType,
+                             common::DefaultEdgeDataType>
+    MutableGroupCSRGraphUInt16;
 
 }  // namespace sics::graph::core::data_structures::graph
 

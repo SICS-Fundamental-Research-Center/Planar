@@ -173,19 +173,38 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
   switch (execute_resp.execute_type) {
     case ExecuteType::kDeserialize: {
       graph_state_.SetSerializedToDeserialized(execute_resp.graph_id);
+      if (group_mode_) {
+        group_serialized_num_++;
+        if (group_serialized_num_ == group_num_) {
+          CreateGroupSerializableGraph();
 
-      ExecuteMessage execute_message;
-      execute_message.graph_id = execute_resp.graph_id;
-      execute_message.graph = execute_resp.response_serializable;
-      if (current_round_ == 0) {
-        execute_message.execute_type = ExecuteType::kPEval;
+          ExecuteMessage execute_message;
+          execute_message.graph_id = group_graphs_.at(0);
+          execute_message.graph = group_serializable_graph_.get();
+          if (current_round_ == 0) {
+            execute_message.execute_type = ExecuteType::kPEval;
+          } else {
+            execute_message.execute_type = ExecuteType::kIncEval;
+          }
+          SetAppRuntimeGraph(group_graphs_.at(0));
+          SetAppRound(current_round_);
+          execute_message.app = app_;
+          message_hub_.get_executor_queue()->Push(execute_message);
+        }
       } else {
-        execute_message.execute_type = ExecuteType::kIncEval;
+        ExecuteMessage execute_message;
+        execute_message.graph_id = execute_resp.graph_id;
+        execute_message.graph = execute_resp.response_serializable;
+        if (current_round_ == 0) {
+          execute_message.execute_type = ExecuteType::kPEval;
+        } else {
+          execute_message.execute_type = ExecuteType::kIncEval;
+        }
+        SetAppRuntimeGraph(execute_message.graph_id);
+        SetAppRound(current_round_);
+        execute_message.app = app_;
+        message_hub_.get_executor_queue()->Push(execute_message);
       }
-      SetAppRuntimeGraph(execute_message.graph_id);
-      SetAppRound(current_round_);
-      execute_message.app = app_;
-      message_hub_.get_executor_queue()->Push(execute_message);
       break;
     }
     case ExecuteType::kPEval:
@@ -193,10 +212,23 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
       graph_state_.SetDeserializedToComputed(execute_resp.graph_id);
 
       // TODO: decide a subgraph if it stays in memory
-      ExecuteMessage execute_message(execute_resp);
-      execute_message.graph_id = execute_resp.graph_id;
-      execute_message.execute_type = ExecuteType::kSerialize;
-      message_hub_.get_executor_queue()->Push(execute_message);
+      if (group_mode_) {
+        for (int i = 0; i < group_num_; i++) {
+          auto gid = group_graphs_.at(i);
+          ExecuteMessage execute_message;
+          execute_message.graph_id = gid;
+          execute_message.execute_type = ExecuteType::kSerialize;
+          execute_message.graph = graph_state_.GetSubgraph(gid);
+          message_hub_.get_executor_queue()->Push(execute_message);
+        }
+        // release the group_graph handler
+        group_serializable_graph_.reset();
+      } else {
+        ExecuteMessage execute_message(execute_resp);
+        execute_message.graph_id = execute_resp.graph_id;
+        execute_message.execute_type = ExecuteType::kSerialize;
+        message_hub_.get_executor_queue()->Push(execute_message);
+      }
       break;
     }
     case ExecuteType::kSerialize: {
@@ -214,6 +246,7 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
           //          ReleaseAllGraph();
           return false;
         } else {
+          // TODO: sync after all sub_graphs are written back.
           // This sync maybe replaced by borderVertex check.
           auto active = update_store_->GetActiveCount();
           graph_state_.SyncCurrentRoundPending();
@@ -263,15 +296,35 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
           // second execute next ready subgraph if exist
           auto next_execute_gid = GetNextExecuteGraph();
           if (next_execute_gid != INVALID_GRAPH_ID) {
-            ExecuteMessage execute_message;
-            execute_message.graph_id = next_execute_gid;
-            execute_message.serialized =
-                graph_state_.GetSubgraphSerialized(next_execute_gid);
-            CreateSerializableGraph(next_execute_gid);
-            execute_message.graph = graph_state_.GetSubgraph(next_execute_gid);
-            execute_message.execute_type = ExecuteType::kDeserialize;
-            is_executor_running_ = true;
-            message_hub_.get_executor_queue()->Push(execute_message);
+            if (group_mode_) {
+              GetNextExecuteGroupGraphs();
+              is_executor_running_ = true;
+              for (int i = 0; i < group_num_; i++) {
+                auto gid = group_graphs_.at(i);
+                ExecuteMessage execute_message;
+                execute_message.graph_id = gid;
+                execute_message.serialized =
+                    graph_state_.GetSubgraphSerialized(gid);
+                CreateSerializableGraph(gid);
+                execute_message.graph = graph_state_.GetSubgraph(gid);
+                execute_message.execute_type = ExecuteType::kDeserialize;
+                LOGF_INFO(
+                    "GROUP MODE: deserialize and execute the read graph {}",
+                    gid);
+                message_hub_.get_executor_queue()->Push(execute_message);
+              }
+            } else {
+              ExecuteMessage execute_message;
+              execute_message.graph_id = next_execute_gid;
+              execute_message.serialized =
+                  graph_state_.GetSubgraphSerialized(next_execute_gid);
+              CreateSerializableGraph(next_execute_gid);
+              execute_message.graph =
+                  graph_state_.GetSubgraph(next_execute_gid);
+              execute_message.execute_type = ExecuteType::kDeserialize;
+              is_executor_running_ = true;
+              message_hub_.get_executor_queue()->Push(execute_message);
+            }
           } else {
             is_executor_running_ = false;
           }
@@ -301,7 +354,8 @@ bool Scheduler::WriteMessageResponseAndCheckTerminate(
   graph_state_.ReleaseSubgraphSerialized(write_resp.graph_id);
   auto write_size = graph_metadata_info_.GetSubgraphSize(write_resp.graph_id);
   LOGF_INFO(
-      "Release subgraph: {}, size: {}. *** Memory size now: {}, after: {} ***",
+      "Release subgraph: {}, size: {}. *** Memory size now: {}, after: {} "
+      "***",
       write_resp.graph_id, write_size, memory_left_size_,
       memory_left_size_ + write_size);
   if (threefour_mode_) {
@@ -402,7 +456,8 @@ bool Scheduler::TryReadNextGraph(bool sync) {
               return false;
             }
             LOGF_INFO(
-                "To read subgraph {}. *** Memory size now: {}, after read: {} "
+                "To read subgraph {}. *** Memory size now: {}, after read: "
+                "{} "
                 "***",
                 next_gid_next_round, memory_left_size_,
                 memory_left_size_ - read_size);
@@ -449,6 +504,28 @@ data_structures::Serialized* Scheduler::CreateSerialized(
   return graph_state_.NewSerializedMutableCSRGraph(graph_id);
 }
 
+void Scheduler::CreateGroupSerializableGraph() {
+  //  if (common::Configurations::Get()->vertex_data_type ==
+  //      common::VertexDataType::kVertexDataTypeUInt32) {
+  //    group_serializable_graph_ =
+  //    std::make_unique<MutableGroupCSRGraphUInt32>();
+  //  } else {
+  //    group_serializable_graph_ =
+  //    std::make_unique<MutableGroupCSRGraphUInt16>();
+  //  }
+  group_serializable_graph_ = std::make_unique<MutableGroupCSRGraphUInt32>();
+}
+
+void Scheduler::InitGroupSerializableGraph() {
+  for (int i = 0; i < group_num_; i++) {
+    auto gid = group_graphs_.at(i);
+    auto group_graph =
+        (MutableGroupCSRGraphUInt32*)(group_serializable_graph_.get());
+    group_graph->AddSubgraph(
+        (MutableCSRGraphUInt32*)graph_state_.GetSubgraph(gid));
+  }
+}
+
 // release all graphs in memory. not write back to disk. just release memory.
 void Scheduler::ReleaseAllGraph() {
   for (int i = 0; i < graph_state_.num_subgraphs_; i++) {
@@ -458,26 +535,45 @@ void Scheduler::ReleaseAllGraph() {
 }
 
 void Scheduler::SetAppRuntimeGraph(common::GraphID gid) {
-  if (common::Configurations::Get()->vertex_data_type ==
-      common::VertexDataType::kVertexDataTypeUInt32) {
-    auto app = dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt32>*>(app_);
-    app->SetRuntimeGraph(
-        dynamic_cast<MutableCSRGraphUInt32*>(graph_state_.GetSubgraph(gid)));
+  if (group_mode_) {
+    auto app =
+        dynamic_cast<apis::PlanarAppGroupBase<MutableGroupCSRGraphUInt32>*>(
+            app_);
+    app->SetRuntimeGraph(dynamic_cast<MutableGroupCSRGraphUInt32*>(
+        group_serializable_graph_.get()));
   } else {
-    auto app = dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt16>*>(app_);
-    app->SetRuntimeGraph(
-        dynamic_cast<MutableCSRGraphUInt16*>(graph_state_.GetSubgraph(gid)));
+    if (common::Configurations::Get()->vertex_data_type ==
+        common::VertexDataType::kVertexDataTypeUInt32) {
+      auto app =
+          dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt32>*>(app_);
+      app->SetRuntimeGraph(
+          dynamic_cast<MutableCSRGraphUInt32*>(graph_state_.GetSubgraph(gid)));
+    } else {
+      auto app =
+          dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt16>*>(app_);
+      app->SetRuntimeGraph(
+          dynamic_cast<MutableCSRGraphUInt16*>(graph_state_.GetSubgraph(gid)));
+    }
   }
 }
 
 void Scheduler::SetAppRound(int round) {
-  if (common::Configurations::Get()->vertex_data_type ==
-      common::VertexDataType::kVertexDataTypeUInt32) {
-    auto app = dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt32>*>(app_);
+  if (group_mode_) {
+    auto app =
+        dynamic_cast<apis::PlanarAppGroupBase<MutableGroupCSRGraphUInt32>*>(
+            app_);
     app->SetRound(round);
   } else {
-    auto app = dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt16>*>(app_);
-    app->SetRound(round);
+    if (common::Configurations::Get()->vertex_data_type ==
+        common::VertexDataType::kVertexDataTypeUInt32) {
+      auto app =
+          dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt32>*>(app_);
+      app->SetRound(round);
+    } else {
+      auto app =
+          dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt16>*>(app_);
+      app->SetRound(round);
+    }
   }
 }
 

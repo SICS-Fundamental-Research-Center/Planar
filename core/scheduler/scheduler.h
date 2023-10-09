@@ -3,10 +3,12 @@
 
 #include "apis/pie.h"
 #include "apis/planar_app_base.h"
+#include "apis/planar_app_group_base.h"
 #include "common/config.h"
 #include "common/multithreading/thread_pool.h"
 #include "common/types.h"
 #include "data_structures/graph/mutable_csr_graph.h"
+#include "data_structures/graph/mutable_group_csr_grah.h"
 #include "data_structures/graph_metadata.h"
 #include "data_structures/serializable.h"
 #include "io/mutable_csr_reader.h"
@@ -19,6 +21,10 @@ namespace sics::graph::core::scheduler {
 class Scheduler {
   using MutableCSRGraphUInt32 = data_structures::graph::MutableCSRGraphUInt32;
   using MutableCSRGraphUInt16 = data_structures::graph::MutableCSRGraphUInt16;
+  using MutableGroupCSRGraphUInt32 =
+      data_structures::graph::MutableGroupCSRGraphUInt32;
+  using MutableGroupCSRGraphUInt16 =
+      data_structures::graph::MutableGroupCSRGraphUInt16;
 
  public:
   Scheduler(const std::string& root_path)
@@ -80,6 +86,9 @@ class Scheduler {
 
   void CreateSerializableGraph(common::GraphID graph_id);
   data_structures::Serialized* CreateSerialized(common::GraphID graph_id);
+  void CreateGroupSerializableGraph();
+
+  void InitGroupSerializableGraph();
 
   common::GraphID GetNextReadGraphInCurrentRound() const;
 
@@ -136,6 +145,7 @@ class Scheduler {
   int group_serialized_num_ = 0;
   int group_deserialized_num_ = 0;
   std::vector<common::GraphID> group_graphs_;
+  std::unique_ptr<data_structures::Serializable> group_serializable_graph_;
 
   int to_read_graphs_ = 0;
   int have_read_graphs_ = 0;
