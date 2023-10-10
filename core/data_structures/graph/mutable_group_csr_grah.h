@@ -42,17 +42,31 @@ class MutableGroupCSRGraph : public Serializable {
   common::VertexCount GetVertexNums() const {
     common::VertexCount num_vertices = 0;
     for (auto& subgraph : subgraphs_) {
-      num_vertices += subgraph.GetVertexNums();
+      num_vertices += subgraph->GetVertexNums();
     }
     return num_vertices;
   }
 
+  bool IsInGraph(VertexID id) const {
+    for (auto& subgraph : subgraphs_) {
+      return subgraph->IsInGraph(id);
+    }
+  }
+
   int GetGroupNums() const { return subgraphs_.size(); }
+
+  size_t GetOutEdgeNums() const {
+    size_t num_edges = 0;
+    for (auto& subgraph : subgraphs_) {
+      num_edges += subgraph->GetOutEdgeNums();
+    }
+    return num_edges;
+  }
 
   VertexData ReadLocalVertexDataByID(VertexID id) const {
     for (auto& subgraph : subgraphs_) {
-      if (subgraph.IsInGraph(id)) {
-        return subgraph.ReadLocalVertexDataByID(id);
+      if (subgraph->IsInGraph(id)) {
+        return subgraph->ReadLocalVertexDataByID(id);
       }
     }
     return VertexData();
@@ -61,7 +75,7 @@ class MutableGroupCSRGraph : public Serializable {
   bool WriteMinVertexDataByID(VertexID id, VertexData data_new) {
     bool flag = false;
     for (auto& subgraph : subgraphs_) {
-      flag = subgraph.WriteMinVertexDataByID(id, data_new);
+      flag = subgraph->WriteMinVertexDataByID(id, data_new);
     }
     return flag;
   }
@@ -69,30 +83,50 @@ class MutableGroupCSRGraph : public Serializable {
   bool WriteVertexDataByID(VertexID id, VertexData data_new) {
     bool flag = false;
     for (auto& subgraph : subgraphs_) {
-      flag = subgraph.WriteVertexDataByID(id, data_new);
+      flag = subgraph->WriteVertexDataByID(id, data_new);
     }
     return flag;
   }
 
+  void SyncVertexData(bool use_readdata_only = false) {
+    for (auto& subgraph : subgraphs_) {
+      subgraph->SyncVertexData(use_readdata_only);
+    }
+  }
+
   int GetNumSubgraphs() const { return subgraphs_.size(); }
+
+  void MutateGraphEdge(common::TaskRunner* runner) {
+    for (auto& subgraph : subgraphs_) {
+      subgraph->MutateGraphEdge(runner);
+    }
+  }
+
+  void DeleteEdge(VertexID id, EdgeIndex index) {
+
+  }
 
   // log methods
   void LogVertexData() const {
     for (auto& subgraph : subgraphs_) {
-      subgraph.LogVertexData();
+      subgraph->LogVertexData();
     }
   }
 
   void LogEdges() const {
     for (auto& subgraph : subgraphs_) {
-      subgraph.LogEdges();
+      subgraph->LogEdges();
     }
   }
 
   void LogGraphInfo(VertexID id) const {
     for (auto& subgraph : subgraphs_) {
-      subgraph.LogGraphInfo(id);
+      subgraph->LogGraphInfo(id);
     }
+  }
+
+  MutableCSRGraph<VertexData, EdgeData>* GetSubgraph(common::GraphID id) {
+    return subgraphs_[id];
   }
 
  public:

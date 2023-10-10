@@ -87,20 +87,21 @@ class PlanarAppGroupBase : public PIE {
   // Parallel execute vertex_func in task_size chunks.
   void ParallelVertexDo(const std::function<void(VertexID)>& vertex_func) {
     LOG_DEBUG("ParallelVertexDo is begin");
-    auto group_graphs = static_cast<MutableGroupCSRGraphUInt32*>(graph_);
-
+    auto group_graphs = (MutableGroupCSRGraphUInt32*)(graph_);
+    uint32_t task_size = GetTaskSize(group_graphs->GetVertexNums());
     common::TaskPackage tasks;
+    tasks.reserve(parallelism_ * task_package_factor_);
+
     for (int i = 0; i < group_graphs->GetGroupNums(); i++) {
-      uint32_t task_size = GetTaskSize();
-      tasks.reserve(parallelism_ * task_package_factor_);
+      auto graph = group_graphs->GetSubgraph(i);
       VertexIndex begin_index = 0, end_index = 0;
-      for (; begin_index < graph_->GetVertexNums();) {
+      for (; begin_index < graph->GetVertexNums();) {
         end_index += task_size;
-        if (end_index > graph_->GetVertexNums())
-          end_index = graph_->GetVertexNums();
-        auto task = [&vertex_func, this, begin_index, end_index]() {
+        if (end_index > graph->GetVertexNums())
+          end_index = graph->GetVertexNums();
+        auto task = [&vertex_func, graph, begin_index, end_index]() {
           for (VertexIndex idx = begin_index; idx < end_index; idx++) {
-            vertex_func(graph_->GetVertexIDByIndex(idx));
+            vertex_func(graph->GetVertexIDByIndex(idx));
           }
         };
         tasks.push_back(task);
@@ -112,139 +113,51 @@ class PlanarAppGroupBase : public PIE {
     }
     runner_->SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
-    graph_->SyncVertexData(use_readdata_only_);
+    group_graphs->SyncVertexData(use_readdata_only_);
     LOG_DEBUG("ParallelVertexDo is done");
-  }
-
-  void ParallelVertexDoByIndex(
-      const std::function<void(VertexID)>& vertex_func) {
-    LOG_DEBUG("ParallelVertexDoByIndex is begin");
-    uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
-    common::TaskPackage tasks;
-    tasks.reserve(parallelism_ * task_package_factor_);
-    VertexIndex begin_index = 0, end_index = 0;
-    for (; begin_index < graph_->GetVertexNums();) {
-      end_index += task_size;
-      if (end_index > graph_->GetVertexNums())
-        end_index = graph_->GetVertexNums();
-      auto task = [&vertex_func, begin_index, end_index]() {
-        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
-          vertex_func(idx);
-        }
-      };
-      tasks.push_back(task);
-      begin_index = end_index;
-    }
-    //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}", task_size,
-    //              tasks.size());
-    runner_->SubmitSync(tasks);
-    // TODO: sync of update_store and graph_ vertex data
-    graph_->SyncVertexData(use_readdata_only_);
-    LOG_DEBUG("ParallelVertexDoByIndex is done");
-  }
-
-  void ParallelVertexDoWithActive(
-      const std::function<void(VertexID)>& vertex_func) {
-    LOG_DEBUG("ParallelVertexDoWithActive is begin");
-    uint32_t task_size = 64 * 100;
-
-    common::TaskPackage tasks;
-    tasks.reserve((graph_->GetVertexNums() / 64 / 100) + 1);
-    VertexIndex begin_index = 0, end_index = 0;
-    for (; begin_index < graph_->GetVertexNums();) {
-      end_index += task_size;
-      if (end_index > graph_->GetVertexNums())
-        end_index = graph_->GetVertexNums();
-      auto task = [&vertex_func, this, begin_index, end_index]() {
-        for (VertexIndex idx = begin_index; idx < end_index;) {
-          if (active_.GetBit64(idx)) {
-            for (int j = 0; j < 64 && (idx + j) < end_index; j++) {
-              if (active_.GetBit(idx + j))
-                vertex_func(graph_->GetVertexIDByIndex(idx + j));
-            }
-          }
-          idx += 64;
-        }
-        //        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
-        //          auto id = graph_->GetVertexIDByIndex(idx);
-        //          if (active_.GetBit(idx)) {
-        //            vertex_func(id);
-        //          }
-        //        }
-      };
-      tasks.push_back(task);
-      begin_index = end_index;
-    }
-    //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}", task_size,
-    //              tasks.size());
-    runner_->SubmitSync(tasks);
-    // TODO: sync of update_store and graph_ vertex data
-    graph_->SyncVertexData(use_readdata_only_);
-    LOG_DEBUG("ParallelVertexDoWithActive is done");
-  }
-
-  // Parallel execute vertex_func in task_size chunks.
-  void ParallelVertexDoStep(const std::function<void(VertexID)>& vertex_func) {
-    LOG_DEBUG("ParallelVertexDoStep is begin");
-    uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
-    common::TaskPackage tasks;
-    tasks.reserve(parallelism_ * task_package_factor_);
-    VertexIndex end = graph_->GetVertexNums();
-    for (int i = 0; i < parallelism_; i++) {
-      auto index = end - 1 - i;
-      auto task = [&vertex_func, this, index]() {
-        for (int idx = index; idx >= 0;) {
-          vertex_func(graph_->GetVertexIDByIndex(idx));
-          idx -= parallelism_;
-        }
-      };
-      tasks.push_back(task);
-    }
-    //    LOGF_INFO("ParallelVertexDoStep task_size: {}, num tasks: {}",
-    //    task_size,
-    //              tasks.size());
-    runner_->SubmitSync(tasks);
-    // TODO: sync of update_store and graph_ vertex data
-    graph_->SyncVertexData(use_readdata_only_);
-    LOG_DEBUG("ParallelVertexDoStep is done");
   }
 
   // Parallel execute edge_func in task_size chunks.
   void ParallelEdgeDo(
       const std::function<void(VertexID, VertexID)>& edge_func) {
     LOG_DEBUG("ParallelEdgeDo is begin");
-    uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
+    auto group_graphs = (MutableGroupCSRGraphUInt32*)(graph_);
+    uint32_t task_size = GetTaskSize(group_graphs->GetVertexNums());
     common::TaskPackage tasks;
     tasks.reserve(parallelism_ * task_package_factor_);
     int count = 0;
-    VertexIndex begin_index = 0, end_index = 0;
-    for (; begin_index < graph_->GetVertexNums();) {
-      end_index += task_size;
-      if (end_index > graph_->GetVertexNums())
-        end_index = graph_->GetVertexNums();
-      auto task = [&edge_func, this, begin_index, end_index]() {
-        for (VertexIndex i = begin_index; i < end_index; i++) {
-          auto degree = graph_->GetOutDegreeByIndex(i);
-          if (degree != 0) {
-            VertexID* outEdges = graph_->GetOutEdgesByIndex(i);
-            for (VertexIndex j = 0; j < degree; j++) {
-              //            LOGF_INFO("edge_func: {}, {}",
-              //            graph_->GetVertexIDByIndex(i),
-              //                      graph_->GetOneOutEdge(i, j));
-              edge_func(graph_->GetVertexIDByIndex(i), outEdges[j]);
+
+    for (int i = 0; i < group_graphs->GetGroupNums(); i++) {
+      auto graph = group_graphs->GetSubgraph(i);
+      VertexIndex begin_index = 0, end_index = 0;
+      for (; begin_index < graph->GetVertexNums();) {
+        end_index += task_size;
+        if (end_index > graph->GetVertexNums())
+          end_index = graph->GetVertexNums();
+        auto task = [&edge_func, graph, begin_index, end_index]() {
+          for (VertexIndex i = begin_index; i < end_index; i++) {
+            auto degree = graph->GetOutDegreeByIndex(i);
+            if (degree != 0) {
+              VertexID* outEdges = graph->GetOutEdgesByIndex(i);
+              for (VertexIndex j = 0; j < degree; j++) {
+                //            LOGF_INFO("edge_func: {}, {}",
+                //            graph_->GetVertexIDByIndex(i),
+                //                      graph_->GetOneOutEdge(i, j));
+                edge_func(graph->GetVertexIDByIndex(i), outEdges[j]);
+              }
             }
           }
-        }
-      };
-      tasks.push_back(task);
-      begin_index = end_index;
-      count++;
+        };
+        tasks.push_back(task);
+        begin_index = end_index;
+        count++;
+      }
     }
     //    LOGF_INFO("task_size: {}, num tasks: {}. left edges: {}", task_size,
     //    count,
     //              graph_->GetOutEdgeNums());
     runner_->SubmitSync(tasks);
-    graph_->SyncVertexData(use_readdata_only_);
+    group_graphs->SyncVertexData(use_readdata_only_);
     LOG_DEBUG("ParallelEdgeDo is done");
   }
 
@@ -252,35 +165,39 @@ class PlanarAppGroupBase : public PIE {
   void ParallelEdgeMutateDo(
       const std::function<void(VertexID, VertexID, EdgeIndex)>& edge_del_func) {
     LOG_DEBUG("ParallelEdgeDelDo is begin");
-    uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
+    auto group_graphs = (MutableGroupCSRGraphUInt32*)(graph_);
+    uint32_t task_size = GetTaskSize(group_graphs->GetVertexNums());
     common::TaskPackage tasks;
-    VertexIndex begin_index = 0, end_index = 0;
-    for (; begin_index < graph_->GetVertexNums();) {
-      end_index += task_size;
-      if (end_index > graph_->GetVertexNums())
-        end_index = graph_->GetVertexNums();
-      auto task = [&edge_del_func, this, begin_index, end_index]() {
-        for (VertexIndex i = begin_index; i < end_index; i++) {
-          auto degree = graph_->GetOutDegreeByIndex(i);
-          if (degree != 0) {
-            EdgeIndex outOffset_base = graph_->GetOutOffsetByIndex(i);
-            VertexID* outEdges = graph_->GetOutEdgesByIndex(i);
-            for (VertexIndex j = 0; j < degree; j++) {
-              //            LOGF_INFO("edge_del_func: {}, {}, {}",
-              //                      graph_->GetVertexIDByIndex(i),
-              //                      graph_->GetOneOutEdge(i, j),
-              //                      graph_->GetOutOffsetByIndex(i) + j);
-              edge_del_func(graph_->GetVertexIDByIndex(i), outEdges[j],
-                            outOffset_base + j);
+    for (int i = 0; i < group_graphs->GetNumSubgraphs(); i++) {
+      auto graph = group_graphs->GetSubgraph(i);
+      VertexIndex begin_index = 0, end_index = 0;
+      for (; begin_index < graph->GetVertexNums();) {
+        end_index += task_size;
+        if (end_index > graph->GetVertexNums())
+          end_index = graph->GetVertexNums();
+        auto task = [&edge_del_func, graph, begin_index, end_index]() {
+          for (VertexIndex i = begin_index; i < end_index; i++) {
+            auto degree = graph->GetOutDegreeByIndex(i);
+            if (degree != 0) {
+              EdgeIndex outOffset_base = graph->GetOutOffsetByIndex(i);
+              VertexID* outEdges = graph->GetOutEdgesByIndex(i);
+              for (VertexIndex j = 0; j < degree; j++) {
+                //            LOGF_INFO("edge_del_func: {}, {}, {}",
+                //                      graph_->GetVertexIDByIndex(i),
+                //                      graph_->GetOneOutEdge(i, j),
+                //                      graph_->GetOutOffsetByIndex(i) + j);
+                edge_del_func(graph->GetVertexIDByIndex(i), outEdges[j],
+                              outOffset_base + j);
+              }
             }
           }
-        }
-      };
-      tasks.push_back(task);
-      begin_index = end_index;
+        };
+        tasks.push_back(task);
+        begin_index = end_index;
+      }
     }
     runner_->SubmitSync(tasks);
-    graph_->MutateGraphEdge(runner_);
+    group_graphs->MutateGraphEdge(runner_);
     LOG_DEBUG("ParallelEdgedelDo is done");
   }
 

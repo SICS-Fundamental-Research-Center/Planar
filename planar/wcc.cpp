@@ -2,6 +2,7 @@
 
 #include "core/apps/wcc_app.h"
 #include "core/apps/wcc_edgecut_app.h"
+#include "core/apps/wcc_group.h"
 #include "core/common/types.h"
 #include "core/planar_system.h"
 
@@ -16,6 +17,7 @@ DEFINE_uint32(limits, 0, "subgrah limits for pre read");
 DEFINE_bool(no_short_cut, false, "no short cut");
 DEFINE_bool(threefour, false, "3/4 partition mode");
 DEFINE_bool(group, false, "group mode");
+DEFINE_uint32(group_num, 2, "group num");
 
 using namespace sics::graph;
 
@@ -37,6 +39,7 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->short_cut = !FLAGS_no_short_cut;
   core::common::Configurations::GetMutable()->threefour_mode = FLAGS_threefour;
   core::common::Configurations::GetMutable()->group = FLAGS_group;
+  core::common::Configurations::GetMutable()->group_num = FLAGS_group_num;
 
   if (FLAGS_partition == core::common::PartitionType::EdgeCut) {
     core::common::Configurations::GetMutable()->partition_type =
@@ -46,10 +49,17 @@ int main(int argc, char** argv) {
         core::common::Configurations::Get()->root_path);
     system.Start();
   } else {
-    LOG_INFO("System begin");
-    core::planar_system::Planar<core::apps::WCCApp> system(
-        core::common::Configurations::Get()->root_path);
-    system.Start();
+    if (FLAGS_group) {
+      LOG_INFO("System begin, group mode of WCC !!");
+      core::planar_system::Planar<core::apps::WCCGroupApp> system(
+          core::common::Configurations::Get()->root_path);
+      system.Start();
+    } else {
+      LOG_INFO("System begin");
+      core::planar_system::Planar<core::apps::WCCApp> system(
+          core::common::Configurations::Get()->root_path);
+      system.Start();
+    }
   }
   return 0;
 }

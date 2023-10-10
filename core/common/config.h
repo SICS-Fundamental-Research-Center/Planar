@@ -67,6 +67,7 @@ class Configurations {
   bool threefour_mode = false;
 
   bool group = false;
+  int group_num = 2;
 
  private:
   Configurations() = default;

@@ -174,8 +174,8 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
     case ExecuteType::kDeserialize: {
       graph_state_.SetSerializedToDeserialized(execute_resp.graph_id);
       if (group_mode_) {
-        group_serialized_num_++;
-        if (group_serialized_num_ == group_num_) {
+        group_deserialized_num_++;
+        if (group_deserialized_num_ == group_num_) {
           CreateGroupSerializableGraph();
 
           ExecuteMessage execute_message;
@@ -223,6 +223,7 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
         }
         // release the group_graph handler
         group_serializable_graph_.reset();
+
       } else {
         ExecuteMessage execute_message(execute_resp);
         execute_message.graph_id = execute_resp.graph_id;
@@ -235,6 +236,18 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
       graph_state_.SetComputedToSerialized(execute_resp.graph_id);
       graph_state_.ReleaseSubgraph(execute_resp.graph_id);
       // Check if current round finish.
+      if (group_mode_) {
+        group_serialized_num_++;
+        if (group_serialized_num_ != group_num_) {
+          break;
+        } else {
+          group_num_ = 0;
+          group_serialized_num_ = 0;
+          group_deserialized_num_ = 0;
+          group_graphs_.clear();
+        }
+      }
+
       if (IsCurrentRoundFinish()) {
         if (IsSystemStop()) {
           WriteMessage write_message;
@@ -514,6 +527,7 @@ void Scheduler::CreateGroupSerializableGraph() {
   //    std::make_unique<MutableGroupCSRGraphUInt16>();
   //  }
   group_serializable_graph_ = std::make_unique<MutableGroupCSRGraphUInt32>();
+  InitGroupSerializableGraph();
 }
 
 void Scheduler::InitGroupSerializableGraph() {
