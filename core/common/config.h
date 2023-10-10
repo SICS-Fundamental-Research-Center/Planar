@@ -63,6 +63,8 @@ class Configurations {
   bool ASP = false;
   // for mst
   bool fast = false;
+  // for wcc
+  bool wcc_ASP = false;
 
   bool threefour_mode = false;
 
