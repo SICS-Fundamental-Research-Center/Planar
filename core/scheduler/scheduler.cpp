@@ -5,7 +5,7 @@ namespace sics::graph::core::scheduler {
 void Scheduler::Start() {
   thread_ = std::make_unique<std::thread>([this]() {
     auto update_store_size = update_store_->GetMemorySize();
-    memory_left_size_ -= update_store_size;
+    //    memory_left_size_ -= update_store_size;
     LOGF_INFO("global memory size: {} MB", memory_left_size_);
     LOGF_INFO(" ============ Current Round: {} ============ ", current_round_);
     bool running = true;
