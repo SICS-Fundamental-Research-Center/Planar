@@ -3,6 +3,7 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <map>
 #include <mutex>
 #include <unordered_set>
 #include <vector>
@@ -20,6 +21,7 @@ class PathMatcher {
   using MiniCleanCSRGraph =
       sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
   using PathPattern = sics::graph::miniclean::common::PathPattern;
+  using PathPatternID = sics::graph::miniclean::common::PathPatternID;
   using TaskPackage = sics::graph::core::common::TaskPackage;
   using VertexID = sics::graph::miniclean::common::VertexID;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
@@ -33,10 +35,6 @@ class PathMatcher {
   void LoadGraph(const std::string& data_path);
 
   void LoadPatterns(const std::string& pattern_path);
-
-  // For temporary usage.
-  // It would be contained in `Graph Partitioner` or `Preprocessing` module.
-  void BuildCandidateSet();
 
   // Split the path matching tasks into `parallelism` parts.
   void GroupTasks(size_t num_tasks,
@@ -62,9 +60,7 @@ class PathMatcher {
   MiniCleanCSRGraph* miniclean_csr_graph_;
   std::vector<PathPattern> path_patterns_;
   std::vector<std::list<std::vector<VertexID>>> matched_results_;
-  std::vector<std::vector<VertexID>> candidates_;
-  std::vector<std::vector<size_t>> vertex_label_to_pattern_id;
-  VertexLabel num_label_ = 0;
+  std::map<VertexLabel, std::vector<PathPatternID>> vertex_label_to_pattern_id;
 
   double exe_t0 = 10000, write_back_t0 = 10000, exe_t1 = 0, write_back_t1 = 0;
 
