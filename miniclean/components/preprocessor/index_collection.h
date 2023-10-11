@@ -41,6 +41,11 @@ class VertexAttributeSegment {
       const std::vector<std::string>& block_path_list,
       const std::vector<std::string>& block_offset_path_list);
 
+  const AttributeBucket& GetAttributeBucketByVertexLabel(
+      VertexLabel vlabel) const {
+    return bucket_by_value_.at(vlabel);
+  }
+
  private:
   template <typename T>
   void LoadBinFile(const std::string& bin_path, std::vector<T>& dst) {
@@ -90,8 +95,7 @@ class PathPatternIndex {
   using VertexID = sics::graph::miniclean::common::VertexID;
   using PathInstance = std::vector<VertexID>;
   using PathInstanceBucket = std::vector<PathInstance>;
-  // `Path Instance Buckets` is a collection of buckets of each pattern
-  // patterns.
+  // `Path Instance Buckets` is a collection of buckets of each path patterns.
   using PathInstanceBuckets = std::vector<PathInstanceBucket>;
   using VertexBucket = std::vector<VertexID>;
 
@@ -115,6 +119,11 @@ class IndexCollection {
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using VertexID = sics::graph::miniclean::common::VertexID;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using VertexAttributeValue =
+      sics::graph::miniclean::common::VertexAttributeValue;
+  using ValueBucket = std::map<VertexAttributeValue, std::vector<VertexID>>;
+  using AttributeBucket = std::map<VertexAttributeID, ValueBucket>;
 
  public:
   IndexCollection() = default;
@@ -122,6 +131,11 @@ class IndexCollection {
                            const std::string& path_instance_file,
                            const std::string& graph_config_path,
                            const std::string& path_pattern_path);
+
+  const AttributeBucket& GetAttributeBucketByVertexLabel(
+      VertexLabel vlabel) const {
+    return vertex_attribute_segment_.GetAttributeBucketByVertexLabel(vlabel);
+  }
 
  private:
   void LoadVertexAttributeSegment(const std::string& vertex_attribute_file);

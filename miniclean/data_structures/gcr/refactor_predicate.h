@@ -23,11 +23,10 @@ class ConstantPredicate {
   ConstantPredicate() = default;
   ConstantPredicate(VertexLabel vertex_label,
                     VertexAttributeID vertex_attribute_id,
-                    uint8_t operator_type, size_t constant_value)
+                    uint8_t operator_type)
       : vertex_label_(vertex_label),
         vertex_attribute_id_(vertex_attribute_id),
-        operator_type_(static_cast<OperatorType>(operator_type)),
-        constant_value_(constant_value) {}
+        operator_type_(static_cast<OperatorType>(operator_type)) {}
 
   VertexLabel get_vertex_label() const { return vertex_label_; }
   VertexAttributeID get_vertex_attribute_id() const {
@@ -65,28 +64,18 @@ class VariablePredicate {
   VariablePredicate() = default;
   VariablePredicate(VertexLabel lhs_label, VertexLabel rhs_label,
                     VertexAttributeID lhs_attribute_id,
-                    VertexAttributeID rhs_attribute_id, uint8_t operator_type,
-                    std::pair<size_t, size_t> left_attr_range,
-                    std::pair<size_t, size_t> right_attr_range)
+                    VertexAttributeID rhs_attribute_id, uint8_t operator_type)
       : lhs_label_(lhs_label),
         rhs_label_(rhs_label),
         lhs_attribute_id_(lhs_attribute_id),
         rhs_attribute_id_(rhs_attribute_id),
-        operator_type_(static_cast<OperatorType>(operator_type)),
-        left_attr_range_(left_attr_range),
-        right_attr_range_(right_attr_range) {}
+        operator_type_(static_cast<OperatorType>(operator_type)) {}
 
   VertexLabel get_lhs_label() const { return lhs_label_; }
   VertexLabel get_rhs_label() const { return rhs_label_; }
   VertexAttributeID get_lhs_attribute_id() const { return lhs_attribute_id_; }
   VertexAttributeID get_rhs_attribute_id() const { return rhs_attribute_id_; }
   OperatorType get_operator_type() const { return operator_type_; }
-  std::pair<size_t, size_t> get_left_attr_range() const {
-    return left_attr_range_;
-  }
-  std::pair<size_t, size_t> get_right_attr_range() const {
-    return right_attr_range_;
-  }
 
   void set_lhs_label(VertexLabel lhs_label) { lhs_label_ = lhs_label; }
   void set_rhs_label(VertexLabel rhs_label) { rhs_label_ = rhs_label; }
@@ -99,12 +88,6 @@ class VariablePredicate {
   void set_operator_type(OperatorType operator_type) {
     operator_type_ = operator_type;
   }
-  void set_left_attr_range(const std::pair<size_t, size_t>& left_attr_range) {
-    left_attr_range_ = left_attr_range;
-  }
-  void set_right_attr_range(const std::pair<size_t, size_t>& right_attr_range) {
-    right_attr_range_ = right_attr_range;
-  }
 
  private:
   VertexLabel lhs_label_;
@@ -112,8 +95,6 @@ class VariablePredicate {
   VertexAttributeID lhs_attribute_id_;
   VertexAttributeID rhs_attribute_id_;
   OperatorType operator_type_;
-  std::pair<size_t, size_t> left_attr_range_;
-  std::pair<size_t, size_t> right_attr_range_;
 };
 
 class ConcreteVariablePredicate {
@@ -167,12 +148,8 @@ struct convert<
     sics::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate> {
   static Node encode(const sics::graph::miniclean::data_structures::gcr::
                          refactor::ConstantPredicate& constant_predicate) {
+    // TODO: Implement it.
     Node node;
-    node["vertex_label"] = constant_predicate.get_vertex_label();
-    node["vertex_attribute_id"] = constant_predicate.get_vertex_attribute_id();
-    node["operator_type"] =
-        static_cast<uint8_t>(constant_predicate.get_operator_type());
-    node["constant_value"] = constant_predicate.get_constant_value();
     return node;
   }
 
@@ -180,18 +157,11 @@ struct convert<
       const Node& node,
       sics::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate&
           constant_predicate) {
-    if (node.size() != 4) {
-      return false;
-    }
-
     constant_predicate = sics::graph::miniclean::data_structures::gcr::
         refactor::ConstantPredicate(
-            node["vertex_label"]
-                .as<sics::graph::miniclean::common::VertexLabel>(),
-            node["vertex_attribute_id"]
-                .as<sics::graph::miniclean::common::VertexAttributeID>(),
-            node["operator_type"].as<uint8_t>(),
-            node["constant_value"].as<size_t>());
+            node[0].as<sics::graph::miniclean::common::VertexLabel>(),
+            node[1].as<sics::graph::miniclean::common::VertexAttributeID>(),
+            node[2].as<uint8_t>());
     return true;
   }
 };
@@ -201,15 +171,8 @@ struct convert<
     sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate> {
   struct Node encode(const sics::graph::miniclean::data_structures::gcr::
                          refactor::VariablePredicate& variable_predicate) {
+    // TODO: Implement it.
     Node node;
-    node["lhs_label"] = variable_predicate.get_lhs_label();
-    node["rhs_label"] = variable_predicate.get_rhs_label();
-    node["lhs_attribute_id"] = variable_predicate.get_lhs_attribute_id();
-    node["rhs_attribute_id"] = variable_predicate.get_rhs_attribute_id();
-    node["operator_type"] =
-        static_cast<uint8_t>(variable_predicate.get_operator_type());
-    node["left_attr_range"] = variable_predicate.get_left_attr_range();
-    node["right_attr_range"] = variable_predicate.get_right_attr_range();
     return node;
   }
 
@@ -217,21 +180,23 @@ struct convert<
       const Node& node,
       sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate&
           variable_predicate) {
-    if (node.size() != 7) {
-      return false;
+    int lhs_vattr_id = node[1].as<int>();
+    int rhs_vattr_id = node[3].as<int>();
+    if (lhs_vattr_id == -1) {
+      lhs_vattr_id = MAX_VERTEX_ATTRIBUTE_ID;
     }
-
+    if (rhs_vattr_id == -1) {
+      rhs_vattr_id = MAX_VERTEX_ATTRIBUTE_ID;
+    }
     variable_predicate = sics::graph::miniclean::data_structures::gcr::
         refactor::VariablePredicate(
-            node["lhs_label"].as<sics::graph::miniclean::common::VertexLabel>(),
-            node["rhs_label"].as<sics::graph::miniclean::common::VertexLabel>(),
-            node["lhs_attribute_id"]
-                .as<sics::graph::miniclean::common::VertexAttributeID>(),
-            node["rhs_attribute_id"]
-                .as<sics::graph::miniclean::common::VertexAttributeID>(),
-            node["operator_type"].as<uint8_t>(),
-            node["left_attr_range"].as<std::pair<size_t, size_t>>(),
-            node["right_attr_range"].as<std::pair<size_t, size_t>>());
+            node[0].as<sics::graph::miniclean::common::VertexLabel>(),
+            static_cast<sics::graph::miniclean::common::VertexAttributeID>(
+                lhs_vattr_id),
+            node[2].as<sics::graph::miniclean::common::VertexLabel>(),
+            static_cast<sics::graph::miniclean::common::VertexAttributeID>(
+                rhs_vattr_id),
+            node[4].as<uint8_t>());
     return true;
   }
 };
