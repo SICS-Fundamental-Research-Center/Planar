@@ -8,7 +8,7 @@
 
 namespace sics::graph::miniclean::data_structures::gcr::refactor {
 
-typedef enum {
+typedef enum : uint8_t {
   kEq = 0,
   kGt,
 } OperatorType;
@@ -23,10 +23,10 @@ class ConstantPredicate {
   ConstantPredicate() = default;
   ConstantPredicate(VertexLabel vertex_label,
                     VertexAttributeID vertex_attribute_id,
-                    uint8_t operator_type)
+                    OperatorType operator_type)
       : vertex_label_(vertex_label),
         vertex_attribute_id_(vertex_attribute_id),
-        operator_type_(static_cast<OperatorType>(operator_type)) {}
+        operator_type_(operator_type) {}
 
   VertexLabel get_vertex_label() const { return vertex_label_; }
   VertexAttributeID get_vertex_attribute_id() const {
@@ -64,12 +64,13 @@ class VariablePredicate {
   VariablePredicate() = default;
   VariablePredicate(VertexLabel lhs_label, VertexLabel rhs_label,
                     VertexAttributeID lhs_attribute_id,
-                    VertexAttributeID rhs_attribute_id, uint8_t operator_type)
+                    VertexAttributeID rhs_attribute_id,
+                    OperatorType operator_type)
       : lhs_label_(lhs_label),
         rhs_label_(rhs_label),
         lhs_attribute_id_(lhs_attribute_id),
         rhs_attribute_id_(rhs_attribute_id),
-        operator_type_(static_cast<OperatorType>(operator_type)) {}
+        operator_type_(operator_type) {}
 
   VertexLabel get_lhs_label() const { return lhs_label_; }
   VertexLabel get_rhs_label() const { return rhs_label_; }
@@ -157,11 +158,26 @@ struct convert<
       const Node& node,
       sics::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate&
           constant_predicate) {
+    uint8_t operator_type_uint8 = node[2].as<uint8_t>();
+    sics::graph::miniclean::data_structures::gcr::refactor::OperatorType
+        operator_type;
+    switch (operator_type_uint8) {
+      case 0:
+        operator_type = sics::graph::miniclean::data_structures::gcr::refactor::
+            OperatorType::kEq;
+        break;
+      case 1:
+        operator_type = sics::graph::miniclean::data_structures::gcr::refactor::
+            OperatorType::kGt;
+        break;
+      default:
+        return false;
+    }
     constant_predicate = sics::graph::miniclean::data_structures::gcr::
         refactor::ConstantPredicate(
             node[0].as<sics::graph::miniclean::common::VertexLabel>(),
             node[1].as<sics::graph::miniclean::common::VertexAttributeID>(),
-            node[2].as<uint8_t>());
+            operator_type);
     return true;
   }
 };
@@ -188,6 +204,21 @@ struct convert<
     if (rhs_vattr_id == -1) {
       rhs_vattr_id = MAX_VERTEX_ATTRIBUTE_ID;
     }
+    uint8_t operator_type_uint8 = node[4].as<uint8_t>();
+    sics::graph::miniclean::data_structures::gcr::refactor::OperatorType
+        operator_type;
+    switch (operator_type_uint8) {
+      case 0:
+        operator_type = sics::graph::miniclean::data_structures::gcr::refactor::
+            OperatorType::kEq;
+        break;
+      case 1:
+        operator_type = sics::graph::miniclean::data_structures::gcr::refactor::
+            OperatorType::kGt;
+        break;
+      default:
+        return false;
+    }
     variable_predicate = sics::graph::miniclean::data_structures::gcr::
         refactor::VariablePredicate(
             node[0].as<sics::graph::miniclean::common::VertexLabel>(),
@@ -196,7 +227,7 @@ struct convert<
             node[2].as<sics::graph::miniclean::common::VertexLabel>(),
             static_cast<sics::graph::miniclean::common::VertexAttributeID>(
                 rhs_vattr_id),
-            node[4].as<uint8_t>());
+            operator_type);
     return true;
   }
 };

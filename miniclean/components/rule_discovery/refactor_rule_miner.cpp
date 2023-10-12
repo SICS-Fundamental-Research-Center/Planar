@@ -123,7 +123,8 @@ void RuleMiner::InitStarRuleContainer() {
       for (const auto& value_bucket_pair : value_bucket) {
         VertexAttributeValue value = value_bucket_pair.first;
         const auto& valid_vertices = value_bucket_pair.second;
-        if (valid_vertices.size() < star_support_threshold_) {
+        if (valid_vertices.size() <
+            Configurations::Get()->star_support_threshold_) {
           continue;
         }
         star_rule_container_[center_label][attr_id].emplace_back(center_label,
@@ -156,7 +157,8 @@ void RuleMiner::InitPathRuleUnitContainer() {
              attr_bucket_by_vlabel.at(attr_id)) {
           VertexAttributeValue value = value_bucket_pair.first;
           const auto& valid_vertices = value_bucket_pair.second;
-          if (valid_vertices.size() < star_support_threshold_) {
+          if (valid_vertices.size() <
+              Configurations::Get()->support_threshold_) {
             continue;
           }
           path_rule_unit_container_[i][j][attr_id].emplace_back(
