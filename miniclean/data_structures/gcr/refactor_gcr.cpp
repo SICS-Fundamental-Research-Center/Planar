@@ -213,10 +213,8 @@ void GCR::EnumerateVariablePredicateInstances(
 std::vector<std::pair<size_t, size_t>> GCR::ComputeAttributeValuePair(
     const ConcreteVariablePredicate& variable_predicate) const {
   // Retrieve the range of the variable value.
-  std::pair<size_t, size_t> left_attr_range =
-      variable_predicate.get_variable_predicate().get_left_attr_range();
-  std::pair<size_t, size_t> right_attr_range =
-      variable_predicate.get_variable_predicate().get_right_attr_range();
+  std::pair<size_t, size_t> left_attr_range = std::make_pair(0, 0);
+  std::pair<size_t, size_t> right_attr_range = std::make_pair(0, 0);
   std::vector<std::pair<size_t, size_t>> value_pair;
   switch (variable_predicate.get_variable_predicate().get_operator_type()) {
     case OperatorType::kEq: {

@@ -44,11 +44,17 @@ typedef std::list<PathPatternID> StarPattern;
 typedef std::pair<StarPattern, StarPattern> DualPattern;
 
 #define MAX_VERTEX_ATTRIBUTE_VALUE \
-  std::numeric_limits<VertexAttributeValue>::max()
+  std::numeric_limits<             \
+      sics::graph::miniclean::common::VertexAttributeValue>::max()
 
-#define MAX_VERTEX_LABEL std::numeric_limits<VertexLabel>::max()
+#define MAX_VERTEX_ATTRIBUTE_ID \
+  std::numeric_limits<sics::graph::miniclean::common::VertexAttributeID>::max()
 
-#define MAX_EDGE_LABEL std::numeric_limits<EdgeLabel>::max()
+#define MAX_VERTEX_LABEL \
+  std::numeric_limits<sics::graph::miniclean::common::VertexLabel>::max()
+
+#define MAX_EDGE_LABEL \
+  std::numeric_limits<sics::graph::miniclean::common::EdgeLabel>::max()
 
 }  // namespace sics::graph::miniclean::common
 

@@ -25,9 +25,18 @@ class PathRule {
   using MiniCleanCSRGraph =
       sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
   using VertexID = sics::graph::miniclean::common::VertexID;
+  using VertexAttributeValue =
+      sics::graph::miniclean::common::VertexAttributeValue;
 
  public:
   PathRule() = default;
+  PathRule(PathPatternID path_pattern_id, size_t vertex_pos,
+           ConstantPredicate constant_predicate,
+           VertexAttributeValue attribute_value)
+      : path_pattern_id_(path_pattern_id) {
+    constant_predicate.set_constant_value(attribute_value);
+    constant_predicates_.emplace_back(vertex_pos, std::move(constant_predicate));
+  }
   PathRule(PathPattern path_pattern, size_t path_pattern_id, size_t map_size)
       : path_pattern_(path_pattern),
         path_pattern_id_(path_pattern_id),
@@ -81,6 +90,41 @@ class PathRule {
   // The bit at position `i` is set to 1 if the vertex `i` can be a valid center
   // vertex of this path.
   StarBitmap star_bitmap_;
+};
+
+class StarRule {
+ private:
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+  using ConstantPredicate =
+      sics::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate;
+  using VertexAttributeValue =
+      sics::graph::miniclean::common::VertexAttributeValue;
+
+ public:
+  StarRule(VertexLabel center_label)
+      : predicate_count_(0), center_label_(center_label) {}
+  StarRule(VertexLabel center_label, ConstantPredicate constant_predicate,
+           VertexAttributeValue attribute_value)
+      : predicate_count_(1), center_label_(center_label) {
+    constant_predicate.set_constant_value(attribute_value);
+    constant_predicates_.emplace_back(constant_predicate);
+  }
+
+  void AddConstantPredicateToCenter(
+      const ConstantPredicate& constant_predicate) {
+    constant_predicates_.emplace_back(constant_predicate);
+    predicate_count_ += 1;
+  }
+  void AddPathRule(PathRule path_rule) {
+    path_rules_.push_back(path_rule);
+    predicate_count_ += path_rule.get_constant_predicates().size();
+  }
+
+ private:
+  size_t predicate_count_;
+  VertexLabel center_label_;
+  std::vector<ConstantPredicate> constant_predicates_;
+  std::vector<PathRule> path_rules_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

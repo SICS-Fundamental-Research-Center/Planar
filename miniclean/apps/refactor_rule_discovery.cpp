@@ -20,7 +20,8 @@ int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   // Initialize graph.
-  YAML::Node metadata = YAML::LoadFile(FLAGS_workspace_path + "/meta.yaml");
+  YAML::Node metadata =
+      YAML::LoadFile(FLAGS_workspace_path + "/graph/meta.yaml");
   GraphMetadata graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
   MiniCleanCSRGraph graph(graph_metadata.GetSubgraphMetadata(0));
 
@@ -30,25 +31,13 @@ int main(int argc, char* argv[]) {
   rule_miner.LoadGraph(FLAGS_workspace_path);
   LOG_INFO("Loading graph done.");
 
-  LOG_INFO("Loading path rules...");
-  rule_miner.LoadPathRules(FLAGS_workspace_path);
-  LOG_INFO("Loading path rules done.");
+  LOG_INFO("Loading index collection...");
+  rule_miner.LoadIndexCollection(FLAGS_workspace_path);
+  LOG_INFO("Loading index collection done.");
 
-  LOG_INFO("Loading path instances...");
-  rule_miner.LoadPathInstances(FLAGS_workspace_path + "/matched_path_patterns");
-  LOG_INFO("Loading path instances done.");
-
-  LOG_INFO("Loading index metadata...");
-  rule_miner.LoadIndexMetadata(FLAGS_workspace_path + "/index_meta.yaml");
-  LOG_INFO("Loading index metadata done.");
-
-  LOG_INFO("Init path rule units...");
-  rule_miner.InitPathRuleUnits();
-  LOG_INFO("Init path rule units done.");
-
-  LOG_INFO("Mining GCRs...");
-  rule_miner.MineGCRs();
-  LOG_INFO("Mining GCRs done.");
+  LOG_INFO("Prepare GCR Components...");
+  rule_miner.PrepareGCRComponents(FLAGS_workspace_path);
+  LOG_INFO("Prepare GCR Components done.");
 
   gflags::ShutDownCommandLineFlags();
 }
