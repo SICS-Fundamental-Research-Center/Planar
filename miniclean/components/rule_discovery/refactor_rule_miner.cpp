@@ -64,7 +64,7 @@ void RuleMiner::PrepareGCRComponents(const std::string& workspace_path) {
   std::string predicates_path = workspace_path + "/predicates.yaml";
   LoadPredicates(predicates_path);
   // Init star rules.
-  InitStarRuleContainer();
+  InitStarRuleUnitContainer();
   // Init path patterns.
   InitPathRuleUnitContainer();
 }
@@ -102,7 +102,7 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
       predicate_nodes["Consequences"].as<std::vector<VariablePredicate>>();
 }
 
-void RuleMiner::InitStarRuleContainer() {
+void RuleMiner::InitStarRuleUnitContainer() {
   // Collect center labels of patterns.
   std::set<VertexLabel> center_labels;
   for (const auto& path_pattern : path_patterns_) {
