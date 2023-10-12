@@ -62,8 +62,6 @@ class RuleMiner {
   // It's used to compose with a GCR.
   void PrepareGCRComponents(const std::string& workspace_path);
 
-  void InitPathRuleUnits();
-
   void MineGCRs();
 
  private:
@@ -94,8 +92,8 @@ class RuleMiner {
 
   const size_t max_predicate_num_ = 3;
   const size_t max_path_num_ = 2;
-  const size_t star_support_threshold_ = 3000;
-  const size_t support_threshold_ = 10000;
+  const size_t star_support_threshold_ = 700;
+  const size_t support_threshold_ = 5000;
   const float confidence_threshold_ = 0.9;
 };
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor
