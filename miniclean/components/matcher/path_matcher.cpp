@@ -48,15 +48,20 @@ void PathMatcher::LoadPatterns(const std::string& pattern_path) {
   YAML::Node path_pattern_node = path_pattern_config["PathPatterns"];
   path_patterns_ = path_pattern_node.as<std::vector<PathPattern>>();
 
+  // Compute the max vertex label.
+  VertexLabel max_vertex_label = 0;
+  for (const PathPattern& path_pattern : path_patterns_) {
+    for (const auto& edge : path_pattern) {
+      max_vertex_label = std::max(max_vertex_label, std::get<0>(edge));
+    }
+  }
+
   // Initialize vertex_label_to_pattern_id.
+  vertex_label_to_pattern_id_.resize(max_vertex_label + 1);
   for (PathPatternID i = 0; i < path_patterns_.size(); i++) {
     VertexLabel src_label = std::get<0>(path_patterns_[i][0]);
-    if (vertex_label_to_pattern_id.find(src_label) ==
-        vertex_label_to_pattern_id.end()) {
-      vertex_label_to_pattern_id[src_label] = {i};
-    } else {
-      vertex_label_to_pattern_id[src_label].push_back(i);
-    }
+    // TODO: reserve the space for each vector.
+    vertex_label_to_pattern_id_[src_label].push_back(i);
   }
 }
 
@@ -78,7 +83,8 @@ void PathMatcher::GroupTasks(
       for (VertexID j = task_size * i; j < task_size * (i + 1); j++) {
         if (j >= vertex_number) break;
         VertexLabel label = miniclean_csr_graph_->GetVertexLabelByLocalID(j);
-        std::vector<PathPatternID> patterns = vertex_label_to_pattern_id[label];
+        std::vector<PathPatternID> patterns =
+            vertex_label_to_pattern_id_[label];
         for (PathPatternID k = 0; k < patterns.size(); k++) {
           (*partial_result_pool)[i].reserve(path_patterns_[patterns[k]].size());
           std::vector<VertexID> init_candidate = {j};
