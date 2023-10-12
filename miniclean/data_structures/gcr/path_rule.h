@@ -31,7 +31,7 @@ class PathRule {
  public:
   PathRule() = default;
   PathRule(PathPatternID path_pattern_id, size_t vertex_pos,
-           ConstantPredicate& constant_predicate,
+           ConstantPredicate constant_predicate,
            VertexAttributeValue attribute_value)
       : path_pattern_id_(path_pattern_id) {
     constant_predicate.set_constant_value(attribute_value);

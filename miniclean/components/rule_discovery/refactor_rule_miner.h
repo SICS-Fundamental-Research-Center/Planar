@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "miniclean/common/config.h"
 #include "miniclean/common/types.h"
 #include "miniclean/components/preprocessor/index_collection.h"
 #include "miniclean/components/preprocessor/index_metadata.h"
@@ -48,6 +49,7 @@ class RuleMiner {
       std::map<VertexLabel, std::map<VertexAttributeID, std::vector<StarRule>>>;
   using ConstantPredicateContainer =
       std::map<VertexLabel, std::map<VertexAttributeID, ConstantPredicate>>;
+  using Configurations = sics::graph::miniclean::common::Configurations;
 
  public:
   RuleMiner(MiniCleanCSRGraph* graph) : graph_(graph) {}
@@ -89,12 +91,6 @@ class RuleMiner {
 
   std::vector<GCR> varified_gcrs_;
   GCRFactory gcr_factory_;
-
-  const size_t max_predicate_num_ = 3;
-  const size_t max_path_num_ = 2;
-  const size_t star_support_threshold_ = 700;
-  const size_t support_threshold_ = 5000;
-  const float confidence_threshold_ = 0.9;
 };
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor
 

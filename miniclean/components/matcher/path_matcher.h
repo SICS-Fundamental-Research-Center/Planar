@@ -60,7 +60,7 @@ class PathMatcher {
   MiniCleanCSRGraph* miniclean_csr_graph_;
   std::vector<PathPattern> path_patterns_;
   std::vector<std::list<std::vector<VertexID>>> matched_results_;
-  std::map<VertexLabel, std::vector<PathPatternID>> vertex_label_to_pattern_id;
+  std::vector<std::vector<PathPatternID>> vertex_label_to_pattern_id_;
 
   double exe_t0 = 10000, write_back_t0 = 10000, exe_t1 = 0, write_back_t1 = 0;
 
