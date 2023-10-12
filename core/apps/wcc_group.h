@@ -16,6 +16,7 @@ class WCCGroupApp : public apis::PlanarAppGroupBase<CSRGroupGraph> {
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
   using VertexID = common::VertexID;
+  using GraphID = common::GraphID;
 
  public:
   using VertexData = typename CSRGraph::VertexData;
@@ -39,7 +40,7 @@ class WCCGroupApp : public apis::PlanarAppGroupBase<CSRGroupGraph> {
 
   void PointJump(VertexID src_id);
 
-  void Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx);
+  void Contract(GraphID gid, VertexID src_id, VertexID dst_id, EdgeIndex idx);
 
   // TODO: judge if the vertex is active, this can be done in parallelDo
   void MessagePassing(VertexID id);

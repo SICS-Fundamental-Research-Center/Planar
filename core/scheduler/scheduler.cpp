@@ -27,6 +27,13 @@ void Scheduler::Start() {
       graph_state_.SetOnDiskToReading(first_read_message.graph_id);
       message_hub_.get_reader_queue()->Push(first_read_message);
     } else {
+      if (group_mode_) {
+        group_serialized_num_ = 0;
+        group_deserialized_num_ = 0;
+        have_read_graphs_ = 0;
+        need_read_graphs_ = group_num_;
+        LOGF_INFO("Group Mode: group_num {}", group_num_);
+      }
       ReadMessage first_read_message;
       first_read_message.graph_id = GetNextReadGraphInCurrentRound();
       first_read_message.num_vertices =
@@ -128,19 +135,26 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
       }
     } else {
       if (group_mode_) {
-        GetNextExecuteGroupGraphs();
-        is_executor_running_ = true;
-        for (int i = 0; i < group_num_; i++) {
-          auto gid = group_graphs_.at(i);
-          ExecuteMessage execute_message;
-          execute_message.graph_id = gid;
-          execute_message.serialized = graph_state_.GetSubgraphSerialized(gid);
-          CreateSerializableGraph(gid);
-          execute_message.graph = graph_state_.GetSubgraph(gid);
-          execute_message.execute_type = ExecuteType::kDeserialize;
-          LOGF_INFO("GROUP MODE: deserialize and execute the read graph {}",
-                    gid);
-          message_hub_.get_executor_queue()->Push(execute_message);
+        have_read_graphs_++;
+        LOGF_INFO("already load graph number: {}", have_read_graphs_);
+        if (!is_executor_running_) {
+          if (have_read_graphs_ >= group_num_) {
+            GetNextExecuteGroupGraphs();
+            is_executor_running_ = true;
+            for (int i = 0; i < group_num_; i++) {
+              auto gid = group_graphs_.at(i);
+              ExecuteMessage execute_message;
+              execute_message.graph_id = gid;
+              execute_message.serialized =
+                  graph_state_.GetSubgraphSerialized(gid);
+              CreateSerializableGraph(gid);
+              execute_message.graph = graph_state_.GetSubgraph(gid);
+              execute_message.execute_type = ExecuteType::kDeserialize;
+              LOGF_INFO("GROUP MODE: deserialize and execute the read graph {}",
+                        gid);
+              message_hub_.get_executor_queue()->Push(execute_message);
+            }
+          }
         }
       } else {
         if (!is_executor_running_) {
@@ -209,12 +223,11 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
     }
     case ExecuteType::kPEval:
     case ExecuteType::kIncEval: {
-      graph_state_.SetDeserializedToComputed(execute_resp.graph_id);
-
       // TODO: decide a subgraph if it stays in memory
       if (group_mode_) {
         for (int i = 0; i < group_num_; i++) {
           auto gid = group_graphs_.at(i);
+          graph_state_.SetDeserializedToComputed(gid);
           ExecuteMessage execute_message;
           execute_message.graph_id = gid;
           execute_message.execute_type = ExecuteType::kSerialize;
@@ -223,8 +236,8 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
         }
         // release the group_graph handler
         group_serializable_graph_.reset();
-
       } else {
+        graph_state_.SetDeserializedToComputed(execute_resp.graph_id);
         ExecuteMessage execute_message(execute_resp);
         execute_message.graph_id = execute_resp.graph_id;
         execute_message.execute_type = ExecuteType::kSerialize;
@@ -238,12 +251,19 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
       // Check if current round finish.
       if (group_mode_) {
         group_serialized_num_++;
+        have_read_graphs_--;
         if (group_serialized_num_ != group_num_) {
+          WriteMessage write_message;
+          write_message.graph_id = execute_resp.graph_id;
+          write_message.serialized = execute_resp.serialized;
+          message_hub_.get_writer_queue()->Push(write_message);
           break;
         } else {
-          group_num_ = 0;
+          auto left = GetLeftPendingGraphNums();
+          group_num_ = left >= need_read_graphs_ ? need_read_graphs_ : left;
           group_serialized_num_ = 0;
           group_deserialized_num_ = 0;
+          //          have_read_graphs_ = 0;
           group_graphs_.clear();
         }
       }
@@ -265,6 +285,13 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
           graph_state_.SyncCurrentRoundPending();
           update_store_->Sync();
           current_round_++;
+          if (group_mode_) {
+            auto left = GetLeftPendingGraphNums();
+            group_num_ = left >= need_read_graphs_ ? need_read_graphs_ : left;
+            group_serialized_num_ = 0;
+            group_deserialized_num_ = 0;
+            group_graphs_.clear();
+          }
           LOGF_INFO(
               " ============ Current Round: {}, Active vertex left: {} "
               "============ ",
@@ -310,21 +337,25 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
           auto next_execute_gid = GetNextExecuteGraph();
           if (next_execute_gid != INVALID_GRAPH_ID) {
             if (group_mode_) {
-              GetNextExecuteGroupGraphs();
-              is_executor_running_ = true;
-              for (int i = 0; i < group_num_; i++) {
-                auto gid = group_graphs_.at(i);
-                ExecuteMessage execute_message;
-                execute_message.graph_id = gid;
-                execute_message.serialized =
-                    graph_state_.GetSubgraphSerialized(gid);
-                CreateSerializableGraph(gid);
-                execute_message.graph = graph_state_.GetSubgraph(gid);
-                execute_message.execute_type = ExecuteType::kDeserialize;
-                LOGF_INFO(
-                    "GROUP MODE: deserialize and execute the read graph {}",
-                    gid);
-                message_hub_.get_executor_queue()->Push(execute_message);
+              if (have_read_graphs_ >= group_num_) {
+                GetNextExecuteGroupGraphs();
+                for (int i = 0; i < group_num_; i++) {
+                  auto gid = group_graphs_.at(i);
+                  ExecuteMessage execute_message;
+                  execute_message.graph_id = gid;
+                  execute_message.serialized =
+                      graph_state_.GetSubgraphSerialized(gid);
+                  CreateSerializableGraph(gid);
+                  execute_message.graph = graph_state_.GetSubgraph(gid);
+                  execute_message.execute_type = ExecuteType::kDeserialize;
+                  LOGF_INFO(
+                      "GROUP MODE: deserialize and execute the read graph {}",
+                      gid);
+                  is_executor_running_ = true;
+                  message_hub_.get_executor_queue()->Push(execute_message);
+                }
+              } else {
+                is_executor_running_ = false;
               }
             } else {
               ExecuteMessage execute_message;
@@ -381,6 +412,7 @@ bool Scheduler::WriteMessageResponseAndCheckTerminate(
       memory_left_size_ += write_size;
     }
   }
+  //  have_read_graphs_--;
   // update subgraph size in memory
   graph_metadata_info_.UpdateSubgraphSize(write_resp.graph_id);
   // Read next subgraph if permitted
@@ -410,6 +442,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       read_flag = true;
     }
   } else {
+    // group_mode use the same logic
     if (use_limits_) {
       if (limits_ > 0) read_flag = true;
     } else {
@@ -592,7 +625,20 @@ void Scheduler::SetAppRound(int round) {
 }
 
 // TODO: Add logic to decide which graph is read first.
-common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
+common::GraphID Scheduler::GetNextReadGraphInCurrentRound() {
+  //  if (test == 0) {
+  //    if (graph_state_.current_round_pending_.at(4) &&
+  //        graph_state_.subgraph_storage_state_.at(4) == GraphState::OnDisk) {
+  //      test++;
+  //      return 4;
+  //    }
+  //  } else if (test == 1) {
+  //    if (graph_state_.current_round_pending_.at(5) &&
+  //        graph_state_.subgraph_storage_state_.at(5) == GraphState::OnDisk) {
+  //      test++;
+  //      return 5;
+  //    }
+  //  }
   for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) == GraphState::OnDisk) {
@@ -616,13 +662,18 @@ common::GraphID Scheduler::GetNextExecuteGraph() const {
 }
 
 void Scheduler::GetNextExecuteGroupGraphs() {
+  int count = 0;
   for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
             GraphState::StorageStateType::Serialized &&
         graph_state_.subgraph_round_.at(gid) == current_round_) {
       group_graphs_.push_back(gid);
-      group_num_++;
+      count++;
+      // check if "group num" graphs have been added.
+      if (count == group_num_) {
+        break;
+      }
     }
   }
   LOGF_INFO("group graphs num: {}", group_num_);

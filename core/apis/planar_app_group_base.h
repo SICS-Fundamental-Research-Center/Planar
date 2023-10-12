@@ -163,7 +163,8 @@ class PlanarAppGroupBase : public PIE {
 
   // Parallel execute edge_delete_func in task_size chunks.
   void ParallelEdgeMutateDo(
-      const std::function<void(VertexID, VertexID, EdgeIndex)>& edge_del_func) {
+      const std::function<void(GraphID, VertexID, VertexID, EdgeIndex)>&
+          edge_del_func) {
     LOG_DEBUG("ParallelEdgeDelDo is begin");
     auto group_graphs = (MutableGroupCSRGraphUInt32*)(graph_);
     uint32_t task_size = GetTaskSize(group_graphs->GetVertexNums());
@@ -175,7 +176,8 @@ class PlanarAppGroupBase : public PIE {
         end_index += task_size;
         if (end_index > graph->GetVertexNums())
           end_index = graph->GetVertexNums();
-        auto task = [&edge_del_func, graph, begin_index, end_index]() {
+        auto task = [&edge_del_func, graph, begin_index, end_index,
+                     graphIndex = i]() {
           for (VertexIndex i = begin_index; i < end_index; i++) {
             auto degree = graph->GetOutDegreeByIndex(i);
             if (degree != 0) {
@@ -186,8 +188,8 @@ class PlanarAppGroupBase : public PIE {
                 //                      graph_->GetVertexIDByIndex(i),
                 //                      graph_->GetOneOutEdge(i, j),
                 //                      graph_->GetOutOffsetByIndex(i) + j);
-                edge_del_func(graph->GetVertexIDByIndex(i), outEdges[j],
-                              outOffset_base + j);
+                edge_del_func(graphIndex, graph->GetVertexIDByIndex(i),
+                              outEdges[j], outOffset_base + j);
               }
             }
           }

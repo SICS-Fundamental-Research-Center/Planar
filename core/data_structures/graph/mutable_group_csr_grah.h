@@ -48,9 +48,11 @@ class MutableGroupCSRGraph : public Serializable {
   }
 
   bool IsInGraph(VertexID id) const {
+    bool res = false;
     for (auto& subgraph : subgraphs_) {
-      return subgraph->IsInGraph(id);
+      res = subgraph->IsInGraph(id);
     }
+    return res;
   }
 
   int GetGroupNums() const { return subgraphs_.size(); }
@@ -75,7 +77,9 @@ class MutableGroupCSRGraph : public Serializable {
   bool WriteMinVertexDataByID(VertexID id, VertexData data_new) {
     bool flag = false;
     for (auto& subgraph : subgraphs_) {
-      flag = subgraph->WriteMinVertexDataByID(id, data_new);
+      if (subgraph->IsInGraph(id)) {
+        flag = subgraph->WriteMinVertexDataByID(id, data_new);
+      }
     }
     return flag;
   }
@@ -83,7 +87,9 @@ class MutableGroupCSRGraph : public Serializable {
   bool WriteVertexDataByID(VertexID id, VertexData data_new) {
     bool flag = false;
     for (auto& subgraph : subgraphs_) {
-      flag = subgraph->WriteVertexDataByID(id, data_new);
+      if (subgraph->IsInGraph(id)) {
+        flag = subgraph->WriteVertexDataByID(id, data_new);
+      }
     }
     return flag;
   }
@@ -102,8 +108,8 @@ class MutableGroupCSRGraph : public Serializable {
     }
   }
 
-  void DeleteEdge(VertexID id, EdgeIndex index) {
-
+  void DeleteEdge(GraphID gid, VertexID id, EdgeIndex index) {
+    subgraphs_.at(gid)->DeleteEdge(id, index);
   }
 
   // log methods
@@ -119,9 +125,15 @@ class MutableGroupCSRGraph : public Serializable {
     }
   }
 
-  void LogGraphInfo(VertexID id) const {
+  void LogGraphInfo() const {
     for (auto& subgraph : subgraphs_) {
-      subgraph->LogGraphInfo(id);
+      subgraph->LogGraphInfo();
+    }
+  }
+
+  void LogIndexInfo() {
+    for (auto subgraph : subgraphs_) {
+      subgraph->LogIndexInfo();
     }
   }
 

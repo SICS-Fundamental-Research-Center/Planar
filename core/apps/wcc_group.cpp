@@ -15,9 +15,9 @@ void WCCGroupApp::PEval() {
     this->Graft(src_id, dstId);
   };
   auto point_jump = [this](VertexID id) { this->PointJump(id); };
-  auto contract = [this](VertexID src_id, VertexID dst_id,
+  auto contract = [this](GraphID gid, VertexID src_id, VertexID dst_id,
                          EdgeIndex edge_index) {
-    this->Contract(src_id, dst_id, edge_index);
+    this->Contract(gid, src_id, dst_id, edge_index);
   };
   LOG_INFO("PEval begin");
   //  update_store_->LogBorderVertexInfo();
@@ -26,8 +26,8 @@ void WCCGroupApp::PEval() {
   //  graph_->LogVertexData();
   //  graph_->LogIndexInfo();
   ParallelVertexDo(init);
-  //  graph_->LogVertexData();
   LOG_INFO("init finished");
+  //  graph_->LogVertexData();
   while (graph_->GetOutEdgeNums() != 0) {
     //    update_store_->LogGlobalMessage();
     ParallelEdgeDo(graft);
@@ -43,7 +43,6 @@ void WCCGroupApp::PEval() {
     ParallelEdgeMutateDo(contract);
     LOG_INFO("contract finished");
     //    graph_->LogEdges();
-    //    graph_->LogGraphInfo();
     //    graph_->LogVertexData();
   }
   LOG_INFO("PEval finished");
@@ -97,10 +96,14 @@ void WCCGroupApp::PointJump(VertexID src_id) {
   }
 }
 
-void WCCGroupApp::Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
+void WCCGroupApp::Contract(GraphID gid, VertexID src_id, VertexID dst_id,
+                           EdgeIndex idx) {
+//  if (graph_->GetOutEdgeNums() < 100) {
+//    LOGF_INFO("gid {} : src {} -> dst {}, index {}", gid, src_id, dst_id, idx);
+//  }
   if (graph_->ReadLocalVertexDataByID(src_id) ==
       graph_->ReadLocalVertexDataByID(dst_id)) {
-    graph_->DeleteEdge(src_id, idx);
+    graph_->DeleteEdge(gid, src_id, idx);
   }
 }
 

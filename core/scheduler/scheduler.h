@@ -1,6 +1,9 @@
 #ifndef GRAPH_SYSTEMS_SCHEDULER_H
 #define GRAPH_SYSTEMS_SCHEDULER_H
 
+#include <cstdlib>
+#include <random>
+
 #include "apis/pie.h"
 #include "apis/planar_app_base.h"
 #include "apis/planar_app_group_base.h"
@@ -43,6 +46,8 @@ class Scheduler {
     // group mode
     group_mode_ = common::Configurations::Get()->group;
     group_graphs_.reserve(graph_metadata_info_.get_num_subgraphs());
+    group_num_ = common::Configurations::Get()->group_num;
+    srand(0);
   }
 
   virtual ~Scheduler() = default;
@@ -90,7 +95,7 @@ class Scheduler {
 
   void InitGroupSerializableGraph();
 
-  common::GraphID GetNextReadGraphInCurrentRound() const;
+  common::GraphID GetNextReadGraphInCurrentRound();
 
   common::GraphID GetNextExecuteGraph() const;
 
@@ -150,6 +155,8 @@ class Scheduler {
   int to_read_graphs_ = 0;
   int have_read_graphs_ = 0;
   int need_read_graphs_ = 0;
+
+  int test = 0;
 };
 
 }  // namespace sics::graph::core::scheduler
