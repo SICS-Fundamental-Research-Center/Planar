@@ -35,7 +35,7 @@ class PathRule {
            VertexAttributeValue attribute_value)
       : path_pattern_id_(path_pattern_id) {
     constant_predicate.set_constant_value(attribute_value);
-    constant_predicates_.emplace_back(vertex_pos, constant_predicate);
+    constant_predicates_.emplace_back(vertex_pos, std::move(constant_predicate));
   }
   PathRule(PathPattern path_pattern, size_t path_pattern_id, size_t map_size)
       : path_pattern_(path_pattern),
