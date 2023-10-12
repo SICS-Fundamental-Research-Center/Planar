@@ -109,14 +109,14 @@ void PathPatternIndex::BuildPathInstanceBucket(
 
     // Get the file size.
     instance_file.seekg(0, std::ios::end);
-    size_t fileSize = instance_file.tellg();
+    size_t file_size = instance_file.tellg();
     instance_file.seekg(0, std::ios::beg);
 
     // Create a buffer.
-    OwnedBuffer buffer(fileSize);
+    OwnedBuffer buffer(file_size);
 
     // Read the instances.
-    instance_file.read(reinterpret_cast<char*>(buffer.Get()), fileSize);
+    instance_file.read(reinterpret_cast<char*>(buffer.Get()), file_size);
     if (!instance_file) {
       LOG_FATAL(
           "Failed to read path instance file: ",
@@ -125,7 +125,7 @@ void PathPatternIndex::BuildPathInstanceBucket(
 
     // Parse the buffer.
     size_t pattern_length = path_patterns[i].size();
-    size_t num_instances = fileSize / (pattern_length * sizeof(VertexID));
+    size_t num_instances = file_size / (pattern_length * sizeof(VertexID));
     VertexID* instance_buffer = reinterpret_cast<VertexID*>(buffer.Get());
 
     // Build the bucket.
@@ -135,7 +135,8 @@ void PathPatternIndex::BuildPathInstanceBucket(
         instance[k] = instance_buffer[j * pattern_length + k];
       }
       VertexID src_vertex_id = instance[0];
-      path_instances_buckets_by_vertex_id_[src_vertex_id][i].push_back(
+      // TODO: reserve the space for vector beforehand.
+      path_instances_buckets_by_vertex_id_[src_vertex_id][i].emplace_back(
           std::move(instance));
     }
 
@@ -165,6 +166,7 @@ void PathPatternIndex::BuildVertexBucket(
               vertex_bucket_by_pattern_id_[i].end());
     auto it = std::unique(vertex_bucket_by_pattern_id_[i].begin(),
                           vertex_bucket_by_pattern_id_[i].end());
+    // TODO: `erase` is not efficient.
     vertex_bucket_by_pattern_id_[i].erase(
         it, vertex_bucket_by_pattern_id_[i].end());
   }
