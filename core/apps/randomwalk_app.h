@@ -31,7 +31,7 @@ class RandomWalkApp : public apis::PlanarAppBase<CSRGraph> {
     //    active_next_.Init(update_store->GetMessageCount());
     walk_length_ = core::common::Configurations::Get()->walk;
     num_vertices_ = update_store->GetMessageCount();
-    uint64_t size = num_vertices_ * walk_length_;
+    uint64_t size = (uint64_t)(num_vertices_) * (uint64_t)(walk_length_);
     matrix_ = new uint32_t[size];
     LOGF_INFO("matrix size : {}", size);
   }
@@ -54,7 +54,10 @@ class RandomWalkApp : public apis::PlanarAppBase<CSRGraph> {
     return res;
   }
 
-  uint32_t* GetRoad(VertexID id) { return matrix_ + id * walk_length_; }
+  uint32_t* GetRoad(VertexID id) {
+    uint64_t index = (uint64_t)(id) * (uint64_t)(walk_length_);
+    return matrix_ + index;
+  }
 
  private:
   // configs
