@@ -346,6 +346,10 @@ class MutableCSRGraph : public Serializable {
     return vertex_data_read_base_[index];
   }
 
+  VertexData ReadLocalVertexDataByIndex(VertexIndex index) const {
+    return vertex_data_read_base_[index];
+  }
+
   bool WriteMaxReadDataByID(VertexID id, VertexData data_new) {
     auto index = index_by_global_id_[id];
     return util::atomic::WriteMax(&vertex_data_read_base_[index], data_new);

@@ -63,6 +63,9 @@ class Configurations {
   bool ASP = false;
   // for mst
   bool fast = false;
+  // for random walk
+  uint32_t walk = 5;
+  bool no_data_need = false;
 
   bool threefour_mode = false;
 

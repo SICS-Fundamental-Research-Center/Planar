@@ -112,6 +112,37 @@ class MutableGroupCSRGraph : public Serializable {
     subgraphs_.at(gid)->DeleteEdge(id, index);
   }
 
+  void SyncAllSubgraphData(common::TaskRunner* runner) {
+    if (subgraphs_.size() == 1) {
+      return;
+    }
+
+    for (int i = 0; i < subgraphs_.size(); i++) {
+      common::TaskPackage tasks;
+      auto subgraph = subgraphs_[i];
+      size_t task_num = parallelism_ * task_package_factor_;
+      uint32_t task_size = ceil(
+          (double)(subgraph->metadata_->num_vertices->num_vertices) / task_num);
+      task_size = task_size < 2 ? 2 : task_size;
+      VertexIndex begin_index = 0, end_index = 0;
+      for (; begin_index < subgraph->metadata_->num_vertices;) {
+        end_index += task_size;
+        if (end_index > subgraph->metadata_->num_vertices) {
+          end_index = subgraph->metadata_->num_vertices;
+        }
+        auto task = []() {
+          for (int j = 0; j < subgraph->GetVertexNums(); j++) {
+            //            auto id = subgraph->GetVertexIDByIndex(i);
+            //            auto data = subgraph->ReadLocalVertexDataByID(id);
+          }
+        };
+        tasks.push_back(task);
+        begin_index = end_index;
+      }
+      runner->SubmitSync(tasks);
+    }
+  }
+
   // log methods
   void LogVertexData() const {
     for (auto& subgraph : subgraphs_) {
@@ -143,6 +174,10 @@ class MutableGroupCSRGraph : public Serializable {
 
  public:
   std::vector<MutableCSRGraph<VertexData, EdgeData>*> subgraphs_;
+
+  // configs
+  uint32_t parallelism_ = 1;
+  uint32_t task_package_factor_ = 50;
 };
 
 typedef MutableGroupCSRGraph<common::Uint32VertexDataType,
