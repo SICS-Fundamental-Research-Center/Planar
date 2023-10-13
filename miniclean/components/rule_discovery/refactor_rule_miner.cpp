@@ -122,8 +122,6 @@ void RuleMiner::PrepareGCRComponents(const std::string& workspace_path) {
                  Configurations::Get()->max_predicate_num_ - 1, false, 0,
                  empty_intermediate_result, &path_rules_[i]);
   }
-
-  int a;
 }
 
 void RuleMiner::LoadPathPatterns(const std::string& path_pattern_path) {
