@@ -19,7 +19,6 @@ int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   core::common::Configurations::GetMutable()->root_path = FLAGS_i;
   core::common::Configurations::GetMutable()->parallelism = FLAGS_p;
-  core::common::Configurations::GetMutable()->edge_mutate = true;
   core::common::Configurations::GetMutable()->in_memory = FLAGS_in_memory;
   core::common::Configurations::GetMutable()->task_package_factor =
       FLAGS_task_package_factor;
