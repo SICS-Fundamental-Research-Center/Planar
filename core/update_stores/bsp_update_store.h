@@ -147,8 +147,10 @@ class BspUpdateStore : public UpdateStoreBase {
   void UnsetActive() { active_count_ = 0; }
 
   void Sync() override {
-    memcpy(read_data_, write_data_, message_count_ * sizeof(VertexData));
-    active_count_ = 0;
+    if (!no_data_need_) {
+      memcpy(read_data_, write_data_, message_count_ * sizeof(VertexData));
+      active_count_ = 0;
+    }
   }
 
   bool IsBorderVertex(VertexID vid) {
