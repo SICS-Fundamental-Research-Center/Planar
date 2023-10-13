@@ -42,9 +42,18 @@ void StarRule::ComposeWith(const StarRule& other) {
   predicate_count_ += other.predicate_count_;
 }
 
+void StarRule::InitializeStarRule() {
+  ComputeValidCenters(&valid_vertices_);
+}
+
 size_t StarRule::ComputeInitSupport() {
+  std::vector<VertexID> valid_centers;
+  ComputeValidCenters(&valid_centers);
+  return valid_centers.size();
+}
+
+void StarRule::ComputeValidCenters(std::vector<VertexID>* valid_centers) {
   std::vector<VertexID> results;
-  std::vector<VertexID> current_valid_vertices;
   bool has_intersected = false;
   for (const auto& predicate : constant_predicates_) {
     if (predicate.get_operator_type() != refactor::OperatorType::kEq) {
@@ -59,16 +68,15 @@ size_t StarRule::ComputeInitSupport() {
     std::vector<VertexID> valid_vertices =
         attr_bucket_by_vlabel.at(vattr_id).at(vattr_value);
     if (has_intersected) {
-      std::set_intersection(current_valid_vertices.begin(),
-                            current_valid_vertices.end(),
+      std::set_intersection((*valid_centers).begin(),
+                            (*valid_centers).end(),
                             valid_vertices.begin(), valid_vertices.end(),
                             std::back_inserter(results));
-      current_valid_vertices = std::move(results);
+      *valid_centers = std::move(results);
     } else {
-      current_valid_vertices = std::move(valid_vertices);
+      *valid_centers = std::move(valid_vertices);
     }
   }
-  return current_valid_vertices.size();
 }
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

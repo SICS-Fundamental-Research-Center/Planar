@@ -60,7 +60,6 @@ class RuleMiner {
 
   void LoadGraph(const std::string& graph_path);
   void LoadIndexCollection(const std::string& workspace_path);
-
   void LoadPathInstances(const std::string& path_instances_path);
   // Path rule contains:
   //   - a path pattern

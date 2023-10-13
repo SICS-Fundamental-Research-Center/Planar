@@ -279,4 +279,12 @@ void RuleMiner::ComposeUnits(const std::vector<std::vector<T>>& unit_container,
   }
 }
 
+void RuleMiner::MineGCRs() {
+  for (size_t i = 0; i < star_rules_.size(); i++) {
+    for (size_t j = 0; j < star_rules_.size(); j++) {
+      
+    }
+  }
+}
+
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor
