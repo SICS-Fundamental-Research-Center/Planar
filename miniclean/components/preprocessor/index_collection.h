@@ -104,6 +104,10 @@ class PathPatternIndex {
   void BuildPathPatternIndex(const std::string& path_instance_file,
                              const std::string& graph_config_path,
                              const std::string& path_pattern_path);
+  const VertexBucket& GetVertexBucketByPatternID(
+      PathPatternID pattern_id) const {
+    return vertex_bucket_by_pattern_id_.at(pattern_id);
+  }
 
  private:
   void BuildPathInstanceBucket(const std::string& path_instance_file,
@@ -117,6 +121,7 @@ class PathPatternIndex {
 class IndexCollection {
  private:
   using PathPattern = sics::graph::miniclean::common::PathPattern;
+  using PathPatternID = sics::graph::miniclean::common::PathPatternID;
   using VertexID = sics::graph::miniclean::common::VertexID;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
@@ -124,6 +129,7 @@ class IndexCollection {
       sics::graph::miniclean::common::VertexAttributeValue;
   using ValueBucket = std::map<VertexAttributeValue, std::vector<VertexID>>;
   using AttributeBucket = std::map<VertexAttributeID, ValueBucket>;
+  using VertexBucket = std::vector<VertexID>;
 
  public:
   IndexCollection() = default;
@@ -135,6 +141,11 @@ class IndexCollection {
   const AttributeBucket& GetAttributeBucketByVertexLabel(
       VertexLabel vlabel) const {
     return vertex_attribute_segment_.GetAttributeBucketByVertexLabel(vlabel);
+  }
+
+  const VertexBucket& GetVertexBucketByPatternID(
+      PathPatternID pattern_id) const {
+    return path_pattern_index_.GetVertexBucketByPatternID(pattern_id);
   }
 
  private:

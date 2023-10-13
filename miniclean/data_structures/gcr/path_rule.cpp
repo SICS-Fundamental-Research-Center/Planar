@@ -1,92 +1,74 @@
 #include "miniclean/data_structures/gcr/path_rule.h"
 
+#include <algorithm>
+
 #include "miniclean/common/types.h"
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
-using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
-using VertexAttributeValue =
-    sics::graph::miniclean::common::VertexAttributeValue;
-
-void PathRule::InitBitmap(std::vector<std::vector<VertexID>> path_instance,
-                          MiniCleanCSRGraph* graph) {
-  star_bitmap_.Clear();
-  for (const auto& instance : path_instance) {
-    VertexID center_id = instance[0];
-    if (star_bitmap_.TestBit(center_id)) {
-      continue;
-    }
-    // Check whether this instance meets the constant predicates.
-    bool is_valid = true;
-    for (const auto& constant_predicate : constant_predicates_) {
-      VertexID vid = instance[constant_predicate.first];
-      ConstantPredicate predicate = constant_predicate.second;
-      VertexAttributeID attribute_id = predicate.get_vertex_attribute_id();
-      refactor::OperatorType operator_type = predicate.get_operator_type();
-      size_t constant_value = predicate.get_constant_value();
-
-      switch (operator_type) {
-        case refactor::OperatorType::kEq:
-          if (graph->GetVertexAttributeValuesByLocalID(vid)[attribute_id] !=
-              constant_value) {
-            is_valid = false;
-            break;
-          }
-          break;
-        case refactor::OperatorType::kGt:
-          LOG_FATAL("Not implemented yet.");
-      }
-    }
-    if (is_valid) {
-      star_bitmap_.SetBit(center_id);
-    }
+void PathRule::ComposeWith(const PathRule& other) {
+  // Check whether the two path rules have the same path pattern.
+  if (path_pattern_id_ != other.path_pattern_id_) {
+    LOG_FATAL("Path rules with different path patterns cannot be composed: ",
+              path_pattern_id_, " vs. ", other.path_pattern_id_);
+  }
+  // Compose path rules.
+  auto other_constant_predicates = other.get_constant_predicates();
+  for (const auto& other_constant_predicate : other_constant_predicates) {
+    constant_predicates_.emplace_back(other_constant_predicate);
   }
 }
 
-bool PathRule::ComposeWith(PathRule& other, size_t max_pred_num) {
-  // Compose the predicates.
+size_t PathRule::ComputeInitSupport() {
+  LOG_FATAL("Not implemented yet.");
+  return 0;
+}
+
+void StarRule::ComposeWith(const StarRule& other) {
+  // Check whether two star rules have th same path pattern.
+  if (center_label_ != other.center_label_) {
+    LOG_FATAL("Star rules with different center label cannot be composed: ",
+              center_label_, " vs. ", other.center_label_);
+  }
+  // Only support composing centers.
+  if (path_rules_.size() != 0 || other.path_rules_.size() != 0) {
+    LOG_FATAL("Do not support composing star rules with non-empty path rules.");
+  }
+  // Compose star rules.
   auto other_constant_predicates = other.get_constant_predicates();
-  bool has_composed = false;
-  if (other_constant_predicates.size() == 0 ||
-      constant_predicates_.size() == 0) {
-    return false;
+  for (const auto& other_constant_predicate : other_constant_predicates) {
+    constant_predicates_.emplace_back(other_constant_predicate);
   }
+  predicate_count_ += other.predicate_count_;
+}
 
-  for (const auto& other_constant_predicate_pair : other_constant_predicates) {
-    bool has_same_predicate = false;
-    bool is_largest_predicate = true;
-    for (const auto& constant_predicate_pair : constant_predicates_) {
-      // check whether the current path rule already has this predicate.
-      if (constant_predicate_pair.first ==
-              other_constant_predicate_pair.first &&
-          constant_predicate_pair.second.get_vertex_attribute_id() ==
-              other_constant_predicate_pair.second.get_vertex_attribute_id()) {
-        has_same_predicate = true;
-        break;
-      }
-      // check whether the order of the predicates.
-      size_t this_order =
-          constant_predicate_pair.first * 10 +
-          constant_predicate_pair.second.get_vertex_attribute_id();
-      size_t other_order =
-          other_constant_predicate_pair.first * 10 +
-          other_constant_predicate_pair.second.get_vertex_attribute_id();
-      if (this_order >= other_order) {
-        is_largest_predicate = false;
-        break;
-      }
+size_t StarRule::ComputeInitSupport() {
+  std::vector<VertexID> results;
+  std::vector<VertexID> current_valid_vertices;
+  bool has_intersected = false;
+  for (const auto& predicate : constant_predicates_) {
+    if (predicate.get_operator_type() != refactor::OperatorType::kEq) {
+      LOG_FATAL("Only support constant predicates with operator type kEq.");
     }
-    if (!has_same_predicate && is_largest_predicate) {
-      constant_predicates_.emplace_back(other_constant_predicate_pair);
-      has_composed = true;
+    auto vlabel = predicate.get_vertex_label();
+    auto vattr_id = predicate.get_vertex_attribute_id();
+    auto vattr_value = predicate.get_constant_value();
+    const auto& attr_bucket_by_vlabel =
+        index_collection_->GetAttributeBucketByVertexLabel(vlabel);
+    // This vector has been sorted.
+    std::vector<VertexID> valid_vertices =
+        attr_bucket_by_vlabel.at(vattr_id).at(vattr_value);
+    if (has_intersected) {
+      std::set_intersection(current_valid_vertices.begin(),
+                            current_valid_vertices.end(),
+                            valid_vertices.begin(), valid_vertices.end(),
+                            std::back_inserter(results));
+      current_valid_vertices = std::move(results);
+    } else {
+      current_valid_vertices = std::move(valid_vertices);
     }
   }
-  if (!has_composed || constant_predicates_.size() > max_pred_num - 1) {
-    return false;
-  }
-
-  star_bitmap_.MergeWith(other.star_bitmap_);
-  return true;
+  return current_valid_vertices.size();
 }
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

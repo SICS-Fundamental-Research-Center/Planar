@@ -2,6 +2,7 @@
 #define MINICLEAN_COMPONENTS_RULE_DISCOVERY_R_RULE_MINER_H_
 
 #include <map>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -31,22 +32,25 @@ class RuleMiner {
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
   using VertexAttributeValue =
       sics::graph::miniclean::common::VertexAttributeValue;
-  using IndexMetadata =
-      sics::graph::miniclean::components::preprocessor::IndexMetadata;
   using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
   using StarRule = sics::graph::miniclean::data_structures::gcr::StarRule;
   using VariablePredicate =
       sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
+  using GCR = sics::graph::miniclean::data_structures::gcr::refactor::GCR;
   using GCRFactory = sics::graph::miniclean::data_structures::gcr::GCRFactory;
   using IndexCollection =
       sics::graph::miniclean::components::preprocessor::IndexCollection;
-  using PathRuleUnits = std::map<VertexAttributeID, std::vector<PathRule>>;
-  // First dimension: path pattern id.
-  // Second dimension: vertex index in the path.
+  // Dim. #1: vertex attribute id.
+  // Dim. #2: path rules with different vertex attribute value.
+  using PathRuleUnits = std::vector<std::vector<PathRule>>;
+  // Dim. #1: path pattern id.
+  // Dim. #2: vertex index in the path.
   using PathRuleUnitContainer = std::vector<std::vector<PathRuleUnits>>;
-  using GCR = sics::graph::miniclean::data_structures::gcr::refactor::GCR;
-  using StarRuleContainer =
-      std::map<VertexLabel, std::map<VertexAttributeID, std::vector<StarRule>>>;
+  // Dim. #1: vertex attribute id.
+  // Dim. #2：star rules with different attribute value.
+  using StarRuleUnits = std::vector<std::vector<StarRule>>;
+  // Dim. #1: vertex label id.
+  using StarRuleUnitContainer = std::vector<StarRuleUnits>;
   using ConstantPredicateContainer =
       std::map<VertexLabel, std::map<VertexAttributeID, ConstantPredicate>>;
   using Configurations = sics::graph::miniclean::common::Configurations;
@@ -71,6 +75,11 @@ class RuleMiner {
   void LoadPredicates(const std::string& predicates_path);
   void InitStarRuleUnitContainer();
   void InitPathRuleUnitContainer();
+  template <typename T>
+  void ComposeUnits(const std::vector<std::vector<T>>& unit_container,
+                    size_t max_item, bool check_support, size_t start_idx,
+                    std::vector<T>& intermediate_result,
+                    std::vector<T>* composed_results);
   void ExtendPathRules(size_t pattern_id);
   void ExtendGCR(const GCR& gcr, size_t start_pattern_id, size_t start_rule_id,
                  VertexLabel left_center_label, VertexLabel right_center_label);
@@ -84,10 +93,10 @@ class RuleMiner {
   //   - Is it enough only declare the consequence as `VariablePredicate`?
   std::vector<VariablePredicate> consequence_predicates_;
   std::vector<VariablePredicate> variable_predicates_;
-  StarRuleContainer star_rule_container_;
-
-  std::vector<std::vector<PathRule>> path_rules_;
+  StarRuleUnitContainer star_rule_unit_container_;
   PathRuleUnitContainer path_rule_unit_container_;
+  std::vector<std::vector<StarRule>> star_rules_;
+  std::vector<std::vector<PathRule>> path_rules_;
 
   std::vector<GCR> varified_gcrs_;
   GCRFactory gcr_factory_;

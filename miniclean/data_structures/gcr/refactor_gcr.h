@@ -15,8 +15,6 @@ class GCR {
       sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
   using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::
       gcr::refactor::ConcreteVariablePredicate;
-  using StarBitmap =
-      sics::graph::miniclean::components::preprocessor::StarBitmap;
   using MiniCleanCSRGraph =
       sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
   using PathPattern = sics::graph::miniclean::common::PathPattern;
@@ -84,8 +82,8 @@ class GCR {
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
                         bool consider_consequence) const;
 
-  void StarRuleCheck(StarRule star_rule, MiniCleanCSRGraph* graph,
-                     StarBitmap* star_bitmap) const;
+  // void StarRuleCheck(StarRule star_rule, MiniCleanCSRGraph* graph,
+  //                    StarBitmap* star_bitmap) const;
 
   bool PathMatching(PathPattern path_pattern, MiniCleanCSRGraph* graph,
                     size_t vertex_id, size_t edge_id) const;
@@ -101,12 +99,12 @@ class GCR {
       const;
   std::vector<std::pair<size_t, size_t>> ComputeAttributeValuePair(
       const ConcreteVariablePredicate& variable_predicate) const;
-  void UpdateBitmapByVariablePredicate(ConcreteVariablePredicate predicate,
-                                       size_t left_attribute_value,
-                                       size_t right_attribute_value,
-                                       PathRuleUnitContainer& container,
-                                       StarBitmap* left_bitmap,
-                                       StarBitmap* right_bitmap) const;
+  // void UpdateBitmapByVariablePredicate(ConcreteVariablePredicate predicate,
+  //                                      size_t left_attribute_value,
+  //                                      size_t right_attribute_value,
+  //                                      PathRuleUnitContainer& container,
+  //                                      StarBitmap* left_bitmap,
+  //                                      StarBitmap* right_bitmap) const;
 
   StarRule left_star_;
   StarRule right_star_;
