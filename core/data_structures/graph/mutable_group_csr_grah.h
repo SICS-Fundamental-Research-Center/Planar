@@ -130,7 +130,7 @@ class MutableGroupCSRGraph : public Serializable {
         if (end_index > subgraph->metadata_->num_vertices) {
           end_index = subgraph->metadata_->num_vertices;
         }
-        auto task = []() {
+        auto task = [subgraph]() {
           for (int j = 0; j < subgraph->GetVertexNums(); j++) {
             //            auto id = subgraph->GetVertexIDByIndex(i);
             //            auto data = subgraph->ReadLocalVertexDataByID(id);
