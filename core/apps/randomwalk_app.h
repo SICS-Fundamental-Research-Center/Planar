@@ -31,7 +31,9 @@ class RandomWalkApp : public apis::PlanarAppBase<CSRGraph> {
     //    active_next_.Init(update_store->GetMessageCount());
     walk_length_ = core::common::Configurations::Get()->walk;
     num_vertices_ = update_store->GetMessageCount();
-    matrix_ = new uint32_t[num_vertices_ * walk_length_];
+    uint64_t size = num_vertices_ * walk_length_;
+    matrix_ = new uint32_t[size];
+    LOGF_INFO("matrix size : {}", size);
   }
 
   ~RandomWalkApp() override { delete[] matrix_; };
