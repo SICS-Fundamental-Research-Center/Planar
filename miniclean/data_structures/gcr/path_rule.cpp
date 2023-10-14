@@ -6,6 +6,14 @@
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
+PathRule::PathRule(PathPatternID path_pattern_id, size_t vertex_pos,
+                   ConstantPredicate constant_predicate,
+                   VertexAttributeValue attribute_value)
+    : path_pattern_id_(path_pattern_id) {
+  constant_predicate.set_constant_value(attribute_value);
+  constant_predicates_.emplace_back(vertex_pos, std::move(constant_predicate));
+}
+
 void PathRule::ComposeWith(const PathRule& other) {
   // Check whether the two path rules have the same path pattern.
   if (path_pattern_id_ != other.path_pattern_id_) {
@@ -42,17 +50,15 @@ void StarRule::ComposeWith(const StarRule& other) {
   predicate_count_ += other.predicate_count_;
 }
 
-void StarRule::InitializeStarRule() {
-  ComputeValidCenters(&valid_vertices_);
-}
+void StarRule::InitializeStarRule() { ComputeValidCenters(&valid_vertices_); }
 
-size_t StarRule::ComputeInitSupport() {
+size_t StarRule::ComputeInitSupport() const {
   std::vector<VertexID> valid_centers;
   ComputeValidCenters(&valid_centers);
   return valid_centers.size();
 }
 
-void StarRule::ComputeValidCenters(std::vector<VertexID>* valid_centers) {
+void StarRule::ComputeValidCenters(std::vector<VertexID>* valid_centers) const {
   std::vector<VertexID> results;
   bool has_intersected = false;
   for (const auto& predicate : constant_predicates_) {
@@ -68,8 +74,7 @@ void StarRule::ComputeValidCenters(std::vector<VertexID>* valid_centers) {
     std::vector<VertexID> valid_vertices =
         attr_bucket_by_vlabel.at(vattr_id).at(vattr_value);
     if (has_intersected) {
-      std::set_intersection((*valid_centers).begin(),
-                            (*valid_centers).end(),
+      std::set_intersection((*valid_centers).begin(), (*valid_centers).end(),
                             valid_vertices.begin(), valid_vertices.end(),
                             std::back_inserter(results));
       *valid_centers = std::move(results);
