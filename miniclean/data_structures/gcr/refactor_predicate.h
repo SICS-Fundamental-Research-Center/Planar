@@ -222,9 +222,9 @@ struct convert<
     variable_predicate = sics::graph::miniclean::data_structures::gcr::
         refactor::VariablePredicate(
             node[0].as<sics::graph::miniclean::common::VertexLabel>(),
+            node[2].as<sics::graph::miniclean::common::VertexLabel>(),
             static_cast<sics::graph::miniclean::common::VertexAttributeID>(
                 lhs_vattr_id),
-            node[2].as<sics::graph::miniclean::common::VertexLabel>(),
             static_cast<sics::graph::miniclean::common::VertexAttributeID>(
                 rhs_vattr_id),
             operator_type);
