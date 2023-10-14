@@ -31,17 +31,12 @@ class PathRule {
  public:
   PathRule() = default;
   PathRule(PathPatternID path_pattern_id) : path_pattern_id_(path_pattern_id) {}
-  PathRule(PathPatternID path_pattern_id, size_t vertex_pos,
-           ConstantPredicate constant_predicate,
-           VertexAttributeValue attribute_value)
-      : path_pattern_id_(path_pattern_id) {
-    constant_predicate.set_constant_value(attribute_value);
-    constant_predicates_.emplace_back(vertex_pos,
-                                      std::move(constant_predicate));
-  }
   PathRule(const PathRule& other)
       : path_pattern_id_(other.path_pattern_id_),
         constant_predicates_(other.constant_predicates_) {}
+  PathRule(PathPatternID path_pattern_id, size_t vertex_pos,
+           ConstantPredicate constant_predicate,
+           VertexAttributeValue attribute_value);
 
   size_t get_path_pattern_id() const { return path_pattern_id_; }
 
@@ -101,7 +96,7 @@ class StarRule {
     constant_predicates_.emplace_back(constant_predicate);
   }
 
-  const VertexLabel& get_center_label() const { return center_label_; }
+  const VertexLabel get_center_label() const { return center_label_; }
 
   const std::vector<ConstantPredicate>& get_constant_predicates() const {
     return constant_predicates_;
@@ -114,7 +109,7 @@ class StarRule {
 
   void ComposeWith(const StarRule& other);
 
-  size_t ComputeInitSupport();
+  size_t ComputeInitSupport() const;
 
  private:
   size_t predicate_count_;

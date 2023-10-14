@@ -6,6 +6,14 @@
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
+PathRule::PathRule(PathPatternID path_pattern_id, size_t vertex_pos,
+                   ConstantPredicate constant_predicate,
+                   VertexAttributeValue attribute_value)
+    : path_pattern_id_(path_pattern_id) {
+  constant_predicate.set_constant_value(attribute_value);
+  constant_predicates_.emplace_back(vertex_pos, std::move(constant_predicate));
+}
+
 void PathRule::ComposeWith(const PathRule& other) {
   // Check whether the two path rules have the same path pattern.
   if (path_pattern_id_ != other.path_pattern_id_) {
@@ -42,7 +50,7 @@ void StarRule::ComposeWith(const StarRule& other) {
   predicate_count_ += other.predicate_count_;
 }
 
-size_t StarRule::ComputeInitSupport() {
+size_t StarRule::ComputeInitSupport() const {
   std::vector<VertexID> results;
   std::vector<VertexID> current_valid_vertices;
   bool has_intersected = false;
