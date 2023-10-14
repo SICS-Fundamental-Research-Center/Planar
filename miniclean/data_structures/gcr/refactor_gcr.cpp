@@ -11,6 +11,22 @@ using PathPattern = sics::graph::miniclean::common::PathPattern;
 using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 using VertexID = sics::graph::miniclean::common::VertexID;
 
+void GCR::Backup() {
+  // TODO: Implement it.
+}
+
+void GCR::Recover() {
+  // TODO: Implement it.
+}
+
+void GCR::VerticalExtend(const GCRVerticalExtension& vertical_extension) {
+  // TODO: Implement it.
+}
+
+void GCR::HorizontalExtend(const GCRHorizontalExtension& horizontal_extension) {
+  // TODO: Implement it.
+}
+
 std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
     MiniCleanCSRGraph* graph,
     PathRuleUnitContainer& path_rule_unit_container) const {
@@ -255,54 +271,57 @@ std::vector<std::pair<size_t, size_t>> GCR::ComputeAttributeValuePair(
   return value_pair;
 }
 
-size_t GCR::CountPreconditions() const {
-  size_t count = 0;
-  for (const auto& left_path : left_star_) {
-    count += left_path->get_constant_predicates().size();
-  }
-  for (const auto& right_path : right_star_) {
-    count += right_path->get_constant_predicates().size();
-  }
-  count += variable_predicates_.size();
-  return count;
-}
+// size_t GCR::CountPreconditions() const {
+//   size_t count = 0;
+//   for (const auto& left_path : left_star_) {
+//     count += left_path->get_constant_predicates().size();
+//   }
+//   for (const auto& right_path : right_star_) {
+//     count += right_path->get_constant_predicates().size();
+//   }
+//   count += variable_predicates_.size();
+//   return count;
+// }
 
 bool GCR::IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
                            bool consider_consequence) const {
+  
+  bool compatibilty = TestCompatibility(variable_predicate, variable_predicates_);
+  if (consider_consequence) {
+    std::vector<ConcreteVariablePredicate> consequences;
+    consequences.emplace_back(consequence_);
+    compatibilty = compatibilty && TestCompatibility(variable_predicate, consequences);
+  }
+  return compatibilty;
+}
+
+bool GCR::TestCompatibility(
+    const ConcreteVariablePredicate& variable_predicate,
+    const std::vector<ConcreteVariablePredicate>& base_predicates) const {
   uint8_t left_path_index = variable_predicate.get_left_path_index();
   uint8_t left_vertex_index = variable_predicate.get_left_vertex_index();
+  auto left_attribute_id = variable_predicate.get_left_attribute_id();
   uint8_t right_path_index = variable_predicate.get_right_path_index();
   uint8_t right_vertex_index = variable_predicate.get_right_vertex_index();
+  auto right_attribute_id = variable_predicate.get_right_attribute_id();
 
-  // Check Variable Predicates.
-  for (const auto& predicate : variable_predicates_) {
+  for (const auto& predicate : base_predicates) {
     uint8_t predicate_left_path_index = predicate.get_left_path_index();
     uint8_t predicate_left_vertex_index = predicate.get_left_vertex_index();
+    auto predicate_left_attribute_id = predicate.get_left_attribute_id();
     uint8_t predicate_right_path_index = predicate.get_right_path_index();
     uint8_t predicate_right_vertex_index = predicate.get_right_vertex_index();
+    auto predicate_right_attribute_id = predicate.get_right_attribute_id();
     if ((left_path_index == predicate_left_path_index &&
-         left_vertex_index == predicate_left_vertex_index) ||
+         left_vertex_index == predicate_left_vertex_index &&
+         left_attribute_id == predicate_left_attribute_id) ||
         (right_path_index == predicate_right_path_index &&
-         right_vertex_index == predicate_right_vertex_index)) {
+         right_vertex_index == predicate_right_vertex_index &&
+         right_attribute_id == predicate_right_attribute_id)) {
       return false;
     }
   }
 
-  if (consider_consequence) {
-    // Check Consequence.
-    uint8_t consequence_left_path_index = consequence_.get_left_path_index();
-    uint8_t consequence_left_vertex_index =
-        consequence_.get_left_vertex_index();
-    uint8_t consequence_right_path_index = consequence_.get_right_path_index();
-    uint8_t consequence_right_vertex_index =
-        consequence_.get_right_vertex_index();
-    if ((left_path_index == consequence_left_path_index &&
-         left_vertex_index == consequence_left_vertex_index) ||
-        (right_path_index == consequence_right_path_index &&
-         right_vertex_index == consequence_right_vertex_index)) {
-      return false;
-    }
-  }
   return true;
 }
 
