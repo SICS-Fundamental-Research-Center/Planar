@@ -137,6 +137,21 @@ class RuleMiner {
       size_t lhs_start_path_index, size_t rhs_start_path_index,
       size_t lhs_start_vertex_index, size_t rhs_start_vertex_index,
       std::vector<GCRHorizontalExtension>* extensions);
+  void GenerateVariablePredicates(
+      const GCR& gcr,
+      const std::vector<ConcreteVariablePredicate>& consequences,
+      VariablePredicate variable_predicate, size_t lhs_start_path_index,
+      size_t rhs_start_path_index, size_t lhs_start_vertex_index,
+      size_t rhs_start_vertex_index,
+      std::vector<ConcreteVariablePredicate>* c_variable_predicates,
+      std::vector<ConcreteVariablePredicate>* o_variable_predicates);
+  void MergeHorizontalExtensions(
+      const GCR& gcr,
+      const std::vector<ConcreteVariablePredicate>& consequences,
+      std::vector<std::vector<ConcreteVariablePredicate>> c_variable_predicates,
+      std::vector<std::vector<ConcreteVariablePredicate>> o_variable_predicates,
+      size_t available_var_pred_num,
+      std::vector<GCRHorizontalExtension>* extensions);
   void EnumerateValidVariablePredicates(
       const std::vector<ConcreteVariablePredicate>& variable_predicates,
       size_t start_idx, size_t max_item_num,
