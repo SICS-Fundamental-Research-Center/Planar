@@ -44,15 +44,13 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
   auto left_bucket = left_star_.get_bucket();
   auto right_bucket = right_star_.get_bucket();
   for (size_t i = 0; i < left_bucket.size(); i++) {
-    for (VertexID left_id = 0; left_id < left_bucket[i].size(); left_id++) {
-      for (VertexID right_id = 0; right_id < right_bucket[i].size();
-           right_id++) {
+    for (const auto& left_vertex : left_bucket[i]) {
+      for (const auto& right_vertex : right_bucket[i]) {
         // Test preconditions.
         preconditions_match = true;
         for (const auto& variable_predicate : variable_predicates_) {
-          if (!TestVariablePredicate(graph, variable_predicate,
-                                     left_bucket[i][left_id],
-                                     right_bucket[i][right_id])) {
+          if (!TestVariablePredicate(graph, variable_predicate, left_vertex,
+                                     right_vertex)) {
             preconditions_match = false;
             break;
           }
@@ -60,9 +58,8 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
         if (preconditions_match) {
           support++;
           // Test consequence.
-          if (TestVariablePredicate(graph, consequence_,
-                                    left_bucket[i][left_id],
-                                    right_bucket[i][right_id])) {
+          if (TestVariablePredicate(graph, consequence_, left_vertex,
+                                    right_vertex)) {
             match++;
           }
         }
@@ -97,15 +94,15 @@ void GCR::InitializeBuckets(MiniCleanCSRGraph* graph) {
       auto value_bucket_size = left_label_buckts[left_attr_id].size();
       left_star_.ReserveBucket(value_bucket_size);
       right_star_.ReserveBucket(value_bucket_size);
-      for (size_t j = 0; j < left_valid_vertices.size(); j++) {
+      for (const auto& left_valid_vertex : left_valid_vertices) {
         auto value = graph->GetVertexAttributeValuesByLocalID(
-            left_valid_vertices[j])[left_attr_id];
-        left_star_.AddVertexToBucket(value, left_valid_vertices[j]);
+            left_valid_vertex)[left_attr_id];
+        left_star_.AddVertexToBucket(value, left_valid_vertex);
       }
-      for (size_t j = 0; j < right_valid_vertices.size(); j++) {
+      for (const auto& right_valid_vertex : right_valid_vertices) {
         auto value = graph->GetVertexAttributeValuesByLocalID(
-            right_valid_vertices[j])[left_attr_id];
-        right_star_.AddVertexToBucket(value, right_valid_vertices[j]);
+            right_valid_vertex)[left_attr_id];
+        right_star_.AddVertexToBucket(value, right_valid_vertex);
       }
       break;
     }
@@ -114,11 +111,11 @@ void GCR::InitializeBuckets(MiniCleanCSRGraph* graph) {
     // All vertices in one bucket.
     left_star_.ReserveBucket(1);
     right_star_.ReserveBucket(1);
-    for (size_t j = 0; j < left_valid_vertices.size(); j++) {
-      left_star_.AddVertexToBucket(0, left_valid_vertices[j]);
+    for (const auto& left_valid_vertex : left_valid_vertices) {
+      left_star_.AddVertexToBucket(0, left_valid_vertex);
     }
-    for (size_t j = 0; j < right_valid_vertices.size(); j++) {
-      right_star_.AddVertexToBucket(0, right_valid_vertices[j]);
+    for (const auto& right_valid_vertex : right_valid_vertices) {
+      right_star_.AddVertexToBucket(0, right_valid_vertex);
     }
   }
 }

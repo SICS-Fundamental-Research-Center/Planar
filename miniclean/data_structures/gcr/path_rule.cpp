@@ -60,6 +60,16 @@ size_t StarRule::ComputeInitSupport() {
 
 void StarRule::ComputeValidCenters(
     std::unordered_set<VertexID>* valid_centers) {
+  // Deal with empty constant predicates.
+  if (constant_predicates_.empty()) {
+    std::pair<VertexID, VertexID> vertex_range =
+        index_collection_->GetVertexRangeByLabelID(center_label_);
+    for (VertexID i = vertex_range.first; i < vertex_range.second; i++) {
+      valid_centers->emplace(i);
+    }
+    return;
+  }
+
   // Get the valid centers from the first constant predicate.
   auto vlabel0 = constant_predicates_[0].get_vertex_label();
   auto vattr_id0 = constant_predicates_[0].get_vertex_attribute_id();
@@ -69,7 +79,8 @@ void StarRule::ComputeValidCenters(
   (*valid_centers) = attr_bucket_by_vlabel0.at(vattr_id0).at(vattr_value0);
   // Compute the intersection.
   for (size_t i = 1; i < constant_predicates_.size(); i++) {
-    if (constant_predicates_[i].get_operator_type() != refactor::OperatorType::kEq) {
+    if (constant_predicates_[i].get_operator_type() !=
+        refactor::OperatorType::kEq) {
       LOG_FATAL("Only support constant predicates with operator type kEq.");
     }
     auto vlabel = constant_predicates_[i].get_vertex_label();

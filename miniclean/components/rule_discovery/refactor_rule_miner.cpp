@@ -52,9 +52,10 @@ void RuleMiner::LoadIndexCollection(const std::string& workspace_path) {
   std::string path_instance_file = workspace_path + "/matched_path_patterns";
   std::string graph_config_path = workspace_path + "/graph/meta.yaml";
   std::string path_pattern_path = workspace_path + "/path_patterns.yaml";
+  std::string label_range_path = workspace_path + "/vlabel/vlabel_offset.yaml";
   index_collection_.LoadIndexCollection(vertex_attribute_file,
                                         path_instance_file, graph_config_path,
-                                        path_pattern_path);
+                                        path_pattern_path, label_range_path);
 }
 
 void RuleMiner::PrepareGCRComponents(const std::string& workspace_path) {
@@ -79,7 +80,7 @@ void RuleMiner::PrepareGCRComponents(const std::string& workspace_path) {
     // Add star rules with at least one predicate.
     std::vector<StarRule> empty_intermediate_result;
     ComposeUnits(star_rule_unit_container_[i],
-                 Configurations::Get()->max_predicate_num_ - 1, true, 0,
+                 Configurations::Get()->max_predicate_num_ - 1, false, 0,
                  &empty_intermediate_result, &star_rules_.back());
   }
 
