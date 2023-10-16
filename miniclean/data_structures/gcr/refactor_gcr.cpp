@@ -25,7 +25,7 @@ void GCR::VerticalExtend(const GCRVerticalExtension& vertical_extension) {
   } else {
     AddPathRuleToRigthStar(vertical_extension.second);
   }
-  // TODO: Compute the valid center vertices after vertical extend.
+  // Update vertex set.
 }
 
 void GCR::HorizontalExtend(const GCRHorizontalExtension& horizontal_extension) {
@@ -123,10 +123,14 @@ void GCR::InitializeBuckets(MiniCleanCSRGraph* graph) {
   }
 }
 
+bool GCR::TestStarRule(MiniCleanCSRGraph* graph, const StarRule& star_rule,
+                       VertexID center_id) const {
+}
+
 bool GCR::TestVariablePredicate(
     MiniCleanCSRGraph* graph,
     const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
-    VertexID right_vid) {
+    VertexID right_vid) const {
   auto left_path_id = variable_predicate.get_left_path_index();
   auto right_path_id = variable_predicate.get_right_path_index();
   auto left_vertex_id = variable_predicate.get_left_vertex_index();

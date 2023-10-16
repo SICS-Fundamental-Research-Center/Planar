@@ -121,10 +121,12 @@ class GCR {
   std::vector<std::pair<size_t, size_t>> ComputeAttributeValuePair(
       const ConcreteVariablePredicate& variable_predicate) const;
   void InitializeBuckets(MiniCleanCSRGraph* graph);
+  bool TestStarRule(MiniCleanCSRGraph* graph, const StarRule& star_rule,
+                    VertexID center_id) const;
   bool TestVariablePredicate(
       MiniCleanCSRGraph* graph,
       const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
-      VertexID right_vid);
+      VertexID right_vid) const;
   // void UpdateBitmapByVariablePredicate(ConcreteVariablePredicate predicate,
   //                                      size_t left_attribute_value,
   //                                      size_t right_attribute_value,
@@ -138,7 +140,6 @@ class GCR {
   std::vector<ConcreteVariablePredicate> variable_predicates_;
   ConcreteVariablePredicate consequence_;
 
-  std::vector<std::vector<VertexID>> buckets_;
   int bucket_index_ = -1;
 };
 

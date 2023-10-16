@@ -146,7 +146,9 @@ class StarRule {
   IndexCollection* index_collection_;
 
   std::vector<VertexID> valid_vertices_;
+  std::vector<VertexID> valid_vertices_diff_;
   std::vector<std::vector<VertexID>> bucket_;
+  std::vector<std::vector<VertexID>> bucket_diff_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr
