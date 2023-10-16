@@ -17,6 +17,7 @@ typedef enum : uint8_t {
 class ConstantPredicate {
  private:
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using VertexAttributeValue = sics::graph::miniclean::common::VertexAttributeValue;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
@@ -44,7 +45,7 @@ class ConstantPredicate {
   void set_operator_type(OperatorType operator_type) {
     operator_type_ = operator_type;
   }
-  void set_constant_value(size_t constant_value) {
+  void set_constant_value(VertexAttributeValue constant_value) {
     constant_value_ = constant_value;
   }
 
@@ -52,12 +53,13 @@ class ConstantPredicate {
   VertexLabel vertex_label_;
   VertexAttributeID vertex_attribute_id_;
   OperatorType operator_type_;
-  size_t constant_value_;
+  VertexAttributeValue constant_value_;
 };
 
 class VariablePredicate {
  private:
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using VertexAttributeValue = sics::graph::miniclean::common::VertexAttributeValue;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
@@ -89,6 +91,16 @@ class VariablePredicate {
   void set_operator_type(OperatorType operator_type) {
     operator_type_ = operator_type;
   }
+  bool Test(VertexAttributeValue rhs, VertexAttributeValue lhs) const {
+    switch (operator_type_) {
+      case kEq:
+        return rhs == lhs;
+      case kGt:
+        return rhs > lhs;
+      default:
+        LOG_FATAL("Error: Unknown operator type: ", operator_type_);
+    }
+  }
 
  private:
   VertexLabel lhs_label_;
@@ -101,6 +113,7 @@ class VariablePredicate {
 class ConcreteVariablePredicate {
  private:
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using VertexAttributeValue = sics::graph::miniclean::common::VertexAttributeValue;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
@@ -130,8 +143,19 @@ class ConcreteVariablePredicate {
     return variable_predicate_.get_rhs_attribute_id();
   }
 
+  VertexLabel get_left_label() const {
+    return variable_predicate_.get_lhs_label();
+  }
+  VertexLabel get_right_label() const {
+    return variable_predicate_.get_rhs_label();
+  }
+
   OperatorType get_operator_type() const {
     return variable_predicate_.get_operator_type();
+  }
+
+  bool Test(VertexAttributeValue rhs, VertexAttributeValue lhs) const {
+    return variable_predicate_.Test(rhs, lhs);
   }
 
  private:

@@ -106,6 +106,23 @@ class StarRule {
 
   const std::vector<PathRule>& get_path_rules() const { return path_rules_; }
 
+  const IndexCollection* get_index_collection() const {
+    return index_collection_;
+  }
+
+  const std::vector<VertexID>& get_valid_vertices() const {
+    return valid_vertices_;
+  }
+
+  const std::vector<std::vector<VertexID>>& get_bucket() const {
+    return bucket_;
+  }
+
+  void ReserveBucket(size_t size) { bucket_.reserve(size); }
+  void AddVertexToBucket(size_t bucket_index, VertexID vertex_id) {
+    bucket_[bucket_index].emplace_back(vertex_id);
+  }
+
   void AddPathRule(const PathRule& path_rule) {
     path_rules_.emplace_back(path_rule);
     predicate_count_ += path_rule.get_constant_predicates().size();
@@ -129,6 +146,7 @@ class StarRule {
   IndexCollection* index_collection_;
 
   std::vector<VertexID> valid_vertices_;
+  std::vector<std::vector<VertexID>> bucket_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

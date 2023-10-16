@@ -9,6 +9,7 @@ namespace sics::graph::miniclean::data_structures::gcr::refactor {
 
 class GCR {
  private:
+  using VertexID = sics::graph::miniclean::common::VertexID;
   using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
   using StarRule = sics::graph::miniclean::data_structures::gcr::StarRule;
   using VariablePredicate =
@@ -90,9 +91,7 @@ class GCR {
     return concrete_variable_predicate;
   }
 
-  std::pair<size_t, size_t> ComputeMatchAndSupport(
-      MiniCleanCSRGraph* graph,
-      PathRuleUnitContainer& path_rule_unit_container) const;
+  std::pair<size_t, size_t> ComputeMatchAndSupport(MiniCleanCSRGraph* graph);
 
   // Return the number of precondition predicates.
   size_t CountPreconditions() const;
@@ -121,6 +120,11 @@ class GCR {
       const;
   std::vector<std::pair<size_t, size_t>> ComputeAttributeValuePair(
       const ConcreteVariablePredicate& variable_predicate) const;
+  void InitializeBuckets(MiniCleanCSRGraph* graph);
+  bool TestVariablePredicate(
+      MiniCleanCSRGraph* graph,
+      const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
+      VertexID right_vid);
   // void UpdateBitmapByVariablePredicate(ConcreteVariablePredicate predicate,
   //                                      size_t left_attribute_value,
   //                                      size_t right_attribute_value,
@@ -133,6 +137,9 @@ class GCR {
 
   std::vector<ConcreteVariablePredicate> variable_predicates_;
   ConcreteVariablePredicate consequence_;
+
+  std::vector<std::vector<VertexID>> buckets_;
+  int bucket_index_ = -1;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr::refactor
