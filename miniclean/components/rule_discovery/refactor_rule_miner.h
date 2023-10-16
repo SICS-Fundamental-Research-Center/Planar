@@ -87,11 +87,11 @@ class RuleMiner {
   template <typename T>
   void ComposeUnits(const std::vector<std::vector<T>>& unit_container,
                     size_t max_item, bool check_support, size_t start_idx,
-                    std::vector<T>& intermediate_result,
+                    std::vector<T>* intermediate_result,
                     std::vector<T>* composed_results) {
     // Check return condition.
     size_t predicate_count = 0;
-    for (const auto& result : intermediate_result) {
+    for (const auto& result : *intermediate_result) {
       predicate_count += result.get_constant_predicates().size();
     }
     if (predicate_count >= max_item) return;
@@ -99,24 +99,24 @@ class RuleMiner {
     for (size_t i = start_idx; i < unit_container.size(); i++) {
       // Compose intermediate result with unit_container[i].
       for (size_t j = 0; j < unit_container[i].size(); j++) {
-        intermediate_result.emplace_back(unit_container[i][j]);
+        intermediate_result->emplace_back(unit_container[i][j]);
         // Construct the composed item.
-        T composed_item = intermediate_result[0];
-        for (size_t k = 1; k < intermediate_result.size(); k++) {
-          composed_item.ComposeWith(intermediate_result[k]);
+        T composed_item = (*intermediate_result)[0];
+        for (size_t k = 1; k < intermediate_result->size(); k++) {
+          composed_item.ComposeWith((*intermediate_result)[k]);
         }
         // Check support.
         if (check_support) {
           size_t support = composed_item.ComputeInitSupport();
           if (support < Configurations::Get()->star_support_threshold_) {
-            intermediate_result.pop_back();
+            intermediate_result->pop_back();
             continue;
           }
         }
         composed_results->emplace_back(composed_item);
         ComposeUnits(unit_container, max_item, check_support, i + 1,
                      intermediate_result, composed_results);
-        intermediate_result.pop_back();
+        intermediate_result->pop_back();
       }
     }
   }
