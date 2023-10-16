@@ -12,15 +12,15 @@
 #include "core/util/logging.h"
 #include "miniclean/io/miniclean_csr_reader.h"
 
-namespace sics::graph::miniclean::components::matcher {
+namespace xyz::graph::miniclean::components::matcher {
 
-using MiniCleanCSRReader = sics::graph::miniclean::io::MiniCleanCSRReader;
-using ReadMessage = sics::graph::core::scheduler::ReadMessage;
+using MiniCleanCSRReader = xyz::graph::miniclean::io::MiniCleanCSRReader;
+using ReadMessage = xyz::graph::core::scheduler::ReadMessage;
 using SerializedImmutableCSRGraph =
-    sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
-using Task = sics::graph::core::common::Task;
-using TaskPackage = sics::graph::core::common::TaskPackage;
-using ThreadPool = sics::graph::core::common::ThreadPool;
+    xyz::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+using Task = xyz::graph::core::common::Task;
+using TaskPackage = xyz::graph::core::common::TaskPackage;
+using ThreadPool = xyz::graph::core::common::ThreadPool;
 
 void PathMatcher::LoadGraph(const std::string& data_path) {
   // Prepare reader.
@@ -286,4 +286,4 @@ void PathMatcher::WriteResultsToPath(const std::string& result_path) {
   }
 }
 
-}  // namespace sics::graph::miniclean::components::matcher
+}  // namespace xyz::graph::miniclean::components::matcher

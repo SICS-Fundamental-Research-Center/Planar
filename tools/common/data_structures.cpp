@@ -12,18 +12,18 @@
 #include <execution>
 #endif
 
-namespace sics::graph::tools::common {
+namespace xyz::graph::tools::common {
 
-using sics::graph::core::common::Bitmap;
-using sics::graph::core::common::GraphID;
-using sics::graph::core::common::TaskPackage;
-using sics::graph::core::common::VertexID;
-using sics::graph::core::common::VertexLabel;
-using sics::graph::core::util::atomic::WriteAdd;
-using sics::graph::core::util::atomic::WriteMax;
-using sics::graph::core::util::atomic::WriteMin;
-using Bitmap = sics::graph::core::common::Bitmap;
-using TaskPackage = sics::graph::core::common::TaskPackage;
+using xyz::graph::core::common::Bitmap;
+using xyz::graph::core::common::GraphID;
+using xyz::graph::core::common::TaskPackage;
+using xyz::graph::core::common::VertexID;
+using xyz::graph::core::common::VertexLabel;
+using xyz::graph::core::util::atomic::WriteAdd;
+using xyz::graph::core::util::atomic::WriteMax;
+using xyz::graph::core::util::atomic::WriteMin;
+using Bitmap = xyz::graph::core::common::Bitmap;
+using TaskPackage = xyz::graph::core::common::TaskPackage;
 
 void Edges::SortBySrc() {
 #ifdef TBB_FOUND
@@ -36,7 +36,7 @@ void Edges::SortBySrc() {
 
 VertexID Edges::GetVertexWithMaximumDegree() {
   auto parallelism = std::thread::hardware_concurrency();
-  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
+  auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
   std::mutex mtx;
 
@@ -48,10 +48,10 @@ VertexID Edges::GetVertexWithMaximumDegree() {
     auto task = std::bind([&, i]() {
       for (VertexID j = i; j < edgelist_metadata_.num_edges; j += parallelism) {
         auto src = get_src_by_index(j);
-        sics::graph::core::util::atomic::WriteAdd(outdegree_by_vid + src,
+        xyz::graph::core::util::atomic::WriteAdd(outdegree_by_vid + src,
                                                   (VertexID)1);
         std::lock_guard<std::mutex> lck(mtx);
-        if (sics::graph::core::util::atomic::WriteMax(&max_outdegree,
+        if (xyz::graph::core::util::atomic::WriteMax(&max_outdegree,
                                                       outdegree_by_vid[src])) {
           vid_with_maximum_degree = src;
         }
@@ -72,4 +72,4 @@ Edges::Iterator Edges::SearchVertex(VertexID vid) {
       [](const auto& l, VertexID vid) { return l.src < vid; });
 }
 
-}  // namespace sics::graph::tools::common
+}  // namespace xyz::graph::tools::common

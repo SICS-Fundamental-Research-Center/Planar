@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cstdlib>
 
-namespace sics::graph::core::data_structures {
+namespace xyz::graph::core::data_structures {
 
 class Buffer {
  public:
@@ -66,6 +66,6 @@ class OwnedBuffer {
   size_t s_;
 };
 
-}  // namespace sics::graph::core::data_structures
+}  // namespace xyz::graph::core::data_structures
 
 #endif  // CORE_DATA_STRUCTURES_BUFFER_H_

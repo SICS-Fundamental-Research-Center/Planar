@@ -1,6 +1,6 @@
 #include "graph_metadata.h"
 
-namespace sics::graph::core::data_structures {
+namespace xyz::graph::core::data_structures {
 
 
 GraphMetadata::GraphMetadata(const std::string& graph_metadata_path)
@@ -16,4 +16,4 @@ GraphMetadata::GraphMetadata(const std::string& graph_metadata_path)
   InitSubgraphSize();
 }
 
-}  // namespace sics::graph::core::data_structures
+}  // namespace xyz::graph::core::data_structures

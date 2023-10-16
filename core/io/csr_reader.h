@@ -16,7 +16,7 @@
 #include "data_structures/serialized.h"
 #include "io/reader_writer.h"
 
-namespace sics::graph::core::io {
+namespace xyz::graph::core::io {
 
 // @DESCRIPTION Class to read data from ssd to memory
 // @EXAMPLE
@@ -27,8 +27,8 @@ namespace sics::graph::core::io {
 //  csr_reader.Read(&read_message, nullptr);
 class CSRReader : public Reader {
  private:
-  using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
-  using Serialized = sics::graph::core::data_structures::Serialized;
+  using OwnedBuffer = xyz::graph::core::data_structures::OwnedBuffer;
+  using Serialized = xyz::graph::core::data_structures::Serialized;
 
  public:
   CSRReader(const std::string& root_path) : root_path_(root_path) {}
@@ -40,6 +40,6 @@ class CSRReader : public Reader {
   const std::string root_path_;
 };
 
-}  // namespace sics::graph::core::io
+}  // namespace xyz::graph::core::io
 
 #endif  // CORE_IO_CSR_READER_H

@@ -1,7 +1,7 @@
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace sics::graph::miniclean::data_structures::graphs {
-using Serialized = sics::graph::core::data_structures::Serialized;
+namespace xyz::graph::miniclean::data_structures::graphs {
+using Serialized = xyz::graph::core::data_structures::Serialized;
 
 std::unique_ptr<Serialized> MiniCleanCSRGraph::Serialize(
     const TaskRunner& runner) {
@@ -108,4 +108,4 @@ void MiniCleanCSRGraph::ParseVertexAttribute(
       reinterpret_cast<VertexAttributeValue*>(buffer_list.front().Get() +
                                               offset_size);
 }
-}  // namespace sics::graph::miniclean::data_structures::graphs
+}  // namespace xyz::graph::miniclean::data_structures::graphs

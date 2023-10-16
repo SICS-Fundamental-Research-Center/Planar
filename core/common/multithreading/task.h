@@ -5,7 +5,7 @@
 #include <vector>
 
 
-namespace sics::graph::core::common {
+namespace xyz::graph::core::common {
 
 // Alias type name for an executable function.
 typedef std::function<void()> Task;
@@ -14,6 +14,6 @@ typedef std::function<void()> Task;
 typedef std::vector<Task> TaskPackage;
 
 
-} // namespace sics::graph::core::common
+} // namespace xyz::graph::core::common
 
 #endif  // CORE_COMMON_MULTITHREADING_TASK_H_

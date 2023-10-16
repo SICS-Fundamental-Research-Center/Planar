@@ -4,7 +4,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-namespace sics::graph::core::scheduler {
+namespace xyz::graph::core::scheduler {
 
 class MessageTest : public ::testing::Test {
  protected:
@@ -47,4 +47,4 @@ TEST(MessageTest, MessageShouldBeOfTheSetType) {
                           Message::Type::kWrite)));
 }
 
-}  // namespace sics::graph::core::scheduler
+}  // namespace xyz::graph::core::scheduler

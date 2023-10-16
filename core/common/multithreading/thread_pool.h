@@ -5,7 +5,7 @@
 
 #include "task_runner.h"
 
-namespace sics::graph::core::common {
+namespace xyz::graph::core::common {
 
 // A wrapper of `folly::CPUThreadPoolExecutor` class, adapting it to the
 // `TaskRunner` interface.
@@ -41,6 +41,6 @@ class ThreadPool final : public TaskRunner {
   folly::CPUThreadPoolExecutor internal_pool_;
 };
 
-}  // namespace sics::graph::core::common
+}  // namespace xyz::graph::core::common
 
 #endif  // CORE_COMMON_MULTITHREADING_THREADPOOL_H_

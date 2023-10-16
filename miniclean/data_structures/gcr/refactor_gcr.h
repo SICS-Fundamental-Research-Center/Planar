@@ -5,21 +5,21 @@
 #include "miniclean/data_structures/gcr/refactor_predicate.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace sics::graph::miniclean::data_structures::gcr::refactor {
+namespace xyz::graph::miniclean::data_structures::gcr::refactor {
 
 class GCR {
  private:
-  using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
+  using PathRule = xyz::graph::miniclean::data_structures::gcr::PathRule;
   using StarRule = std::vector<PathRule*>;
   using VariablePredicate =
-      sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
-  using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::
+      xyz::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
+  using ConcreteVariablePredicate = xyz::graph::miniclean::data_structures::
       gcr::refactor::ConcreteVariablePredicate;
   using StarBitmap =
-      sics::graph::miniclean::components::preprocessor::StarBitmap;
+      xyz::graph::miniclean::components::preprocessor::StarBitmap;
   using MiniCleanCSRGraph =
-      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-  using PathPattern = sics::graph::miniclean::common::PathPattern;
+      xyz::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+  using PathPattern = xyz::graph::miniclean::common::PathPattern;
   using PathRuleUnitContainer =
       std::vector<std::vector<std::vector<std::vector<std::vector<PathRule>>>>>;
 
@@ -115,6 +115,6 @@ class GCR {
   ConcreteVariablePredicate consequence_;
 };
 
-}  // namespace sics::graph::miniclean::data_structures::gcr::refactor
+}  // namespace xyz::graph::miniclean::data_structures::gcr::refactor
 
 #endif  // MINICLEAN_DATA_STRUCTURES_GCR_R_GCR_H_

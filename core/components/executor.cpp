@@ -1,6 +1,6 @@
 #include "components/executor.h"
 
-namespace sics::graph::core::components {
+namespace xyz::graph::core::components {
 void Executor::Start() {
   thread_ = std::make_unique<std::thread>([this]() {
     while (true) {
@@ -43,4 +43,4 @@ void Executor::Start() {
     }
   });
 }
-}  // namespace sics::graph::core::components
+}  // namespace xyz::graph::core::components

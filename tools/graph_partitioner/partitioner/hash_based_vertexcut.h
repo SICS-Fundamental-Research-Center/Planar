@@ -1,10 +1,10 @@
-#ifndef SICS_GRAPH_SYSTEMS_TOOLS_VERTEXCUT_PARTITIONER_H_
-#define SICS_GRAPH_SYSTEMS_TOOLS_VERTEXCUT_PARTITIONER_H_
+#ifndef xyz_GRAPH_SYSTEMS_TOOLS_VERTEXCUT_PARTITIONER_H_
+#define xyz_GRAPH_SYSTEMS_TOOLS_VERTEXCUT_PARTITIONER_H_
 
 #include "core/common/types.h"
 #include "tools/graph_partitioner/partitioner/partitioner_base.h"
 
-namespace sics::graph::tools::partitioner {
+namespace xyz::graph::tools::partitioner {
 
 // @DESCRIPTION A vertex-cut partitioning divides edges of a graph into equal
 // size clusters. f vertex-cuts are used. A vertex-cut partitioning divides
@@ -31,9 +31,9 @@ namespace sics::graph::tools::partitioner {
 // PartitionStrategy.RandomVertexCut$.html
 class HashBasedVertexCutPartitioner : public PartitionerBase {
  private:
-  using StoreStrategy = sics::graph::tools::common::StoreStrategy;
-  using VertexID = sics::graph::core::common::VertexID;
-  using GraphID = sics::graph::core::common::GraphID;
+  using StoreStrategy = xyz::graph::tools::common::StoreStrategy;
+  using VertexID = xyz::graph::core::common::VertexID;
+  using GraphID = xyz::graph::core::common::GraphID;
 
  public:
   HashBasedVertexCutPartitioner(const std::string& input_path,
@@ -51,6 +51,6 @@ class HashBasedVertexCutPartitioner : public PartitionerBase {
   VertexID GetBucketID(VertexID vid, VertexID n_bucket) const;
 };
 
-}  // namespace sics::graph::tools::partitioner
+}  // namespace xyz::graph::tools::partitioner
 
-#endif  // SICS_GRAPH_SYSTEMS_TOOLS_VERTEXCUT_PARTITIONER_H_
+#endif  // xyz_GRAPH_SYSTEMS_TOOLS_VERTEXCUT_PARTITIONER_H_

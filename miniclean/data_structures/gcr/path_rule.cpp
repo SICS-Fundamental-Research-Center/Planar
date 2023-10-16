@@ -2,11 +2,11 @@
 
 #include "miniclean/common/types.h"
 
-namespace sics::graph::miniclean::data_structures::gcr {
+namespace xyz::graph::miniclean::data_structures::gcr {
 
-using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+using VertexAttributeID = xyz::graph::miniclean::common::VertexAttributeID;
 using VertexAttributeValue =
-    sics::graph::miniclean::common::VertexAttributeValue;
+    xyz::graph::miniclean::common::VertexAttributeValue;
 
 void PathRule::InitBitmap(std::vector<std::vector<VertexID>> path_instance,
                           MiniCleanCSRGraph* graph) {
@@ -89,4 +89,4 @@ bool PathRule::ComposeWith(PathRule& other, size_t max_pred_num) {
   return true;
 }
 
-}  // namespace sics::graph::miniclean::data_structures::gcr
+}  // namespace xyz::graph::miniclean::data_structures::gcr

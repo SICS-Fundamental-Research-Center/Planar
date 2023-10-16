@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-namespace sics::graph::core::tests {
+namespace xyz::graph::core::tests {
 
 class SampleTest : public ::testing::Test {
  protected:
@@ -16,4 +16,4 @@ TEST_F(SampleTest, SomeValuesAreAlwaysEqual) {
   EXPECT_EQ("miao", "miao");
 }
 
-}  // namespace sics::graph::core::common
+}  // namespace xyz::graph::core::common

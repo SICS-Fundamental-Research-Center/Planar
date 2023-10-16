@@ -9,7 +9,7 @@
 #include "update_stores/bsp_update_store.h"
 #include "util/logging.h"
 
-namespace sics::graph::core::apis {
+namespace xyz::graph::core::apis {
 
 // An automatic factory that creates an app instance by its name.
 template <typename GraphType>
@@ -65,6 +65,6 @@ template <typename GraphType>
 std::map<std::string, typename PlanarAppFactory<GraphType>::CreationMethod>
     PlanarAppFactory<GraphType>::factories_ = {};
 
-}  // namespace sics::graph::core::apis
+}  // namespace xyz::graph::core::apis
 
 #endif  // GRAPH_SYSTEMS_PLANAR_APP_FACTORY_H

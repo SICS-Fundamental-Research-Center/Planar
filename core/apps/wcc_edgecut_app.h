@@ -6,7 +6,7 @@
 #include "apis/planar_app_base.h"
 #include "data_structures/graph/mutable_csr_graph.h"
 
-namespace sics::graph::core::apps {
+namespace xyz::graph::core::apps {
 
 using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 
@@ -52,6 +52,6 @@ class WCCEdgeCutApp : public apis::PlanarAppBase<CSRGraph> {
   std::mutex mtx_;
 };
 
-}  // namespace sics::graph::core::apps
+}  // namespace xyz::graph::core::apps
 
 #endif  // GRAPH_SYSTEMS_CORE_APPS_WCC_EDGECUT_APP_H_

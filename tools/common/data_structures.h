@@ -5,12 +5,12 @@
 
 #include "core/common/types.h"
 
-namespace sics::graph::tools::common {
+namespace xyz::graph::tools::common {
 
 struct EdgelistMetadata {
  private:
-  using VertexID = sics::graph::core::common::VertexID;
-  using EdgeIndex = sics::graph::core::common::EdgeIndex;
+  using VertexID = xyz::graph::core::common::VertexID;
+  using EdgeIndex = xyz::graph::core::common::EdgeIndex;
 
  public:
   VertexID num_vertices;
@@ -20,7 +20,7 @@ struct EdgelistMetadata {
 
 struct Edge {
  private:
-  using VertexID = sics::graph::core::common::VertexID;
+  using VertexID = xyz::graph::core::common::VertexID;
 
  public:
   Edge(VertexID src, VertexID dst) : src(src), dst(dst) {}
@@ -35,8 +35,8 @@ struct Edge {
 
 class Edges {
  private:
-  using VertexID = sics::graph::core::common::VertexID;
-  using EdgelistMetadata = sics::graph::tools::common::EdgelistMetadata;
+  using VertexID = xyz::graph::core::common::VertexID;
+  using EdgelistMetadata = xyz::graph::tools::common::EdgelistMetadata;
 
  public:
   struct Iterator {
@@ -160,6 +160,6 @@ class Edges {
   EdgelistMetadata edgelist_metadata_;
 };
 
-}  // namespace sics::graph::tools::common
+}  // namespace xyz::graph::tools::common
 
 #endif  // TOOLS_COMMON_TYPES_H_

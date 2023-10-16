@@ -15,7 +15,7 @@
 #include "io/reader_writer.h"
 #include "scheduler/message.h"
 
-namespace sics::graph::core::io {
+namespace xyz::graph::core::io {
 
 class MutableCSRWriter : public Writer {
  private:
@@ -39,6 +39,6 @@ class MutableCSRWriter : public Writer {
   const std::string root_path_;
 };
 
-}  // namespace sics::graph::core::io
+}  // namespace xyz::graph::core::io
 
 #endif  // CORE_IO_MUTABLE_CSR_WRITER_H_

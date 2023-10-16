@@ -7,7 +7,7 @@
 #include "common/types.h"
 #include "data_structures/serialized.h"
 
-namespace sics::graph::core::data_structures {
+namespace xyz::graph::core::data_structures {
 
 // This class defines the Serializable interface, which is used to serialize and
 // deserialize objects. The Serializable interface provides methods for
@@ -30,6 +30,6 @@ class Serializable {
   virtual common::GraphID GetGraphID() const { return INVALID_GRAPH_ID; };
 };
 
-}  // namespace sics::graph::core::data_structures
+}  // namespace xyz::graph::core::data_structures
 
 #endif  // CORE_DATA_STRUCTURES_SERIALIZABLE_H_

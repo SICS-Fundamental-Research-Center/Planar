@@ -1,6 +1,6 @@
 #include "io/mutable_csr_reader.h"
 
-namespace sics::graph::core::io {
+namespace xyz::graph::core::io {
 
 using SerializedMuatbleCSRGraph =
     data_structures::graph::SerializedMutableCSRGraph;
@@ -98,4 +98,4 @@ void MutableCSRReader::ReadSingleBufferFromBin(
   file.close();
 }
 
-}  // namespace sics::graph::core::io
+}  // namespace xyz::graph::core::io

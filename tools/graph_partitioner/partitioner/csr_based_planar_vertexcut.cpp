@@ -21,36 +21,36 @@
 
 #include "sys/types.h"
 
-namespace sics::graph::tools::partitioner {
+namespace xyz::graph::tools::partitioner {
 
-using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
+using Vertex = xyz::graph::core::data_structures::graph::ImmutableCSRVertex;
 using folly::hash::fnv64_append_byte;
-using sics::graph::core::common::Bitmap;
-using sics::graph::core::common::EdgeIndex;
-using sics::graph::core::common::ThreadPool;
-using sics::graph::core::common::VertexID;
-using sics::graph::core::data_structures::GraphMetadata;
-using sics::graph::tools::common::StoreStrategy2Enum;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
-using Edge = sics::graph::tools::common::Edge;
-using sics::graph::core::common::GraphID;
-using sics::graph::core::common::TaskPackage;
-using sics::graph::core::data_structures::GraphMetadata;
-using sics::graph::core::data_structures::SubgraphMetadata;
-using sics::graph::core::data_structures::graph::ImmutableCSRGraph;
-using sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
-using sics::graph::core::io::CSRReader;
-using sics::graph::core::scheduler::ReadMessage;
-using sics::graph::core::scheduler::WriteMessage;
-using sics::graph::core::util::atomic::WriteAdd;
-using sics::graph::core::util::atomic::WriteMax;
-using sics::graph::core::util::atomic::WriteMin;
-using sics::graph::tools::common::Edges;
-using sics::graph::tools::common::GraphFormatConverter;
+using xyz::graph::core::common::ThreadPool;
+using xyz::graph::core::common::VertexID;
+using xyz::graph::core::data_structures::GraphMetadata;
+using xyz::graph::tools::common::StoreStrategy2Enum;
+using std::filesystem::create_directory;
+using std::filesystem::exists;
+using Edge = xyz::graph::tools::common::Edge;
+using xyz::graph::core::common::GraphID;
+using xyz::graph::core::common::TaskPackage;
+using xyz::graph::core::data_structures::GraphMetadata;
+using xyz::graph::core::data_structures::SubgraphMetadata;
+using xyz::graph::core::data_structures::graph::ImmutableCSRGraph;
+using xyz::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+using xyz::graph::core::io::CSRReader;
+using xyz::graph::core::scheduler::ReadMessage;
+using xyz::graph::core::scheduler::WriteMessage;
+using xyz::graph::core::util::atomic::WriteAdd;
+using xyz::graph::core::util::atomic::WriteMax;
+using xyz::graph::core::util::atomic::WriteMin;
+using xyz::graph::tools::common::Edges;
+using xyz::graph::tools::common::GraphFormatConverter;
 
 void CSRBasedPlanarVertexCutPartitioner::RunPartitioner() {
-  // TODO (hsiaoko):
+  // TODO:
 }
 
 void CSRBasedPlanarVertexCutPartitioner::RunPartitioner(bool biggraph) {
@@ -61,7 +61,7 @@ void CSRBasedPlanarVertexCutPartitioner::RunPartitioner(bool biggraph) {
   auto graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
 
   auto parallelism = std::thread::hardware_concurrency();
-  auto thread_pool = sics::graph::core::common::ThreadPool(1);
+  auto thread_pool = xyz::graph::core::common::ThreadPool(1);
   auto task_package = TaskPackage();
 
   // Read graph.
@@ -108,7 +108,7 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
   LOG_INFO("SortBFSBranch, minimum_n_edges_of_branch",
            minimum_n_edges_of_a_branch);
   auto parallelism = std::thread::hardware_concurrency();
-  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
+  auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
   task_package.reserve(parallelism);
 
@@ -258,7 +258,7 @@ CSRBasedPlanarVertexCutPartitioner::BigGraphSortBFSBranch(
   LOG_INFO("BigGraphSortBFSBranch, minimum_n_edges_of_branch",
            minimum_n_edges_of_a_branch);
   auto parallelism = std::thread::hardware_concurrency();
-  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
+  auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
   task_package.reserve(parallelism);
   std::mutex mtx;
@@ -472,7 +472,7 @@ void CSRBasedPlanarVertexCutPartitioner::Redistributing(
 std::vector<Edges> CSRBasedPlanarVertexCutPartitioner::ConvertListofEdge2Edges(
     const std::list<std::list<Edge>>& list_of_branches) {
   auto parallelism = std::thread::hardware_concurrency();
-  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
+  auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
   task_package.reserve(parallelism);
 
@@ -547,4 +547,4 @@ std::vector<Edges> CSRBasedPlanarVertexCutPartitioner::ConvertListofEdge2Edges(
   return vec_edges;
 }
 
-}  // namespace sics::graph::tools::partitioner
+}  // namespace xyz::graph::tools::partitioner

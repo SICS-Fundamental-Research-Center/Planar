@@ -8,14 +8,14 @@
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 using ConstantPredicate =
-    sics::graph::miniclean::data_structures::gcr::ConstantPredicate;
-using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
+    xyz::graph::miniclean::data_structures::gcr::ConstantPredicate;
+using GraphMetadata = xyz::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph =
-    sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-using RuleMiner = sics::graph::miniclean::components::rule_discovery::RuleMiner;
+    xyz::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+using RuleMiner = xyz::graph::miniclean::components::rule_discovery::RuleMiner;
 using VariablePredicate =
-    sics::graph::miniclean::data_structures::gcr::VariablePredicate;
-using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+    xyz::graph::miniclean::data_structures::gcr::VariablePredicate;
+using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
 
 DEFINE_string(data_directory, "", "data directory");
 

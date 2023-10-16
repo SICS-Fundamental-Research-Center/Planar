@@ -1,4 +1,4 @@
-// This file belongs to the SICS graph-systems project, a C++ library for
+// This file belongs to the xyz graph-systems project, a C++ library for
 // exploiting parallelism graph computing.
 //
 // We store graphs in a binary format. Other formats such as edge-list can be
@@ -25,19 +25,19 @@
 #include "tools/common/io.h"
 #include "tools/common/yaml_config.h"
 
-using sics::graph::core::common::Bitmap;
-using sics::graph::core::common::EdgeIndex;
-using sics::graph::core::common::TaskPackage;
-using sics::graph::core::common::VertexID;
-using sics::graph::core::common::VertexLabel;
-using sics::graph::core::data_structures::GraphMetadata;
-using sics::graph::core::data_structures::SubgraphMetadata;
-using sics::graph::core::util::atomic::WriteAdd;
-using sics::graph::tools::common::Edge;
-using sics::graph::tools::common::Edges;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
-using namespace sics::graph::tools::common;
+using xyz::graph::core::common::TaskPackage;
+using xyz::graph::core::common::VertexID;
+using xyz::graph::core::common::VertexLabel;
+using xyz::graph::core::data_structures::GraphMetadata;
+using xyz::graph::core::data_structures::SubgraphMetadata;
+using xyz::graph::core::util::atomic::WriteAdd;
+using xyz::graph::tools::common::Edge;
+using xyz::graph::tools::common::Edges;
+using std::filesystem::create_directory;
+using std::filesystem::exists;
+using namespace xyz::graph::tools::common;
 
 DEFINE_string(partitioner, "", "partitioner type.");
 DEFINE_string(i, "", "input path.");
@@ -62,7 +62,7 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
                                     const std::string& sep, bool read_head) {
   LOG_INFO("ConvertEdgelistCSV2EdgelistBin");
   auto parallelism = std::thread::hardware_concurrency();
-  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
+  auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
   task_package.reserve(parallelism);
 
@@ -94,7 +94,7 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
     std::stringstream ss_line(line);
     while (getline(ss_line, vid_str, *sep.c_str())) {
       VertexID vid = stoll(vid_str);
-      sics::graph::core::util::atomic::WriteMax(&max_vid, vid);
+      xyz::graph::core::util::atomic::WriteMax(&max_vid, vid);
       buffer_edges[index++] = vid;
     }
   }
@@ -158,7 +158,7 @@ void BigGraphConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   LOG_INFO("Read ", n_edges, " edges.", n_edges * 2);
 
   auto parallelism = std::thread::hardware_concurrency();
-  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
+  auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
 
   if (!exists(output_path)) create_directory(output_path);
@@ -179,7 +179,7 @@ void BigGraphConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
     if (index > (n_edges - 1) * 2) break;
     while (getline(ss, vid_str, *sep.c_str())) {
       VertexID vid = stoll(vid_str);
-      sics::graph::core::util::atomic::WriteMax(&max_vid, vid);
+      xyz::graph::core::util::atomic::WriteMax(&max_vid, vid);
       *(buffer_edges + index++) = vid;
     }
   }
@@ -241,7 +241,7 @@ void ConvertEdgelistBin2CSRBin(const std::string& input_path,
                                const std::string& output_path,
                                const StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
-  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
+  auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
 
   YAML::Node node = YAML::LoadFile(input_path + "meta.yaml");
   LOG_INFO(input_path + "meta.yaml");
@@ -304,7 +304,7 @@ int main(int argc, char** argv) {
                                        FLAGS_read_head);
       break;
     case kEdgelistCSV2CSRBin:
-      // TODO(hsiaoko): to add edgelist csv 2 csr bin function.
+      // TODO: to add edgelist csv 2 csr bin function.
       break;
     case kEdgelistBin2CSRBin:
       ConvertEdgelistBin2CSRBin(FLAGS_i, FLAGS_o,

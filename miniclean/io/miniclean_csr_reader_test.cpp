@@ -13,16 +13,16 @@
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-using GraphID = sics::graph::miniclean::common::GraphID;
-using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
+using GraphID = xyz::graph::miniclean::common::GraphID;
+using GraphMetadata = xyz::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph =
-    sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-using ReadMessage = sics::graph::core::scheduler::ReadMessage;
+    xyz::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+using ReadMessage = xyz::graph::core::scheduler::ReadMessage;
 using SerializedImmutableCSRGraph =
-    sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
-using ThreadPool = sics::graph::core::common::ThreadPool;
+    xyz::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+using ThreadPool = xyz::graph::core::common::ThreadPool;
 
-namespace sics::graph::miniclean::io {
+namespace xyz::graph::miniclean::io {
 
 // The fixture for testing class LogTest
 class MiniCleanCSRReaderTest : public ::testing::Test {
@@ -71,7 +71,7 @@ TEST_F(MiniCleanCSRReaderTest, ReadSubgraphTest) {
   graph.ShowGraph(100);
 
   /* Test vertex id, degree, related edges, labels, and attributes */
-  // TODO (bai-wenchao): Add tests for labels and attributes.
+  // TODO: Add tests for labels and attributes.
 
   // Test vertex 0.
   auto vertex_0 = graph.GetVertexByLocalID(0);
@@ -119,4 +119,4 @@ TEST_F(MiniCleanCSRReaderTest, ReadSubgraphTest) {
   EXPECT_EQ(incomeing_edges_57[0], 45);
 }
 
-}  // namespace sics::graph::miniclean::io
+}  // namespace xyz::graph::miniclean::io

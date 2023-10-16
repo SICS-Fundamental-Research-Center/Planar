@@ -1,33 +1,33 @@
 #include "format_converter.h"
 
-namespace sics::graph::tools::util {
+namespace xyz::graph::tools::util {
 namespace format_converter {
 
-using sics::graph::core::common::Bitmap;
-using sics::graph::core::common::EdgeIndex;
-using sics::graph::core::common::GraphID;
-using sics::graph::core::common::TaskPackage;
-using sics::graph::core::common::VertexID;
-using sics::graph::core::common::VertexLabel;
-using sics::graph::core::data_structures::GraphMetadata;
-using sics::graph::core::data_structures::SubgraphMetadata;
-using sics::graph::core::util::atomic::WriteAdd;
-using sics::graph::core::util::atomic::WriteMax;
-using sics::graph::core::util::atomic::WriteMin;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
-using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
-using sics::graph::core::data_structures::graph::ImmutableCSRGraph;
-using sics::graph::tools::common::Edge;
-using sics::graph::tools::common::EdgelistMetadata;
-using sics::graph::tools::common::Edges;
-using sics::graph::tools::common::kUnconstrained;
-using sics::graph::tools::common::StoreStrategy;
+using xyz::graph::core::common::GraphID;
+using xyz::graph::core::common::TaskPackage;
+using xyz::graph::core::common::VertexID;
+using xyz::graph::core::common::VertexLabel;
+using xyz::graph::core::data_structures::GraphMetadata;
+using xyz::graph::core::data_structures::SubgraphMetadata;
+using xyz::graph::core::util::atomic::WriteAdd;
+using xyz::graph::core::util::atomic::WriteMax;
+using xyz::graph::core::util::atomic::WriteMin;
+using std::filesystem::create_directory;
+using std::filesystem::exists;
+using Vertex = xyz::graph::core::data_structures::graph::ImmutableCSRVertex;
+using xyz::graph::core::data_structures::graph::ImmutableCSRGraph;
+using xyz::graph::tools::common::Edge;
+using xyz::graph::tools::common::EdgelistMetadata;
+using xyz::graph::tools::common::Edges;
+using xyz::graph::tools::common::kUnconstrained;
+using xyz::graph::tools::common::StoreStrategy;
 
 void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
                   ImmutableCSRGraph* csr_graph) {
   auto parallelism = std::thread::hardware_concurrency();
-  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
+  auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
   task_package.reserve(parallelism);
 
@@ -179,4 +179,4 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
 }
 
 }  // namespace format_converter
-}  // namespace sics::graph::tools::util
+}  // namespace xyz::graph::tools::util

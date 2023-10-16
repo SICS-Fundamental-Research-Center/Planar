@@ -1,6 +1,6 @@
 #include "apps/sssp_app.h"
 
-namespace sics::graph::core::apps {
+namespace xyz::graph::core::apps {
 
 void SsspApp::PEval() {
   auto init = [this](VertexID id) { this->Init(id); };
@@ -122,4 +122,4 @@ void SsspApp::LogActive() {
   }
 }
 
-}  // namespace sics::graph::core::apps
+}  // namespace xyz::graph::core::apps

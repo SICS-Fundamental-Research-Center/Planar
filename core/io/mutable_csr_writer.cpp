@@ -1,6 +1,6 @@
 #include "io/mutable_csr_writer.h"
 
-namespace sics::graph::core::io {
+namespace xyz::graph::core::io {
 
 void MutableCSRWriter::Write(WriteMessage* message,
                              common::TaskRunner* /* runner */) {
@@ -51,4 +51,4 @@ void MutableCSRWriter::WriteLabelInfoToBin(
   label_file.close();
 }
 
-}  // namespace sics::graph::core::io
+}  // namespace xyz::graph::core::io

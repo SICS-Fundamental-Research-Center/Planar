@@ -3,7 +3,7 @@
 
 #include <memory>
 
-namespace sics::graph::core::util {
+namespace xyz::graph::core::util {
 
 // change derived class pointer to base class pointer
 template <typename BaseType, typename DerivedType>
@@ -24,6 +24,6 @@ inline std::unique_ptr<DerivedType> pointer_upcast(
       dynamic_cast<DerivedType*>(based.release()));
 }
 
-}  // namespace sics::graph::core::util
+}  // namespace xyz::graph::core::util
 
 #endif  // GRAPH_SYSTEMS_POINTER_CAST_H

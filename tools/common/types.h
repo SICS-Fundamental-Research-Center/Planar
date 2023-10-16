@@ -1,9 +1,9 @@
-#ifndef SICS_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_TYPES_H_
-#define SICS_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_TYPES_H_
+#ifndef xyz_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_TYPES_H_
+#define xyz_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_TYPES_H_
 
 #include <string>
 
-namespace sics::graph::tools::common {
+namespace xyz::graph::tools::common {
 
 enum StoreStrategy {
   kUnconstrained,  // default
@@ -41,4 +41,4 @@ static inline ConvertMode ConvertMode2Enum(const std::string& s) {
 
 }  // namespace tools
 
-#endif  // SICS_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_TYPES_H_
+#endif  // xyz_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_TYPES_H_

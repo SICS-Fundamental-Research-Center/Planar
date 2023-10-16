@@ -1,5 +1,5 @@
-#ifndef SICS_GRAPH_SYSTEMS_TOOLS_COMMON_YAML_CONFIG_H_
-#define SICS_GRAPH_SYSTEMS_TOOLS_COMMON_YAML_CONFIG_H_
+#ifndef xyz_GRAPH_SYSTEMS_TOOLS_COMMON_YAML_CONFIG_H_
+#define xyz_GRAPH_SYSTEMS_TOOLS_COMMON_YAML_CONFIG_H_
 
 #include <yaml-cpp/yaml.h>
 
@@ -10,11 +10,10 @@
 
 namespace YAML {
 
-using sics::graph::core::common::GraphID;
-using sics::graph::core::common::VertexID;
-using sics::graph::core::common::EdgeIndex;
-using sics::graph::core::data_structures::SubgraphMetadata;
-using sics::graph::tools::common::EdgelistMetadata;
+using xyz::graph::core::common::EdgeIndex;
+using xyz::graph::core::common::VertexID;
+using xyz::graph::core::data_structures::SubgraphMetadata;
+using xyz::graph::tools::common::EdgelistMetadata;
 
 template <>
 struct convert<EdgelistMetadata> {
@@ -43,4 +42,4 @@ struct convert<EdgelistMetadata> {
 
 }  // namespace YAML
 
-#endif  // SICS_GRAPH_SYSTEMS_TOOLS_COMMON_YAML_CONFIG_H_
+#endif  // xyz_GRAPH_SYSTEMS_TOOLS_COMMON_YAML_CONFIG_H_

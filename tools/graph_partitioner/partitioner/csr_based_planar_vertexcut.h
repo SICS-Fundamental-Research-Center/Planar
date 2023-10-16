@@ -1,5 +1,5 @@
-#ifndef SICS_GRAPH_SYSTEMS_TOOLS_PLANAR_VERTEXCUT_CSR_BASED_PARTITIONER_H_
-#define SICS_GRAPH_SYSTEMS_TOOLS_PLANAR_VERTEXCUT_CSR_BASED_PARTITIONER_H_
+#ifndef xyz_GRAPH_SYSTEMS_TOOLS_PLANAR_VERTEXCUT_CSR_BASED_PARTITIONER_H_
+#define xyz_GRAPH_SYSTEMS_TOOLS_PLANAR_VERTEXCUT_CSR_BASED_PARTITIONER_H_
 
 #include <vector>
 
@@ -10,19 +10,19 @@
 #include "tools/common/yaml_config.h"
 #include "tools/graph_partitioner/partitioner/partitioner_base.h"
 
-namespace sics::graph::tools::partitioner {
+namespace xyz::graph::tools::partitioner {
 
 class CSRBasedPlanarVertexCutPartitioner : public PartitionerBase {
  private:
-  using StoreStrategy = sics::graph::tools::common::StoreStrategy;
-  using Edges = sics::graph::tools::common::Edges;
-  using Edge = sics::graph::tools::common::Edge;
-  using Bitmap = sics::graph::core::common::Bitmap;
-  using VertexID = sics::graph::core::common::VertexID;
-  using GraphID = sics::graph::core::common::GraphID;
-  using EdgelistMetadata = sics::graph::tools::common::EdgelistMetadata;
+  using StoreStrategy = xyz::graph::tools::common::StoreStrategy;
+  using Edges = xyz::graph::tools::common::Edges;
+  using Edge = xyz::graph::tools::common::Edge;
+  using Bitmap = xyz::graph::core::common::Bitmap;
+  using VertexID = xyz::graph::core::common::VertexID;
+  using GraphID = xyz::graph::core::common::GraphID;
+  using EdgelistMetadata = xyz::graph::tools::common::EdgelistMetadata;
   using ImmutableCSRGraph =
-      sics::graph::core::data_structures::graph::ImmutableCSRGraph;
+      xyz::graph::core::data_structures::graph::ImmutableCSRGraph;
 
   std::list<VertexID> members;
 
@@ -86,6 +86,6 @@ class CSRBasedPlanarVertexCutPartitioner : public PartitionerBase {
       const std::list<std::list<Edge>>& list_of_branches);
 };
 
-}  // namespace sics::graph::tools::partitioner
+}  // namespace xyz::graph::tools::partitioner
 
-#endif  // SICS_GRAPH_SYSTEMS_TOOLS_PLANAR_VERTEXCUT_PARTITIONER_H_
+#endif  // xyz_GRAPH_SYSTEMS_TOOLS_PLANAR_VERTEXCUT_PARTITIONER_H_

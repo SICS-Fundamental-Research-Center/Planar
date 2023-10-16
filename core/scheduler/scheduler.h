@@ -19,7 +19,7 @@
 #include "scheduler/message_hub.h"
 #include "update_stores/update_store_base.h"
 
-namespace sics::graph::core::scheduler {
+namespace xyz::graph::core::scheduler {
 
 class Scheduler {
   using MutableCSRGraphUInt32 = data_structures::graph::MutableCSRGraphUInt32;
@@ -159,6 +159,6 @@ class Scheduler {
   int test = 0;
 };
 
-}  // namespace sics::graph::core::scheduler
+}  // namespace xyz::graph::core::scheduler
 
 #endif  // GRAPH_SYSTEMS_SCHEDULER_H

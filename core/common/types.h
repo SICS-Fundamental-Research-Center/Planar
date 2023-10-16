@@ -7,7 +7,7 @@
 #include <limits>
 #include <string>
 
-namespace sics::graph::core::common {
+namespace xyz::graph::core::common {
 
 typedef uint32_t GraphID;  // uint32_t: 0 ~ 4,294,967,295
 typedef uint32_t VertexID;
@@ -23,12 +23,12 @@ typedef uint16_t Uint16VertexDataType;
 
 #define MAX_VERTEX_ID std::numeric_limits<VertexID>::max()
 #define INVALID_GRAPH_ID \
-  std::numeric_limits<sics::graph::core::common::GraphID>::max()
+  std::numeric_limits<xyz::graph::core::common::GraphID>::max()
 #define INVALID_VERTEX_INDEX \
-  std::numeric_limits<sics::graph::core::common::VertexIndex>::max()
+  std::numeric_limits<xyz::graph::core::common::VertexIndex>::max()
 
 static int subgraph_limits = 1;  // used only for test.
 
-}  // namespace sics::graph::core::common
+}  // namespace xyz::graph::core::common
 
 #endif  // CORE_COMMON_TYPES_H_

@@ -14,11 +14,11 @@
 #include "data_structures/serialized.h"
 #include "util/logging.h"
 
-namespace sics::graph::core::data_structures::graph {
+namespace xyz::graph::core::data_structures::graph {
 
 struct ImmutableCSRVertex {
  private:
-  using VertexID = sics::graph::core::common::VertexID;
+  using VertexID = xyz::graph::core::common::VertexID;
 
  public:
   VertexID vid;
@@ -30,10 +30,10 @@ struct ImmutableCSRVertex {
 
 class ImmutableCSRGraph : public Serializable {
  private:
-  using GraphID = sics::graph::core::common::GraphID;
-  using VertexID = sics::graph::core::common::VertexID;
-  using VertexLabel = sics::graph::core::common::VertexLabel;
-  using EdgeIndex = sics::graph::core::common::EdgeIndex;
+  using GraphID = xyz::graph::core::common::GraphID;
+  using VertexID = xyz::graph::core::common::VertexID;
+  using VertexLabel = xyz::graph::core::common::VertexLabel;
+  using EdgeIndex = xyz::graph::core::common::EdgeIndex;
 
  public:
   explicit ImmutableCSRGraph(SubgraphMetadata metadata)
@@ -201,6 +201,6 @@ class ImmutableCSRGraph : public Serializable {
   VertexLabel* vertex_label_base_pointer_;
 };
 
-}  // namespace sics::graph::core::data_structures::graph
+}  // namespace xyz::graph::core::data_structures::graph
 
 #endif  // CORE_DATA_STRUCTURES_GRAPH_IMMUTABLE_CSR_GRAPH_H_

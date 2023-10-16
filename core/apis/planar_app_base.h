@@ -12,7 +12,7 @@
 #include "update_stores/bsp_update_store.h"
 #include "util/logging.h"
 
-namespace sics::graph::core::apis {
+namespace xyz::graph::core::apis {
 
 // Planar's extended PIE interfaces for graph applications.
 //
@@ -305,6 +305,6 @@ class PlanarAppBase : public PIE {
   // TODO: add UpdateStore as a member here.
 };
 
-}  // namespace sics::graph::core::apis
+}  // namespace xyz::graph::core::apis
 
 #endif  // GRAPH_SYSTEMS_PLANAR_APP_BASE_H

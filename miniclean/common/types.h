@@ -5,11 +5,11 @@
 #include <list>
 #include <vector>
 
-namespace sics::graph::miniclean::common {
+namespace xyz::graph::miniclean::common {
 
 typedef uint8_t GraphID;
 typedef uint32_t VertexID;
-// TODO (bai-wenchao): uint8_t is enough, change the vertex_label format.
+// TODO: uint8_t is enough, change the vertex_label format.
 typedef uint32_t VertexLabel;
 typedef uint8_t EdgeLabel;
 
@@ -46,6 +46,6 @@ typedef std::pair<StarPattern, StarPattern> DualPattern;
 #define MAX_VERTEX_ATTRIBUTE_VALUE \
   std::numeric_limits<VertexAttributeValue>::max()
 
-}  // namespace sics::graph::miniclean::common
+}  // namespace xyz::graph::miniclean::common
 
 #endif  // MINICLEAN_COMMON_TYPES_H_

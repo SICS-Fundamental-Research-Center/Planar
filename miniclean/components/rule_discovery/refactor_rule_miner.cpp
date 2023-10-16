@@ -10,17 +10,17 @@
 #include "core/util/logging.h"
 #include "miniclean/io/miniclean_csr_reader.h"
 
-namespace sics::graph::miniclean::components::rule_discovery::refactor {
+namespace xyz::graph::miniclean::components::rule_discovery::refactor {
 
-using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
-using VertexLabel = sics::graph::miniclean::common::VertexLabel;
-using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
-using MiniCleanCSRReader = sics::graph::miniclean::io::MiniCleanCSRReader;
+using EdgeLabel = xyz::graph::miniclean::common::EdgeLabel;
+using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
+using VertexAttributeID = xyz::graph::miniclean::common::VertexAttributeID;
+using MiniCleanCSRReader = xyz::graph::miniclean::io::MiniCleanCSRReader;
 using SerializedImmutableCSRGraph =
-    sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
-using ReadMessage = sics::graph::core::scheduler::ReadMessage;
-using ThreadPool = sics::graph::core::common::ThreadPool;
-using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
+    xyz::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+using ReadMessage = xyz::graph::core::scheduler::ReadMessage;
+using ThreadPool = xyz::graph::core::common::ThreadPool;
+using OwnedBuffer = xyz::graph::core::data_structures::OwnedBuffer;
 
 void RuleMiner::LoadGraph(const std::string& graph_path) {
   // Prepare reader.
@@ -222,13 +222,13 @@ void RuleMiner::InitPathRuleUnits() {
         path_rule_unit_container_[i][j].resize(
             attribute_metadata.at(label).size());
         for (size_t k = 0; k < path_rule_unit_container_[i][j].size(); k++) {
-          // TODO (bai-wenchao): this is a dangurous implementation, we need to
+          // TODO: this is a dangurous implementation, we need to
           // make sure whether attribute_metadata[label] range from 0 to n.
           path_rule_unit_container_[i][j][k].resize(
               attribute_metadata.at(label)[k].second);
           for (size_t l = 0; l < path_rule_unit_container_[i][j][k].size();
                l++) {
-            // TODO (bai-wenchao): `2` is the number of operator types.
+            // TODO: `2` is the number of operator types.
             path_rule_unit_container_[i][j][k][l].resize(2);
           }
         }
@@ -240,7 +240,7 @@ void RuleMiner::InitPathRuleUnits() {
   for (size_t i = 0; i < path_rule_unit_container_.size(); i++) {
     PathRule path_rule(path_patterns_[i], i, num_vertex);
     path_rule.InitBitmap(path_instances_[i], graph_);
-    // TODO (bai-wenchao): check the support.
+    // TODO: check the support.
     if (path_rule.CountOneBits() <= 0) {
       continue;
     }
@@ -254,7 +254,7 @@ void RuleMiner::InitPathRuleUnits() {
         for (const auto& predicate : predicate_pair.second) {
           path_rule.AddConstantPredicate(j - 1, predicate);
           path_rule.InitBitmap(path_instances_[i], graph_);
-          // TODO (bai-wenchao): check support.
+          // TODO: check support.
           if (path_rule.CountOneBits() <= 0) {
             bool pop_status = path_rule.PopConstantPredicate();
             if (!pop_status) {
@@ -303,7 +303,7 @@ void RuleMiner::ExtendPathRules(size_t pattern_id) {
         should_continue = should_continue || should_compose;
         LOG_INFO("Compose status: ", should_continue);
         if (should_compose) {
-          // TODO (bai-wenchao): check support.
+          // TODO: check support.
           if (path_rule_cp.CountOneBits() <= 0) {
             continue;
           }
@@ -409,4 +409,4 @@ void RuleMiner::ExtendGCR(const GCR& gcr, size_t start_pattern_id,
   }
 }
 
-}  // namespace sics::graph::miniclean::components::rule_discovery::refactor
+}  // namespace xyz::graph::miniclean::components::rule_discovery::refactor

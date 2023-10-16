@@ -11,7 +11,7 @@ DEFINE_bool(in_memory, false, "in memory mode");
 DEFINE_uint32(memory_size, 64, "memory size (GB)");
 DEFINE_bool(fast, false, "fast mode (no output)");
 
-using namespace sics::graph;
+using namespace xyz::graph;
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);

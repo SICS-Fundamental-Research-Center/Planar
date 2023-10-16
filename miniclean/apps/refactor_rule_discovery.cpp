@@ -7,12 +7,12 @@
 #include "miniclean/components/rule_discovery/refactor_rule_miner.h"
 
 using RuleMiner =
-    sics::graph::miniclean::components::rule_discovery::refactor::RuleMiner;
-using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
+    xyz::graph::miniclean::components::rule_discovery::refactor::RuleMiner;
+using GraphMetadata = xyz::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph =
-    sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+    xyz::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
 using IndexMetadata =
-    sics::graph::miniclean::components::preprocessor::IndexMetadata;
+    xyz::graph::miniclean::components::preprocessor::IndexMetadata;
 
 DEFINE_string(workspace_path, "", "workspace_path");
 

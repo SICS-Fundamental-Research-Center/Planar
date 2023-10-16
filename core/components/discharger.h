@@ -10,7 +10,7 @@
 #include "scheduler/message_hub.h"
 #include "util/logging.h"
 
-namespace sics::graph::core::components {
+namespace xyz::graph::core::components {
 
 // An adapter class that adapts a WriterInterface to Discharger that works
 // against a MessageHub.
@@ -61,6 +61,6 @@ class Discharger : public Component {
   std::unique_ptr<std::thread> thread_;
 };
 
-}  // namespace sics::graph::core::components
+}  // namespace xyz::graph::core::components
 
 #endif  // GRAPH_SYSTEMS_DISCHARGER_H

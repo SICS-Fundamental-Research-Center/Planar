@@ -12,7 +12,7 @@ DEFINE_uint32(memory_size, 64, "memory size (GB)");
 DEFINE_uint32(source, 0, "source vertex id");
 DEFINE_bool(ASP, false, "debug mode");
 
-using namespace sics::graph;
+using namespace xyz::graph;
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);

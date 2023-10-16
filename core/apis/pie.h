@@ -1,7 +1,7 @@
 #ifndef GRAPH_SYSTEMS_PIE_H
 #define GRAPH_SYSTEMS_PIE_H
 
-namespace sics::graph::core::apis {
+namespace xyz::graph::core::apis {
 
 // PIE interfaces for graph applications.
 class PIE {
@@ -15,6 +15,6 @@ class PIE {
   virtual void Assemble() = 0;
 };
 
-}  // namespace sics::graph::core::apis
+}  // namespace xyz::graph::core::apis
 
 #endif  // GRAPH_SYSTEMS_PIE_H

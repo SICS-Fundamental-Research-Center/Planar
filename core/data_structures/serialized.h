@@ -5,7 +5,7 @@
 
 #include "data_structures/buffer.h"
 
-namespace sics::graph::core::data_structures {
+namespace xyz::graph::core::data_structures {
 
 class Serialized {
  public:
@@ -56,6 +56,6 @@ class Serialized {
   bool is_complete_ = false;
 };
 
-}  // namespace sics::graph::core::data_structures
+}  // namespace xyz::graph::core::data_structures
 
 #endif  // CORE_DATA_STRUCTURES_SERIALIZED_H_

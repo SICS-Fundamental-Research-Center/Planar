@@ -12,7 +12,7 @@
 #include "scheduler/scheduler.h"
 #include "update_stores/bsp_update_store.h"
 
-namespace sics::graph::core::planar_system {
+namespace xyz::graph::core::planar_system {
 
 template <typename AppType>
 class Planar {
@@ -84,4 +84,4 @@ class Planar {
   std::chrono::time_point<std::chrono::system_clock> end_time_;
 };
 
-}  // namespace sics::graph::core::planar_system
+}  // namespace xyz::graph::core::planar_system

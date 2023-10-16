@@ -4,12 +4,12 @@
 
 #include "core/util/logging.h"
 
-namespace sics::graph::miniclean::data_structures::gcr {
+namespace xyz::graph::miniclean::data_structures::gcr {
 
-using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+using VertexAttributeID = xyz::graph::miniclean::common::VertexAttributeID;
 using VertexAttributeValue =
-    sics::graph::miniclean::common::VertexAttributeValue;
-using PathPatternID = sics::graph::miniclean::common::PathPatternID;
+    xyz::graph::miniclean::common::VertexAttributeValue;
+using PathPatternID = xyz::graph::miniclean::common::PathPatternID;
 
 void GCR::Init(
     MiniCleanCSRGraph* graph,
@@ -45,7 +45,7 @@ void GCR::InitTask(
   size_t left_segment_size = left_path_instances->size() / num_segments + 1;
   size_t right_segment_size = right_path_instances->size() / num_segments + 1;
 
-  // TODO: (bai-wenchao) A unique pair of center can at most contribute 1
+  // TODO: A unique pair of center can at most contribute 1
   // support. Fix this mistake when instance tree is built.
   size_t local_support = 0;
   size_t local_match = 0;
@@ -130,4 +130,4 @@ void GCR::InitTask(
   }
 }
 
-}  // namespace sics::graph::miniclean::data_structures::gcr
+}  // namespace xyz::graph::miniclean::data_structures::gcr

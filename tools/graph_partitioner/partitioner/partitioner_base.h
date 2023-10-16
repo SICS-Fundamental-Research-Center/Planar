@@ -1,17 +1,17 @@
-#ifndef SICS_GRAPH_SYSTEMS_TOOLS_PARTITIONER_H_
-#define SICS_GRAPH_SYSTEMS_TOOLS_PARTITIONER_H_
+#ifndef xyz_GRAPH_SYSTEMS_TOOLS_PARTITIONER_H_
+#define xyz_GRAPH_SYSTEMS_TOOLS_PARTITIONER_H_
 
 #include "tools/common/types.h"
 
 #include <string>
 
-namespace sics::graph::tools::partitioner {
+namespace xyz::graph::tools::partitioner {
 
 // This class defines the Partitioner interface, which is used to partition a
 // graph into several subgraphs.
 class PartitionerBase {
  private:
-  using StoreStrategy = sics::graph::tools::common::StoreStrategy;
+  using StoreStrategy = xyz::graph::tools::common::StoreStrategy;
 
  public:
   PartitionerBase(const std::string& input_path,
@@ -30,6 +30,6 @@ class PartitionerBase {
   const StoreStrategy store_strategy_;
 };
 
-}  // namespace sics::graph::tools::partitioner
+}  // namespace xyz::graph::tools::partitioner
 
-#endif  // SICS_GRAPH_SYSTEMS_TOOLS_PARTITIONER_H_
+#endif  // xyz_GRAPH_SYSTEMS_TOOLS_PARTITIONER_H_

@@ -1,5 +1,5 @@
-#ifndef SICS_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_FORMAT_CONVERTER_H_
-#define SICS_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_FORMAT_CONVERTER_H_
+#ifndef xyz_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_FORMAT_CONVERTER_H_
+#define xyz_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_FORMAT_CONVERTER_H_
 
 #include <filesystem>
 #include <fstream>
@@ -16,7 +16,7 @@
 #include "tools/common/types.h"
 #include "tools/common/yaml_config.h"
 
-namespace sics::graph::tools::util {
+namespace xyz::graph::tools::util {
 namespace format_converter {
 
 // @DESCRIPTION convert edgelist to immutable CSR graph
@@ -25,11 +25,11 @@ namespace format_converter {
 //  store_strategy: store strategy for the graph
 //  csr_graph: output graph
 void Edgelist2CSR(
-    const sics::graph::tools::common::Edges& buffer_edges,
-    sics::graph::tools::common::StoreStrategy store_strategy,
-    sics::graph::core::data_structures::graph::ImmutableCSRGraph* csr_graph);
+    const xyz::graph::tools::common::Edges& buffer_edges,
+    xyz::graph::tools::common::StoreStrategy store_strategy,
+    xyz::graph::core::data_structures::graph::ImmutableCSRGraph* csr_graph);
 
 }  // namespace format_converter
-}  // namespace sics::graph::tools::util
+}  // namespace xyz::graph::tools::util
 
-#endif  // SICS_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_FORMAT_CONVERTER_H_
+#endif  // xyz_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_FORMAT_CONVERTER_H_

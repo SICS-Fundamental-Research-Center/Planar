@@ -9,7 +9,7 @@
 #include "common/types.h"
 #include "data_structures/graph/mutable_csr_graph.h"
 
-namespace sics::graph::core::apps {
+namespace xyz::graph::core::apps {
 
 using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 
@@ -67,6 +67,6 @@ class ColoringApp : public apis::PlanarAppBase<CSRGraph> {
   uint32_t max_round_ = 10000;
 };
 
-}  // namespace sics::graph::core::apps
+}  // namespace xyz::graph::core::apps
 
 #endif  // GRAPH_SYSTEMS_CORE_APPS_COLORING_APP_H_

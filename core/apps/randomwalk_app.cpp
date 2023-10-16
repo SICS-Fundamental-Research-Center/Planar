@@ -1,6 +1,6 @@
 #include "apps/randomwalk_app.h"
 
-namespace sics::graph::core::apps {
+namespace xyz::graph::core::apps {
 
 RandomWalkApp::RandomWalkApp(
     common::TaskRunner* runner,
@@ -42,4 +42,4 @@ void RandomWalkApp::Walk(VertexID id) {
   }
 }
 
-}  // namespace sics::graph::core::apps
+}  // namespace xyz::graph::core::apps

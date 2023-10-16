@@ -13,25 +13,25 @@
 #include "miniclean/data_structures/gcr/refactor_predicate.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace sics::graph::miniclean::components::rule_discovery::refactor {
+namespace xyz::graph::miniclean::components::rule_discovery::refactor {
 
 class RuleMiner {
  private:
-  using PathPattern = sics::graph::miniclean::common::PathPattern;
+  using PathPattern = xyz::graph::miniclean::common::PathPattern;
   using ConstantPredicate =
-      sics::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate;
+      xyz::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate;
   using MiniCleanCSRGraph =
-      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-  using VertexID = sics::graph::miniclean::common::VertexID;
-  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
-  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+      xyz::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+  using VertexID = xyz::graph::miniclean::common::VertexID;
+  using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
+  using VertexAttributeID = xyz::graph::miniclean::common::VertexAttributeID;
   using IndexMetadata =
-      sics::graph::miniclean::components::preprocessor::IndexMetadata;
-  using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
+      xyz::graph::miniclean::components::preprocessor::IndexMetadata;
+  using PathRule = xyz::graph::miniclean::data_structures::gcr::PathRule;
   using StarRule = std::vector<PathRule*>;
   using VariablePredicate =
-      sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
-  using GCRFactory = sics::graph::miniclean::data_structures::gcr::GCRFactory;
+      xyz::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
+  using GCRFactory = xyz::graph::miniclean::data_structures::gcr::GCRFactory;
   // The first dimension is the path pattern id.
   // The second dimension is the vertex id (indicates the vertex that carries
   // predicate).
@@ -40,7 +40,7 @@ class RuleMiner {
   // The fifth dimension is the operator type.
   using PathRuleUnitContainer =
       std::vector<std::vector<std::vector<std::vector<std::vector<PathRule>>>>>;
-  using GCR = sics::graph::miniclean::data_structures::gcr::refactor::GCR;
+  using GCR = xyz::graph::miniclean::data_structures::gcr::refactor::GCR;
 
  public:
   RuleMiner(MiniCleanCSRGraph* graph) : graph_(graph) {}
@@ -87,6 +87,6 @@ class RuleMiner {
   const int max_predicate_num_ = 3;
   const int max_path_num_ = 2;
 };
-}  // namespace sics::graph::miniclean::components::rule_discovery::refactor
+}  // namespace xyz::graph::miniclean::components::rule_discovery::refactor
 
 #endif  // MINICLEAN_COMPONENTS_RULE_DISCOVERY_R_RULE_MINER_H_

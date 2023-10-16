@@ -1,5 +1,5 @@
-#ifndef SICS_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_IO_H_
-#define SICS_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_IO_H_
+#ifndef xyz_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_IO_H_
+#define xyz_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_IO_H_
 
 #include <filesystem>
 #include <fstream>
@@ -15,19 +15,19 @@
 #include "tools/common/yaml_config.h"
 #include "tools/util/format_converter.h"
 
-namespace sics::graph::tools::common {
+namespace xyz::graph::tools::common {
 
 // Adapter for the IO operations.
 class GraphFormatConverter {
  private:
-  using VertexID = sics::graph::core::common::VertexID;
-  using Bitmap = sics::graph::core::common::Bitmap;
+  using VertexID = xyz::graph::core::common::VertexID;
+  using Bitmap = xyz::graph::core::common::Bitmap;
   using ImmutableCSRGraph =
-      sics::graph::core::data_structures::graph::ImmutableCSRGraph;
-  using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
-  using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
-  using EdgelistMetadata = sics::graph::tools::common::EdgelistMetadata;
-  using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
+      xyz::graph::core::data_structures::graph::ImmutableCSRGraph;
+  using GraphMetadata = xyz::graph::core::data_structures::GraphMetadata;
+  using SubgraphMetadata = xyz::graph::core::data_structures::SubgraphMetadata;
+  using EdgelistMetadata = xyz::graph::tools::common::EdgelistMetadata;
+  using Vertex = xyz::graph::core::data_structures::graph::ImmutableCSRVertex;
 
  public:
   GraphFormatConverter(const std::string& output_root_path)
@@ -77,6 +77,6 @@ class GraphFormatConverter {
   const std::string output_root_path_;
 };
 
-}  // namespace sics::graph::tools::common
+}  // namespace xyz::graph::tools::common
 
-#endif  // SICS_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_IO_H_
+#endif  // xyz_GRAPH_SYSTEMS_TOOLS_TOOLS_COMMON_IO_H_

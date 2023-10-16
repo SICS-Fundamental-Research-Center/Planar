@@ -5,7 +5,7 @@
 #include "common/multithreading/thread_pool.h"
 #include "data_structures/graph/mutable_csr_graph.h"
 
-namespace sics::grapg::core::io {
+namespace xyz::grapg::core::io {
 
 class CSRWriterTest : public ::testing::Test {
  protected:
@@ -15,4 +15,4 @@ class CSRWriterTest : public ::testing::Test {
 
 // TODO: test write mutable csrgraph
 
-}  // namespace sics::grapg::core::io
+}  // namespace xyz::grapg::core::io

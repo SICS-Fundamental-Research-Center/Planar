@@ -14,7 +14,7 @@
 #include "util/atomic.h"
 #include "util/pointer_cast.h"
 
-namespace sics::graph::core::data_structures::graph {
+namespace xyz::graph::core::data_structures::graph {
 
 // TV : type of vertexData; TE : type of EdgeData
 template <typename TV, typename TE>
@@ -523,6 +523,6 @@ typedef MutableCSRGraph<common::Uint16VertexDataType,
                         common::DefaultEdgeDataType>
     MutableCSRGraphUInt16;
 
-}  // namespace sics::graph::core::data_structures::graph
+}  // namespace xyz::graph::core::data_structures::graph
 
 #endif  // GRAPH_SYSTEMS_CORE_DATA_STRUCTURES_GRAPH_MUTABLE_CSR_GRAPH_H_

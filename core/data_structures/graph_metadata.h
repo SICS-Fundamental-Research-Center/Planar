@@ -11,7 +11,7 @@
 #include "common/types.h"
 #include "util/logging.h"
 
-namespace sics::graph::core::data_structures {
+namespace xyz::graph::core::data_structures {
 
 struct SubgraphMetadata {
   using GraphID = common::GraphID;
@@ -168,17 +168,17 @@ class GraphMetadata {
   uint32_t vertex_data_size_ = 4;
 };
 
-}  // namespace sics::graph::core::data_structures
+}  // namespace xyz::graph::core::data_structures
 
 // used for read meta.yaml when serialized(encode) and deserialize(decode)
 namespace YAML {
 
-using GraphID = sics::graph::core::common::GraphID;
-using VertexID = sics::graph::core::common::VertexID;
+using GraphID = xyz::graph::core::common::GraphID;
+using VertexID = xyz::graph::core::common::VertexID;
 // template is needed for this function
 template <>
-struct convert<sics::graph::core::data_structures::SubgraphMetadata> {
-  static Node encode(const sics::graph::core::data_structures::SubgraphMetadata&
+struct convert<xyz::graph::core::data_structures::SubgraphMetadata> {
+  static Node encode(const xyz::graph::core::data_structures::SubgraphMetadata&
                          subgraph_metadata) {
     Node node;
     node["gid"] = subgraph_metadata.gid;
@@ -191,12 +191,12 @@ struct convert<sics::graph::core::data_structures::SubgraphMetadata> {
   }
   static bool decode(
       const Node& node,
-      sics::graph::core::data_structures::SubgraphMetadata& subgraph_metadata) {
+      xyz::graph::core::data_structures::SubgraphMetadata& subgraph_metadata) {
     if (node.size() != 6) {
       return false;
     }
     subgraph_metadata.gid =
-        node["gid"].as<sics::graph::core::common::GraphID>();
+        node["gid"].as<xyz::graph::core::common::GraphID>();
     subgraph_metadata.num_vertices = node["num_vertices"].as<size_t>();
     subgraph_metadata.num_incoming_edges =
         node["num_incoming_edges"].as<size_t>();
@@ -210,9 +210,9 @@ struct convert<sics::graph::core::data_structures::SubgraphMetadata> {
 
 // template is needed for this function
 template <>
-struct convert<sics::graph::core::data_structures::GraphMetadata> {
+struct convert<xyz::graph::core::data_structures::GraphMetadata> {
   static Node encode(
-      const sics::graph::core::data_structures::GraphMetadata& metadata) {
+      const xyz::graph::core::data_structures::GraphMetadata& metadata) {
     Node node;
     node["num_vertices"] = metadata.get_num_vertices();
     node["num_edges"] = metadata.get_num_edges();
@@ -220,7 +220,7 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
     node["min_vid"] = metadata.get_min_vid();
     node["count_border_vertices"] = metadata.get_count_border_vertices();
     node["num_subgraphs"] = metadata.get_num_subgraphs();
-    std::vector<sics::graph::core::data_structures::SubgraphMetadata> tmp;
+    std::vector<xyz::graph::core::data_structures::SubgraphMetadata> tmp;
     for (size_t i = 0; i < metadata.get_num_subgraphs(); i++) {
       tmp.push_back(metadata.GetSubgraphMetadata(0));
     }
@@ -230,7 +230,7 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
 
   static bool decode(
       const Node& node,
-      sics::graph::core::data_structures::GraphMetadata& metadata) {
+      xyz::graph::core::data_structures::GraphMetadata& metadata) {
     if (node.size() != 7) return false;
 
     metadata.set_num_vertices(node["num_vertices"].as<size_t>());
@@ -245,7 +245,7 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
     auto subgraph_metadata_vec =
         node["subgraphs"]
             .as<std::vector<
-                sics::graph::core::data_structures::SubgraphMetadata>>();
+                xyz::graph::core::data_structures::SubgraphMetadata>>();
     metadata.set_subgraph_metadata_vec(subgraph_metadata_vec);
     return true;
   }

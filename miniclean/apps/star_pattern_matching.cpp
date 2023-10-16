@@ -11,15 +11,15 @@
 #include "miniclean/components/matcher/path_matcher.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
+using GraphMetadata = xyz::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph =
-    sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-using PathMatcher = sics::graph::miniclean::components::matcher::PathMatcher;
+    xyz::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+using PathMatcher = xyz::graph::miniclean::components::matcher::PathMatcher;
 using SerializedImmutableCSRGraph =
-    sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
-using ThreadPool = sics::graph::core::common::ThreadPool;
-using VertexID = sics::graph::miniclean::common::VertexID;
-using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+    xyz::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+using ThreadPool = xyz::graph::core::common::ThreadPool;
+using VertexID = xyz::graph::miniclean::common::VertexID;
+using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
 
 DEFINE_string(i, "", "input graph directory");
 DEFINE_uint64(p, 1, "number of threads for path matching");
@@ -37,7 +37,7 @@ DEFINE_uint64(t, 1, "number of tasks for path matching");
 //      User input that less than 1 would adopt 1;
 //      User input that greater than the hardware concurrency would adopt the
 //      hardware concurrency.
-//      The hardware concurrency in sics::50.10 is 20.
+//      The hardware concurrency in xyz::50.10 is 20.
 //   - num_tasks: the number of tasks for path matching.
 //      The default value is 1. It should equal or greater than the parallism.
 int main(int argc, char* argv[]) {

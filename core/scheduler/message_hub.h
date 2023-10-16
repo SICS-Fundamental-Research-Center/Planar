@@ -4,7 +4,7 @@
 #include "common/blocking_queue.h"
 #include "scheduler/message.h"
 
-namespace sics::graph::core::scheduler {
+namespace xyz::graph::core::scheduler {
 
 typedef common::BlockingQueue<ReadMessage> ReaderQueue;
 typedef common::BlockingQueue<ExecuteMessage> ExecutorQueue;
@@ -44,6 +44,6 @@ class MessageHub {
   ResponseQueue response_q_;
 };
 
-}  // namespace sics::graph::core::scheduler
+}  // namespace xyz::graph::core::scheduler
 
 #endif  // GRAPH_SYSTEMS_MESSAGE_HUB_H

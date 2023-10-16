@@ -5,9 +5,9 @@
 #include "data_structures/graph_metadata.h"
 
 using ImmutableCSRGraph =
-    sics::graph::core::data_structures::graph::ImmutableCSRGraph;
+    xyz::graph::core::data_structures::graph::ImmutableCSRGraph;
 
-namespace sics::graph::core::test {
+namespace xyz::graph::core::test {
 
 class ImmutableCSRGraphTest : public ::testing::Test {
  private:
@@ -23,4 +23,4 @@ TEST_F(ImmutableCSRGraphTest, TestDeserialize4Subgraph_0) {
   EXPECT_NE(graph_ptr, nullptr);
 }
 
-}  // namespace sics::graph::core::test
+}  // namespace xyz::graph::core::test

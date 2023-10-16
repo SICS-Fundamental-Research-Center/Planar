@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-namespace sics::graph::core::common {
+namespace xyz::graph::core::common {
 
 class BitmapNoOwnerShipTest : public ::testing::Test {
  protected:
@@ -25,4 +25,4 @@ TEST_F(BitmapNoOwnerShipTest, Constructor) {
   EXPECT_EQ(a.GetDataBasePointer(), data);
 }
 
-}  // namespace sics::graph::core::common
+}  // namespace xyz::graph::core::common

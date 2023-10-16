@@ -6,7 +6,7 @@
 
 #include "apis/planar_app_base.h"
 
-namespace sics::graph::core::apps {
+namespace xyz::graph::core::apps {
 
 // TODO: test for paralleldo functions
 // A dummy graph type for testing purposes. Do *NOT* use it in production.
@@ -76,6 +76,6 @@ class SampleApp : public apis::PlanarAppBase<DummyGraph> {
   static bool registered_;
 };
 
-}  // namespace sics::graph::core::apps
+}  // namespace xyz::graph::core::apps
 
 #endif  // GRAPH_SYSTEMS_SAMPLE_APP_H

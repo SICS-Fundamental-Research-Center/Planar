@@ -9,7 +9,7 @@
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
 
-namespace sics::graph::core::scheduler {
+namespace xyz::graph::core::scheduler {
 
 struct GraphState {
  public:
@@ -149,6 +149,6 @@ struct GraphState {
   std::vector<std::unique_ptr<data_structures::Serialized>> serialized_;
   std::vector<std::unique_ptr<data_structures::Serializable>> graphs_;
 };
-}  // namespace sics::graph::core::scheduler
+}  // namespace xyz::graph::core::scheduler
 
 #endif  // GRAPH_SYSTEMS_CORE_SCHEDULER_GRAPH_STATE_H_

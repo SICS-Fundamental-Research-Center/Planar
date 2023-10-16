@@ -8,7 +8,7 @@
 #include <folly/logging/LoggerDB.h>
 #include <folly/logging/xlog.h>
 
-namespace sics::graph::core::util {
+namespace xyz::graph::core::util {
 
 // Default logging configuration for stderr-only logging.
 //
@@ -87,6 +87,6 @@ inline void OverrideConfig(const std::string& config_str) {
 // with python-style formatting.
 #define LOGF_DEBUG(...) XLOGF(DBG, ##__VA_ARGS__)
 
-}  // namespace sics::graph::core::util
+}  // namespace xyz::graph::core::util
 
 #endif  // MINIGRAPH_UTILITY_LOGGING_H_

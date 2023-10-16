@@ -11,24 +11,24 @@
 #include "miniclean/data_structures/gcr/predicate.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace sics::graph::miniclean::components::rule_discovery {
+namespace xyz::graph::miniclean::components::rule_discovery {
 
-// TODO (bai-wenchao): Implement out-of-core version.
+// TODO: Implement out-of-core version.
 class RuleMiner {
  private:
   using ConstantPredicate =
-      sics::graph::miniclean::data_structures::gcr::ConstantPredicate;
-  using GCR = sics::graph::miniclean::data_structures::gcr::GCR;
+      xyz::graph::miniclean::data_structures::gcr::ConstantPredicate;
+  using GCR = xyz::graph::miniclean::data_structures::gcr::GCR;
   using MiniCleanCSRGraph =
-      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-  using PathInstance = sics::graph::miniclean::common::PathInstance;
-  using PathPattern = sics::graph::miniclean::common::PathPattern;
-  using VertexID = sics::graph::miniclean::common::VertexID;
+      xyz::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+  using PathInstance = xyz::graph::miniclean::common::PathInstance;
+  using PathPattern = xyz::graph::miniclean::common::PathPattern;
+  using VertexID = xyz::graph::miniclean::common::VertexID;
   using GCRPredicate =
-      sics::graph::miniclean::data_structures::gcr::GCRPredicate;
+      xyz::graph::miniclean::data_structures::gcr::GCRPredicate;
   using VariablePredicate =
-      sics::graph::miniclean::data_structures::gcr::VariablePredicate;
-  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+      xyz::graph::miniclean::data_structures::gcr::VariablePredicate;
+  using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
 
  public:
   RuleMiner(MiniCleanCSRGraph* graph) : graph_(graph) {}
@@ -77,6 +77,6 @@ class RuleMiner {
       constant_predicates_;
 };
 
-}  // namespace sics::graph::miniclean::components::rule_discovery
+}  // namespace xyz::graph::miniclean::components::rule_discovery
 
 #endif  // MINICLEAN_COMPONENTS_RULE_DISCOVERY_RULE_DISCOVERY_H_

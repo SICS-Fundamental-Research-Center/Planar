@@ -10,11 +10,11 @@
 #include "core/util/logging.h"
 #include "miniclean/common/types.h"
 
-namespace sics::graph::miniclean::components::preprocessor {
+namespace xyz::graph::miniclean::components::preprocessor {
 
 class IndexMetadata {
  private:
-  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+  using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
 
  public:
   IndexMetadata() = default;
@@ -36,33 +36,32 @@ class IndexMetadata {
       attribute_metadata_;
 };
 
-}  // namespace sics::graph::miniclean::components::preprocessor
+}  // namespace xyz::graph::miniclean::components::preprocessor
 
 namespace YAML {
 template <>
-struct convert<
-    sics::graph::miniclean::components::preprocessor::IndexMetadata> {
+struct convert<xyz::graph::miniclean::components::preprocessor::IndexMetadata> {
   static Node encode(
-      const sics::graph::miniclean::components::preprocessor::IndexMetadata&
+      const xyz::graph::miniclean::components::preprocessor::IndexMetadata&
           index_metadata) {
     Node node;
-    // TODO (bai-wenchao): implement it when needed.
+    // TODO: implement it when needed.
     return node;
   }
 
   static bool decode(
       const Node& node,
-      sics::graph::miniclean::components::preprocessor::IndexMetadata&
+      xyz::graph::miniclean::components::preprocessor::IndexMetadata&
           index_metadata) {
-    std::unordered_map<sics::graph::miniclean::common::VertexLabel,
+    std::unordered_map<xyz::graph::miniclean::common::VertexLabel,
                        std::vector<std::pair<uint8_t, uint8_t>>>
         attribute_metadata;
     auto attribute_metadata_nodes = node["AttributeMetadata"];
     attribute_metadata.reserve(attribute_metadata_nodes.size());
 
     for (const auto& attribute_metadata_node : attribute_metadata_nodes) {
-      sics::graph::miniclean::common::VertexLabel vertex_label =
-          static_cast<sics::graph::miniclean::common::VertexLabel>(
+      xyz::graph::miniclean::common::VertexLabel vertex_label =
+          static_cast<xyz::graph::miniclean::common::VertexLabel>(
               std::stoi(attribute_metadata_node.first.as<std::string>()));
 
       std::vector<std::pair<uint8_t, uint8_t>> attribute;
@@ -78,7 +77,7 @@ struct convert<
     }
 
     index_metadata =
-        sics::graph::miniclean::components::preprocessor::IndexMetadata(
+        xyz::graph::miniclean::components::preprocessor::IndexMetadata(
             attribute_metadata);
 
     return true;

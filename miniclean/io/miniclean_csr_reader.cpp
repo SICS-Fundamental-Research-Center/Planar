@@ -1,6 +1,6 @@
 #include "miniclean/io/miniclean_csr_reader.h"
 
-namespace sics::graph::miniclean::io {
+namespace xyz::graph::miniclean::io {
 
 void MiniCleanCSRReader::Read(ReadMessage* message, TaskRunner* /* runner */) {
   std::ostringstream ss;
@@ -72,4 +72,4 @@ void MiniCleanCSRReader::ReadBinFile(const std::string& path,
   dst_object->ReceiveBuffers(std::move(file_buffers));
 }
 
-}  // namespace sics::graph::miniclean::io
+}  // namespace xyz::graph::miniclean::io

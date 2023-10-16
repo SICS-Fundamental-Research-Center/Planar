@@ -1,6 +1,6 @@
 #include "message.h"
 
-namespace sics::graph::core::scheduler {
+namespace xyz::graph::core::scheduler {
 
 Message::Message(const ReadMessage& message)
     : type_(kRead), message_(message) {}
@@ -48,4 +48,4 @@ void Message::Get(WriteMessage* message) const {
   *message = message_.write_message;
 }
 
-}  // namespace sics::graph::core::scheduler
+}  // namespace xyz::graph::core::scheduler
