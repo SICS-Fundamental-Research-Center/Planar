@@ -80,7 +80,7 @@ void RuleMiner::PrepareGCRComponents(const std::string& workspace_path) {
     std::vector<StarRule> empty_intermediate_result;
     ComposeUnits(star_rule_unit_container_[i],
                  Configurations::Get()->max_predicate_num_ - 1, true, 0,
-                 empty_intermediate_result, &star_rules_.back());
+                 &empty_intermediate_result, &star_rules_.back());
   }
 
   // Compose path rule units.
@@ -100,7 +100,7 @@ void RuleMiner::PrepareGCRComponents(const std::string& workspace_path) {
       std::vector<PathRule> empty_intermediate_result;
       ComposeUnits(path_rule_unit_container_[i][j],
                    Configurations::Get()->max_predicate_num_ - 1, false, 0,
-                   empty_intermediate_result,
+                   &empty_intermediate_result,
                    &vertex_level_path_rules.back().back());
     }
   }
@@ -108,7 +108,7 @@ void RuleMiner::PrepareGCRComponents(const std::string& workspace_path) {
     std::vector<PathRule> empty_intermediate_result;
     ComposeUnits(vertex_level_path_rules[i],
                  Configurations::Get()->max_predicate_num_ - 1, false, 0,
-                 empty_intermediate_result, &path_rules_[i]);
+                 &empty_intermediate_result, &path_rules_[i]);
   }
 }
 
