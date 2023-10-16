@@ -125,6 +125,7 @@ void GCR::InitializeBuckets(MiniCleanCSRGraph* graph) {
 
 bool GCR::TestStarRule(MiniCleanCSRGraph* graph, const StarRule& star_rule,
                        VertexID center_id) const {
+  // TODO: Implement it.
 }
 
 bool GCR::TestVariablePredicate(
