@@ -52,34 +52,47 @@ void StarRule::ComposeWith(const StarRule& other) {
 
 void StarRule::InitializeStarRule() { ComputeValidCenters(&valid_vertices_); }
 
-size_t StarRule::ComputeInitSupport() const {
-  std::vector<VertexID> valid_centers;
+size_t StarRule::ComputeInitSupport() {
+  std::unordered_set<VertexID> valid_centers;
   ComputeValidCenters(&valid_centers);
   return valid_centers.size();
 }
 
-void StarRule::ComputeValidCenters(std::vector<VertexID>* valid_centers) const {
-  std::vector<VertexID> results;
-  bool has_intersected = false;
-  for (const auto& predicate : constant_predicates_) {
-    if (predicate.get_operator_type() != refactor::OperatorType::kEq) {
+void StarRule::ComputeValidCenters(
+    std::unordered_set<VertexID>* valid_centers) {
+  // Get the valid centers from the first constant predicate.
+  auto vlabel0 = constant_predicates_[0].get_vertex_label();
+  auto vattr_id0 = constant_predicates_[0].get_vertex_attribute_id();
+  auto vattr_value0 = constant_predicates_[0].get_constant_value();
+  const auto& attr_bucket_by_vlabel0 =
+      index_collection_->GetAttributeBucketByVertexLabel(vlabel0);
+  (*valid_centers) = attr_bucket_by_vlabel0.at(vattr_id0).at(vattr_value0);
+  // Compute the intersection.
+  for (size_t i = 1; i < constant_predicates_.size(); i++) {
+    if (constant_predicates_[i].get_operator_type() != refactor::OperatorType::kEq) {
       LOG_FATAL("Only support constant predicates with operator type kEq.");
     }
-    auto vlabel = predicate.get_vertex_label();
-    auto vattr_id = predicate.get_vertex_attribute_id();
-    auto vattr_value = predicate.get_constant_value();
+    auto vlabel = constant_predicates_[i].get_vertex_label();
+    auto vattr_id = constant_predicates_[i].get_vertex_attribute_id();
+    auto vattr_value = constant_predicates_[i].get_constant_value();
     const auto& attr_bucket_by_vlabel =
         index_collection_->GetAttributeBucketByVertexLabel(vlabel);
-    // This vector has been sorted.
-    std::vector<VertexID> valid_vertices =
+    std::unordered_set<VertexID> valid_vertices =
         attr_bucket_by_vlabel.at(vattr_id).at(vattr_value);
-    if (has_intersected) {
-      std::set_intersection((*valid_centers).begin(), (*valid_centers).end(),
-                            valid_vertices.begin(), valid_vertices.end(),
-                            std::back_inserter(results));
-      *valid_centers = std::move(results);
+    std::unordered_set<VertexID> diff;
+    SetIntersection(valid_centers, &valid_vertices, &diff);
+  }
+}
+
+void StarRule::SetIntersection(std::unordered_set<VertexID>* base_set,
+                               std::unordered_set<VertexID>* comp_set,
+                               std::unordered_set<VertexID>* diff_set) {
+  for (auto it = (*base_set).begin(); it != (*base_set).end();) {
+    if (comp_set->count(*it) > 0) {
+      ++it;
     } else {
-      *valid_centers = std::move(valid_vertices);
+      diff_set->emplace(*it);
+      it = (*base_set).erase(it);
     }
   }
 }

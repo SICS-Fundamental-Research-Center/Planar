@@ -156,7 +156,7 @@ void PathPatternIndex::BuildVertexBucket(
         if (instance[0] != i) {
           LOG_FATAL("Instance[0] != i");
         }
-        vertex_bucket_by_pattern_id_[j].push_back(instance[0]);
+        vertex_bucket_by_pattern_id_[j].emplace(instance[0]);
       }
     }
   }

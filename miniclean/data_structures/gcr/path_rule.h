@@ -1,7 +1,7 @@
 #ifndef MINICLEAN_DATA_STRUCTURES_GCR_PATH_RULE_H_
 #define MINICLEAN_DATA_STRUCTURES_GCR_PATH_RULE_H_
 
-#include <list>
+#include <unordered_set>
 
 #include "miniclean/common/types.h"
 #include "miniclean/components/preprocessor/index_collection.h"
@@ -110,17 +110,17 @@ class StarRule {
     return index_collection_;
   }
 
-  const std::vector<VertexID>& get_valid_vertices() const {
+  const std::unordered_set<VertexID>& get_valid_vertices() const {
     return valid_vertices_;
   }
 
-  const std::vector<std::vector<VertexID>>& get_bucket() const {
+  const std::vector<std::unordered_set<VertexID>>& get_bucket() const {
     return bucket_;
   }
 
   void ReserveBucket(size_t size) { bucket_.reserve(size); }
   void AddVertexToBucket(size_t bucket_index, VertexID vertex_id) {
-    bucket_[bucket_index].emplace_back(vertex_id);
+    bucket_[bucket_index].emplace(vertex_id);
   }
 
   void AddPathRule(const PathRule& path_rule) {
@@ -131,13 +131,16 @@ class StarRule {
   void ComposeWith(const StarRule& other);
 
   void InitializeStarRule();
-  size_t ComputeInitSupport() const;
+  size_t ComputeInitSupport();
+  void SetIntersection(std::unordered_set<VertexID>* base_set,
+                       std::unordered_set<VertexID>* comp_set,
+                       std::unordered_set<VertexID>* diff_set);
 
   void Backup();
   void Recover();
 
  private:
-  void ComputeValidCenters(std::vector<VertexID>* valid_centers) const;
+  void ComputeValidCenters(std::unordered_set<VertexID>* valid_centers);
 
   size_t predicate_count_;
   VertexLabel center_label_;
@@ -145,10 +148,10 @@ class StarRule {
   std::vector<PathRule> path_rules_;
   IndexCollection* index_collection_;
 
-  std::vector<VertexID> valid_vertices_;
-  std::vector<VertexID> valid_vertices_diff_;
-  std::vector<std::vector<VertexID>> bucket_;
-  std::vector<std::vector<VertexID>> bucket_diff_;
+  std::unordered_set<VertexID> valid_vertices_;
+  std::unordered_set<VertexID> valid_vertices_diff_;
+  std::vector<std::unordered_set<VertexID>> bucket_;
+  std::vector<std::unordered_set<VertexID>> bucket_diff_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

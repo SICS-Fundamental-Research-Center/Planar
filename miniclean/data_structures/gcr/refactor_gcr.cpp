@@ -74,8 +74,8 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
 
 void GCR::InitializeBuckets(MiniCleanCSRGraph* graph) {
   auto index_collection = left_star_.get_index_collection();
-  std::vector<VertexID> left_valid_vertices = left_star_.get_valid_vertices();
-  std::vector<VertexID> right_valid_vertices = right_star_.get_valid_vertices();
+  std::unordered_set<VertexID> left_valid_vertices = left_star_.get_valid_vertices();
+  std::unordered_set<VertexID> right_valid_vertices = right_star_.get_valid_vertices();
   if (left_star_.get_bucket().size() != right_star_.get_bucket().size()) {
     LOG_FATAL("Number of buckets in left and right star are not the same.");
   }

@@ -5,6 +5,7 @@
 
 #include <fstream>
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -20,7 +21,7 @@ class VertexAttributeSegment {
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
   using VertexAttributeValue =
       sics::graph::miniclean::common::VertexAttributeValue;
-  using ValueBucket = std::map<VertexAttributeValue, std::vector<VertexID>>;
+  using ValueBucket = std::map<VertexAttributeValue, std::unordered_set<VertexID>>;
   using ValueBlock = std::vector<std::vector<VertexID>>;
   using AttributeBucket = std::map<VertexAttributeID, ValueBucket>;
   using AttributeBlock = std::map<VertexAttributeID, ValueBlock>;
@@ -97,7 +98,7 @@ class PathPatternIndex {
   using PathInstanceBucket = std::vector<PathInstance>;
   // `Path Instance Buckets` is a collection of buckets of each path patterns.
   using PathInstanceBuckets = std::vector<PathInstanceBucket>;
-  using VertexBucket = std::vector<VertexID>;
+  using VertexBucket = std::unordered_set<VertexID>;
 
  public:
   PathPatternIndex() = default;
@@ -133,9 +134,9 @@ class IndexCollection {
   using PathPatternID = sics::graph::miniclean::common::PathPatternID;
   using PathInstance = std::vector<VertexID>;
   using PathInstanceBucket = std::vector<PathInstance>;
-  using ValueBucket = std::map<VertexAttributeValue, std::vector<VertexID>>;
+  using ValueBucket = std::map<VertexAttributeValue, std::unordered_set<VertexID>>;
   using AttributeBucket = std::map<VertexAttributeID, ValueBucket>;
-  using VertexBucket = std::vector<VertexID>;
+  using VertexBucket = std::unordered_set<VertexID>;
 
  public:
   IndexCollection() = default;
