@@ -42,27 +42,28 @@ bool GCRFactory::MergeAndCompleteGCRs(const GCR& gcr, PathRule* path_rule,
                                       std::vector<GCR>* complete_gcrs) {
   bool merge_status = false;
 
-  VertexLabel path_rule_label = std::get<0>(path_rule->get_path_pattern()[0]);
-  VertexLabel left_star_label =
-      std::get<0>(gcr.get_left_star()[0]->get_path_pattern()[0]);
-  VertexLabel right_star_label =
-      std::get<0>(gcr.get_right_star()[0]->get_path_pattern()[0]);
+  // VertexLabel path_rule_label =
+  // std::get<0>(path_rule->get_path_pattern()[0]); VertexLabel left_star_label
+  // =
+  //     std::get<0>(gcr.get_left_star()[0]->get_path_pattern()[0]);
+  // VertexLabel right_star_label =
+  //     std::get<0>(gcr.get_right_star()[0]->get_path_pattern()[0]);
 
-  // Check whether the path rule can be added to the left star.
-  if (path_rule_label == left_star_label &&
-      gcr.get_left_star().size() < max_path_num) {
-    GCR new_gcr = gcr;
-    new_gcr.AddPathRuleToLeftStar(path_rule);
-    merge_status = InitializeGCRs(new_gcr, true, complete_gcrs);
-  }
+  // // Check whether the path rule can be added to the left star.
+  // if (path_rule_label == left_star_label &&
+  //     gcr.get_left_star().size() < max_path_num) {
+  //   GCR new_gcr = gcr;
+  //   new_gcr.AddPathRuleToLeftStar(path_rule);
+  //   merge_status = InitializeGCRs(new_gcr, true, complete_gcrs);
+  // }
 
-  // Check whether the path rule can be added to the right star.
-  if (path_rule_label == right_star_label &&
-      gcr.get_right_star().size() < max_path_num) {
-    GCR new_gcr = gcr;
-    new_gcr.AddPathRuleToRigthStar(path_rule);
-    merge_status = InitializeGCRs(new_gcr, false, complete_gcrs);
-  }
+  // // Check whether the path rule can be added to the right star.
+  // if (path_rule_label == right_star_label &&
+  //     gcr.get_right_star().size() < max_path_num) {
+  //   GCR new_gcr = gcr;
+  //   new_gcr.AddPathRuleToRigthStar(path_rule);
+  //   merge_status = InitializeGCRs(new_gcr, false, complete_gcrs);
+  // }
 
   return merge_status;
 }
@@ -71,44 +72,48 @@ bool GCRFactory::ConcretizeVariablePredicates(
     const GCR& gcr, const VariablePredicate& variable_predicate,
     bool added_to_left_star, bool consider_consequence,
     std::vector<ConcreteVariablePredicate>* predicates) const {
-  VertexLabel lhs_label = variable_predicate.get_lhs_label();
-  VertexLabel rhs_label = variable_predicate.get_rhs_label();
-  // TODO: in this version, only variable predicates with lsh and rhs in
-  // different stars are considered. Consider cases within the same star for
-  // variable predicates in precondition in the future.
-  size_t lhs_start_index = 0;
-  size_t rhs_start_index = 0;
-  if (added_to_left_star) {
-    lhs_start_index = gcr.get_left_star().size() - 1;
-  } else {
-    rhs_start_index = gcr.get_right_star().size() - 1;
-  }
+  // VertexLabel lhs_label = variable_predicate.get_lhs_label();
+  // VertexLabel rhs_label = variable_predicate.get_rhs_label();
+  // // TODO: in this version, only variable predicates with lsh and rhs in
+  // // different stars are considered. Consider cases within the same star for
+  // // variable predicates in precondition in the future.
+  // size_t lhs_start_index = 0;
+  // size_t rhs_start_index = 0;
+  // if (added_to_left_star) {
+  //   lhs_start_index = gcr.get_left_star().size() - 1;
+  // } else {
+  //   rhs_start_index = gcr.get_right_star().size() - 1;
+  // }
 
-  for (size_t i = lhs_start_index; i < gcr.get_left_star().size(); i++) {
-    for (size_t j = rhs_start_index; j < gcr.get_right_star().size(); j++) {
-      // For each pair of paths.
-      for (size_t k = 0; k < gcr.get_left_star()[i]->get_path_pattern().size();
-           k++) {
-        if (std::get<0>(gcr.get_left_star()[i]->get_path_pattern()[k]) !=
-            lhs_label)
-          continue;
-        for (size_t l = 0;
-             l < gcr.get_right_star()[j]->get_path_pattern().size(); l++) {
-          if (std::get<0>(gcr.get_right_star()[j]->get_path_pattern()[l]) !=
-              rhs_label)
-            continue;
-          const auto& concrete_vpredicate =
-              gcr.ConcretizeVariablePredicate(variable_predicate, i, k, j, l);
-          bool compatible_status =
-              gcr.IsCompatibleWith(concrete_vpredicate, consider_consequence);
-          if (compatible_status) {
-            predicates->push_back(concrete_vpredicate);
-          }
-        }
-      }
-    }
-  }
-  return predicates->size() > 0;
+  // for (size_t i = lhs_start_index; i < gcr.get_left_star().size(); i++) {
+  //   for (size_t j = rhs_start_index; j < gcr.get_right_star().size(); j++) {
+  //     // For each pair of paths.
+  //     for (size_t k = 0; k <
+  //     gcr.get_left_star()[i]->get_path_pattern().size();
+  //          k++) {
+  //       if (std::get<0>(gcr.get_left_star()[i]->get_path_pattern()[k]) !=
+  //           lhs_label)
+  //         continue;
+  //       for (size_t l = 0;
+  //            l < gcr.get_right_star()[j]->get_path_pattern().size(); l++) {
+  //         if (std::get<0>(gcr.get_right_star()[j]->get_path_pattern()[l]) !=
+  //             rhs_label)
+  //           continue;
+  //         const auto& concrete_vpredicate =
+  //             gcr.ConcretizeVariablePredicate(variable_predicate, i, k, j,
+  //             l);
+  //         bool compatible_status =
+  //             gcr.IsCompatibleWith(concrete_vpredicate,
+  //             consider_consequence);
+  //         if (compatible_status) {
+  //           predicates->push_back(concrete_vpredicate);
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+  // return predicates->size() > 0;
+  return false;
 }
 
 void GCRFactory::ExtendVariablePredicates(

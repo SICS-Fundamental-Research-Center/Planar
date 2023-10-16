@@ -14,138 +14,146 @@ using VertexID = sics::graph::miniclean::common::VertexID;
 std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
     MiniCleanCSRGraph* graph,
     PathRuleUnitContainer& path_rule_unit_container) const {
-  size_t support = 0;
-  size_t match = 0;
-  // Compute the bitmap for left and right star.
-  StarBitmap left_bitmap = left_star_[0]->get_star_bitmap();
-  StarBitmap right_bitmap = right_star_[0]->get_star_bitmap();
-  LOG_INFO("GCR::ComputeMatchAndSupport: INIT SIZE: ",
-           left_bitmap.CountOneBits() * right_bitmap.CountOneBits());
-  for (size_t i = 1; i < left_star_.size(); i++) {
-    left_bitmap.MergeWith(left_star_[i]->get_star_bitmap());
-  }
-  for (size_t i = 1; i < right_star_.size(); i++) {
-    right_bitmap.MergeWith(right_star_[i]->get_star_bitmap());
-  }
-  LOG_INFO("GCR::ComputeMatchAndSupport: CONSIDER CONSTANT PREDICATES SIZE: ",
-           left_bitmap.CountOneBits() * right_bitmap.CountOneBits());
+  // size_t support = 0;
+  // size_t match = 0;
+  // // Compute the bitmap for left and right star.
+  // StarBitmap left_bitmap = left_star_[0]->get_star_bitmap();
+  // StarBitmap right_bitmap = right_star_[0]->get_star_bitmap();
+  // LOG_INFO("GCR::ComputeMatchAndSupport: INIT SIZE: ",
+  //          left_bitmap.CountOneBits() * right_bitmap.CountOneBits());
+  // for (size_t i = 1; i < left_star_.size(); i++) {
+  //   left_bitmap.MergeWith(left_star_[i]->get_star_bitmap());
+  // }
+  // for (size_t i = 1; i < right_star_.size(); i++) {
+  //   right_bitmap.MergeWith(right_star_[i]->get_star_bitmap());
+  // }
+  // LOG_INFO("GCR::ComputeMatchAndSupport: CONSIDER CONSTANT PREDICATES SIZE:
+  // ",
+  //          left_bitmap.CountOneBits() * right_bitmap.CountOneBits());
 
-  // Star pattern matching.
-  StarRuleCheck(left_star_, graph, &left_bitmap);
-  StarRuleCheck(right_star_, graph, &right_bitmap);
+  // // Star pattern matching.
+  // StarRuleCheck(left_star_, graph, &left_bitmap);
+  // StarRuleCheck(right_star_, graph, &right_bitmap);
 
-  // TODO: compute the maximum support number, prune the GCRs with support less
-  // than threshold.
-  size_t max_support = left_bitmap.CountOneBits() * right_bitmap.CountOneBits();
-  LOG_INFO("GCR::ComputeMatchAndSupport: CONSIDER STAR PATTERN SIZE: ",
-           max_support);
+  // // TODO: compute the maximum support number, prune the GCRs with support
+  // less
+  // // than threshold.
+  // size_t max_support = left_bitmap.CountOneBits() *
+  // right_bitmap.CountOneBits(); LOG_INFO("GCR::ComputeMatchAndSupport:
+  // CONSIDER STAR PATTERN SIZE: ",
+  //          max_support);
 
-  // Consider the variable predicates:
-  std::vector<std::vector<std::pair<size_t, size_t>>> var_pred_instances =
-      ComputeVariablePredicateInstances();
-  for (const auto& var_pred_instance : var_pred_instances) {
-    StarBitmap left_bitmap_copy = left_bitmap;
-    StarBitmap right_bitmap_copy = right_bitmap;
-    for (size_t i = 0; i < variable_predicates_.size(); i++) {
-      size_t left_attribute_value = var_pred_instance[i].first;
-      size_t right_attribute_value = var_pred_instance[i].second;
+  // // Consider the variable predicates:
+  // std::vector<std::vector<std::pair<size_t, size_t>>> var_pred_instances =
+  //     ComputeVariablePredicateInstances();
+  // for (const auto& var_pred_instance : var_pred_instances) {
+  //   StarBitmap left_bitmap_copy = left_bitmap;
+  //   StarBitmap right_bitmap_copy = right_bitmap;
+  //   for (size_t i = 0; i < variable_predicates_.size(); i++) {
+  //     size_t left_attribute_value = var_pred_instance[i].first;
+  //     size_t right_attribute_value = var_pred_instance[i].second;
 
-      UpdateBitmapByVariablePredicate(
-          variable_predicates_[i], left_attribute_value, right_attribute_value,
-          path_rule_unit_container, &left_bitmap_copy, &right_bitmap_copy);
-    }
-    // Compute the match.
-    match += left_bitmap_copy.CountOneBits() * right_bitmap_copy.CountOneBits();
-    // Consider the consequence.
-    size_t left_attribute_value = var_pred_instance.back().first;
-    size_t right_attribute_value = var_pred_instance.back().second;
-    UpdateBitmapByVariablePredicate(
-        consequence_, left_attribute_value, right_attribute_value,
-        path_rule_unit_container, &left_bitmap_copy, &right_bitmap_copy);
-    // Compute the support.
-    support +=
-        left_bitmap_copy.CountOneBits() * right_bitmap_copy.CountOneBits();
-  }
+  //     UpdateBitmapByVariablePredicate(
+  //         variable_predicates_[i], left_attribute_value,
+  //         right_attribute_value, path_rule_unit_container, &left_bitmap_copy,
+  //         &right_bitmap_copy);
+  //   }
+  //   // Compute the match.
+  //   match += left_bitmap_copy.CountOneBits() *
+  //   right_bitmap_copy.CountOneBits();
+  //   // Consider the consequence.
+  //   size_t left_attribute_value = var_pred_instance.back().first;
+  //   size_t right_attribute_value = var_pred_instance.back().second;
+  //   UpdateBitmapByVariablePredicate(
+  //       consequence_, left_attribute_value, right_attribute_value,
+  //       path_rule_unit_container, &left_bitmap_copy, &right_bitmap_copy);
+  //   // Compute the support.
+  //   support +=
+  //       left_bitmap_copy.CountOneBits() * right_bitmap_copy.CountOneBits();
+  // }
 
-  return std::make_pair(match, support);
+  // return std::make_pair(match, support);
+  return std::make_pair(0, 0);
 }
 
-void GCR::UpdateBitmapByVariablePredicate(ConcreteVariablePredicate predicate,
-                                          size_t left_attribute_value,
-                                          size_t right_attribute_value,
-                                          PathRuleUnitContainer& container,
-                                          StarBitmap* left_bitmap,
-                                          StarBitmap* right_bitmap) const {
-  size_t left_path_id = predicate.get_left_path_index();
-  size_t right_path_id = predicate.get_right_path_index();
-  size_t left_path_pattern_id = left_star_[left_path_id]->get_path_pattern_id();
-  size_t right_path_pattern_id =
-      right_star_[right_path_id]->get_path_pattern_id();
-  size_t left_vertex_id = predicate.get_left_vertex_index();
-  size_t right_vertex_id = predicate.get_right_vertex_index();
-  size_t left_attr_id = predicate.get_left_attribute_id();
-  size_t right_attr_id = predicate.get_right_attribute_id();
-  OperatorType operator_type = predicate.get_operator_type();
+// void GCR::UpdateBitmapByVariablePredicate(ConcreteVariablePredicate
+// predicate,
+//                                           size_t left_attribute_value,
+//                                           size_t right_attribute_value,
+//                                           PathRuleUnitContainer& container,
+//                                           StarBitmap* left_bitmap,
+//                                           StarBitmap* right_bitmap) const {
+//   size_t left_path_id = predicate.get_left_path_index();
+//   size_t right_path_id = predicate.get_right_path_index();
+//   size_t left_path_pattern_id =
+//   left_star_[left_path_id]->get_path_pattern_id(); size_t
+//   right_path_pattern_id =
+//       right_star_[right_path_id]->get_path_pattern_id();
+//   size_t left_vertex_id = predicate.get_left_vertex_index();
+//   size_t right_vertex_id = predicate.get_right_vertex_index();
+//   size_t left_attr_id = predicate.get_left_attribute_id();
+//   size_t right_attr_id = predicate.get_right_attribute_id();
+//   OperatorType operator_type = predicate.get_operator_type();
 
-  left_bitmap->MergeWith(
-      container[left_path_pattern_id][left_vertex_id + 1][left_attr_id]
-               [left_attribute_value][operator_type]
-                   .get_star_bitmap());
-  right_bitmap->MergeWith(
-      container[right_path_pattern_id][right_vertex_id + 1][right_attr_id]
-               [right_attribute_value][operator_type]
-                   .get_star_bitmap());
-}
+//   left_bitmap->MergeWith(
+//       container[left_path_pattern_id][left_vertex_id + 1][left_attr_id]
+//                [left_attribute_value][operator_type]
+//                    .get_star_bitmap());
+//   right_bitmap->MergeWith(
+//       container[right_path_pattern_id][right_vertex_id + 1][right_attr_id]
+//                [right_attribute_value][operator_type]
+//                    .get_star_bitmap());
+// }
 
-void GCR::StarRuleCheck(StarRule star_rule, MiniCleanCSRGraph* graph,
-                        StarBitmap* star_bitmap) const {
-  for (size_t i = 0; i < star_bitmap->get_bitset_num(); i++) {
-    if (star_bitmap->get_bitset_count(i) == 0) continue;
-    for (size_t j = 0; j < 64; j++) {
-      size_t vertex_id = i * 64 + j;
-      if (!star_bitmap->TestBit(vertex_id)) continue;
-      // TODO: implement rigorous match.
-      std::vector<size_t> visited;
-      visited.reserve(star_rule.size());
-      VertexID out_degree = graph->GetOutDegreeByLocalID(vertex_id);
-      VertexID* out_edges = graph->GetOutgoingEdgesByLocalID(vertex_id);
+// void GCR::StarRuleCheck(StarRule star_rule, MiniCleanCSRGraph* graph,
+//                         StarBitmap* star_bitmap) const {
+//   for (size_t i = 0; i < star_bitmap->get_bitset_num(); i++) {
+//     if (star_bitmap->get_bitset_count(i) == 0) continue;
+//     for (size_t j = 0; j < 64; j++) {
+//       size_t vertex_id = i * 64 + j;
+//       if (!star_bitmap->TestBit(vertex_id)) continue;
+//       // TODO: implement rigorous match.
+//       std::vector<size_t> visited;
+//       visited.reserve(star_rule.size());
+//       VertexID out_degree = graph->GetOutDegreeByLocalID(vertex_id);
+//       VertexID* out_edges = graph->GetOutgoingEdgesByLocalID(vertex_id);
 
-      for (const auto& path_rule : star_rule) {
-        PathPattern path_pattern = path_rule->get_path_pattern();
-        bool has_matched = false;
-        for (size_t k = 0; k < out_degree; k++) {
-          // Check visited vector
-          bool has_visited = false;
-          for (const auto& visited_vertex : visited) {
-            if (visited_vertex == out_edges[k]) {
-              has_visited = true;
-              break;
-            }
-          }
-          if (has_visited) continue;
+//       for (const auto& path_rule : star_rule) {
+//         PathPattern path_pattern = path_rule->get_path_pattern();
+//         bool has_matched = false;
+//         for (size_t k = 0; k < out_degree; k++) {
+//           // Check visited vector
+//           bool has_visited = false;
+//           for (const auto& visited_vertex : visited) {
+//             if (visited_vertex == out_edges[k]) {
+//               has_visited = true;
+//               break;
+//             }
+//           }
+//           if (has_visited) continue;
 
-          // Check edge label.
-          if (graph->GetVertexLabelByLocalID(out_edges[k]) !=
-              std::get<0>(path_pattern[0]))
-            continue;
+//           // Check edge label.
+//           if (graph->GetVertexLabelByLocalID(out_edges[k]) !=
+//               std::get<0>(path_pattern[0]))
+//             continue;
 
-          bool match_status =
-              PathMatching(path_pattern, graph, out_edges[k], 1);
-          if (match_status) {
-            visited.push_back(out_edges[k]);
-            has_matched = true;
-            break;
-          }
-        }
+//           bool match_status =
+//               PathMatching(path_pattern, graph, out_edges[k], 1);
+//           if (match_status) {
+//             visited.push_back(out_edges[k]);
+//             has_matched = true;
+//             break;
+//           }
+//         }
 
-        if (!has_matched) {
-          star_bitmap->ResetBit(vertex_id);
-          break;
-        }
-      }
-    }
-  }
-}
+//         if (!has_matched) {
+//           star_bitmap->ResetBit(vertex_id);
+//           break;
+//         }
+//       }
+//     }
+//   }
+// }
 
 bool GCR::PathMatching(PathPattern path_pattern, MiniCleanCSRGraph* graph,
                        size_t vertex_id, size_t edge_id) const {

@@ -3,6 +3,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <fstream>
+#include <functional>
 #include <set>
 
 #include "core/common/multithreading/thread_pool.h"
@@ -64,9 +65,51 @@ void RuleMiner::PrepareGCRComponents(const std::string& workspace_path) {
   std::string predicates_path = workspace_path + "/predicates.yaml";
   LoadPredicates(predicates_path);
   // Init star rules.
-  InitStarRuleContainer();
+  InitStarRuleUnitContainer();
   // Init path patterns.
   InitPathRuleUnitContainer();
+
+  // Compose star rule units.
+  star_rules_.reserve(star_rule_unit_container_.size());
+  for (size_t i = 0; i < star_rule_unit_container_.size(); i++) {
+    // Add empty star rule.
+    star_rules_.emplace_back();
+    if (star_rule_unit_container_[i].empty()) continue;
+    star_rules_.back().emplace_back(i, &index_collection_);
+    // Add star rules with at least one predicate.
+    std::vector<StarRule> empty_intermediate_result;
+    ComposeUnits(star_rule_unit_container_[i],
+                 Configurations::Get()->max_predicate_num_ - 1, true, 0,
+                 &empty_intermediate_result, &star_rules_.back());
+  }
+
+  // Compose path rule units.
+  path_rules_.reserve(path_rule_unit_container_.size());
+  // Dim. #1: path pattern id.
+  // Dim. #2: vertex index in the path.
+  // Dim. #3: path rules
+  std::vector<std::vector<std::vector<PathRule>>> vertex_level_path_rules;
+  for (size_t i = 0; i < path_rule_unit_container_.size(); i++) {
+    // Add empty path rule
+    path_rules_.emplace_back();
+    path_rules_.back().emplace_back(i);
+    vertex_level_path_rules.emplace_back();
+    for (size_t j = 0; j < path_rule_unit_container_[i].size(); j++) {
+      vertex_level_path_rules.back().emplace_back();
+      // Add path rules with at least one predicate.
+      std::vector<PathRule> empty_intermediate_result;
+      ComposeUnits(path_rule_unit_container_[i][j],
+                   Configurations::Get()->max_predicate_num_ - 1, false, 0,
+                   &empty_intermediate_result,
+                   &vertex_level_path_rules.back().back());
+    }
+  }
+  for (size_t i = 0; i < path_rule_unit_container_.size(); i++) {
+    std::vector<PathRule> empty_intermediate_result;
+    ComposeUnits(vertex_level_path_rules[i],
+                 Configurations::Get()->max_predicate_num_ - 1, false, 0,
+                 &empty_intermediate_result, &path_rules_[i]);
+  }
 }
 
 void RuleMiner::LoadPathPatterns(const std::string& path_pattern_path) {
@@ -76,12 +119,7 @@ void RuleMiner::LoadPathPatterns(const std::string& path_pattern_path) {
 }
 
 void RuleMiner::LoadPredicates(const std::string& predicates_path) {
-  YAML::Node predicate_nodes;
-  try {
-    predicate_nodes = YAML::LoadFile(predicates_path);
-  } catch (const YAML::BadFile& e) {
-    LOG_FATAL("Failed to open predicates file: ", predicates_path.c_str());
-  }
+  YAML::Node predicate_nodes = YAML::LoadFile(predicates_path);
 
   std::vector<ConstantPredicate> constant_predicates =
       predicate_nodes["ConstantPredicates"]
@@ -94,32 +132,43 @@ void RuleMiner::LoadPredicates(const std::string& predicates_path) {
     // be a vector instead of a `ConstantPredicate`
     constant_predicate_container_[vertex_label][attribute_id] = const_pred;
   }
-
   variable_predicates_ = predicate_nodes["VariablePredicates"]
                              .as<std::vector<VariablePredicate>>();
-
   consequence_predicates_ =
       predicate_nodes["Consequences"].as<std::vector<VariablePredicate>>();
 }
 
-void RuleMiner::InitStarRuleContainer() {
+void RuleMiner::InitStarRuleUnitContainer() {
   // Collect center labels of patterns.
   std::set<VertexLabel> center_labels;
+  VertexLabel max_label = 0;
   for (const auto& path_pattern : path_patterns_) {
-    center_labels.insert(std::get<0>(path_pattern[0]));
+    VertexLabel center_label = std::get<0>(path_pattern[0]);
+    center_labels.insert(center_label);
+    max_label = std::max(max_label, center_label);
   }
 
-  // Initialize star rules.
+  // Initialize star rule units.
+  star_rule_unit_container_.resize(max_label + 1);
   for (const auto& center_label : center_labels) {
     const auto& attr_bucket_by_vlabel =
         index_collection_.GetAttributeBucketByVertexLabel(center_label);
     const auto& constant_predicate_by_vlabel =
         constant_predicate_container_[center_label];
+    // Compute the max attribute id.
+    VertexAttributeID max_attr_id = 0;
+    for (const auto& const_pred : constant_predicate_by_vlabel) {
+      max_attr_id = std::max(max_attr_id, const_pred.first);
+    }
+    star_rule_unit_container_[center_label].resize(max_attr_id + 1);
     for (const auto& const_pred : constant_predicate_by_vlabel) {
       // key: attr id; val: const pred.
       VertexAttributeID attr_id = const_pred.first;
       ConstantPredicate pred = const_pred.second;
       const auto& value_bucket = attr_bucket_by_vlabel.at(attr_id);
+      // TODO: we do not reserve space beforehand for star rule unit because not
+      // every attribute value has enough support. Optimize it in the future if
+      // possible.
       for (const auto& value_bucket_pair : value_bucket) {
         VertexAttributeValue value = value_bucket_pair.first;
         const auto& valid_vertices = value_bucket_pair.second;
@@ -127,8 +176,8 @@ void RuleMiner::InitStarRuleContainer() {
             Configurations::Get()->star_support_threshold_) {
           continue;
         }
-        star_rule_container_[center_label][attr_id].emplace_back(center_label,
-                                                                 pred, value);
+        star_rule_unit_container_[center_label][attr_id].emplace_back(
+            center_label, pred, value, &index_collection_);
       }
     }
   }
@@ -150,15 +199,24 @@ void RuleMiner::InitPathRuleUnitContainer() {
           index_collection_.GetAttributeBucketByVertexLabel(label);
       const auto& const_pred_by_attr_id =
           constant_predicate_container_.at(label);
+      // Compute the max attribute id.
+      VertexAttributeID max_attr_id = 0;
+      for (const auto& const_pred : const_pred_by_attr_id) {
+        max_attr_id = std::max(max_attr_id, const_pred.first);
+      }
+      path_rule_unit_container_[i][j].resize(max_attr_id + 1);
       for (const auto& const_pred_pair : const_pred_by_attr_id) {
         VertexAttributeID attr_id = const_pred_pair.first;
         auto const_pred = const_pred_pair.second;
-        for (const auto& value_bucket_pair :
-             attr_bucket_by_vlabel.at(attr_id)) {
+        const auto& value_bucket = attr_bucket_by_vlabel.at(attr_id);
+        // TODO: we do not reserve space beforehand for star rule unit because
+        // not every attribute value has enough support. Optimize it in the
+        // future if possible.
+        for (const auto& value_bucket_pair : value_bucket) {
           VertexAttributeValue value = value_bucket_pair.first;
           const auto& valid_vertices = value_bucket_pair.second;
           if (valid_vertices.size() <
-              Configurations::Get()->support_threshold_) {
+              Configurations::Get()->star_support_threshold_) {
             continue;
           }
           path_rule_unit_container_[i][j][attr_id].emplace_back(
@@ -168,5 +226,7 @@ void RuleMiner::InitPathRuleUnitContainer() {
     }
   }
 }
+
+
 
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor
