@@ -6,6 +6,8 @@
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
+using VertexID = sics::graph::miniclean::common::VertexID;
+
 PathRule::PathRule(PathPatternID path_pattern_id, size_t vertex_pos,
                    ConstantPredicate constant_predicate,
                    VertexAttributeValue attribute_value)
@@ -50,9 +52,16 @@ void StarRule::ComposeWith(const StarRule& other) {
   predicate_count_ += other.predicate_count_;
 }
 
+void StarRule::InitializeStarRule() { valid_vertices_ = ComputeValidCenters(); }
+
 size_t StarRule::ComputeInitSupport() const {
+  std::vector<VertexID> valid_centers = ComputeValidCenters();
+  return valid_centers.size();
+}
+
+std::vector<VertexID> StarRule::ComputeValidCenters() const {
   std::vector<VertexID> results;
-  std::vector<VertexID> current_valid_vertices;
+  std::vector<VertexID> valid_centers;
   bool has_intersected = false;
   for (const auto& predicate : constant_predicates_) {
     if (predicate.get_operator_type() != refactor::OperatorType::kEq) {
@@ -67,16 +76,14 @@ size_t StarRule::ComputeInitSupport() const {
     std::vector<VertexID> valid_vertices =
         attr_bucket_by_vlabel.at(vattr_id).at(vattr_value);
     if (has_intersected) {
-      std::set_intersection(current_valid_vertices.begin(),
-                            current_valid_vertices.end(),
+      std::set_intersection(valid_centers.begin(), valid_centers.end(),
                             valid_vertices.begin(), valid_vertices.end(),
                             std::back_inserter(results));
-      current_valid_vertices = std::move(results);
+      valid_centers = std::move(results);
     } else {
-      current_valid_vertices = std::move(valid_vertices);
+      valid_centers = std::move(valid_vertices);
     }
   }
-  return current_valid_vertices.size();
 }
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

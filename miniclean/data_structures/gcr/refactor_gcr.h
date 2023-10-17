@@ -10,7 +10,7 @@ namespace sics::graph::miniclean::data_structures::gcr::refactor {
 class GCR {
  private:
   using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
-  using StarRule = std::vector<PathRule*>;
+  using StarRule = sics::graph::miniclean::data_structures::gcr::StarRule;
   using VariablePredicate =
       sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
   using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::
@@ -20,10 +20,17 @@ class GCR {
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using PathRuleUnitContainer =
       std::vector<std::vector<std::vector<std::vector<std::vector<PathRule>>>>>;
+  using GCRVerticalExtension = std::pair<bool, PathRule>;
+  using GCRHorizontalExtension =
+      std::pair<ConcreteVariablePredicate,
+                std::vector<ConcreteVariablePredicate>>;
 
  public:
   GCR(const StarRule& left_star, const StarRule& right_star)
-      : left_star_(left_star), right_star_(right_star) {}
+      : left_star_(left_star), right_star_(right_star) {
+    left_star_.InitializeStarRule();
+    right_star_.InitializeStarRule();
+  }
 
   void AddVariablePredicateToBack(
       const ConcreteVariablePredicate& variable_predicate) {
@@ -38,12 +45,12 @@ class GCR {
     return false;
   }
 
-  void AddPathRuleToLeftStar(PathRule* path_rule) {
-    left_star_.push_back(path_rule);
+  void AddPathRuleToLeftStar(const PathRule& path_rule) {
+    left_star_.AddPathRule(path_rule);
   }
 
-  void AddPathRuleToRigthStar(PathRule* path_rule) {
-    right_star_.push_back(path_rule);
+  void AddPathRuleToRigthStar(const PathRule& path_rule) {
+    right_star_.AddPathRule(path_rule);
   }
 
   void set_consequence(const ConcreteVariablePredicate& consequence) {
@@ -61,6 +68,17 @@ class GCR {
   const ConcreteVariablePredicate& get_consequence() const {
     return consequence_;
   }
+
+  size_t get_constant_predicate_count() const {
+    size_t left_count = left_star_.get_predicate_count();
+    size_t right_count = right_star_.get_predicate_count();
+    return left_count + right_count;
+  }
+
+  void Backup();
+  void Recover();
+  void VerticalExtend(const GCRVerticalExtension& vertical_extension);
+  void HorizontalExtend(const GCRHorizontalExtension& horizontal_extension);
 
   ConcreteVariablePredicate ConcretizeVariablePredicate(
       const VariablePredicate& variable_predicate, uint8_t left_path_index,

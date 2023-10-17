@@ -36,6 +36,8 @@ class RuleMiner {
   using StarRule = sics::graph::miniclean::data_structures::gcr::StarRule;
   using VariablePredicate =
       sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
+  using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::
+      gcr::refactor::ConcreteVariablePredicate;
   using GCR = sics::graph::miniclean::data_structures::gcr::refactor::GCR;
   using GCRFactory = sics::graph::miniclean::data_structures::gcr::GCRFactory;
   using IndexCollection =
@@ -54,13 +56,20 @@ class RuleMiner {
   using ConstantPredicateContainer =
       std::map<VertexLabel, std::map<VertexAttributeID, ConstantPredicate>>;
   using Configurations = sics::graph::miniclean::common::Configurations;
+  // First item: consequence predicate.
+  // Second item: variable predicates.
+  using GCRHorizontalExtension =
+      std::pair<ConcreteVariablePredicate,
+                std::vector<ConcreteVariablePredicate>>;
+  // First item: whether extend to left or right.
+  // Second item: path rule.
+  using GCRVerticalExtension = std::pair<bool, PathRule>;
 
  public:
   RuleMiner(MiniCleanCSRGraph* graph) : graph_(graph) {}
 
   void LoadGraph(const std::string& graph_path);
   void LoadIndexCollection(const std::string& workspace_path);
-
   void LoadPathInstances(const std::string& path_instances_path);
   // Path rule contains:
   //   - a path pattern
@@ -111,9 +120,29 @@ class RuleMiner {
       }
     }
   }
-  void ExtendPathRules(size_t pattern_id);
-  void ExtendGCR(const GCR& gcr, size_t start_pattern_id, size_t start_rule_id,
-                 VertexLabel left_center_label, VertexLabel right_center_label);
+  void ExtendGCR(GCR& gcr);
+  void ComputeVerticalExtensions(const GCR& gcr,
+                                 std::vector<GCRVerticalExtension>* extensions);
+  void ComputeHorizontalExtensions(
+      const GCR& gcr, bool from_left,
+      std::vector<GCRHorizontalExtension>* extensions);
+  void ExtendConsequences(const GCR& gcr, size_t lhs_start_path_index,
+                          size_t rhs_start_path_index,
+                          size_t lhs_start_vertex_index,
+                          size_t rhs_start_vertex_index,
+                          std::vector<ConcreteVariablePredicate>* consequences);
+  void ExtendVariablePredicates(
+      const GCR& gcr,
+      const std::vector<ConcreteVariablePredicate>& consequences,
+      size_t lhs_start_path_index, size_t rhs_start_path_index,
+      size_t lhs_start_vertex_index, size_t rhs_start_vertex_index,
+      std::vector<GCRHorizontalExtension>* extensions);
+  void EnumerateValidVariablePredicates(
+      const std::vector<ConcreteVariablePredicate>& variable_predicates,
+      size_t start_idx, size_t max_item_num,
+      std::vector<ConcreteVariablePredicate>& intermediate_result,
+      std::vector<std::vector<ConcreteVariablePredicate>>*
+          valid_variable_predicates);
 
  private:
   MiniCleanCSRGraph* graph_;

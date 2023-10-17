@@ -134,6 +134,12 @@ class ConcreteVariablePredicate {
     return variable_predicate_.get_operator_type();
   }
 
+  // TODO: Prefer free (inline) functions over static functions. 
+  //       Reference: core/util/pointer_cast.h.
+  static const bool TestCompatibility(
+      const std::vector<ConcreteVariablePredicate>& lhs_predicates,
+      const std::vector<ConcreteVariablePredicate>& rhs_predicates);
+
  private:
   VariablePredicate variable_predicate_;
   uint8_t left_path_index_;
@@ -222,9 +228,9 @@ struct convert<
     variable_predicate = sics::graph::miniclean::data_structures::gcr::
         refactor::VariablePredicate(
             node[0].as<sics::graph::miniclean::common::VertexLabel>(),
+            node[2].as<sics::graph::miniclean::common::VertexLabel>(),
             static_cast<sics::graph::miniclean::common::VertexAttributeID>(
                 lhs_vattr_id),
-            node[2].as<sics::graph::miniclean::common::VertexLabel>(),
             static_cast<sics::graph::miniclean::common::VertexAttributeID>(
                 rhs_vattr_id),
             operator_type);

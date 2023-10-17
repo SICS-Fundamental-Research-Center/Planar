@@ -102,6 +102,10 @@ class StarRule {
     return constant_predicates_;
   }
 
+  size_t get_predicate_count() const { return predicate_count_; }
+
+  const std::vector<PathRule>& get_path_rules() const { return path_rules_; }
+
   void AddPathRule(const PathRule& path_rule) {
     path_rules_.emplace_back(path_rule);
     predicate_count_ += path_rule.get_constant_predicates().size();
@@ -109,14 +113,22 @@ class StarRule {
 
   void ComposeWith(const StarRule& other);
 
+  void InitializeStarRule();
   size_t ComputeInitSupport() const;
 
+  void Backup();
+  void Recover();
+
  private:
+  std::vector<VertexID> ComputeValidCenters() const;
+
   size_t predicate_count_;
   VertexLabel center_label_;
   std::vector<ConstantPredicate> constant_predicates_;
   std::vector<PathRule> path_rules_;
   IndexCollection* index_collection_;
+
+  std::vector<VertexID> valid_vertices_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

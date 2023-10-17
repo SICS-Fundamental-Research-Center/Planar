@@ -39,5 +39,9 @@ int main(int argc, char* argv[]) {
   rule_miner.PrepareGCRComponents(FLAGS_workspace_path);
   LOG_INFO("Prepare GCR Components done.");
 
+  LOG_INFO("Start mining...");
+  rule_miner.MineGCRs();
+  LOG_INFO("Mining done.");
+
   gflags::ShutDownCommandLineFlags();
 }

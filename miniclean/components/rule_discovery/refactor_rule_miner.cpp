@@ -227,6 +227,268 @@ void RuleMiner::InitPathRuleUnitContainer() {
   }
 }
 
+void RuleMiner::MineGCRs() {
+  for (size_t l_label = 0; l_label < star_rules_.size(); l_label++) {
+    if (star_rules_[l_label].empty()) continue;
+    for (size_t r_label = l_label; r_label < star_rules_.size(); r_label++) {
+      if (star_rules_[r_label].empty()) continue;
+      VertexLabel ll = std::get<0>(path_patterns_[l_label][0]);
+      VertexLabel rl = std::get<0>(path_patterns_[r_label][0]);
+      for (size_t ls = 0; ls < star_rules_[ll].size(); ls++) {
+        size_t j_start = (ll == rl) ? ls : 0;
+        for (size_t rs = j_start; rs < star_rules_[rl].size(); rs++) {
+          GCR gcr = GCR(star_rules_[ll][ls], star_rules_[rl][rs]);
+          ExtendGCR(gcr);
+        }
+      }
+    }
+  }
+}
 
+void RuleMiner::ExtendGCR(GCR& gcr) {
+  // Check whether the GCR should be extended.
+  if (gcr.get_left_star().get_path_rules().size() +
+          gcr.get_right_star().get_path_rules().size() >=
+      Configurations::Get()->max_path_num_) {
+    return;
+  }
+  // Compute vertical extensions.
+  std::vector<GCRVerticalExtension> vertical_extensions;
+  ComputeVerticalExtensions(gcr, &vertical_extensions);
+  // Compute horizontal extensions for each vertical extension.
+  for (const auto& vertical_extension : vertical_extensions) {
+    // Vertical extension.
+    gcr.Backup();
+    gcr.VerticalExtend(vertical_extension);
+    // Compute horizontal extensions.
+    std::vector<GCRHorizontalExtension> horizontal_extensions;
+    ComputeHorizontalExtensions(gcr, vertical_extension.first,
+                                &horizontal_extensions);
+
+    for (const auto& horizontal_extension : horizontal_extensions) {
+      // Horizontal extension.
+      gcr.Backup();
+      gcr.HorizontalExtend(horizontal_extension);
+      // Compute support of GCR
+
+      // If support < threshold, continue.
+
+      // If support >= threshold, confidence >= threshold, write back to disk.
+
+      // If support >= threshold, confidence < threshold, go to next level.
+      ExtendGCR(gcr);
+      gcr.Recover();
+    }
+    gcr.Recover();
+  }
+}
+
+void RuleMiner::ComputeVerticalExtensions(
+    const GCR& gcr, std::vector<GCRVerticalExtension>* extensions) {
+  // Check whether the number of path rules exceeds the limit.
+  if (gcr.get_left_star().get_path_rules().size() +
+          gcr.get_right_star().get_path_rules().size() >=
+      Configurations::Get()->max_path_num_) {
+    return;
+  }
+  StarRule left_star = gcr.get_left_star();
+  StarRule right_star = gcr.get_right_star();
+  std::vector<PathRule> left_paths = left_star.get_path_rules();
+  std::vector<PathRule> right_paths = right_star.get_path_rules();
+  VertexLabel llabel = left_star.get_center_label();
+  VertexLabel rlabel = right_star.get_center_label();
+  bool choose_left = true;
+  size_t min_pattern_id = 0;
+  if (left_paths.size() > right_paths.size()) choose_left = false;
+  if (right_paths.size() != 0) {
+    min_pattern_id = std::min(left_paths.back().get_path_pattern_id(),
+                              right_paths.back().get_path_pattern_id());
+  } else if (left_paths.size() != 0) {
+    min_pattern_id = left_paths.back().get_path_pattern_id();
+  }
+  for (size_t i = min_pattern_id; i < path_rules_.size(); i++) {
+    if (choose_left) {
+      if (llabel != std::get<0>(path_patterns_[i][0])) continue;
+    } else {
+      if (rlabel != std::get<0>(path_patterns_[i][0])) continue;
+    }
+    for (size_t j = 0; j < path_rules_[i].size(); j++) {
+      extensions->emplace_back(choose_left, path_rules_[i][j]);
+    }
+  }
+}
+
+void RuleMiner::ComputeHorizontalExtensions(
+    const GCR& gcr, bool from_left,
+    std::vector<GCRHorizontalExtension>* extensions) {
+  // Check whether the number of predicates exceeds the limit.
+  if (gcr.get_constant_predicate_count() +
+          gcr.get_variable_predicates().size() >=
+      Configurations::Get()->max_predicate_num_) {
+    return;
+  }
+
+  // Compute left and right bias.
+  auto left_path_rules = gcr.get_left_star().get_path_rules();
+  auto right_path_rules = gcr.get_right_star().get_path_rules();
+  size_t lhs_start_path_index = 0;
+  size_t rhs_start_path_index = 0;
+  size_t lhs_start_vertex_index = 0;
+  size_t rhs_start_vertex_index = 0;
+  if (from_left) {
+    lhs_start_path_index = left_path_rules.size() - 1;
+    lhs_start_vertex_index = 1;
+  } else {
+    rhs_start_path_index = right_path_rules.size() - 1;
+    rhs_start_vertex_index = 1;
+  }
+
+  // Assign consequence.
+  std::vector<ConcreteVariablePredicate> c_consequences;
+  ExtendConsequences(gcr, lhs_start_path_index, rhs_start_path_index,
+                     lhs_start_vertex_index, rhs_start_vertex_index,
+                     &c_consequences);
+
+  // Assign variable predicates.
+  ExtendVariablePredicates(gcr, c_consequences, lhs_start_path_index,
+                           rhs_start_path_index, lhs_start_vertex_index,
+                           rhs_start_vertex_index, extensions);
+}
+
+void RuleMiner::ExtendConsequences(
+    const GCR& gcr, size_t lhs_start_path_index, size_t rhs_start_path_index,
+    size_t lhs_start_vertex_index, size_t rhs_start_vertex_index,
+    std::vector<ConcreteVariablePredicate>* consequences) {
+  auto left_path_rules = gcr.get_left_star().get_path_rules();
+  auto right_path_rules = gcr.get_right_star().get_path_rules();
+  for (const auto& consequence : consequence_predicates_) {
+    auto target_left_label = consequence.get_lhs_label();
+    auto target_right_label = consequence.get_rhs_label();
+    // Check two center vertices.
+    if (gcr.get_left_star().get_center_label() == target_left_label &&
+        gcr.get_right_star().get_center_label() == target_right_label) {
+      ConcreteVariablePredicate center_cvp(consequence, 0, 0, 0, 0);
+      if (!gcr.IsCompatibleWith(center_cvp, false)) continue;
+      consequences->emplace_back(center_cvp);
+    }
+    // Check other pairs.
+    for (size_t i = lhs_start_path_index; i < left_path_rules.size(); i++) {
+      auto left_pattern =
+          path_patterns_[left_path_rules[i].get_path_pattern_id()];
+      for (size_t j = rhs_start_path_index; j < right_path_rules.size(); j++) {
+        auto right_pattern =
+            path_patterns_[right_path_rules[j].get_path_pattern_id()];
+        for (size_t k = lhs_start_vertex_index; k < left_pattern.size(); k++) {
+          if (std::get<0>(left_pattern[k]) != target_left_label) continue;
+          for (size_t l = lhs_start_vertex_index; l < right_pattern.size();
+               l++) {
+            if (std::get<0>(right_pattern[l]) != target_right_label) continue;
+            ConcreteVariablePredicate cvp(consequence, i, k, j, l);
+            if (!gcr.IsCompatibleWith(cvp, false)) continue;
+            consequences->emplace_back(cvp);
+          }
+        }
+      }
+    }
+  }
+}
+
+void RuleMiner::ExtendVariablePredicates(
+    const GCR& gcr, const std::vector<ConcreteVariablePredicate>& consequences,
+    size_t lhs_start_path_index, size_t rhs_start_path_index,
+    size_t lhs_start_vertex_index, size_t rhs_start_vertex_index,
+    std::vector<GCRHorizontalExtension>* extensions) {
+  auto left_path_rules = gcr.get_left_star().get_path_rules();
+  auto right_path_rules = gcr.get_right_star().get_path_rules();
+  // Check the available number of variable predicates.
+  size_t const_pred_num = gcr.get_constant_predicate_count();
+  size_t var_pred_num = gcr.get_variable_predicates().size();
+  size_t consequence_num = 1;
+  size_t available_var_pred_num = Configurations::Get()->max_predicate_num_ -
+                                  const_pred_num - consequence_num;
+  if (gcr.get_variable_predicates().size() >=
+      Configurations::Get()->max_variable_predicate_num_) {
+    for (const auto& c_consequence : consequences) {
+      std::vector<ConcreteVariablePredicate> empty_cvps;
+      extensions->emplace_back(c_consequence, empty_cvps);
+    }
+  }
+
+  for (const auto& variable_predicate : variable_predicates_) {
+    auto target_left_label = variable_predicate.get_lhs_label();
+    auto target_right_label = variable_predicate.get_rhs_label();
+    // Check two center vertices.
+    if (gcr.get_left_star().get_center_label() == target_left_label &&
+        gcr.get_right_star().get_center_label() == target_right_label) {
+      std::vector<ConcreteVariablePredicate> center_cvps;
+      center_cvps.emplace_back(variable_predicate, 0, 0, 0, 0);
+      if (!gcr.IsCompatibleWith(center_cvps.back(), true)) continue;
+      for (const auto& c_consequence : consequences) {
+        std::vector<ConcreteVariablePredicate> consequence_cvps;
+        consequence_cvps.emplace_back(c_consequence);
+        if (!ConcreteVariablePredicate::TestCompatibility(consequence_cvps,
+                                                          center_cvps))
+          continue;
+        extensions->emplace_back(c_consequence, center_cvps);
+      }
+    }
+    // Check other pairs.
+    for (size_t i = lhs_start_path_index; i < left_path_rules.size(); i++) {
+      auto left_pattern =
+          path_patterns_[left_path_rules[i].get_path_pattern_id()];
+      for (size_t j = rhs_start_path_index; j < right_path_rules.size(); j++) {
+        auto right_pattern =
+            path_patterns_[right_path_rules[j].get_path_pattern_id()];
+        std::vector<ConcreteVariablePredicate> variable_predicates;
+        for (size_t k = lhs_start_vertex_index; k < left_pattern.size(); k++) {
+          if (std::get<0>(left_pattern[k]) != target_left_label) continue;
+          for (size_t l = rhs_start_path_index; l < right_pattern.size(); l++) {
+            if (std::get<0>(right_pattern[l]) != target_right_label) continue;
+            ConcreteVariablePredicate cvp(variable_predicate, i, k, j, l);
+            if (!gcr.IsCompatibleWith(cvp, true)) continue;
+            variable_predicates.emplace_back(cvp);
+          }
+        }
+        // Select `available_var_pred_num` predicates from `variable_predicates`
+        std::vector<std::vector<ConcreteVariablePredicate>>
+            c_variable_predicates;
+        std::vector<ConcreteVariablePredicate> empty_intermediate_result;
+        EnumerateValidVariablePredicates(
+            variable_predicates, 0, available_var_pred_num,
+            empty_intermediate_result, &c_variable_predicates);
+        for (const auto& c_consequence : consequences) {
+          std::vector<ConcreteVariablePredicate> consequence_cvps;
+          consequence_cvps.emplace_back(c_consequence);
+          for (const auto& c_variable_predicate : c_variable_predicates) {
+            if (!ConcreteVariablePredicate::TestCompatibility(
+                    consequence_cvps, c_variable_predicate))
+              continue;
+            extensions->emplace_back(c_consequence, c_variable_predicate);
+          }
+        }
+      }
+    }
+  }
+}
+
+void RuleMiner::EnumerateValidVariablePredicates(
+    const std::vector<ConcreteVariablePredicate>& variable_predicates,
+    size_t start_idx, size_t max_item_num,
+    std::vector<ConcreteVariablePredicate>& intermediate_result,
+    std::vector<std::vector<ConcreteVariablePredicate>>*
+        valid_variable_predicates) {
+  // Check return condition.
+  if (intermediate_result.size() >= max_item_num) {
+    return;
+  }
+  for (size_t i = start_idx; i < variable_predicates.size(); i++) {
+    intermediate_result.emplace_back(variable_predicates[i]);
+    valid_variable_predicates->emplace_back(intermediate_result);
+    EnumerateValidVariablePredicates(variable_predicates, i + 1, max_item_num,
+                                     intermediate_result,
+                                     valid_variable_predicates);
+    intermediate_result.pop_back();
+  }
+}
 
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor
