@@ -3,7 +3,6 @@
 #include <yaml-cpp/yaml.h>
 
 #include <fstream>
-#include <functional>
 #include <set>
 
 #include "core/common/multithreading/thread_pool.h"
@@ -25,6 +24,7 @@ using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 using ThreadPool = sics::graph::core::common::ThreadPool;
 using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
 using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
+using PathPattern = sics::graph::miniclean::common::PathPattern;
 using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::gcr::
     refactor::ConcreteVariablePredicate;
 using GCRHorizontalExtension =
@@ -318,9 +318,11 @@ void RuleMiner::ComputeVerticalExtensions(
   size_t min_pattern_id = 0;
   if (left_paths.size() > right_paths.size()) choose_left = false;
   if (right_paths.size() != 0) {
+    // Both paths are not empty: choose the minimum pattern id.
     min_pattern_id = std::min(left_paths.back().get_path_pattern_id(),
                               right_paths.back().get_path_pattern_id());
   } else if (left_paths.size() != 0) {
+    // Only left path is not empty: choose the minimum pattern id.
     min_pattern_id = left_paths.back().get_path_pattern_id();
   }
   for (size_t i = min_pattern_id; i < path_rules_.size(); i++) {
@@ -345,7 +347,7 @@ std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
   if (gcr.get_constant_predicate_count() +
           gcr.get_variable_predicates().size() >=
       Configurations::Get()->max_predicate_num_) {
-    return;
+    return extensions;
   }
 
   // Compute left and right bias.
@@ -367,29 +369,50 @@ std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
 
   // Assign consequence.
   std::vector<ConcreteVariablePredicate> c_consequences =
-      ExtendConsequences(gcr);
+      InstantiateVariablePredicates(gcr, consequence_predicates_);
 
   // Assign variable predicates.
-  ExtendVariablePredicates(gcr, c_consequences, lhs_start_path_index,
-                           rhs_start_path_index, lhs_start_vertex_index,
-                           rhs_start_vertex_index, &extensions);
+  // Note that, unlike constant predicates which can be inherited from the
+  // previous GCR, variable predicates need to be enumerated from scratch.
+  extensions = ExtendVariablePredicates(
+      gcr, c_consequences, lhs_start_path_index, rhs_start_path_index,
+      lhs_start_vertex_index, rhs_start_vertex_index);
   return extensions;
 }
 
-std::vector<ConcreteVariablePredicate> RuleMiner::ExtendConsequences(
-    const GCR& gcr) {
-  std::vector<ConcreteVariablePredicate> consequences;
+std::vector<ConcreteVariablePredicate> RuleMiner::InstantiateVariablePredicates(
+    const GCR& gcr, const std::vector<VariablePredicate>& variable_predicates) {
+  std::vector<ConcreteVariablePredicate> results;
   auto left_path_rules = gcr.get_left_star().get_path_rules();
   auto right_path_rules = gcr.get_right_star().get_path_rules();
-  for (const auto& consequence : consequence_predicates_) {
-    auto target_left_label = consequence.get_lhs_label();
-    auto target_right_label = consequence.get_rhs_label();
-    for (size_t i = 0; i < left_path_rules.size(); i++) {
-      auto left_pattern =
-          path_patterns_[left_path_rules[i].get_path_pattern_id()];
-      for (size_t j = 0; j < right_path_rules.size(); j++) {
-        auto right_pattern =
-            path_patterns_[right_path_rules[j].get_path_pattern_id()];
+  for (const auto& predicate : variable_predicates) {
+    auto target_left_label = predicate.get_lhs_label();
+    auto target_right_label = predicate.get_rhs_label();
+    // The reason of `+ 1` is that we need to consider the case where the star
+    // do not have any path.
+    for (size_t i = 0; i < left_path_rules.size() + 1; i++) {
+      if (i > 0 && i == left_path_rules.size()) break;
+      PathPattern left_pattern;
+      if (left_path_rules.size() == 0) {
+        left_pattern.reserve(1);
+        left_pattern.emplace_back(
+            std::make_tuple(gcr.get_left_star().get_center_label(),
+                            MAX_EDGE_LABEL, MAX_EDGE_LABEL));
+      } else {
+        left_pattern = path_patterns_[left_path_rules[i].get_path_pattern_id()];
+      }
+      for (size_t j = 0; j < right_path_rules.size() + 1; j++) {
+        if (j > 0 && j == right_path_rules.size()) break;
+        PathPattern right_pattern;
+        if (right_path_rules.size() == 0) {
+          right_pattern.reserve(1);
+          right_pattern.emplace_back(
+              std::make_tuple(gcr.get_right_star().get_center_label(),
+                              MAX_EDGE_LABEL, MAX_EDGE_LABEL));
+        } else {
+          right_pattern =
+              path_patterns_[right_path_rules[j].get_path_pattern_id()];
+        }
         for (size_t k = 0; k < left_pattern.size(); k++) {
           // Skip the center node if it's not the first path.
           if (i > 0 && k == 0) continue;
@@ -397,127 +420,78 @@ std::vector<ConcreteVariablePredicate> RuleMiner::ExtendConsequences(
           for (size_t l = 0; l < right_pattern.size(); l++) {
             if (j > 0 && l == 0) continue;
             if (std::get<0>(right_pattern[l]) != target_right_label) continue;
-            ConcreteVariablePredicate cvp(consequence, i, k, j, l);
+            ConcreteVariablePredicate cvp(predicate, i, k, j, l);
             if (!gcr.IsCompatibleWith(cvp, false)) continue;
-            consequences.emplace_back(cvp);
+            results.emplace_back(cvp);
           }
         }
       }
     }
   }
-  return consequences;
+  return results;
 }
 
-void RuleMiner::ExtendVariablePredicates(
+std::vector<GCRHorizontalExtension> RuleMiner::ExtendVariablePredicates(
     const GCR& gcr, const std::vector<ConcreteVariablePredicate>& consequences,
     size_t lhs_start_path_index, size_t rhs_start_path_index,
-    size_t lhs_start_vertex_index, size_t rhs_start_vertex_index,
-    std::vector<GCRHorizontalExtension>* extensions) {
+    size_t lhs_start_vertex_index, size_t rhs_start_vertex_index) {
+  std::vector<GCRHorizontalExtension> extensions;
   // Check the available number of variable predicates.
   size_t const_pred_num = gcr.get_constant_predicate_count();
-  size_t var_pred_num = gcr.get_variable_predicates().size();
   size_t consequence_num = 1;
-  size_t available_var_pred_num = Configurations::Get()->max_predicate_num_ -
-                                  const_pred_num - consequence_num;
-  available_var_pred_num =
-      std::min(available_var_pred_num,
+  size_t available_var_pred_num =
+      std::min(Configurations::Get()->max_predicate_num_ - const_pred_num -
+                   consequence_num,
                Configurations::Get()->max_variable_predicate_num_);
-  if (gcr.get_variable_predicates().size() >= available_var_pred_num) {
+  if (available_var_pred_num < 0) {
+    LOG_FATAL("Available variable predicate number < 0");
+  }
+  if (available_var_pred_num == 0) {
     for (const auto& c_consequence : consequences) {
+      // We have tested the compability of consequences with the GCR.
       std::vector<ConcreteVariablePredicate> empty_cvps;
-      extensions->emplace_back(c_consequence, empty_cvps);
+      extensions.emplace_back(c_consequence, empty_cvps);
     }
-    return;
+    return extensions;
   }
 
-  std::vector<ConcreteVariablePredicate> center_variable_predicates;
-  std::vector<ConcreteVariablePredicate> other_variable_predicates;
-  for (const auto& variable_predicate : variable_predicates_) {
-    GenerateVariablePredicates(
-        gcr, consequences, variable_predicate, lhs_start_path_index,
-        rhs_start_path_index, lhs_start_vertex_index, rhs_start_vertex_index,
-        &center_variable_predicates, &other_variable_predicates);
-  }
-  std::vector<std::vector<ConcreteVariablePredicate>> c_c_variable_predicates;
-  std::vector<std::vector<ConcreteVariablePredicate>> c_o_variable_predicates;
+  std::vector<ConcreteVariablePredicate> variable_predicates =
+      InstantiateVariablePredicates(gcr, variable_predicates_);
+  std::vector<std::vector<ConcreteVariablePredicate>> c_variable_predicates;
   std::vector<ConcreteVariablePredicate> empty_intermediate_result;
   EnumerateValidVariablePredicates(
-      center_variable_predicates, 0, available_var_pred_num,
-      empty_intermediate_result, &c_c_variable_predicates);
-  empty_intermediate_result.clear();
-  EnumerateValidVariablePredicates(
-      other_variable_predicates, 0, available_var_pred_num,
-      empty_intermediate_result, &c_o_variable_predicates);
-  MergeHorizontalExtensions(gcr, consequences, c_c_variable_predicates,
-                            c_o_variable_predicates, available_var_pred_num,
-                            extensions);
+      variable_predicates, 0, available_var_pred_num,
+      &empty_intermediate_result, &c_variable_predicates);
+  extensions = MergeHorizontalExtensions(
+      gcr, consequences, c_variable_predicates, available_var_pred_num);
+  return extensions;
 }
 
-void RuleMiner::GenerateVariablePredicates(
-    const GCR& gcr, const std::vector<ConcreteVariablePredicate>& consequences,
-    VariablePredicate variable_predicate, size_t lhs_start_path_index,
-    size_t rhs_start_path_index, size_t lhs_start_vertex_index,
-    size_t rhs_start_vertex_index,
-    std::vector<ConcreteVariablePredicate>* c_variable_predicates,
-    std::vector<ConcreteVariablePredicate>* o_variable_predicates) {
-  auto left_path_rules = gcr.get_left_star().get_path_rules();
-  auto right_path_rules = gcr.get_right_star().get_path_rules();
-  auto target_left_label = variable_predicate.get_lhs_label();
-  auto target_right_label = variable_predicate.get_rhs_label();
-  // Check two center vertices.
-  if (gcr.get_left_star().get_center_label() == target_left_label &&
-      gcr.get_right_star().get_center_label() == target_right_label) {
-    ConcreteVariablePredicate center_cvp(variable_predicate, 0, 0, 0, 0);
-    if (gcr.IsCompatibleWith(center_cvp, true)) {
-      c_variable_predicates->emplace_back(center_cvp);
-    }
-  }
-  // Check other pairs.
-  for (size_t i = lhs_start_path_index; i < left_path_rules.size(); i++) {
-    auto left_pattern =
-        path_patterns_[left_path_rules[i].get_path_pattern_id()];
-    for (size_t j = rhs_start_path_index; j < right_path_rules.size(); j++) {
-      auto right_pattern =
-          path_patterns_[right_path_rules[j].get_path_pattern_id()];
-      for (size_t k = lhs_start_vertex_index; k < left_pattern.size(); k++) {
-        if (std::get<0>(left_pattern[k]) != target_left_label) continue;
-        for (size_t l = rhs_start_path_index; l < right_pattern.size(); l++) {
-          if (std::get<0>(right_pattern[l]) != target_right_label) continue;
-          ConcreteVariablePredicate cvp(variable_predicate, i, k, j, l);
-          if (!gcr.IsCompatibleWith(cvp, true)) continue;
-          o_variable_predicates->emplace_back(cvp);
-        }
-      }
-    }
-  }
-}
-
-void RuleMiner::MergeHorizontalExtensions(
-    const GCR& gcr, const std::vector<ConcreteVariablePredicate>& consequences,
+std::vector<GCRHorizontalExtension> RuleMiner::MergeHorizontalExtensions(
+    const GCR& gcr,
+    const std::vector<ConcreteVariablePredicate>& c_consequences,
     std::vector<std::vector<ConcreteVariablePredicate>> c_variable_predicates,
-    std::vector<std::vector<ConcreteVariablePredicate>> o_variable_predicates,
-    size_t available_var_pred_num,
-    std::vector<GCRHorizontalExtension>* extensions) {
-  for (const auto& c_c_vp : c_variable_predicates) {
-    for (const auto& c_o_vp : o_variable_predicates) {
-      if (c_c_vp.size() + c_o_vp.size() >= available_var_pred_num) continue;
-      if (!ConcreteVariablePredicate::TestCompatibility(c_c_vp, c_o_vp))
+    size_t available_var_pred_num) {
+  std::vector<GCRHorizontalExtension> extensions;
+  if (c_consequences.size() == 0) {
+    LOG_FATAL("Consequences is empty");
+  }
+  if (c_variable_predicates.size() == 0) {
+    for (const auto& c_consequence : c_consequences) {
+      std::vector<ConcreteVariablePredicate> empty_cvps;
+      extensions.emplace_back(c_consequence, empty_cvps);
+    }
+    return extensions;
+  }
+  for (const auto& c_consequence : c_consequences) {
+    for (const auto& c_variable_predicate : c_variable_predicates) {
+      std::vector<ConcreteVariablePredicate> c_consequence_vec;
+      c_consequence_vec.reserve(1);
+      c_consequence_vec.emplace_back(c_consequence);
+      if (!ConcreteVariablePredicate::TestCompatibility(c_consequence_vec,
+                                                        c_variable_predicate))
         continue;
-      // if (!is_compatible) continue;
-      std::vector<ConcreteVariablePredicate> c_variable_predicates;
-      c_variable_predicates.insert(c_variable_predicates.end(), c_c_vp.begin(),
-                                   c_c_vp.end());
-      c_variable_predicates.insert(c_variable_predicates.end(), c_o_vp.begin(),
-                                   c_o_vp.end());
-      for (const auto& c_consequence : consequences) {
-        std::vector<ConcreteVariablePredicate> c_consequence_vec;
-        c_consequence_vec.reserve(1);
-        c_consequence_vec.emplace_back(c_consequence);
-        if (!ConcreteVariablePredicate::TestCompatibility(
-                c_consequence_vec, c_variable_predicates))
-          continue;
-        extensions->emplace_back(c_consequence, c_variable_predicates);
-      }
+      extensions.emplace_back(c_consequence, c_variable_predicate);
     }
   }
 }
@@ -525,20 +499,20 @@ void RuleMiner::MergeHorizontalExtensions(
 void RuleMiner::EnumerateValidVariablePredicates(
     const std::vector<ConcreteVariablePredicate>& variable_predicates,
     size_t start_idx, size_t max_item_num,
-    std::vector<ConcreteVariablePredicate>& intermediate_result,
+    std::vector<ConcreteVariablePredicate>* intermediate_result,
     std::vector<std::vector<ConcreteVariablePredicate>>*
         valid_variable_predicates) {
   // Check return condition.
-  if (intermediate_result.size() >= max_item_num) {
+  if (intermediate_result->size() >= max_item_num) {
     return;
   }
   for (size_t i = start_idx; i < variable_predicates.size(); i++) {
-    intermediate_result.emplace_back(variable_predicates[i]);
-    valid_variable_predicates->emplace_back(intermediate_result);
+    intermediate_result->emplace_back(variable_predicates[i]);
+    valid_variable_predicates->emplace_back(*intermediate_result);
     EnumerateValidVariablePredicates(variable_predicates, i + 1, max_item_num,
                                      intermediate_result,
                                      valid_variable_predicates);
-    intermediate_result.pop_back();
+    intermediate_result->pop_back();
   }
 }
 
