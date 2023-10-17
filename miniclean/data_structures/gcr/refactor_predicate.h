@@ -134,6 +134,11 @@ class ConcreteVariablePredicate {
     return variable_predicate_.get_operator_type();
   }
 
+  static const bool TestCompatibility(
+      const std::vector<ConcreteVariablePredicate>& lhs_predicates,
+      const std::vector<ConcreteVariablePredicate>& rhs_predicates);
+
+
  private:
   VariablePredicate variable_predicate_;
   uint8_t left_path_index_;

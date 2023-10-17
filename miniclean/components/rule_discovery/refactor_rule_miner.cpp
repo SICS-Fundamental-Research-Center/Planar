@@ -424,7 +424,11 @@ void RuleMiner::ExtendVariablePredicates(
       center_cvps.emplace_back(variable_predicate, 0, 0, 0, 0);
       if (!gcr.IsCompatibleWith(center_cvps.back(), true)) continue;
       for (const auto& c_consequence : consequences) {
-        if (!gcr.TestCompatibility(c_consequence, center_cvps)) continue;
+        std::vector<ConcreteVariablePredicate> consequence_cvps;
+        consequence_cvps.emplace_back(c_consequence);
+        if (!ConcreteVariablePredicate::TestCompatibility(consequence_cvps,
+                                                          center_cvps))
+          continue;
         extensions->emplace_back(c_consequence, center_cvps);
       }
     }
@@ -453,8 +457,11 @@ void RuleMiner::ExtendVariablePredicates(
             variable_predicates, 0, available_var_pred_num,
             empty_intermediate_result, &c_variable_predicates);
         for (const auto& c_consequence : consequences) {
+          std::vector<ConcreteVariablePredicate> consequence_cvps;
+          consequence_cvps.emplace_back(c_consequence);
           for (const auto& c_variable_predicate : c_variable_predicates) {
-            if (!gcr.TestCompatibility(c_consequence, c_variable_predicate))
+            if (!ConcreteVariablePredicate::TestCompatibility(
+                    consequence_cvps, c_variable_predicate))
               continue;
             extensions->emplace_back(c_consequence, c_variable_predicate);
           }

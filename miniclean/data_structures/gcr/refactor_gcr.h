@@ -100,10 +100,6 @@ class GCR {
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
                         bool consider_consequence) const;
 
-  bool TestCompatibility(
-      const ConcreteVariablePredicate& variable_predicate,
-      const std::vector<ConcreteVariablePredicate>& base_predicates) const;
-
   // void StarRuleCheck(StarRule star_rule, MiniCleanCSRGraph* graph,
   //                    StarBitmap* star_bitmap) const;
 
