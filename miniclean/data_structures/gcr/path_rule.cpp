@@ -68,7 +68,7 @@ std::unordered_set<VertexID> StarRule::ComputeValidCenters() {
     for (VertexID i = vertex_range.first; i < vertex_range.second; i++) {
       valid_centers.emplace(i);
     }
-    return;
+    return valid_centers;
   }
 
   // Get the valid centers from the first constant predicate.
@@ -92,8 +92,9 @@ std::unordered_set<VertexID> StarRule::ComputeValidCenters() {
     std::unordered_set<VertexID> valid_vertices =
         attr_bucket_by_vlabel.at(vattr_id).at(vattr_value);
     std::unordered_set<VertexID> diff;
-    SetIntersection(valid_centers, &valid_vertices, &diff);
+    SetIntersection(&valid_centers, &valid_vertices, &diff);
   }
+  return valid_centers;
 }
 
 void StarRule::SetIntersection(std::unordered_set<VertexID>* base_set,
