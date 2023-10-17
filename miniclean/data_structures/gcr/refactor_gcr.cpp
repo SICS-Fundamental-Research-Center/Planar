@@ -20,76 +20,149 @@ void GCR::Recover() {
 }
 
 void GCR::VerticalExtend(const GCRVerticalExtension& vertical_extension) {
-  // TODO: Implement it.
+  if (vertical_extension.first) {
+    AddPathRuleToLeftStar(vertical_extension.second);
+  } else {
+    AddPathRuleToRigthStar(vertical_extension.second);
+  }
+  // TODO: Compute the valid center vertices after vertical extend.
 }
 
 void GCR::HorizontalExtend(const GCRHorizontalExtension& horizontal_extension) {
-  // TODO: Implement it.
+  set_consequence(horizontal_extension.first);
+  for (const auto& variable_predicate : horizontal_extension.second) {
+    AddVariablePredicateToBack(variable_predicate);
+  }
 }
 
 std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
+    MiniCleanCSRGraph* graph) {
+  size_t support = 0;
+  size_t match = 0;
+  InitializeBuckets(graph);
+  bool preconditions_match = true;
+  auto left_bucket = left_star_.get_bucket();
+  auto right_bucket = right_star_.get_bucket();
+  for (size_t i = 0; i < left_bucket.size(); i++) {
+    for (VertexID left_id = 0; left_id < left_bucket[i].size(); left_id++) {
+      for (VertexID right_id = 0; right_id < right_bucket[i].size();
+           right_id++) {
+        // Test preconditions.
+        preconditions_match = true;
+        for (const auto& variable_predicate : variable_predicates_) {
+          if (!TestVariablePredicate(graph, variable_predicate,
+                                     left_bucket[i][left_id],
+                                     right_bucket[i][right_id])) {
+            preconditions_match = false;
+            break;
+          }
+        }
+        if (preconditions_match) {
+          support++;
+          // Test consequence.
+          if (TestVariablePredicate(graph, consequence_,
+                                    left_bucket[i][left_id],
+                                    right_bucket[i][right_id])) {
+            match++;
+          }
+        }
+      }
+    }
+  }
+  return std::make_pair(match, support);
+}
+
+// TODO: use reference instead.
+void GCR::InitializeBuckets(MiniCleanCSRGraph* graph) {
+  auto index_collection = left_star_.get_index_collection();
+  std::vector<VertexID> left_valid_vertices = left_star_.get_valid_vertices();
+  std::vector<VertexID> right_valid_vertices = right_star_.get_valid_vertices();
+  if (left_star_.get_bucket().size() != right_star_.get_bucket().size()) {
+    LOG_FATAL("Number of buckets in left and right star are not the same.");
+  }
+  if (left_star_.get_bucket().size() == 0) {
+    // Initialize buckets.
+    for (size_t i = 0; i < variable_predicates_.size(); i++) {
+      auto left_path_id = variable_predicates_[i].get_left_path_index();
+      auto right_path_id = variable_predicates_[i].get_right_path_index();
+      auto left_vertex_id = variable_predicates_[i].get_left_vertex_index();
+      auto right_vertex_id = variable_predicates_[i].get_right_vertex_index();
+      if (left_path_id != 0 || left_vertex_id != 0 || right_path_id != 0 ||
+          right_vertex_id != 0)
+        continue;
+      bucket_index_ = i;
+      auto left_label = variable_predicates_[i].get_left_label();
+      auto left_attr_id = variable_predicates_[i].get_left_attribute_id();
+      auto left_label_buckts =
+          index_collection->GetAttributeBucketByVertexLabel(left_label);
+      auto value_bucket_size = left_label_buckts[left_attr_id].size();
+      left_star_.ReserveBucket(value_bucket_size);
+      right_star_.ReserveBucket(value_bucket_size);
+      for (size_t j = 0; j < left_valid_vertices.size(); j++) {
+        auto value = graph->GetVertexAttributeValuesByLocalID(
+            left_valid_vertices[j])[left_attr_id];
+        left_star_.AddVertexToBucket(value, left_valid_vertices[j]);
+      }
+      for (size_t j = 0; j < right_valid_vertices.size(); j++) {
+        auto value = graph->GetVertexAttributeValuesByLocalID(
+            right_valid_vertices[j])[left_attr_id];
+        right_star_.AddVertexToBucket(value, right_valid_vertices[j]);
+      }
+      break;
+    }
+  }
+  if (left_star_.get_bucket().size() == 0) {
+    // All vertices in one bucket.
+    left_star_.ReserveBucket(1);
+    right_star_.ReserveBucket(1);
+    for (size_t j = 0; j < left_valid_vertices.size(); j++) {
+      left_star_.AddVertexToBucket(0, left_valid_vertices[j]);
+    }
+    for (size_t j = 0; j < right_valid_vertices.size(); j++) {
+      right_star_.AddVertexToBucket(0, right_valid_vertices[j]);
+    }
+  }
+}
+
+bool GCR::TestVariablePredicate(
     MiniCleanCSRGraph* graph,
-    PathRuleUnitContainer& path_rule_unit_container) const {
-  // size_t support = 0;
-  // size_t match = 0;
-  // // Compute the bitmap for left and right star.
-  // StarBitmap left_bitmap = left_star_[0]->get_star_bitmap();
-  // StarBitmap right_bitmap = right_star_[0]->get_star_bitmap();
-  // LOG_INFO("GCR::ComputeMatchAndSupport: INIT SIZE: ",
-  //          left_bitmap.CountOneBits() * right_bitmap.CountOneBits());
-  // for (size_t i = 1; i < left_star_.size(); i++) {
-  //   left_bitmap.MergeWith(left_star_[i]->get_star_bitmap());
-  // }
-  // for (size_t i = 1; i < right_star_.size(); i++) {
-  //   right_bitmap.MergeWith(right_star_[i]->get_star_bitmap());
-  // }
-  // LOG_INFO("GCR::ComputeMatchAndSupport: CONSIDER CONSTANT PREDICATES SIZE:
-  // ",
-  //          left_bitmap.CountOneBits() * right_bitmap.CountOneBits());
+    const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
+    VertexID right_vid) {
+  auto left_path_id = variable_predicate.get_left_path_index();
+  auto right_path_id = variable_predicate.get_right_path_index();
+  auto left_vertex_id = variable_predicate.get_left_vertex_index();
+  auto right_vertex_id = variable_predicate.get_right_vertex_index();
+  auto left_attr_id = variable_predicate.get_left_attribute_id();
+  auto right_attr_id = variable_predicate.get_right_attribute_id();
+  auto left_pattern_id =
+      left_star_.get_path_rules()[left_path_id].get_path_pattern_id();
+  auto right_pattern_id =
+      left_star_.get_path_rules()[right_path_id].get_path_pattern_id();
 
-  // // Star pattern matching.
-  // StarRuleCheck(left_star_, graph, &left_bitmap);
-  // StarRuleCheck(right_star_, graph, &right_bitmap);
+  auto left_bucket = left_star_.get_bucket();
+  auto right_bucket = right_star_.get_bucket();
+  auto index_collection = left_star_.get_index_collection();
 
-  // // TODO: compute the maximum support number, prune the GCRs with support
-  // less
-  // // than threshold.
-  // size_t max_support = left_bitmap.CountOneBits() *
-  // right_bitmap.CountOneBits(); LOG_INFO("GCR::ComputeMatchAndSupport:
-  // CONSIDER STAR PATTERN SIZE: ",
-  //          max_support);
+  auto left_path_instances =
+      index_collection->GetPathInstanceBucket(left_vid, left_pattern_id);
+  auto right_path_instances =
+      index_collection->GetPathInstanceBucket(right_vid, right_pattern_id);
 
-  // // Consider the variable predicates:
-  // std::vector<std::vector<std::pair<size_t, size_t>>> var_pred_instances =
-  //     ComputeVariablePredicateInstances();
-  // for (const auto& var_pred_instance : var_pred_instances) {
-  //   StarBitmap left_bitmap_copy = left_bitmap;
-  //   StarBitmap right_bitmap_copy = right_bitmap;
-  //   for (size_t i = 0; i < variable_predicates_.size(); i++) {
-  //     size_t left_attribute_value = var_pred_instance[i].first;
-  //     size_t right_attribute_value = var_pred_instance[i].second;
+  for (const auto& left_instance : left_path_instances) {
+    for (const auto& right_instance : right_path_instances) {
+      VertexID lvid = left_instance[left_vertex_id];
+      VertexID rvid = right_instance[right_vertex_id];
+      auto left_value =
+          graph->GetVertexAttributeValuesByLocalID(lvid)[left_attr_id];
+      auto right_value =
+          graph->GetVertexAttributeValuesByLocalID(rvid)[right_attr_id];
+      if (variable_predicate.Test(left_value, right_value)) {
+        return true;
+      }
+    }
+  }
 
-  //     UpdateBitmapByVariablePredicate(
-  //         variable_predicates_[i], left_attribute_value,
-  //         right_attribute_value, path_rule_unit_container, &left_bitmap_copy,
-  //         &right_bitmap_copy);
-  //   }
-  //   // Compute the match.
-  //   match += left_bitmap_copy.CountOneBits() *
-  //   right_bitmap_copy.CountOneBits();
-  //   // Consider the consequence.
-  //   size_t left_attribute_value = var_pred_instance.back().first;
-  //   size_t right_attribute_value = var_pred_instance.back().second;
-  //   UpdateBitmapByVariablePredicate(
-  //       consequence_, left_attribute_value, right_attribute_value,
-  //       path_rule_unit_container, &left_bitmap_copy, &right_bitmap_copy);
-  //   // Compute the support.
-  //   support +=
-  //       left_bitmap_copy.CountOneBits() * right_bitmap_copy.CountOneBits();
-  // }
-
-  // return std::make_pair(match, support);
-  return std::make_pair(0, 0);
+  return false;
 }
 
 // void GCR::UpdateBitmapByVariablePredicate(ConcreteVariablePredicate
