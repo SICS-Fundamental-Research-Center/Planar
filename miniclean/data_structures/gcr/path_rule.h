@@ -106,6 +106,7 @@ class StarRule {
 
   const std::vector<PathRule>& get_path_rules() const { return path_rules_; }
 
+  // TODO: use reference instead.
   IndexCollection* get_index_collection() const {
     return index_collection_;
   }
