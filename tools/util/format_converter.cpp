@@ -9,6 +9,7 @@ using xyz::graph::core::common::GraphID;
 using xyz::graph::core::common::TaskPackage;
 using xyz::graph::core::common::VertexID;
 using xyz::graph::core::common::VertexLabel;
+using xyz::graph::core::common::EdgeIndex;
 using xyz::graph::core::data_structures::GraphMetadata;
 using xyz::graph::core::data_structures::SubgraphMetadata;
 using xyz::graph::core::util::atomic::WriteAdd;
@@ -32,7 +33,7 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
   task_package.reserve(parallelism);
 
   auto aligned_max_vid = (((edges.get_metadata().max_vid + 1) >> 6) << 6) + 64;
-  auto visited = Bitmap(aligned_max_vid);
+  auto visited = graph::core::common::Bitmap(aligned_max_vid);
   auto num_inedges_by_vid = new VertexID[aligned_max_vid]();
   auto num_outedges_by_vid = new VertexID[aligned_max_vid]();
   VertexID min_vid = MAX_VERTEX_ID;

@@ -8,6 +8,7 @@ using xyz::graph::core::common::GraphID;
 using xyz::graph::core::common::TaskPackage;
 using xyz::graph::core::common::VertexID;
 using xyz::graph::core::common::VertexLabel;
+using xyz::graph::core::common::EdgeIndex;
 using xyz::graph::core::util::atomic::WriteAdd;
 using xyz::graph::core::util::atomic::WriteMax;
 using xyz::graph::core::util::atomic::WriteMin;
