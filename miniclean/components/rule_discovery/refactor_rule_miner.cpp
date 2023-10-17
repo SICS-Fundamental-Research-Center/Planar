@@ -247,8 +247,8 @@ void RuleMiner::MineGCRs() {
         for (size_t rs = j_start; rs < star_rules_[rl].size(); rs++) {
           GCR gcr = GCR(star_rules_[ll][ls], star_rules_[rl][rs]);
           // Horizontally extend the GCR.
-          std::vector<GCRHorizontalExtension> horizontal_extensions;
-          ComputeHorizontalExtensions(gcr, true);
+          std::vector<GCRHorizontalExtension> horizontal_extensions =
+              ComputeHorizontalExtensions(gcr, true);
           for (const auto& horizontal_extension : horizontal_extensions) {
             gcr.Backup();
             gcr.HorizontalExtend(horizontal_extension);
@@ -286,9 +286,8 @@ void RuleMiner::ExtendGCR(GCR& gcr) {
     gcr.Backup();
     gcr.VerticalExtend(vertical_extension);
     // Compute horizontal extensions.
-    std::vector<GCRHorizontalExtension> horizontal_extensions;
-    ComputeHorizontalExtensions(gcr, vertical_extension.first,
-                                &horizontal_extensions);
+    std::vector<GCRHorizontalExtension> horizontal_extensions =
+        ComputeHorizontalExtensions(gcr, vertical_extension.first);
 
     for (const auto& horizontal_extension : horizontal_extensions) {
       // Horizontal extension.
@@ -345,6 +344,9 @@ void RuleMiner::ComputeVerticalExtensions(
 
 std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
     const GCR& gcr, bool from_left) {
+  // Result to return.
+  // TODO: Can we reserve space beforehand?
+  std::vector<GCRHorizontalExtension> extensions;
   // Check whether the number of predicates exceeds the limit.
   // `>=` since we need to reserve space for consequence.
   if (gcr.get_constant_predicate_count() +
@@ -361,7 +363,9 @@ std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
   size_t lhs_start_vertex_index = 0;
   size_t rhs_start_vertex_index = 0;
   if (from_left) {
+    // Choose the last path rule from the left star.
     lhs_start_path_index = left_path_rules.size() - 1;
+    // Skip the center vertex.
     lhs_start_vertex_index = 1;
   } else {
     rhs_start_path_index = right_path_rules.size() - 1;
@@ -369,53 +373,46 @@ std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
   }
 
   // Assign consequence.
-  std::vector<ConcreteVariablePredicate> c_consequences;
-  ExtendConsequences(gcr, lhs_start_path_index, rhs_start_path_index,
-                     lhs_start_vertex_index, rhs_start_vertex_index,
-                     &c_consequences);
+  std::vector<ConcreteVariablePredicate> c_consequences =
+      ExtendConsequences(gcr);
 
   // Assign variable predicates.
   ExtendVariablePredicates(gcr, c_consequences, lhs_start_path_index,
                            rhs_start_path_index, lhs_start_vertex_index,
-                           rhs_start_vertex_index, extensions);
+                           rhs_start_vertex_index, &extensions);
+  return extensions;
 }
 
-void RuleMiner::ExtendConsequences(
-    const GCR& gcr, size_t lhs_start_path_index, size_t rhs_start_path_index,
-    size_t lhs_start_vertex_index, size_t rhs_start_vertex_index,
-    std::vector<ConcreteVariablePredicate>* consequences) {
+std::vector<ConcreteVariablePredicate> RuleMiner::ExtendConsequences(
+    const GCR& gcr) {
+  std::vector<ConcreteVariablePredicate> consequences;
   auto left_path_rules = gcr.get_left_star().get_path_rules();
   auto right_path_rules = gcr.get_right_star().get_path_rules();
   for (const auto& consequence : consequence_predicates_) {
     auto target_left_label = consequence.get_lhs_label();
     auto target_right_label = consequence.get_rhs_label();
-    // Check two center vertices.
-    if (gcr.get_left_star().get_center_label() == target_left_label &&
-        gcr.get_right_star().get_center_label() == target_right_label) {
-      ConcreteVariablePredicate center_cvp(consequence, 0, 0, 0, 0);
-      if (!gcr.IsCompatibleWith(center_cvp, false)) continue;
-      consequences->emplace_back(center_cvp);
-    }
-    // Check other pairs.
-    for (size_t i = lhs_start_path_index; i < left_path_rules.size(); i++) {
+    for (size_t i = 0; i < left_path_rules.size(); i++) {
       auto left_pattern =
           path_patterns_[left_path_rules[i].get_path_pattern_id()];
-      for (size_t j = rhs_start_path_index; j < right_path_rules.size(); j++) {
+      for (size_t j = 0; j < right_path_rules.size(); j++) {
         auto right_pattern =
             path_patterns_[right_path_rules[j].get_path_pattern_id()];
-        for (size_t k = lhs_start_vertex_index; k < left_pattern.size(); k++) {
+        for (size_t k = 0; k < left_pattern.size(); k++) {
+          // Skip the center node if it's not the first path.
+          if (i > 0 && k == 0) continue;
           if (std::get<0>(left_pattern[k]) != target_left_label) continue;
-          for (size_t l = lhs_start_vertex_index; l < right_pattern.size();
-               l++) {
+          for (size_t l = 0; l < right_pattern.size(); l++) {
+            if (j > 0 && l == 0) continue;
             if (std::get<0>(right_pattern[l]) != target_right_label) continue;
             ConcreteVariablePredicate cvp(consequence, i, k, j, l);
             if (!gcr.IsCompatibleWith(cvp, false)) continue;
-            consequences->emplace_back(cvp);
+            consequences.emplace_back(cvp);
           }
         }
       }
     }
   }
+  return consequences;
 }
 
 void RuleMiner::ExtendVariablePredicates(
