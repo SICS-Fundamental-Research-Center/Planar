@@ -154,6 +154,11 @@ class ConcreteVariablePredicate {
     return variable_predicate_.get_operator_type();
   }
 
+  static const bool TestCompatibility(
+      const std::vector<ConcreteVariablePredicate>& lhs_predicates,
+      const std::vector<ConcreteVariablePredicate>& rhs_predicates);
+
+
   bool Test(VertexAttributeValue rhs, VertexAttributeValue lhs) const {
     return variable_predicate_.Test(rhs, lhs);
   }
