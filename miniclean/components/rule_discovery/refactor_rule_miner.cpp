@@ -239,37 +239,37 @@ void RuleMiner::MineGCRs() {
         size_t j_start = (ll == rl) ? ls : 0;
         for (size_t rs = j_start; rs < star_rules_[rl].size(); rs++) {
           GCR gcr = GCR(star_rules_[ll][ls], star_rules_[rl][rs]);
-          ExtendGCR(gcr);
+          ExtendGCR(&gcr);
         }
       }
     }
   }
 }
 
-void RuleMiner::ExtendGCR(GCR& gcr) {
+void RuleMiner::ExtendGCR(GCR* gcr) {
   // Check whether the GCR should be extended.
-  if (gcr.get_left_star().get_path_rules().size() +
-          gcr.get_right_star().get_path_rules().size() >=
+  if (gcr->get_left_star().get_path_rules().size() +
+          gcr->get_right_star().get_path_rules().size() >=
       Configurations::Get()->max_path_num_) {
     return;
   }
   // Compute vertical extensions.
   std::vector<GCRVerticalExtension> vertical_extensions;
-  ComputeVerticalExtensions(gcr, &vertical_extensions);
+  ComputeVerticalExtensions(*gcr, &vertical_extensions);
   // Compute horizontal extensions for each vertical extension.
   for (const auto& vertical_extension : vertical_extensions) {
     // Vertical extension.
-    gcr.Backup();
-    gcr.VerticalExtend(vertical_extension);
+    gcr->Backup();
+    gcr->VerticalExtend(vertical_extension);
     // Compute horizontal extensions.
     std::vector<GCRHorizontalExtension> horizontal_extensions;
-    ComputeHorizontalExtensions(gcr, vertical_extension.first,
+    ComputeHorizontalExtensions(*gcr, vertical_extension.first,
                                 &horizontal_extensions);
 
     for (const auto& horizontal_extension : horizontal_extensions) {
       // Horizontal extension.
-      gcr.Backup();
-      gcr.HorizontalExtend(horizontal_extension);
+      gcr->Backup();
+      gcr->HorizontalExtend(horizontal_extension);
       // Compute support of GCR
 
       // If support < threshold, continue.
@@ -278,9 +278,9 @@ void RuleMiner::ExtendGCR(GCR& gcr) {
 
       // If support >= threshold, confidence < threshold, go to next level.
       ExtendGCR(gcr);
-      gcr.Recover();
+      gcr->Recover();
     }
-    gcr.Recover();
+    gcr->Recover();
   }
 }
 

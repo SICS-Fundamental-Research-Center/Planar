@@ -118,7 +118,7 @@ class RuleMiner {
       }
     }
   }
-  void ExtendGCR(GCR& gcr);
+  void ExtendGCR(GCR* gcr);
   void ComputeVerticalExtensions(const GCR& gcr,
                                  std::vector<GCRVerticalExtension>* extensions);
   void ComputeHorizontalExtensions(
