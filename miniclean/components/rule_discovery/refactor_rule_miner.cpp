@@ -250,7 +250,6 @@ void RuleMiner::MineGCRs() {
           std::vector<GCRHorizontalExtension> horizontal_extensions =
               ComputeHorizontalExtensions(gcr, true);
           for (const auto& horizontal_extension : horizontal_extensions) {
-            gcr.Backup();
             gcr.HorizontalExtend(horizontal_extension);
             // Compute support of GCR
 
@@ -258,12 +257,9 @@ void RuleMiner::MineGCRs() {
 
             // If support >= threshold, confidence >= threshold, write back to
             // disk.
-
-            // If support >= threshold, confidence < threshold, go to next
-            // level.
-            ExtendGCR(gcr);
-            gcr.Recover();
           }
+          // If support >= threshold, confidence < threshold, go to next level.
+          ExtendGCR(gcr);
         }
       }
     }
@@ -291,18 +287,15 @@ void RuleMiner::ExtendGCR(GCR& gcr) {
 
     for (const auto& horizontal_extension : horizontal_extensions) {
       // Horizontal extension.
-      gcr.Backup();
       gcr.HorizontalExtend(horizontal_extension);
       // Compute support of GCR
 
       // If support < threshold, continue.
 
       // If support >= threshold, confidence >= threshold, write back to disk.
-
-      // If support >= threshold, confidence < threshold, go to next level.
-      ExtendGCR(gcr);
-      gcr.Recover();
     }
+    // If support >= threshold, confidence < threshold, go to next level.
+    ExtendGCR(gcr);
     gcr.Recover();
   }
 }
