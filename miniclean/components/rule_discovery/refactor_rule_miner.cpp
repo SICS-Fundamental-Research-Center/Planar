@@ -239,7 +239,24 @@ void RuleMiner::MineGCRs() {
         size_t j_start = (ll == rl) ? ls : 0;
         for (size_t rs = j_start; rs < star_rules_[rl].size(); rs++) {
           GCR gcr = GCR(star_rules_[ll][ls], star_rules_[rl][rs]);
-          ExtendGCR(gcr);
+          // Horizontally extend the GCR.
+          std::vector<GCRHorizontalExtension> horizontal_extensions;
+          ComputeHorizontalExtensions(gcr, true, &horizontal_extensions);
+          for (const auto& horizontal_extension : horizontal_extensions) {
+            gcr.Backup();
+            gcr.HorizontalExtend(horizontal_extension);
+            // Compute support of GCR
+
+            // If support < threshold, continue.
+
+            // If support >= threshold, confidence >= threshold, write back to
+            // disk.
+
+            // If support >= threshold, confidence < threshold, go to next
+            // level.
+            ExtendGCR(gcr);
+            gcr.Recover();
+          }
         }
       }
     }
