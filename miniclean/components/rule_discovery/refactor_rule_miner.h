@@ -119,8 +119,7 @@ class RuleMiner {
     }
   }
   void ExtendGCR(GCR* gcr);
-  void ComputeVerticalExtensions(const GCR& gcr,
-                                 std::vector<GCRVerticalExtension>* extensions);
+  std::vector<GCRVerticalExtension> ComputeVerticalExtensions(const GCR& gcr);
   std::vector<GCRHorizontalExtension> ComputeHorizontalExtensions(
       const GCR& gcr, bool from_left);
   std::vector<ConcreteVariablePredicate> InstantiateVariablePredicates(

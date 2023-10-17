@@ -274,8 +274,8 @@ void RuleMiner::ExtendGCR(GCR* gcr) {
     return;
   }
   // Compute vertical extensions.
-  std::vector<GCRVerticalExtension> vertical_extensions;
-  ComputeVerticalExtensions(*gcr, &vertical_extensions);
+  std::vector<GCRVerticalExtension> vertical_extensions =
+      ComputeVerticalExtensions(*gcr);
   // Compute horizontal extensions for each vertical extension.
   for (const auto& vertical_extension : vertical_extensions) {
     // Vertical extension.
@@ -300,13 +300,14 @@ void RuleMiner::ExtendGCR(GCR* gcr) {
   }
 }
 
-void RuleMiner::ComputeVerticalExtensions(
-    const GCR& gcr, std::vector<GCRVerticalExtension>* extensions) {
+std::vector<GCRVerticalExtension> RuleMiner::ComputeVerticalExtensions(
+    const GCR& gcr) {
+  std::vector<GCRVerticalExtension> extensions;
   // Check whether the number of path rules exceeds the limit.
   if (gcr.get_left_star().get_path_rules().size() +
           gcr.get_right_star().get_path_rules().size() >=
       Configurations::Get()->max_path_num_) {
-    return;
+    return extensions;
   }
   StarRule left_star = gcr.get_left_star();
   StarRule right_star = gcr.get_right_star();
@@ -332,9 +333,10 @@ void RuleMiner::ComputeVerticalExtensions(
       if (rlabel != std::get<0>(path_patterns_[i][0])) continue;
     }
     for (size_t j = 0; j < path_rules_[i].size(); j++) {
-      extensions->emplace_back(choose_left, path_rules_[i][j]);
+      extensions.emplace_back(choose_left, path_rules_[i][j]);
     }
   }
+  return extensions;
 }
 
 std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
