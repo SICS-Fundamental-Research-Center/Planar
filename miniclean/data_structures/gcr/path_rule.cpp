@@ -55,8 +55,41 @@ void StarRule::ComposeWith(const StarRule& other) {
 void StarRule::InitializeStarRule() { valid_vertices_ = ComputeValidCenters(); }
 
 size_t StarRule::ComputeInitSupport() {
-  std::unordered_set<VertexID> valid_centers = ComputeValidCenters();
-  return valid_centers.size();
+  if (constant_predicates_.empty()) {
+    std::pair<VertexID, VertexID> vertex_range =
+        index_collection_->GetVertexRangeByLabelID(center_label_);
+    return vertex_range.second - vertex_range.first;
+  }
+  size_t support = 0;
+  auto vlabel0 = constant_predicates_[0].get_vertex_label();
+  auto vattr_id0 = constant_predicates_[0].get_vertex_attribute_id();
+  auto vattr_value0 = constant_predicates_[0].get_constant_value();
+  const auto& attr_bucket_by_vlabel0 =
+      index_collection_->GetAttributeBucketByVertexLabel(vlabel0);
+  for (const auto& center :
+       attr_bucket_by_vlabel0.at(vattr_id0).at(vattr_value0)) {
+    bool valid = true;
+    for (size_t i = 1; i < constant_predicates_.size(); i++) {
+      if (constant_predicates_[i].get_operator_type() !=
+          refactor::OperatorType::kEq) {
+        LOG_FATAL("Only support constant predicates with operator type kEq.");
+      }
+      auto vlabel = constant_predicates_[i].get_vertex_label();
+      auto vattr_id = constant_predicates_[i].get_vertex_attribute_id();
+      auto vattr_value = constant_predicates_[i].get_constant_value();
+      const auto& attr_bucket_by_vlabel =
+          index_collection_->GetAttributeBucketByVertexLabel(vlabel);
+      if (attr_bucket_by_vlabel.at(vattr_id).at(vattr_value).count(center) ==
+          0) {
+        valid = false;
+        break;
+      }
+    }
+    if (valid) {
+      support++;
+    }
+  }
+  return support;
 }
 
 std::unordered_set<VertexID> StarRule::ComputeValidCenters() {

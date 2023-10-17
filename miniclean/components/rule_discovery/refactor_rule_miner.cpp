@@ -80,7 +80,7 @@ void RuleMiner::PrepareGCRComponents(const std::string& workspace_path) {
     // Add star rules with at least one predicate.
     std::vector<StarRule> empty_intermediate_result;
     ComposeUnits(star_rule_unit_container_[i],
-                 Configurations::Get()->max_predicate_num_ - 1, false, 0,
+                 Configurations::Get()->max_predicate_num_ - 1, true, 0,
                  &empty_intermediate_result, &star_rules_.back());
   }
 
