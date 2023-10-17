@@ -486,21 +486,20 @@ void RuleMiner::MergeHorizontalExtensions(
   for (const auto& c_c_vp : c_variable_predicates) {
     for (const auto& c_o_vp : o_variable_predicates) {
       if (c_c_vp.size() + c_o_vp.size() >= available_var_pred_num) continue;
-      bool is_compatible = true;
-      for (const auto& cvp : c_c_vp) {
-        if (!gcr.TestCompatibility(cvp, c_o_vp)) {
-          is_compatible = false;
-          break;
-        }
-      }
-      if (!is_compatible) continue;
+      if (!ConcreteVariablePredicate::TestCompatibility(c_c_vp, c_o_vp))
+        continue;
+      // if (!is_compatible) continue;
       std::vector<ConcreteVariablePredicate> c_variable_predicates;
       c_variable_predicates.insert(c_variable_predicates.end(), c_c_vp.begin(),
                                    c_c_vp.end());
       c_variable_predicates.insert(c_variable_predicates.end(), c_o_vp.begin(),
                                    c_o_vp.end());
       for (const auto& c_consequence : consequences) {
-        if (!gcr.TestCompatibility(c_consequence, c_variable_predicates))
+        std::vector<ConcreteVariablePredicate> c_consequence_vec;
+        c_consequence_vec.reserve(1);
+        c_consequence_vec.emplace_back(c_consequence);
+        if (!ConcreteVariablePredicate::TestCompatibility(
+                c_consequence_vec, c_variable_predicates))
           continue;
         extensions->emplace_back(c_consequence, c_variable_predicates);
       }
