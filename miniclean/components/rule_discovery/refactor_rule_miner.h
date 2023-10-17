@@ -64,7 +64,7 @@ class RuleMiner {
   using GCRVerticalExtension = std::pair<bool, PathRule>;
 
  public:
-  RuleMiner(MiniCleanCSRGraph* graph) : graph_(graph) {}
+  RuleMiner(MiniCleanCSRGraph& graph) : graph_(graph) {}
 
   void LoadGraph(const std::string& graph_path);
   void LoadIndexCollection(const std::string& workspace_path);
@@ -158,7 +158,7 @@ class RuleMiner {
           valid_variable_predicates);
 
  private:
-  MiniCleanCSRGraph* graph_;
+  MiniCleanCSRGraph& graph_;
   std::vector<PathPattern> path_patterns_;
   IndexCollection index_collection_;
   ConstantPredicateContainer constant_predicate_container_;

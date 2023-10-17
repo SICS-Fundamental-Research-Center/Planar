@@ -35,7 +35,7 @@ void RuleMiner::LoadGraph(const std::string& graph_path) {
 
   // Initialize ReadMessage object.
   ReadMessage read_message;
-  read_message.graph_id = graph_->get_metadata().gid;
+  read_message.graph_id = graph_.get_metadata().gid;
   read_message.response_serialized = serialized_graph.get();
 
   // Read a subgraph.
@@ -43,7 +43,7 @@ void RuleMiner::LoadGraph(const std::string& graph_path) {
 
   // Deserialize the subgraph.
   ThreadPool thread_pool(1);
-  graph_->Deserialize(thread_pool, std::move(serialized_graph));
+  graph_.Deserialize(thread_pool, std::move(serialized_graph));
 }
 
 void RuleMiner::LoadIndexCollection(const std::string& workspace_path) {
