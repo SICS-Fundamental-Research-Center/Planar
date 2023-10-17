@@ -76,7 +76,7 @@ void RuleMiner::PrepareGCRComponents(const std::string& workspace_path) {
     // Add empty star rule.
     star_rules_.emplace_back();
     if (star_rule_unit_container_[i].empty()) continue;
-    star_rules_.back().emplace_back(i, &index_collection_);
+    star_rules_.back().emplace_back(i, index_collection_);
     // Add star rules with at least one predicate.
     std::vector<StarRule> empty_intermediate_result;
     ComposeUnits(star_rule_unit_container_[i],
@@ -178,7 +178,7 @@ void RuleMiner::InitStarRuleUnitContainer() {
           continue;
         }
         star_rule_unit_container_[center_label][attr_id].emplace_back(
-            center_label, pred, value, &index_collection_);
+            center_label, pred, value, index_collection_);
       }
     }
   }

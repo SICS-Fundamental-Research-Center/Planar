@@ -91,7 +91,7 @@ void GCR::InitializeBuckets(MiniCleanCSRGraph* graph) {
       auto left_label = variable_predicates_[i].get_left_label();
       auto left_attr_id = variable_predicates_[i].get_left_attribute_id();
       auto left_label_buckts =
-          index_collection->GetAttributeBucketByVertexLabel(left_label);
+          index_collection.GetAttributeBucketByVertexLabel(left_label);
       auto value_bucket_size = left_label_buckts[left_attr_id].size();
       left_star_.ReserveBucket(value_bucket_size);
       right_star_.ReserveBucket(value_bucket_size);
@@ -146,9 +146,9 @@ bool GCR::TestVariablePredicate(
   auto index_collection = left_star_.get_index_collection();
 
   auto left_path_instances =
-      index_collection->GetPathInstanceBucket(left_vid, left_pattern_id);
+      index_collection.GetPathInstanceBucket(left_vid, left_pattern_id);
   auto right_path_instances =
-      index_collection->GetPathInstanceBucket(right_vid, right_pattern_id);
+      index_collection.GetPathInstanceBucket(right_vid, right_pattern_id);
 
   for (const auto& left_instance : left_path_instances) {
     for (const auto& right_instance : right_path_instances) {

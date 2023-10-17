@@ -11,7 +11,6 @@
 #include "miniclean/common/types.h"
 #include "miniclean/components/preprocessor/index_collection.h"
 #include "miniclean/components/preprocessor/index_metadata.h"
-#include "miniclean/data_structures/gcr/gcr_factory.h"
 #include "miniclean/data_structures/gcr/path_rule.h"
 #include "miniclean/data_structures/gcr/refactor_gcr.h"
 #include "miniclean/data_structures/gcr/refactor_predicate.h"
@@ -39,7 +38,6 @@ class RuleMiner {
   using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::
       gcr::refactor::ConcreteVariablePredicate;
   using GCR = sics::graph::miniclean::data_structures::gcr::refactor::GCR;
-  using GCRFactory = sics::graph::miniclean::data_structures::gcr::GCRFactory;
   using IndexCollection =
       sics::graph::miniclean::components::preprocessor::IndexCollection;
   // Dim. #1: vertex attribute id.
@@ -174,7 +172,6 @@ class RuleMiner {
   std::vector<std::vector<PathRule>> path_rules_;
 
   std::vector<GCR> varified_gcrs_;
-  GCRFactory gcr_factory_;
 };
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor
 

@@ -57,7 +57,7 @@ void StarRule::InitializeStarRule() { valid_vertices_ = ComputeValidCenters(); }
 size_t StarRule::ComputeInitSupport() {
   if (constant_predicates_.empty()) {
     std::pair<VertexID, VertexID> vertex_range =
-        index_collection_->GetVertexRangeByLabelID(center_label_);
+        index_collection_.GetVertexRangeByLabelID(center_label_);
     return vertex_range.second - vertex_range.first;
   }
   size_t support = 0;
@@ -65,7 +65,7 @@ size_t StarRule::ComputeInitSupport() {
   auto vattr_id0 = constant_predicates_[0].get_vertex_attribute_id();
   auto vattr_value0 = constant_predicates_[0].get_constant_value();
   const auto& attr_bucket_by_vlabel0 =
-      index_collection_->GetAttributeBucketByVertexLabel(vlabel0);
+      index_collection_.GetAttributeBucketByVertexLabel(vlabel0);
   for (const auto& center :
        attr_bucket_by_vlabel0.at(vattr_id0).at(vattr_value0)) {
     bool valid = true;
@@ -78,7 +78,7 @@ size_t StarRule::ComputeInitSupport() {
       auto vattr_id = constant_predicates_[i].get_vertex_attribute_id();
       auto vattr_value = constant_predicates_[i].get_constant_value();
       const auto& attr_bucket_by_vlabel =
-          index_collection_->GetAttributeBucketByVertexLabel(vlabel);
+          index_collection_.GetAttributeBucketByVertexLabel(vlabel);
       if (attr_bucket_by_vlabel.at(vattr_id).at(vattr_value).count(center) ==
           0) {
         valid = false;
@@ -97,7 +97,7 @@ std::unordered_set<VertexID> StarRule::ComputeValidCenters() {
   // Deal with empty constant predicates.
   if (constant_predicates_.empty()) {
     std::pair<VertexID, VertexID> vertex_range =
-        index_collection_->GetVertexRangeByLabelID(center_label_);
+        index_collection_.GetVertexRangeByLabelID(center_label_);
     for (VertexID i = vertex_range.first; i < vertex_range.second; i++) {
       valid_centers.emplace(i);
     }
@@ -109,7 +109,7 @@ std::unordered_set<VertexID> StarRule::ComputeValidCenters() {
   auto vattr_id0 = constant_predicates_[0].get_vertex_attribute_id();
   auto vattr_value0 = constant_predicates_[0].get_constant_value();
   const auto& attr_bucket_by_vlabel0 =
-      index_collection_->GetAttributeBucketByVertexLabel(vlabel0);
+      index_collection_.GetAttributeBucketByVertexLabel(vlabel0);
   valid_centers = attr_bucket_by_vlabel0.at(vattr_id0).at(vattr_value0);
   // Compute the intersection.
   for (size_t i = 1; i < constant_predicates_.size(); i++) {
@@ -121,7 +121,7 @@ std::unordered_set<VertexID> StarRule::ComputeValidCenters() {
     auto vattr_id = constant_predicates_[i].get_vertex_attribute_id();
     auto vattr_value = constant_predicates_[i].get_constant_value();
     const auto& attr_bucket_by_vlabel =
-        index_collection_->GetAttributeBucketByVertexLabel(vlabel);
+        index_collection_.GetAttributeBucketByVertexLabel(vlabel);
     std::unordered_set<VertexID> valid_vertices =
         attr_bucket_by_vlabel.at(vattr_id).at(vattr_value);
     std::unordered_set<VertexID> diff;
