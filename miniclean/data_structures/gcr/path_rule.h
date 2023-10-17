@@ -140,7 +140,7 @@ class StarRule {
   void Recover();
 
  private:
-  void ComputeValidCenters(std::unordered_set<VertexID>* valid_centers);
+  std::unordered_set<VertexID> ComputeValidCenters();
 
   size_t predicate_count_;
   VertexLabel center_label_;
