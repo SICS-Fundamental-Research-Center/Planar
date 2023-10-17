@@ -42,7 +42,7 @@ void RuleMiner::LoadGraph(const std::string& graph_path) {
 
   // Initialize ReadMessage object.
   ReadMessage read_message;
-  read_message.graph_id = graph_->get_metadata().gid;
+  read_message.graph_id = graph_.get_metadata().gid;
   read_message.response_serialized = serialized_graph.get();
 
   // Read a subgraph.
@@ -50,7 +50,7 @@ void RuleMiner::LoadGraph(const std::string& graph_path) {
 
   // Deserialize the subgraph.
   ThreadPool thread_pool(1);
-  graph_->Deserialize(thread_pool, std::move(serialized_graph));
+  graph_.Deserialize(thread_pool, std::move(serialized_graph));
 }
 
 void RuleMiner::LoadIndexCollection(const std::string& workspace_path) {
@@ -83,7 +83,7 @@ void RuleMiner::PrepareGCRComponents(const std::string& workspace_path) {
     // Add empty star rule.
     star_rules_.emplace_back();
     if (star_rule_unit_container_[i].empty()) continue;
-    star_rules_.back().emplace_back(i, &index_collection_);
+    star_rules_.back().emplace_back(i, index_collection_);
     // Add star rules with at least one predicate.
     std::vector<StarRule> empty_intermediate_result;
     ComposeUnits(star_rule_unit_container_[i],
@@ -185,7 +185,7 @@ void RuleMiner::InitStarRuleUnitContainer() {
           continue;
         }
         star_rule_unit_container_[center_label][attr_id].emplace_back(
-            center_label, pred, value, &index_collection_);
+            center_label, pred, value, index_collection_);
       }
     }
   }
@@ -259,35 +259,35 @@ void RuleMiner::MineGCRs() {
             // disk.
           }
           // If support >= threshold, confidence < threshold, go to next level.
-          ExtendGCR(gcr);
+          ExtendGCR(&gcr);
         }
       }
     }
   }
 }
 
-void RuleMiner::ExtendGCR(GCR& gcr) {
+void RuleMiner::ExtendGCR(GCR* gcr) {
   // Check whether the GCR should be extended.
-  if (gcr.get_left_star().get_path_rules().size() +
-          gcr.get_right_star().get_path_rules().size() >=
+  if (gcr->get_left_star().get_path_rules().size() +
+          gcr->get_right_star().get_path_rules().size() >=
       Configurations::Get()->max_path_num_) {
     return;
   }
   // Compute vertical extensions.
   std::vector<GCRVerticalExtension> vertical_extensions;
-  ComputeVerticalExtensions(gcr, &vertical_extensions);
+  ComputeVerticalExtensions(*gcr, &vertical_extensions);
   // Compute horizontal extensions for each vertical extension.
   for (const auto& vertical_extension : vertical_extensions) {
     // Vertical extension.
-    gcr.Backup();
-    gcr.VerticalExtend(vertical_extension);
+    gcr->Backup();
+    gcr->VerticalExtend(vertical_extension);
     // Compute horizontal extensions.
     std::vector<GCRHorizontalExtension> horizontal_extensions =
-        ComputeHorizontalExtensions(gcr, vertical_extension.first);
+        ComputeHorizontalExtensions(*gcr, vertical_extension.first);
 
     for (const auto& horizontal_extension : horizontal_extensions) {
       // Horizontal extension.
-      gcr.HorizontalExtend(horizontal_extension);
+      gcr->HorizontalExtend(horizontal_extension);
       // Compute support of GCR
 
       // If support < threshold, continue.
@@ -296,7 +296,7 @@ void RuleMiner::ExtendGCR(GCR& gcr) {
     }
     // If support >= threshold, confidence < threshold, go to next level.
     ExtendGCR(gcr);
-    gcr.Recover();
+    gcr->Recover();
   }
 }
 

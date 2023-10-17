@@ -156,7 +156,7 @@ class ConcreteVariablePredicate {
 
   // TODO: Prefer free (inline) functions over static functions. 
   //       Reference: core/util/pointer_cast.h.
-  static const bool TestCompatibility(
+  static bool TestCompatibility(
       const std::vector<ConcreteVariablePredicate>& lhs_predicates,
       const std::vector<ConcreteVariablePredicate>& rhs_predicates);
 

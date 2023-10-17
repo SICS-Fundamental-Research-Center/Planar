@@ -82,13 +82,13 @@ class StarRule {
       sics::graph::miniclean::components::preprocessor::IndexCollection;
 
  public:
-  StarRule(VertexLabel center_label, IndexCollection* index_collection)
+  StarRule(VertexLabel center_label, IndexCollection& index_collection)
       : predicate_count_(0),
         center_label_(center_label),
         index_collection_(index_collection) {}
   StarRule(VertexLabel center_label, ConstantPredicate constant_predicate,
            VertexAttributeValue attribute_value,
-           IndexCollection* index_collection)
+           IndexCollection& index_collection)
       : predicate_count_(1),
         center_label_(center_label),
         index_collection_(index_collection) {
@@ -106,7 +106,7 @@ class StarRule {
 
   const std::vector<PathRule>& get_path_rules() const { return path_rules_; }
 
-  const IndexCollection* get_index_collection() const {
+  const IndexCollection& get_index_collection() const {
     return index_collection_;
   }
 
@@ -146,7 +146,7 @@ class StarRule {
   VertexLabel center_label_;
   std::vector<ConstantPredicate> constant_predicates_;
   std::vector<PathRule> path_rules_;
-  IndexCollection* index_collection_;
+  IndexCollection& index_collection_;
 
   std::unordered_set<VertexID> valid_vertices_;
   std::unordered_set<VertexID> valid_vertices_diff_;

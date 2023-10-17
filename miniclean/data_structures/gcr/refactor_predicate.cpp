@@ -2,7 +2,7 @@
 
 namespace sics::graph::miniclean::data_structures::gcr::refactor {
 
-const bool ConcreteVariablePredicate::TestCompatibility(
+bool ConcreteVariablePredicate::TestCompatibility(
     const std::vector<ConcreteVariablePredicate>& lhs_predicates,
     const std::vector<ConcreteVariablePredicate>& rhs_predicates) {
   for (const auto& lhs_predicate : lhs_predicates) {

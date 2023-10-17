@@ -11,7 +11,6 @@
 #include "miniclean/common/types.h"
 #include "miniclean/components/preprocessor/index_collection.h"
 #include "miniclean/components/preprocessor/index_metadata.h"
-#include "miniclean/data_structures/gcr/gcr_factory.h"
 #include "miniclean/data_structures/gcr/path_rule.h"
 #include "miniclean/data_structures/gcr/refactor_gcr.h"
 #include "miniclean/data_structures/gcr/refactor_predicate.h"
@@ -39,7 +38,6 @@ class RuleMiner {
   using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::
       gcr::refactor::ConcreteVariablePredicate;
   using GCR = sics::graph::miniclean::data_structures::gcr::refactor::GCR;
-  using GCRFactory = sics::graph::miniclean::data_structures::gcr::GCRFactory;
   using IndexCollection =
       sics::graph::miniclean::components::preprocessor::IndexCollection;
   // Dim. #1: vertex attribute id.
@@ -66,7 +64,7 @@ class RuleMiner {
   using GCRVerticalExtension = std::pair<bool, PathRule>;
 
  public:
-  RuleMiner(MiniCleanCSRGraph* graph) : graph_(graph) {}
+  RuleMiner(MiniCleanCSRGraph& graph) : graph_(graph) {}
 
   void LoadGraph(const std::string& graph_path);
   void LoadIndexCollection(const std::string& workspace_path);
@@ -120,7 +118,7 @@ class RuleMiner {
       }
     }
   }
-  void ExtendGCR(GCR& gcr);
+  void ExtendGCR(GCR* gcr);
   void ComputeVerticalExtensions(const GCR& gcr,
                                  std::vector<GCRVerticalExtension>* extensions);
   std::vector<GCRHorizontalExtension> ComputeHorizontalExtensions(
@@ -146,7 +144,7 @@ class RuleMiner {
           valid_variable_predicates);
 
  private:
-  MiniCleanCSRGraph* graph_;
+  MiniCleanCSRGraph& graph_;
   std::vector<PathPattern> path_patterns_;
   IndexCollection index_collection_;
   ConstantPredicateContainer constant_predicate_container_;
@@ -160,7 +158,6 @@ class RuleMiner {
   std::vector<std::vector<PathRule>> path_rules_;
 
   std::vector<GCR> varified_gcrs_;
-  GCRFactory gcr_factory_;
 };
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor
 
