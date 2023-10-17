@@ -123,9 +123,8 @@ class RuleMiner {
   void ExtendGCR(GCR& gcr);
   void ComputeVerticalExtensions(const GCR& gcr,
                                  std::vector<GCRVerticalExtension>* extensions);
-  void ComputeHorizontalExtensions(
-      const GCR& gcr, bool from_left,
-      std::vector<GCRHorizontalExtension>* extensions);
+  std::vector<GCRHorizontalExtension> ComputeHorizontalExtensions(
+      const GCR& gcr, bool from_left);
   void ExtendConsequences(const GCR& gcr, size_t lhs_start_path_index,
                           size_t rhs_start_path_index,
                           size_t lhs_start_vertex_index,

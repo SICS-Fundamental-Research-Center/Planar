@@ -24,6 +24,13 @@ using SerializedImmutableCSRGraph =
 using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 using ThreadPool = sics::graph::core::common::ThreadPool;
 using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
+using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
+using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::gcr::
+    refactor::ConcreteVariablePredicate;
+using GCRHorizontalExtension =
+    std::pair<ConcreteVariablePredicate,
+              std::vector<ConcreteVariablePredicate>>;
+using GCRVerticalExtension = std::pair<bool, PathRule>;
 
 void RuleMiner::LoadGraph(const std::string& graph_path) {
   // Prepare reader.
@@ -241,7 +248,7 @@ void RuleMiner::MineGCRs() {
           GCR gcr = GCR(star_rules_[ll][ls], star_rules_[rl][rs]);
           // Horizontally extend the GCR.
           std::vector<GCRHorizontalExtension> horizontal_extensions;
-          ComputeHorizontalExtensions(gcr, true, &horizontal_extensions);
+          ComputeHorizontalExtensions(gcr, true);
           for (const auto& horizontal_extension : horizontal_extensions) {
             gcr.Backup();
             gcr.HorizontalExtend(horizontal_extension);
@@ -336,10 +343,10 @@ void RuleMiner::ComputeVerticalExtensions(
   }
 }
 
-void RuleMiner::ComputeHorizontalExtensions(
-    const GCR& gcr, bool from_left,
-    std::vector<GCRHorizontalExtension>* extensions) {
+std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
+    const GCR& gcr, bool from_left) {
   // Check whether the number of predicates exceeds the limit.
+  // `>=` since we need to reserve space for consequence.
   if (gcr.get_constant_predicate_count() +
           gcr.get_variable_predicates().size() >=
       Configurations::Get()->max_predicate_num_) {
