@@ -91,7 +91,7 @@ class GCR {
     return concrete_variable_predicate;
   }
 
-  std::pair<size_t, size_t> ComputeMatchAndSupport(MiniCleanCSRGraph* graph);
+  std::pair<size_t, size_t> ComputeMatchAndSupport(MiniCleanCSRGraph& graph);
 
   // Return the number of precondition predicates.
   size_t CountPreconditions() const;
@@ -99,10 +99,7 @@ class GCR {
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
                         bool consider_consequence) const;
 
-  // void StarRuleCheck(StarRule star_rule, MiniCleanCSRGraph* graph,
-  //                    StarBitmap* star_bitmap) const;
-
-  bool PathMatching(PathPattern path_pattern, MiniCleanCSRGraph* graph,
+  bool PathMatching(PathPattern path_pattern, MiniCleanCSRGraph& graph,
                     size_t vertex_id, size_t edge_id) const;
 
  private:
@@ -116,17 +113,13 @@ class GCR {
       const;
   std::vector<std::pair<size_t, size_t>> ComputeAttributeValuePair(
       const ConcreteVariablePredicate& variable_predicate) const;
-  void InitializeBuckets(MiniCleanCSRGraph* graph);
+  void InitializeBuckets(MiniCleanCSRGraph& graph);
+  bool TestStarRule(MiniCleanCSRGraph& graph, const StarRule& star_rule,
+                    VertexID center_id) const;
   bool TestVariablePredicate(
-      MiniCleanCSRGraph* graph,
+      MiniCleanCSRGraph& graph,
       const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
-      VertexID right_vid);
-  // void UpdateBitmapByVariablePredicate(ConcreteVariablePredicate predicate,
-  //                                      size_t left_attribute_value,
-  //                                      size_t right_attribute_value,
-  //                                      PathRuleUnitContainer& container,
-  //                                      StarBitmap* left_bitmap,
-  //                                      StarBitmap* right_bitmap) const;
+      VertexID right_vid) const;
 
   StarRule left_star_;
   StarRule right_star_;
@@ -134,7 +127,6 @@ class GCR {
   std::vector<ConcreteVariablePredicate> variable_predicates_;
   ConcreteVariablePredicate consequence_;
 
-  std::vector<std::vector<VertexID>> buckets_;
   int bucket_index_ = -1;
 };
 

@@ -32,7 +32,7 @@ void VertexAttributeSegment::LoadAttributeBucket(
     ValueBucket value_bucket;
     for (size_t j = 0; j < bucket_size.size(); j++) {
       value_bucket.emplace(
-          j, std::vector<VertexID>(
+          j, std::unordered_set<VertexID>(
                  bucket.begin() + bucket_offset[j],
                  bucket.begin() + bucket_offset[j] + bucket_size[j]));
     }
@@ -70,7 +70,8 @@ void VertexAttributeSegment::LoadAttributeBlock(
 void PathPatternIndex::BuildPathPatternIndex(
     const std::string& path_instances_path,
     const std::string& graph_config_path,
-    const std::string& path_pattern_path) {
+    const std::string& path_pattern_path,
+    const std::string& range_config_path) {
   // Load graph config.
   YAML::Node metadata = YAML::LoadFile(graph_config_path);
   GraphMetadata graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
@@ -91,6 +92,7 @@ void PathPatternIndex::BuildPathPatternIndex(
   // Build buckets.
   BuildPathInstanceBucket(path_instances_path, path_pattern);
   BuildVertexBucket(path_instances_buckets_by_vertex_id_);
+  BuildVertexRange(range_config_path);
 }
 
 void PathPatternIndex::BuildPathInstanceBucket(
@@ -152,33 +154,30 @@ void PathPatternIndex::BuildVertexBucket(
   for (size_t i = 0; i < path_instances_buckets_by_vertex_id.size(); i++) {
     // For each pattern.
     for (size_t j = 0; j < path_instances_buckets_by_vertex_id[i].size(); j++) {
-      for (const auto& instance : path_instances_buckets_by_vertex_id[i][j]) {
-        if (instance[0] != i) {
-          LOG_FATAL("Instance[0] != i");
-        }
-        vertex_bucket_by_pattern_id_[j].push_back(instance[0]);
-      }
+      if (path_instances_buckets_by_vertex_id[i][j].size() == 0) continue;
+      vertex_bucket_by_pattern_id_[j].emplace(i);
     }
   }
-  // remove redundent vertices.
-  for (size_t i = 0; i < vertex_bucket_by_pattern_id_.size(); i++) {
-    std::sort(vertex_bucket_by_pattern_id_[i].begin(),
-              vertex_bucket_by_pattern_id_[i].end());
-    auto it = std::unique(vertex_bucket_by_pattern_id_[i].begin(),
-                          vertex_bucket_by_pattern_id_[i].end());
-    // TODO: `erase` is not efficient.
-    vertex_bucket_by_pattern_id_[i].erase(
-        it, vertex_bucket_by_pattern_id_[i].end());
+}
+
+void PathPatternIndex::BuildVertexRange(const std::string& range_config_path) {
+  YAML::Node vertex_range_node = YAML::LoadFile(range_config_path);
+  std::vector<size_t> vertex_range =
+      vertex_range_node["VertexLabelRange"].as<std::vector<size_t>>();
+  vertex_range_by_label_id_.reserve(vertex_range.size()-1);
+  for (size_t i = 0; i < vertex_range.size() - 1; i++) {
+    vertex_range_by_label_id_.emplace_back(
+        std::make_pair(vertex_range[i], vertex_range[i + 1]));
   }
 }
 
 void IndexCollection::LoadIndexCollection(
     const std::string& vertex_attribute_file,
     const std::string& path_instance_file, const std::string& graph_config_path,
-    const std::string& path_pattern_path) {
+    const std::string& path_pattern_path, const std::string& range_config_path) {
   LoadVertexAttributeSegment(vertex_attribute_file);
   LoadPathPatternIndex(path_instance_file, graph_config_path,
-                       path_pattern_path);
+                       path_pattern_path, range_config_path);
 }
 
 void IndexCollection::LoadVertexAttributeSegment(
@@ -191,9 +190,10 @@ void IndexCollection::LoadVertexAttributeSegment(
 void IndexCollection::LoadPathPatternIndex(
     const std::string& path_instances_path,
     const std::string& graph_config_path,
-    const std::string& path_pattern_path) {
+    const std::string& path_pattern_path,
+    const std::string& range_config_path) {
   path_pattern_index_.BuildPathPatternIndex(
-      path_instances_path, graph_config_path, path_pattern_path);
+      path_instances_path, graph_config_path, path_pattern_path, range_config_path);
 }
 
 }  // namespace sics::graph::miniclean::components::preprocessor

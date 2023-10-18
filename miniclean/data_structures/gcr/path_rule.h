@@ -1,7 +1,7 @@
 #ifndef MINICLEAN_DATA_STRUCTURES_GCR_PATH_RULE_H_
 #define MINICLEAN_DATA_STRUCTURES_GCR_PATH_RULE_H_
 
-#include <list>
+#include <unordered_set>
 
 #include "miniclean/common/types.h"
 #include "miniclean/components/preprocessor/index_collection.h"
@@ -82,13 +82,13 @@ class StarRule {
       sics::graph::miniclean::components::preprocessor::IndexCollection;
 
  public:
-  StarRule(VertexLabel center_label, IndexCollection* index_collection)
+  StarRule(VertexLabel center_label, IndexCollection& index_collection)
       : predicate_count_(0),
         center_label_(center_label),
         index_collection_(index_collection) {}
   StarRule(VertexLabel center_label, ConstantPredicate constant_predicate,
            VertexAttributeValue attribute_value,
-           IndexCollection* index_collection)
+           IndexCollection& index_collection)
       : predicate_count_(1),
         center_label_(center_label),
         index_collection_(index_collection) {
@@ -106,22 +106,21 @@ class StarRule {
 
   const std::vector<PathRule>& get_path_rules() const { return path_rules_; }
 
-  // TODO: use reference instead.
-  IndexCollection* get_index_collection() const {
+  const IndexCollection& get_index_collection() const {
     return index_collection_;
   }
 
-  const std::vector<VertexID>& get_valid_vertices() const {
+  const std::unordered_set<VertexID>& get_valid_vertices() const {
     return valid_vertices_;
   }
 
-  const std::vector<std::vector<VertexID>>& get_bucket() const {
-    return bucket_;
+  const std::vector<std::unordered_set<VertexID>>& get_bucket() const {
+    return buckets_;
   }
 
-  void ReserveBucket(size_t size) { bucket_.reserve(size); }
+  void ReserveBucket(size_t size) { buckets_.reserve(size); }
   void AddVertexToBucket(size_t bucket_index, VertexID vertex_id) {
-    bucket_[bucket_index].emplace_back(vertex_id);
+    buckets_[bucket_index].insert(vertex_id);
   }
 
   void AddPathRule(const PathRule& path_rule) {
@@ -132,22 +131,27 @@ class StarRule {
   void ComposeWith(const StarRule& other);
 
   void InitializeStarRule();
-  size_t ComputeInitSupport() const;
+  size_t ComputeInitSupport();
+  void SetIntersection(std::unordered_set<VertexID>* base_set,
+                       std::unordered_set<VertexID>* comp_set,
+                       std::unordered_set<VertexID>* diff_set);
 
   void Backup();
   void Recover();
 
  private:
-  std::vector<VertexID> ComputeValidCenters() const;
+  std::unordered_set<VertexID> ComputeValidCenters();
 
   size_t predicate_count_;
   VertexLabel center_label_;
   std::vector<ConstantPredicate> constant_predicates_;
   std::vector<PathRule> path_rules_;
-  IndexCollection* index_collection_;
+  IndexCollection& index_collection_;
 
-  std::vector<VertexID> valid_vertices_;
-  std::vector<std::vector<VertexID>> bucket_;
+  std::unordered_set<VertexID> valid_vertices_;
+  std::unordered_set<VertexID> valid_vertices_diff_;
+  std::vector<std::unordered_set<VertexID>> buckets_;
+  std::vector<std::unordered_set<VertexID>> bucket_diffs_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr
