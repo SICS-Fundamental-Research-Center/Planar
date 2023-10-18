@@ -383,7 +383,8 @@ std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
 }
 
 std::vector<ConcreteVariablePredicate> RuleMiner::InstantiateVariablePredicates(
-    const GCR& gcr, const std::vector<VariablePredicate>& variable_predicates) const {
+    const GCR& gcr,
+    const std::vector<VariablePredicate>& variable_predicates) const {
   std::vector<ConcreteVariablePredicate> results;
   auto left_path_rules = gcr.get_left_star().get_path_rules();
   auto right_path_rules = gcr.get_right_star().get_path_rules();
