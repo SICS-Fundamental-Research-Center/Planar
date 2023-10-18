@@ -461,7 +461,10 @@ std::vector<GCRHorizontalExtension> RuleMiner::ExtendVariablePredicates(
   std::vector<ConcreteVariablePredicate> variable_predicates =
       InstantiateVariablePredicates(gcr, variable_predicates_);
   std::vector<std::vector<ConcreteVariablePredicate>> c_variable_predicates;
+  c_variable_predicates.reserve(ComputeCombinationNum(
+      variable_predicates.size(), available_var_pred_num));
   std::vector<ConcreteVariablePredicate> empty_intermediate_result;
+  empty_intermediate_result.reserve(available_var_pred_num);
   EnumerateValidVariablePredicates(
       variable_predicates, 0, available_var_pred_num,
       &empty_intermediate_result, &c_variable_predicates);
@@ -515,6 +518,16 @@ void RuleMiner::EnumerateValidVariablePredicates(
                                      valid_variable_predicates);
     intermediate_results->pop_back();
   }
+}
+
+// Compute the number of combinations of k elements from a set of n elements.
+size_t ComputeCombinationNum(size_t n, size_t k) {
+  if (k > n || n <= 0) return 0;
+  size_t result = 1;
+  for (size_t i = 1; i <= k; ++i) {
+    result = result * (n - i + 1) / i;
+  }
+  return result;
 }
 
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor
