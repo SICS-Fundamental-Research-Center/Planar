@@ -194,7 +194,7 @@ bool GCR::TestVariablePredicate(
   return false;
 }
 
-bool GCR::PathMatching(PathPattern path_pattern, const MiniCleanCSRGraph& graph,
+bool GCR::PathMatching(const PathPattern path_pattern, const MiniCleanCSRGraph& graph,
                        size_t vertex_id, size_t edge_id) const {
   // Check depth
   if (edge_id == path_pattern.size()) return true;
