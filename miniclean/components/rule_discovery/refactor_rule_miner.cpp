@@ -502,20 +502,20 @@ std::vector<GCRHorizontalExtension> RuleMiner::MergeHorizontalExtensions(
 void RuleMiner::EnumerateValidVariablePredicates(
     const std::vector<ConcreteVariablePredicate>& variable_predicates,
     size_t start_idx, size_t max_item_num,
-    std::vector<ConcreteVariablePredicate>* intermediate_result,
+    std::vector<ConcreteVariablePredicate>* intermediate_results,
     std::vector<std::vector<ConcreteVariablePredicate>>*
         valid_variable_predicates) const {
   // Check return condition.
-  if (intermediate_result->size() >= max_item_num) {
+  if (intermediate_results->size() >= max_item_num) {
     return;
   }
   for (size_t i = start_idx; i < variable_predicates.size(); i++) {
-    intermediate_result->emplace_back(variable_predicates[i]);
-    valid_variable_predicates->emplace_back(*intermediate_result);
+    intermediate_results->emplace_back(variable_predicates[i]);
+    valid_variable_predicates->emplace_back(*intermediate_results);
     EnumerateValidVariablePredicates(variable_predicates, i + 1, max_item_num,
-                                     intermediate_result,
+                                     intermediate_results,
                                      valid_variable_predicates);
-    intermediate_result->pop_back();
+    intermediate_results->pop_back();
   }
 }
 
