@@ -138,6 +138,7 @@ class RuleMiner {
       std::vector<ConcreteVariablePredicate>* intermediate_result,
       std::vector<std::vector<ConcreteVariablePredicate>>*
           valid_variable_predicates) const;
+  size_t ComputeCombinationNum(size_t n, size_t k) const;
 
  private:
   MiniCleanCSRGraph& graph_;

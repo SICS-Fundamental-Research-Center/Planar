@@ -521,7 +521,8 @@ void RuleMiner::EnumerateValidVariablePredicates(
 }
 
 // Compute the number of combinations of k elements from a set of n elements.
-size_t ComputeCombinationNum(size_t n, size_t k) {
+// TODO: this function should not be bonded to this class, make it free.
+size_t RuleMiner::ComputeCombinationNum(size_t n, size_t k) const {
   if (k > n || n <= 0) return 0;
   size_t result = 1;
   for (size_t i = 1; i <= k; ++i) {
