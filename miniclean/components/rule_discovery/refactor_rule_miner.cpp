@@ -245,18 +245,16 @@ void RuleMiner::MineGCRs() {
       for (size_t ls = 0; ls < star_rules_[ll].size(); ls++) {
         size_t j_start = (ll == rl) ? ls : 0;
         for (size_t rs = j_start; rs < star_rules_[rl].size(); rs++) {
+          // Build GCR and initiaize star rules.
           GCR gcr = GCR(star_rules_[ll][ls], star_rules_[rl][rs]);
           // Horizontally extend the GCR.
           std::vector<GCRHorizontalExtension> horizontal_extensions =
               ComputeHorizontalExtensions(gcr, true);
           for (const auto& horizontal_extension : horizontal_extensions) {
-            gcr.HorizontalExtend(horizontal_extension);
+            gcr.HorizontalExtend(horizontal_extension, graph_);
             // Compute support of GCR
-
             // If support < threshold, continue.
-
-            // If support >= threshold, confidence >= threshold, write back to
-            // disk.
+            // If support, confidenc >= threshold, write back to disk.
           }
           // If support >= threshold, confidence < threshold, go to next level.
           ExtendGCR(&gcr);
@@ -287,7 +285,7 @@ void RuleMiner::ExtendGCR(GCR* gcr) {
 
     for (const auto& horizontal_extension : horizontal_extensions) {
       // Horizontal extension.
-      gcr->HorizontalExtend(horizontal_extension);
+      gcr->HorizontalExtend(horizontal_extension, graph_);
       // Compute support of GCR
 
       // If support < threshold, continue.

@@ -145,10 +145,10 @@ class ImmutableCSRGraph : public Serializable {
   VertexID GetOutOffsetByLocalID(VertexID i) const {
     return out_offset_base_pointer_[i];
   }
-  VertexID* GetIncomingEdgesByLocalID(VertexID i) {
+  VertexID* GetIncomingEdgesByLocalID(VertexID i) const {
     return incoming_edges_base_pointer_ + in_offset_base_pointer_[i];
   }
-  VertexID* GetOutgoingEdgesByLocalID(VertexID i) {
+  VertexID* GetOutgoingEdgesByLocalID(VertexID i) const {
     return outgoing_edges_base_pointer_ + out_offset_base_pointer_[i];
   }
   VertexID GetInDegreeByLocalID(VertexID i) const {

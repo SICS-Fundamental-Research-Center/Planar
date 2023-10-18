@@ -82,13 +82,13 @@ class StarRule {
       sics::graph::miniclean::components::preprocessor::IndexCollection;
 
  public:
-  StarRule(VertexLabel center_label, IndexCollection& index_collection)
+  StarRule(VertexLabel center_label, const IndexCollection& index_collection)
       : predicate_count_(0),
         center_label_(center_label),
         index_collection_(index_collection) {}
   StarRule(VertexLabel center_label, ConstantPredicate constant_predicate,
            VertexAttributeValue attribute_value,
-           IndexCollection& index_collection)
+           const IndexCollection& index_collection)
       : predicate_count_(1),
         center_label_(center_label),
         index_collection_(index_collection) {
@@ -110,17 +110,14 @@ class StarRule {
     return index_collection_;
   }
 
-  const std::unordered_set<VertexID>& get_valid_vertices() const {
-    return valid_vertices_;
+  const std::vector<std::unordered_set<VertexID>>& get_valid_vertex_bucket()
+      const {
+    return valid_vertex_bucket_;
   }
 
-  const std::vector<std::unordered_set<VertexID>>& get_bucket() const {
-    return bucket_;
-  }
-
-  void ReserveBucket(size_t size) { bucket_.reserve(size); }
-  void AddVertexToBucket(size_t bucket_index, VertexID vertex_id) {
-    bucket_[bucket_index].emplace(vertex_id);
+  const void UpdateValidVertexBucket(
+      std::vector<std::unordered_set<VertexID>>* new_valid_vertex_bucket) {
+    std::swap(valid_vertex_bucket_, *new_valid_vertex_bucket);
   }
 
   void AddPathRule(const PathRule& path_rule) {
@@ -146,12 +143,10 @@ class StarRule {
   VertexLabel center_label_;
   std::vector<ConstantPredicate> constant_predicates_;
   std::vector<PathRule> path_rules_;
-  IndexCollection& index_collection_;
+  const IndexCollection& index_collection_;
 
-  std::unordered_set<VertexID> valid_vertices_;
-  std::unordered_set<VertexID> valid_vertices_diff_;
-  std::vector<std::unordered_set<VertexID>> bucket_;
-  std::vector<std::unordered_set<VertexID>> bucket_diff_;
+  std::vector<std::unordered_set<VertexID>> valid_vertex_bucket_;
+  std::vector<std::unordered_set<VertexID>> valid_vertex_bucket_diff_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

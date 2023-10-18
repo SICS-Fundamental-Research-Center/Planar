@@ -52,7 +52,9 @@ void StarRule::ComposeWith(const StarRule& other) {
   predicate_count_ += other.predicate_count_;
 }
 
-void StarRule::InitializeStarRule() { valid_vertices_ = ComputeValidCenters(); }
+void StarRule::InitializeStarRule() {
+  valid_vertex_bucket_.emplace_back(ComputeValidCenters());
+}
 
 size_t StarRule::ComputeInitSupport() {
   if (constant_predicates_.empty()) {

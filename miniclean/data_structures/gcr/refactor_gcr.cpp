@@ -28,21 +28,55 @@ void GCR::VerticalExtend(const GCRVerticalExtension& vertical_extension) {
   // Update vertex set.
 }
 
-void GCR::HorizontalExtend(const GCRHorizontalExtension& horizontal_extension) {
+void GCR::HorizontalExtend(const GCRHorizontalExtension& horizontal_extension,
+                           const MiniCleanCSRGraph& graph) {
   set_consequence(horizontal_extension.first);
-  for (const auto& variable_predicate : horizontal_extension.second) {
-    AddVariablePredicateToBack(variable_predicate);
+  for (const auto& c_variable_predicate : horizontal_extension.second) {
+    AddVariablePredicateToBack(c_variable_predicate);
+  }
+  // Update vertex buckets.
+  // 1. Check whether the previous buckets can be reused.
+  if (bucket_id_.first.first != MAX_VERTEX_ID) {
+    // Have initialized buckets.
+    for (const auto& c_variable_predicate : horizontal_extension.second) {
+      if (c_variable_predicate.get_left_label() == bucket_id_.first.first &&
+          c_variable_predicate.get_left_attribute_id() ==
+              bucket_id_.first.second &&
+          c_variable_predicate.get_right_label() == bucket_id_.second.first &&
+          c_variable_predicate.get_right_attribute_id() ==
+              bucket_id_.second.second) {
+        // Can reuse the buckets, return directly.
+        return;
+      }
+    }
+  }
+  // 2. Re-bucketing.
+  // TODO: Determine which variable predicate is the best choice to
+  // re-bucketing.
+  for (const auto& c_variable_predicate : horizontal_extension.second) {
+    // Check whether the predicate located at the centers.
+    if (c_variable_predicate.get_left_path_index() != 0 ||
+        c_variable_predicate.get_left_vertex_index() != 0 ||
+        c_variable_predicate.get_right_path_index() != 0 ||
+        c_variable_predicate.get_right_vertex_index() != 0)
+      continue;
+    // Set the bucket id.
+    bucket_id_.first.first = c_variable_predicate.get_left_label();
+    bucket_id_.first.second = c_variable_predicate.get_left_attribute_id();
+    bucket_id_.second.first = c_variable_predicate.get_right_label();
+    bucket_id_.second.second = c_variable_predicate.get_right_attribute_id();
+    // Initialize buckets.
   }
 }
 
 std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
-    MiniCleanCSRGraph& graph) {
+    const MiniCleanCSRGraph& graph) {
   size_t support = 0;
   size_t match = 0;
-  InitializeBuckets(graph);
+
   bool preconditions_match = true;
-  auto left_bucket = left_star_.get_bucket();
-  auto right_bucket = right_star_.get_bucket();
+  auto left_bucket = left_star_.get_valid_vertex_bucket();
+  auto right_bucket = right_star_.get_valid_vertex_bucket();
   for (size_t i = 0; i < left_bucket.size(); i++) {
     for (const auto& left_vertex : left_bucket[i]) {
       for (const auto& right_vertex : right_bucket[i]) {
@@ -69,64 +103,58 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
   return std::make_pair(match, support);
 }
 
-void GCR::InitializeBuckets(MiniCleanCSRGraph& graph) {
+void GCR::InitializeBuckets(
+    const MiniCleanCSRGraph& graph,
+    const ConcreteVariablePredicate& c_variable_predicate) {
   auto index_collection = left_star_.get_index_collection();
-  std::unordered_set<VertexID> left_valid_vertices = left_star_.get_valid_vertices();
-  std::unordered_set<VertexID> right_valid_vertices = right_star_.get_valid_vertices();
-  if (left_star_.get_bucket().size() != right_star_.get_bucket().size()) {
-    LOG_FATAL("Number of buckets in left and right star are not the same.");
+
+  auto left_label = c_variable_predicate.get_left_label();
+  auto left_attr_id = c_variable_predicate.get_left_attribute_id();
+  auto left_label_buckts =
+      index_collection.GetAttributeBucketByVertexLabel(left_label);
+  auto right_label = c_variable_predicate.get_right_label();
+  auto right_attr_id = c_variable_predicate.get_right_attribute_id();
+  auto right_label_buckts =
+      index_collection.GetAttributeBucketByVertexLabel(right_label);
+  auto left_value_bucket_size = left_label_buckts[left_attr_id].size();
+  auto right_value_bucket_size = right_label_buckts[right_attr_id].size();
+
+  if (left_value_bucket_size != right_value_bucket_size) {
+    LOG_FATAL("The value bucket size of left and right are not equal.");
   }
-  if (left_star_.get_bucket().size() == 0) {
-    // Initialize buckets.
-    for (size_t i = 0; i < variable_predicates_.size(); i++) {
-      auto left_path_id = variable_predicates_[i].get_left_path_index();
-      auto right_path_id = variable_predicates_[i].get_right_path_index();
-      auto left_vertex_id = variable_predicates_[i].get_left_vertex_index();
-      auto right_vertex_id = variable_predicates_[i].get_right_vertex_index();
-      if (left_path_id != 0 || left_vertex_id != 0 || right_path_id != 0 ||
-          right_vertex_id != 0)
-        continue;
-      bucket_index_ = i;
-      auto left_label = variable_predicates_[i].get_left_label();
-      auto left_attr_id = variable_predicates_[i].get_left_attribute_id();
-      auto left_label_buckts =
-          index_collection.GetAttributeBucketByVertexLabel(left_label);
-      auto value_bucket_size = left_label_buckts[left_attr_id].size();
-      left_star_.ReserveBucket(value_bucket_size);
-      right_star_.ReserveBucket(value_bucket_size);
-      for (const auto& left_valid_vertex : left_valid_vertices) {
-        auto value = graph.GetVertexAttributeValuesByLocalID(
-            left_valid_vertex)[left_attr_id];
-        left_star_.AddVertexToBucket(value, left_valid_vertex);
-      }
-      for (const auto& right_valid_vertex : right_valid_vertices) {
-        auto value = graph.GetVertexAttributeValuesByLocalID(
-            right_valid_vertex)[left_attr_id];
-        right_star_.AddVertexToBucket(value, right_valid_vertex);
-      }
-      break;
+
+  std::vector<std::unordered_set<VertexID>> new_left_valid_vertex_bucket;
+  std::vector<std::unordered_set<VertexID>> new_right_valid_vertex_bucket;
+
+  new_left_valid_vertex_bucket.resize(left_value_bucket_size);
+  new_right_valid_vertex_bucket.resize(right_value_bucket_size);
+
+  auto left_valid_vertex_bucket = left_star_.get_valid_vertex_bucket();
+  auto right_valid_vertex_bucket = right_star_.get_valid_vertex_bucket();
+  for (const auto& left_bucket : left_valid_vertex_bucket) {
+    for (const auto& vid : left_bucket) {
+      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
+      new_left_valid_vertex_bucket[value].emplace(vid);
     }
   }
-  if (left_star_.get_bucket().size() == 0) {
-    // All vertices in one bucket.
-    left_star_.ReserveBucket(1);
-    right_star_.ReserveBucket(1);
-    for (const auto& left_valid_vertex : left_valid_vertices) {
-      left_star_.AddVertexToBucket(0, left_valid_vertex);
-    }
-    for (const auto& right_valid_vertex : right_valid_vertices) {
-      right_star_.AddVertexToBucket(0, right_valid_vertex);
+  for (const auto& right_bucket : right_valid_vertex_bucket) {
+    for (const auto& vid : right_bucket) {
+      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
+      new_right_valid_vertex_bucket[value].emplace(vid);
     }
   }
+
+  left_star_.UpdateValidVertexBucket(&new_left_valid_vertex_bucket);
+  right_star_.UpdateValidVertexBucket(&new_right_valid_vertex_bucket);
 }
 
-bool GCR::TestStarRule(MiniCleanCSRGraph& graph, const StarRule& star_rule,
-                       VertexID center_id) const {
+bool GCR::TestStarRule(const MiniCleanCSRGraph& graph,
+                       const StarRule& star_rule, VertexID center_id) const {
   // TODO: Implement it.
 }
 
 bool GCR::TestVariablePredicate(
-    MiniCleanCSRGraph& graph,
+    const MiniCleanCSRGraph& graph,
     const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
     VertexID right_vid) const {
   auto left_path_id = variable_predicate.get_left_path_index();
@@ -140,8 +168,8 @@ bool GCR::TestVariablePredicate(
   auto right_pattern_id =
       left_star_.get_path_rules()[right_path_id].get_path_pattern_id();
 
-  auto left_bucket = left_star_.get_bucket();
-  auto right_bucket = right_star_.get_bucket();
+  auto left_bucket = left_star_.get_valid_vertex_bucket();
+  auto right_bucket = right_star_.get_valid_vertex_bucket();
   auto index_collection = left_star_.get_index_collection();
 
   auto left_path_instances =
@@ -166,8 +194,7 @@ bool GCR::TestVariablePredicate(
   return false;
 }
 
-
-bool GCR::PathMatching(PathPattern path_pattern, MiniCleanCSRGraph& graph,
+bool GCR::PathMatching(PathPattern path_pattern, const MiniCleanCSRGraph& graph,
                        size_t vertex_id, size_t edge_id) const {
   // Check depth
   if (edge_id == path_pattern.size()) return true;
