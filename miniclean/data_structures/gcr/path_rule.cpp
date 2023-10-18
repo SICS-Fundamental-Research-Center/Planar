@@ -53,7 +53,7 @@ void StarRule::ComposeWith(const StarRule& other) {
 }
 
 void StarRule::InitializeStarRule() {
-  valid_vertex_bucket_.emplace_back(ComputeValidCenters());
+  valid_vertex_buckets_.emplace_back(ComputeValidCenters());
 }
 
 size_t StarRule::ComputeInitSupport() {

@@ -5,8 +5,8 @@
 
 #include <fstream>
 #include <map>
-#include <unordered_set>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "core/util/logging.h"
@@ -21,7 +21,8 @@ class VertexAttributeSegment {
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
   using VertexAttributeValue =
       sics::graph::miniclean::common::VertexAttributeValue;
-  using ValueBucket = std::map<VertexAttributeValue, std::unordered_set<VertexID>>;
+  using ValueBucket =
+      std::map<VertexAttributeValue, std::unordered_set<VertexID>>;
   using ValueBlock = std::vector<std::vector<VertexID>>;
   using AttributeBucket = std::map<VertexAttributeID, ValueBucket>;
   using AttributeBlock = std::map<VertexAttributeID, ValueBlock>;
@@ -142,7 +143,8 @@ class IndexCollection {
   using PathPatternID = sics::graph::miniclean::common::PathPatternID;
   using PathInstance = std::vector<VertexID>;
   using PathInstanceBucket = std::vector<PathInstance>;
-  using ValueBucket = std::map<VertexAttributeValue, std::unordered_set<VertexID>>;
+  using ValueBucket =
+      std::map<VertexAttributeValue, std::unordered_set<VertexID>>;
   using AttributeBucket = std::map<VertexAttributeID, ValueBucket>;
   using VertexBucket = std::unordered_set<VertexID>;
 
