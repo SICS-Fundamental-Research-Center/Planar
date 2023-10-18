@@ -69,7 +69,6 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
   return std::make_pair(match, support);
 }
 
-// TODO: use reference instead.
 void GCR::InitializeBuckets(MiniCleanCSRGraph& graph) {
   auto index_collection = left_star_.get_index_collection();
   std::unordered_set<VertexID> left_valid_vertices = left_star_.get_valid_vertices();
