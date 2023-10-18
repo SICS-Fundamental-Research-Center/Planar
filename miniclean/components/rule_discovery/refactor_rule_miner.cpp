@@ -246,7 +246,7 @@ void RuleMiner::MineGCRs() {
   }
 }
 
-void RuleMiner::ExtendGCR(GCR* gcr) {
+void RuleMiner::ExtendGCR(GCR* gcr) const {
   // Check whether the GCR should be extended.
   if (gcr->get_left_star().get_path_rules().size() +
           gcr->get_right_star().get_path_rules().size() >=
@@ -285,7 +285,7 @@ void RuleMiner::ExtendGCR(GCR* gcr) {
 }
 
 void RuleMiner::ComputeVerticalExtensions(
-    const GCR& gcr, std::vector<GCRVerticalExtension>* extensions) {
+    const GCR& gcr, std::vector<GCRVerticalExtension>* extensions) const {
   // Check whether the number of path rules exceeds the limit.
   if (gcr.get_left_star().get_path_rules().size() +
           gcr.get_right_star().get_path_rules().size() >=
@@ -321,7 +321,7 @@ void RuleMiner::ComputeVerticalExtensions(
 
 void RuleMiner::ComputeHorizontalExtensions(
     const GCR& gcr, bool from_left,
-    std::vector<GCRHorizontalExtension>* extensions) {
+    std::vector<GCRHorizontalExtension>* extensions) const {
   // Check whether the number of predicates exceeds the limit.
   if (gcr.get_constant_predicate_count() +
           gcr.get_variable_predicates().size() >=
@@ -359,7 +359,7 @@ void RuleMiner::ComputeHorizontalExtensions(
 void RuleMiner::ExtendConsequences(
     const GCR& gcr, size_t lhs_start_path_index, size_t rhs_start_path_index,
     size_t lhs_start_vertex_index, size_t rhs_start_vertex_index,
-    std::vector<ConcreteVariablePredicate>* consequences) {
+    std::vector<ConcreteVariablePredicate>* consequences) const {
   auto left_path_rules = gcr.get_left_star().get_path_rules();
   auto right_path_rules = gcr.get_right_star().get_path_rules();
   for (const auto& consequence : consequence_predicates_) {
@@ -398,7 +398,7 @@ void RuleMiner::ExtendVariablePredicates(
     const GCR& gcr, const std::vector<ConcreteVariablePredicate>& consequences,
     size_t lhs_start_path_index, size_t rhs_start_path_index,
     size_t lhs_start_vertex_index, size_t rhs_start_vertex_index,
-    std::vector<GCRHorizontalExtension>* extensions) {
+    std::vector<GCRHorizontalExtension>* extensions) const {
   // Check the available number of variable predicates.
   size_t const_pred_num = gcr.get_constant_predicate_count();
   size_t var_pred_num = gcr.get_variable_predicates().size();
@@ -445,7 +445,7 @@ void RuleMiner::GenerateVariablePredicates(
     size_t rhs_start_path_index, size_t lhs_start_vertex_index,
     size_t rhs_start_vertex_index,
     std::vector<ConcreteVariablePredicate>* c_variable_predicates,
-    std::vector<ConcreteVariablePredicate>* o_variable_predicates) {
+    std::vector<ConcreteVariablePredicate>* o_variable_predicates) const {
   auto left_path_rules = gcr.get_left_star().get_path_rules();
   auto right_path_rules = gcr.get_right_star().get_path_rules();
   auto target_left_label = variable_predicate.get_lhs_label();
@@ -483,7 +483,7 @@ void RuleMiner::MergeHorizontalExtensions(
     std::vector<std::vector<ConcreteVariablePredicate>> c_variable_predicates,
     std::vector<std::vector<ConcreteVariablePredicate>> o_variable_predicates,
     size_t available_var_pred_num,
-    std::vector<GCRHorizontalExtension>* extensions) {
+    std::vector<GCRHorizontalExtension>* extensions) const {
   for (const auto& c_c_vp : c_variable_predicates) {
     for (const auto& c_o_vp : o_variable_predicates) {
       if (c_c_vp.size() + c_o_vp.size() >= available_var_pred_num) continue;
@@ -513,7 +513,7 @@ void RuleMiner::EnumerateValidVariablePredicates(
     size_t start_idx, size_t max_item_num,
     std::vector<ConcreteVariablePredicate>& intermediate_result,
     std::vector<std::vector<ConcreteVariablePredicate>>*
-        valid_variable_predicates) {
+        valid_variable_predicates) const {
   // Check return condition.
   if (intermediate_result.size() >= max_item_num) {
     return;
