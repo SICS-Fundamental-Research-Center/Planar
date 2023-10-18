@@ -352,23 +352,6 @@ std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
     return extensions;
   }
 
-  // Compute left and right bias.
-  auto left_path_rules = gcr.get_left_star().get_path_rules();
-  auto right_path_rules = gcr.get_right_star().get_path_rules();
-  size_t lhs_start_path_index = 0;
-  size_t rhs_start_path_index = 0;
-  size_t lhs_start_vertex_index = 0;
-  size_t rhs_start_vertex_index = 0;
-  if (from_left) {
-    // Choose the last path rule from the left star.
-    lhs_start_path_index = left_path_rules.size() - 1;
-    // Skip the center vertex.
-    lhs_start_vertex_index = 1;
-  } else {
-    rhs_start_path_index = right_path_rules.size() - 1;
-    rhs_start_vertex_index = 1;
-  }
-
   // Assign consequence.
   std::vector<ConcreteVariablePredicate> c_consequences =
       InstantiateVariablePredicates(gcr, consequence_predicates_);
@@ -376,9 +359,7 @@ std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
   // Assign variable predicates.
   // Note that, unlike constant predicates which can be inherited from the
   // previous GCR, variable predicates need to be enumerated from scratch.
-  extensions = ExtendVariablePredicates(
-      gcr, c_consequences, lhs_start_path_index, rhs_start_path_index,
-      lhs_start_vertex_index, rhs_start_vertex_index);
+  extensions = ExtendVariablePredicates(gcr, c_consequences);
   return extensions;
 }
 
@@ -434,9 +415,8 @@ std::vector<ConcreteVariablePredicate> RuleMiner::InstantiateVariablePredicates(
 }
 
 std::vector<GCRHorizontalExtension> RuleMiner::ExtendVariablePredicates(
-    const GCR& gcr, const std::vector<ConcreteVariablePredicate>& consequences,
-    size_t lhs_start_path_index, size_t rhs_start_path_index,
-    size_t lhs_start_vertex_index, size_t rhs_start_vertex_index) {
+    const GCR& gcr,
+    const std::vector<ConcreteVariablePredicate>& consequences) {
   std::vector<GCRHorizontalExtension> extensions;
   // Check the available number of variable predicates.
   size_t const_pred_num = gcr.get_constant_predicate_count();
