@@ -27,10 +27,10 @@ using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
 using PathPattern = sics::graph::miniclean::common::PathPattern;
 using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::gcr::
     refactor::ConcreteVariablePredicate;
-using GCRHorizontalExtension =
-    std::pair<ConcreteVariablePredicate,
-              std::vector<ConcreteVariablePredicate>>;
-using GCRVerticalExtension = std::pair<bool, PathRule>;
+using GCRVerticalExtension = sics::graph::miniclean::data_structures::gcr::
+    refactor::GCRVerticalExtension;
+using GCRHorizontalExtension = sics::graph::miniclean::data_structures::gcr::
+    refactor::GCRHorizontalExtension;
 
 void RuleMiner::LoadGraph(const std::string& graph_path) {
   // Prepare reader.
@@ -283,7 +283,7 @@ void RuleMiner::ExtendGCR(GCR* gcr) const {
     gcr->VerticalExtend(vertical_extension);
     // Compute horizontal extensions.
     std::vector<GCRHorizontalExtension> horizontal_extensions =
-        ComputeHorizontalExtensions(*gcr, vertical_extension.first);
+        ComputeHorizontalExtensions(*gcr, vertical_extension.extend_to_left);
 
     for (const auto& horizontal_extension : horizontal_extensions) {
       // Horizontal extension.

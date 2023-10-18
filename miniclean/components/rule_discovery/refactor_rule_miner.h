@@ -54,14 +54,10 @@ class RuleMiner {
   using ConstantPredicateContainer =
       std::map<VertexLabel, std::map<VertexAttributeID, ConstantPredicate>>;
   using Configurations = sics::graph::miniclean::common::Configurations;
-  // First item: consequence predicate.
-  // Second item: variable predicates.
-  using GCRHorizontalExtension =
-      std::pair<ConcreteVariablePredicate,
-                std::vector<ConcreteVariablePredicate>>;
-  // First item: whether extend to left or right.
-  // Second item: path rule.
-  using GCRVerticalExtension = std::pair<bool, PathRule>;
+  using GCRVerticalExtension = sics::graph::miniclean::data_structures::gcr::
+      refactor::GCRVerticalExtension;
+  using GCRHorizontalExtension = sics::graph::miniclean::data_structures::gcr::
+      refactor::GCRHorizontalExtension;
 
  public:
   RuleMiner(MiniCleanCSRGraph& graph) : graph_(graph) {}

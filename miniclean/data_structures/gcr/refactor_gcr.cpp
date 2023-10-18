@@ -20,17 +20,18 @@ void GCR::Recover() {
 }
 
 void GCR::VerticalExtend(const GCRVerticalExtension& vertical_extension) {
-  if (vertical_extension.first) {
-    AddPathRuleToLeftStar(vertical_extension.second);
+  if (vertical_extension.extend_to_left) {
+    AddPathRuleToLeftStar(vertical_extension.path_rule);
   } else {
-    AddPathRuleToRigthStar(vertical_extension.second);
+    AddPathRuleToRigthStar(vertical_extension.path_rule);
   }
   // Update vertex set.
 }
 
 void GCR::HorizontalExtend(const GCRHorizontalExtension& horizontal_extension) {
-  set_consequence(horizontal_extension.first);
-  for (const auto& variable_predicate : horizontal_extension.second) {
+  set_consequence(horizontal_extension.consequence);
+  for (const auto& variable_predicate :
+       horizontal_extension.variable_predicates) {
     AddVariablePredicateToBack(variable_predicate);
   }
 }
