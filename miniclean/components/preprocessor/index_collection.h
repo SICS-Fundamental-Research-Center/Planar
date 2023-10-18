@@ -115,7 +115,7 @@ class PathPatternIndex {
       VertexID vertex_id, PathPatternID pattern_id) const {
     return path_instances_buckets_by_vertex_id_.at(vertex_id).at(pattern_id);
   }
-  const std::pair<VertexID, VertexID> GetVertexRangeByLabelID(
+  const std::pair<VertexID, VertexID>& GetVertexRangeByLabelID(
       VertexLabel label_id) const {
     return vertex_range_by_label_id_.at(label_id);
   }
@@ -127,7 +127,7 @@ class PathPatternIndex {
                              path_instances_buckets_by_vertex_id);
   void BuildVertexRange(const std::string& range_config_path);
   std::vector<VertexBucket> vertex_bucket_by_pattern_id_;
-  std::vector<std::pair<size_t, size_t>> vertex_range_by_label_id_;
+  std::vector<std::pair<VertexID, VertexID>> vertex_range_by_label_id_;
   std::vector<PathInstanceBuckets> path_instances_buckets_by_vertex_id_;
 };
 
@@ -169,7 +169,7 @@ class IndexCollection {
     return path_pattern_index_.GetPathInstanceBucket(vertex_id, pattern_id);
   }
 
-  const std::pair<VertexID, VertexID> GetVertexRangeByLabelID(
+  const std::pair<VertexID, VertexID>& GetVertexRangeByLabelID(
       VertexLabel label_id) const {
     return path_pattern_index_.GetVertexRangeByLabelID(label_id);
   }
