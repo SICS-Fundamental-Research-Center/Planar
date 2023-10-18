@@ -506,9 +506,7 @@ void RuleMiner::EnumerateValidVariablePredicates(
     std::vector<std::vector<ConcreteVariablePredicate>>*
         valid_variable_predicates) const {
   // Check return condition.
-  if (intermediate_results->size() >= max_item_num) {
-    return;
-  }
+  if (intermediate_results->size() >= max_item_num) return;
   for (size_t i = start_idx; i < variable_predicates.size(); i++) {
     intermediate_results->emplace_back(variable_predicates[i]);
     valid_variable_predicates->emplace_back(*intermediate_results);
