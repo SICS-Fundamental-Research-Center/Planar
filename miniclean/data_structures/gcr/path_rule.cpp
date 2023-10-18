@@ -99,7 +99,7 @@ std::unordered_set<VertexID> StarRule::ComputeValidCenters() {
     std::pair<VertexID, VertexID> vertex_range =
         index_collection_.GetVertexRangeByLabelID(center_label_);
     for (VertexID i = vertex_range.first; i < vertex_range.second; i++) {
-      valid_centers.emplace(i);
+      valid_centers.insert(i);
     }
     return valid_centers;
   }
