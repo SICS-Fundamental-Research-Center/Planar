@@ -20,25 +20,27 @@ void GCR::Recover() {
 }
 
 void GCR::VerticalExtend(const GCRVerticalExtension& vertical_extension) {
-  if (vertical_extension.first) {
-    AddPathRuleToLeftStar(vertical_extension.second);
+  if (vertical_extension.extend_to_left) {
+    AddPathRuleToLeftStar(vertical_extension.path_rule);
   } else {
-    AddPathRuleToRigthStar(vertical_extension.second);
+    AddPathRuleToRigthStar(vertical_extension.path_rule);
   }
   // Update vertex set.
 }
 
 void GCR::HorizontalExtend(const GCRHorizontalExtension& horizontal_extension,
                            const MiniCleanCSRGraph& graph) {
-  set_consequence(horizontal_extension.first);
-  for (const auto& c_variable_predicate : horizontal_extension.second) {
+  set_consequence(horizontal_extension.consequence);
+  for (const auto& c_variable_predicate :
+       horizontal_extension.variable_predicates) {
     AddVariablePredicateToBack(c_variable_predicate);
   }
   // Update vertex buckets.
   // 1. Check whether the previous buckets can be reused.
   if (bucket_id_.first.first != MAX_VERTEX_ID) {
     // Have initialized buckets.
-    for (const auto& c_variable_predicate : horizontal_extension.second) {
+    for (const auto& c_variable_predicate :
+         horizontal_extension.variable_predicates) {
       if (c_variable_predicate.get_left_label() == bucket_id_.first.first &&
           c_variable_predicate.get_left_attribute_id() ==
               bucket_id_.first.second &&
@@ -53,7 +55,8 @@ void GCR::HorizontalExtend(const GCRHorizontalExtension& horizontal_extension,
   // 2. Re-bucketing.
   // TODO: Determine which variable predicate is the best choice to
   // re-bucketing.
-  for (const auto& c_variable_predicate : horizontal_extension.second) {
+  for (const auto& c_variable_predicate :
+       horizontal_extension.variable_predicates) {
     // Check whether the predicate located at the centers.
     if (c_variable_predicate.get_left_path_index() != 0 ||
         c_variable_predicate.get_left_vertex_index() != 0 ||

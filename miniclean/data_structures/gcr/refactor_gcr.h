@@ -7,6 +7,22 @@
 
 namespace sics::graph::miniclean::data_structures::gcr::refactor {
 
+struct GCRHorizontalExtension {
+  GCRHorizontalExtension(
+      const ConcreteVariablePredicate& consequence,
+      const std::vector<ConcreteVariablePredicate>& variable_predicates)
+      : consequence(consequence), variable_predicates(variable_predicates) {}
+  ConcreteVariablePredicate consequence;
+  std::vector<ConcreteVariablePredicate> variable_predicates;
+};
+
+struct GCRVerticalExtension {
+  GCRVerticalExtension(bool extend_to_left, const PathRule& path_rule)
+      : extend_to_left(extend_to_left), path_rule(path_rule) {}
+  bool extend_to_left;
+  PathRule path_rule;
+};
+
 class GCR {
  private:
   using VertexID = sics::graph::miniclean::common::VertexID;
@@ -23,10 +39,6 @@ class GCR {
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using PathRuleUnitContainer =
       std::vector<std::vector<std::vector<std::vector<std::vector<PathRule>>>>>;
-  using GCRVerticalExtension = std::pair<bool, PathRule>;
-  using GCRHorizontalExtension =
-      std::pair<ConcreteVariablePredicate,
-                std::vector<ConcreteVariablePredicate>>;
   using BucketID = std::pair<std::pair<VertexLabel, VertexAttributeID>,
                              std::pair<VertexLabel, VertexAttributeID>>;
 

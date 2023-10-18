@@ -27,10 +27,10 @@ using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
 using PathPattern = sics::graph::miniclean::common::PathPattern;
 using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::gcr::
     refactor::ConcreteVariablePredicate;
-using GCRHorizontalExtension =
-    std::pair<ConcreteVariablePredicate,
-              std::vector<ConcreteVariablePredicate>>;
-using GCRVerticalExtension = std::pair<bool, PathRule>;
+using GCRVerticalExtension = sics::graph::miniclean::data_structures::gcr::
+    refactor::GCRVerticalExtension;
+using GCRHorizontalExtension = sics::graph::miniclean::data_structures::gcr::
+    refactor::GCRHorizontalExtension;
 
 void RuleMiner::LoadGraph(const std::string& graph_path) {
   // Prepare reader.
@@ -281,7 +281,7 @@ void RuleMiner::ExtendGCR(GCR* gcr) const {
     gcr->VerticalExtend(vertical_extension);
     // Compute horizontal extensions.
     std::vector<GCRHorizontalExtension> horizontal_extensions =
-        ComputeHorizontalExtensions(*gcr, vertical_extension.first);
+        ComputeHorizontalExtensions(*gcr, vertical_extension.extend_to_left);
 
     for (const auto& horizontal_extension : horizontal_extensions) {
       // Horizontal extension.
@@ -439,7 +439,10 @@ std::vector<GCRHorizontalExtension> RuleMiner::ExtendVariablePredicates(
   std::vector<ConcreteVariablePredicate> variable_predicates =
       InstantiateVariablePredicates(gcr, variable_predicates_);
   std::vector<std::vector<ConcreteVariablePredicate>> c_variable_predicates;
+  c_variable_predicates.reserve(ComputeCombinationNum(
+      variable_predicates.size(), available_var_pred_num));
   std::vector<ConcreteVariablePredicate> empty_intermediate_result;
+  empty_intermediate_result.reserve(available_var_pred_num);
   EnumerateValidVariablePredicates(
       variable_predicates, 0, available_var_pred_num,
       &empty_intermediate_result, &c_variable_predicates);
@@ -480,21 +483,30 @@ std::vector<GCRHorizontalExtension> RuleMiner::MergeHorizontalExtensions(
 void RuleMiner::EnumerateValidVariablePredicates(
     const std::vector<ConcreteVariablePredicate>& variable_predicates,
     size_t start_idx, size_t max_item_num,
-    std::vector<ConcreteVariablePredicate>* intermediate_result,
+    std::vector<ConcreteVariablePredicate>* intermediate_results,
     std::vector<std::vector<ConcreteVariablePredicate>>*
         valid_variable_predicates) const {
   // Check return condition.
-  if (intermediate_result->size() >= max_item_num) {
-    return;
-  }
+  if (intermediate_results->size() >= max_item_num) return;
   for (size_t i = start_idx; i < variable_predicates.size(); i++) {
-    intermediate_result->emplace_back(variable_predicates[i]);
-    valid_variable_predicates->emplace_back(*intermediate_result);
+    intermediate_results->emplace_back(variable_predicates[i]);
+    valid_variable_predicates->emplace_back(*intermediate_results);
     EnumerateValidVariablePredicates(variable_predicates, i + 1, max_item_num,
-                                     intermediate_result,
+                                     intermediate_results,
                                      valid_variable_predicates);
-    intermediate_result->pop_back();
+    intermediate_results->pop_back();
   }
+}
+
+// Compute the number of combinations of k elements from a set of n elements.
+// TODO: this function should not be bonded to this class, make it free.
+size_t RuleMiner::ComputeCombinationNum(size_t n, size_t k) const {
+  if (k > n || n <= 0) return 0;
+  size_t result = 1;
+  for (size_t i = 1; i <= k; ++i) {
+    result = result * (n - i + 1) / i;
+  }
+  return result;
 }
 
 }  // namespace sics::graph::miniclean::components::rule_discovery::refactor
