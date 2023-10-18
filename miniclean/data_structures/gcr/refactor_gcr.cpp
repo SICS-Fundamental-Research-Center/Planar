@@ -37,16 +37,16 @@ void GCR::HorizontalExtend(const GCRHorizontalExtension& horizontal_extension,
   }
   // Update vertex buckets.
   // 1. Check whether the previous buckets can be reused.
-  if (bucket_id_.first.first != MAX_VERTEX_ID) {
+  if (bucket_id_.left_label != MAX_VERTEX_ID) {
     // Have initialized buckets.
     for (const auto& c_variable_predicate :
          horizontal_extension.variable_predicates) {
-      if (c_variable_predicate.get_left_label() == bucket_id_.first.first &&
+      if (c_variable_predicate.get_left_label() == bucket_id_.left_label &&
           c_variable_predicate.get_left_attribute_id() ==
-              bucket_id_.first.second &&
-          c_variable_predicate.get_right_label() == bucket_id_.second.first &&
+              bucket_id_.left_attribute_id &&
+          c_variable_predicate.get_right_label() == bucket_id_.right_label &&
           c_variable_predicate.get_right_attribute_id() ==
-              bucket_id_.second.second) {
+              bucket_id_.right_attribute_id) {
         // Can reuse the buckets, return directly.
         return;
       }
@@ -64,11 +64,14 @@ void GCR::HorizontalExtend(const GCRHorizontalExtension& horizontal_extension,
         c_variable_predicate.get_right_vertex_index() != 0)
       continue;
     // Set the bucket id.
-    bucket_id_.first.first = c_variable_predicate.get_left_label();
-    bucket_id_.first.second = c_variable_predicate.get_left_attribute_id();
-    bucket_id_.second.first = c_variable_predicate.get_right_label();
-    bucket_id_.second.second = c_variable_predicate.get_right_attribute_id();
+    bucket_id_.left_label = c_variable_predicate.get_left_label();
+    bucket_id_.left_attribute_id = c_variable_predicate.get_left_attribute_id();
+    bucket_id_.right_label = c_variable_predicate.get_right_label();
+    bucket_id_.right_attribute_id =
+        c_variable_predicate.get_right_attribute_id();
     // Initialize buckets.
+    InitializeBuckets(graph, c_variable_predicate);
+    return;
   }
 }
 

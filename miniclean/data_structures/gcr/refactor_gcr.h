@@ -23,6 +23,22 @@ struct GCRVerticalExtension {
   PathRule path_rule;
 };
 
+struct BucketID {
+  BucketID() = default;
+  BucketID(sics::graph::miniclean::common::VertexLabel left_label,
+           sics::graph::miniclean::common::VertexAttributeID left_attribute_id,
+           sics::graph::miniclean::common::VertexLabel right_label,
+           sics::graph::miniclean::common::VertexAttributeID right_attribute_id)
+      : left_label(left_label),
+        left_attribute_id(left_attribute_id),
+        right_label(right_label),
+        right_attribute_id(right_attribute_id) {}
+  sics::graph::miniclean::common::VertexLabel left_label;
+  sics::graph::miniclean::common::VertexAttributeID left_attribute_id;
+  sics::graph::miniclean::common::VertexLabel right_label;
+  sics::graph::miniclean::common::VertexAttributeID right_attribute_id;
+};
+
 class GCR {
  private:
   using VertexID = sics::graph::miniclean::common::VertexID;
@@ -39,18 +55,16 @@ class GCR {
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using PathRuleUnitContainer =
       std::vector<std::vector<std::vector<std::vector<std::vector<PathRule>>>>>;
-  using BucketID = std::pair<std::pair<VertexLabel, VertexAttributeID>,
-                             std::pair<VertexLabel, VertexAttributeID>>;
+  // using BucketID = std::pair<std::pair<VertexLabel, VertexAttributeID>,
+  //                            std::pair<VertexLabel, VertexAttributeID>>;
 
  public:
   GCR(const StarRule& left_star, const StarRule& right_star)
       : left_star_(left_star), right_star_(right_star) {
     left_star_.InitializeStarRule();
     right_star_.InitializeStarRule();
-    bucket_id_.first.first = MAX_VERTEX_ID;
-    bucket_id_.first.second = MAX_VERTEX_ATTRIBUTE_ID;
-    bucket_id_.second.first = MAX_VERTEX_ID;
-    bucket_id_.second.second = MAX_VERTEX_ATTRIBUTE_ID;
+    bucket_id_ = BucketID(MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID,
+                          MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID);
   }
 
   void AddVariablePredicateToBack(
