@@ -86,7 +86,7 @@ class RuleMiner {
   void ComposeUnits(const std::vector<std::vector<T>>& unit_container,
                     size_t max_item, bool check_support, size_t start_idx,
                     std::vector<T>* intermediate_result,
-                    std::vector<T>* composed_results) {
+                    std::vector<T>* composed_results) const {
     // Check return condition.
     size_t predicate_count = 0;
     for (const auto& result : *intermediate_result) {
@@ -118,29 +118,29 @@ class RuleMiner {
       }
     }
   }
-  void ExtendGCR(GCR* gcr);
-  std::vector<GCRVerticalExtension> ComputeVerticalExtensions(const GCR& gcr);
+  void ExtendGCR(GCR* gcr) const;
+  std::vector<GCRVerticalExtension> ComputeVerticalExtensions(const GCR& gcr) const;
   std::vector<GCRHorizontalExtension> ComputeHorizontalExtensions(
-      const GCR& gcr, bool from_left);
+      const GCR& gcr, bool from_left) const;
   std::vector<ConcreteVariablePredicate> InstantiateVariablePredicates(
       const GCR& gcr,
-      const std::vector<VariablePredicate>& variable_predicates);
+      const std::vector<VariablePredicate>& variable_predicates) const;
   std::vector<GCRHorizontalExtension> ExtendVariablePredicates(
       const GCR& gcr,
       const std::vector<ConcreteVariablePredicate>& consequences,
       size_t lhs_start_path_index, size_t rhs_start_path_index,
-      size_t lhs_start_vertex_index, size_t rhs_start_vertex_index);
+      size_t lhs_start_vertex_index, size_t rhs_start_vertex_index) const;
   std::vector<GCRHorizontalExtension> MergeHorizontalExtensions(
       const GCR& gcr,
       const std::vector<ConcreteVariablePredicate>& c_consequences,
       std::vector<std::vector<ConcreteVariablePredicate>> c_variable_predicates,
-      size_t available_var_pred_num);
+      size_t available_var_pred_num) const;
   void EnumerateValidVariablePredicates(
       const std::vector<ConcreteVariablePredicate>& variable_predicates,
       size_t start_idx, size_t max_item_num,
       std::vector<ConcreteVariablePredicate>* intermediate_result,
       std::vector<std::vector<ConcreteVariablePredicate>>*
-          valid_variable_predicates);
+          valid_variable_predicates) const;
 
  private:
   MiniCleanCSRGraph& graph_;

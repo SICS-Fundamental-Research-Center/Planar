@@ -115,12 +115,12 @@ class StarRule {
   }
 
   const std::vector<std::unordered_set<VertexID>>& get_bucket() const {
-    return bucket_;
+    return buckets_;
   }
 
-  void ReserveBucket(size_t size) { bucket_.reserve(size); }
+  void ReserveBucket(size_t size) { buckets_.reserve(size); }
   void AddVertexToBucket(size_t bucket_index, VertexID vertex_id) {
-    bucket_[bucket_index].emplace(vertex_id);
+    buckets_[bucket_index].insert(vertex_id);
   }
 
   void AddPathRule(const PathRule& path_rule) {
@@ -150,8 +150,8 @@ class StarRule {
 
   std::unordered_set<VertexID> valid_vertices_;
   std::unordered_set<VertexID> valid_vertices_diff_;
-  std::vector<std::unordered_set<VertexID>> bucket_;
-  std::vector<std::unordered_set<VertexID>> bucket_diff_;
+  std::vector<std::unordered_set<VertexID>> buckets_;
+  std::vector<std::unordered_set<VertexID>> bucket_diffs_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr
