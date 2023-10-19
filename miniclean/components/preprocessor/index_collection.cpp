@@ -69,8 +69,7 @@ void VertexAttributeSegment::LoadAttributeBlock(
 
 void PathPatternIndex::BuildPathPatternIndex(
     const std::string& path_instances_path,
-    const std::string& graph_config_path,
-    const std::string& path_pattern_path,
+    const std::string& graph_config_path, const std::string& path_pattern_path,
     const std::string& range_config_path) {
   // Load graph config.
   YAML::Node metadata = YAML::LoadFile(graph_config_path);
@@ -164,7 +163,7 @@ void PathPatternIndex::BuildVertexRange(const std::string& range_config_path) {
   YAML::Node vertex_range_node = YAML::LoadFile(range_config_path);
   std::vector<size_t> vertex_range =
       vertex_range_node["VertexLabelRange"].as<std::vector<size_t>>();
-  vertex_range_by_label_id_.reserve(vertex_range.size()-1);
+  vertex_range_by_label_id_.reserve(vertex_range.size() - 1);
   for (size_t i = 0; i < vertex_range.size() - 1; i++) {
     vertex_range_by_label_id_.emplace_back(
         std::make_pair(vertex_range[i], vertex_range[i + 1]));
@@ -174,10 +173,11 @@ void PathPatternIndex::BuildVertexRange(const std::string& range_config_path) {
 void IndexCollection::LoadIndexCollection(
     const std::string& vertex_attribute_file,
     const std::string& path_instance_file, const std::string& graph_config_path,
-    const std::string& path_pattern_path, const std::string& range_config_path) {
+    const std::string& path_pattern_path,
+    const std::string& range_config_path) {
   LoadVertexAttributeSegment(vertex_attribute_file);
-  LoadPathPatternIndex(path_instance_file, graph_config_path,
-                       path_pattern_path, range_config_path);
+  LoadPathPatternIndex(path_instance_file, graph_config_path, path_pattern_path,
+                       range_config_path);
 }
 
 void IndexCollection::LoadVertexAttributeSegment(
@@ -189,11 +189,11 @@ void IndexCollection::LoadVertexAttributeSegment(
 
 void IndexCollection::LoadPathPatternIndex(
     const std::string& path_instances_path,
-    const std::string& graph_config_path,
-    const std::string& path_pattern_path,
+    const std::string& graph_config_path, const std::string& path_pattern_path,
     const std::string& range_config_path) {
   path_pattern_index_.BuildPathPatternIndex(
-      path_instances_path, graph_config_path, path_pattern_path, range_config_path);
+      path_instances_path, graph_config_path, path_pattern_path,
+      range_config_path);
 }
 
 }  // namespace sics::graph::miniclean::components::preprocessor

@@ -23,6 +23,22 @@ struct GCRVerticalExtension {
   PathRule path_rule;
 };
 
+struct BucketID {
+  BucketID() = default;
+  BucketID(sics::graph::miniclean::common::VertexLabel left_label,
+           sics::graph::miniclean::common::VertexAttributeID left_attribute_id,
+           sics::graph::miniclean::common::VertexLabel right_label,
+           sics::graph::miniclean::common::VertexAttributeID right_attribute_id)
+      : left_label(left_label),
+        left_attribute_id(left_attribute_id),
+        right_label(right_label),
+        right_attribute_id(right_attribute_id) {}
+  sics::graph::miniclean::common::VertexLabel left_label;
+  sics::graph::miniclean::common::VertexAttributeID left_attribute_id;
+  sics::graph::miniclean::common::VertexLabel right_label;
+  sics::graph::miniclean::common::VertexAttributeID right_attribute_id;
+};
+
 class GCR {
  private:
   using VertexID = sics::graph::miniclean::common::VertexID;
@@ -39,18 +55,16 @@ class GCR {
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using PathRuleUnitContainer =
       std::vector<std::vector<std::vector<std::vector<std::vector<PathRule>>>>>;
-  using BucketID = std::pair<std::pair<VertexLabel, VertexAttributeID>,
-                             std::pair<VertexLabel, VertexAttributeID>>;
+  using PathInstance = std::vector<VertexID>;
+  using PathInstanceBucket = std::vector<PathInstance>;
 
  public:
   GCR(const StarRule& left_star, const StarRule& right_star)
       : left_star_(left_star), right_star_(right_star) {
     left_star_.InitializeStarRule();
     right_star_.InitializeStarRule();
-    bucket_id_.first.first = MAX_VERTEX_ID;
-    bucket_id_.first.second = MAX_VERTEX_ATTRIBUTE_ID;
-    bucket_id_.second.first = MAX_VERTEX_ID;
-    bucket_id_.second.second = MAX_VERTEX_ATTRIBUTE_ID;
+    bucket_id_ = BucketID(MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID,
+                          MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID);
   }
 
   void AddVariablePredicateToBack(
@@ -98,7 +112,8 @@ class GCR {
 
   void Backup();
   void Recover();
-  void ExtendVertically(const GCRVerticalExtension& vertical_extension);
+  void ExtendVertically(const GCRVerticalExtension& vertical_extension,
+                      const MiniCleanCSRGraph& graph);
   void ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
                           const MiniCleanCSRGraph& graph);
 
@@ -144,6 +159,11 @@ class GCR {
       const MiniCleanCSRGraph& graph,
       const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
       VertexID right_vid) const;
+
+  size_t TestPathRule(const MiniCleanCSRGraph& graph, const PathRule& path_rule,
+                      const PathInstanceBucket& path_instance_bucket,
+                      const std::vector<size_t>& visited,
+                      size_t start_pos) const;
 
   StarRule left_star_;
   StarRule right_star_;

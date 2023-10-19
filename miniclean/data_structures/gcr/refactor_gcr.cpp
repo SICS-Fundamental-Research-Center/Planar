@@ -1,5 +1,7 @@
 #include "miniclean/data_structures/gcr/refactor_gcr.h"
 
+#include <map>
+
 #include "miniclean/common/types.h"
 #include "miniclean/components/preprocessor/star_bitmap.h"
 #include "miniclean/data_structures/gcr/refactor_predicate.h"
@@ -8,6 +10,7 @@ namespace sics::graph::miniclean::data_structures::gcr::refactor {
 
 using StarBitmap = sics::graph::miniclean::components::preprocessor::StarBitmap;
 using PathPattern = sics::graph::miniclean::common::PathPattern;
+using PathPatternID = sics::graph::miniclean::common::PathPatternID;
 using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 using VertexID = sics::graph::miniclean::common::VertexID;
 
@@ -19,13 +22,33 @@ void GCR::Recover() {
   // TODO: Implement it.
 }
 
-void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension) {
+void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension,
+                         const MiniCleanCSRGraph& graph) {
   if (vertical_extension.extend_to_left) {
     AddPathRuleToLeftStar(vertical_extension.path_rule);
   } else {
     AddPathRuleToRigthStar(vertical_extension.path_rule);
   }
-  // Update vertex set.
+
+  auto index_collection = left_star_.get_index_collection();
+  // Update left valid vertices.
+  for (const auto& bucket : left_star_.get_valid_vertex_bucket()) {
+    for (const auto& vid : bucket) {
+      bool match_status = TestStarRule(graph, left_star_, vid);
+      if (!match_status) {
+        // Move this vertex to the diff bucket.
+      }
+    }
+  }
+  // Update right valid vertices.
+  for (const auto& bucket : right_star_.get_valid_vertex_bucket()) {
+    for (const auto& vid : bucket) {
+      bool match_status = TestStarRule(graph, right_star_, vid);
+      if (!match_status) {
+        // Move this vertex to the diff bucket.
+      }
+    }
+  }
 }
 
 void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
@@ -37,16 +60,16 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
   }
   // Update vertex buckets.
   // 1. Check whether the previous buckets can be reused.
-  if (bucket_id_.first.first != MAX_VERTEX_ID) {
+  if (bucket_id_.left_label != MAX_VERTEX_ID) {
     // Have initialized buckets.
     for (const auto& c_variable_predicate :
          horizontal_extension.variable_predicates) {
-      if (c_variable_predicate.get_left_label() == bucket_id_.first.first &&
+      if (c_variable_predicate.get_left_label() == bucket_id_.left_label &&
           c_variable_predicate.get_left_attribute_id() ==
-              bucket_id_.first.second &&
-          c_variable_predicate.get_right_label() == bucket_id_.second.first &&
+              bucket_id_.left_attribute_id &&
+          c_variable_predicate.get_right_label() == bucket_id_.right_label &&
           c_variable_predicate.get_right_attribute_id() ==
-              bucket_id_.second.second) {
+              bucket_id_.right_attribute_id) {
         // Can reuse the buckets, return directly.
         return;
       }
@@ -64,11 +87,14 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
         c_variable_predicate.get_right_vertex_index() != 0)
       continue;
     // Set the bucket id.
-    bucket_id_.first.first = c_variable_predicate.get_left_label();
-    bucket_id_.first.second = c_variable_predicate.get_left_attribute_id();
-    bucket_id_.second.first = c_variable_predicate.get_right_label();
-    bucket_id_.second.second = c_variable_predicate.get_right_attribute_id();
+    bucket_id_.left_label = c_variable_predicate.get_left_label();
+    bucket_id_.left_attribute_id = c_variable_predicate.get_left_attribute_id();
+    bucket_id_.right_label = c_variable_predicate.get_right_label();
+    bucket_id_.right_attribute_id =
+        c_variable_predicate.get_right_attribute_id();
     // Initialize buckets.
+    InitializeBuckets(graph, c_variable_predicate);
+    return;
   }
 }
 
@@ -156,7 +182,50 @@ void GCR::InitializeBuckets(
 
 bool GCR::TestStarRule(const MiniCleanCSRGraph& graph,
                        const StarRule& star_rule, VertexID center_id) const {
-  // TODO: Implement it.
+  auto index_collection = star_rule.get_index_collection();
+  // Group path rules according to their path pattern ids.
+  std::map<PathPatternID, std::vector<PathRule>> path_rule_map;
+  for (const auto& path_rule : star_rule.get_path_rules()) {
+    auto path_pattern_id = path_rule.get_path_pattern_id();
+    path_rule_map[path_pattern_id].emplace_back(path_rule);
+  }
+  // Procss path rules that have the same path pattern id.
+  for (const auto& path_rule_pair : path_rule_map) {
+    auto path_pattern_id = path_rule_pair.first;
+    auto path_rules = path_rule_pair.second;
+    auto path_instances =
+        index_collection.GetPathInstanceBucket(center_id, path_pattern_id);
+
+    // Check whether the path instances are enough.
+    if (path_instances.size() < path_rules.size()) return false;
+
+    std::vector<size_t> match_stack;
+    match_stack.reserve(path_rules.size());
+
+    size_t start_pos =
+        TestPathRule(graph, path_rules[0], path_instances, match_stack, 0);
+    if (start_pos == path_instances.size()) return false;
+    match_stack.push_back(start_pos);
+
+    while (match_stack.size() > 0) {
+      // Check whether the match has finished.
+      if (match_stack.size() == path_rules.size()) break;
+      // Check the next path rule.
+      size_t next_matched_position =
+          TestPathRule(graph, path_rules[match_stack.size()], path_instances,
+                       match_stack, 0);
+      while (match_stack.size() > 0 &&
+             next_matched_position == path_instances.size()) {
+        next_matched_position =
+            TestPathRule(graph, path_rules[match_stack.size() - 1],
+                         path_instances, match_stack, match_stack.back() + 1);
+        match_stack.pop_back();
+      }
+      if (next_matched_position == path_instances.size()) return false;
+      match_stack.push_back(next_matched_position);
+    }
+  }
+  return true;
 }
 
 bool GCR::TestVariablePredicate(
@@ -195,6 +264,30 @@ bool GCR::TestVariablePredicate(
   }
 
   return false;
+}
+
+size_t GCR::TestPathRule(const MiniCleanCSRGraph& graph,
+                         const PathRule& path_rule,
+                         const PathInstanceBucket& path_instance_bucket,
+                         const std::vector<size_t>& visited,
+                         size_t start_pos) const {
+  for (size_t i = start_pos; i < path_instance_bucket.size(); i++) {
+    // Check whether i has been visited.
+    for (const auto& visited_pos : visited) {
+      if (visited_pos == i) continue;
+    }
+    auto path_instance = path_instance_bucket[i];
+    auto constant_predicates = path_rule.get_constant_predicates();
+    for (const auto& const_pred : constant_predicates) {
+      auto vertex_id = path_instance[const_pred.first];
+      auto vertex_value = graph.GetVertexAttributeValuesByLocalID(
+          vertex_id)[const_pred.second.get_vertex_attribute_id()];
+      if (vertex_value == const_pred.second.get_constant_value()) {
+        return i;
+      }
+    }
+  }
+  return path_instance_bucket.size();
 }
 
 bool GCR::PathMatching(const PathPattern& path_pattern,
