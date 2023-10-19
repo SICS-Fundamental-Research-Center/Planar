@@ -161,7 +161,7 @@ void RuleMiner::InitStarRuleUnitContainer() {
   for (const auto& center_label : center_labels) {
     const auto& attr_bucket_by_vlabel =
         index_collection_.GetAttributeBucketByVertexLabel(center_label);
-    const auto& constant_predicate_by_vlabel =
+    auto constant_predicate_by_vlabel =
         constant_predicate_container_[center_label];
     // Compute the max attribute id.
     VertexAttributeID max_attr_id = 0;
@@ -173,13 +173,13 @@ void RuleMiner::InitStarRuleUnitContainer() {
       // key: attr id; val: const pred.
       VertexAttributeID attr_id = const_pred.first;
       ConstantPredicate pred = const_pred.second;
-      const auto& value_bucket = attr_bucket_by_vlabel.at(attr_id);
+      auto value_bucket = attr_bucket_by_vlabel.at(attr_id);
       // TODO: we do not reserve space beforehand for star rule unit because not
       // every attribute value has enough support. Optimize it in the future if
       // possible.
       for (const auto& value_bucket_pair : value_bucket) {
         VertexAttributeValue value = value_bucket_pair.first;
-        const auto& valid_vertices = value_bucket_pair.second;
+        auto valid_vertices = value_bucket_pair.second;
         if (valid_vertices.size() <
             Configurations::Get()->star_support_threshold_) {
           continue;
@@ -194,7 +194,7 @@ void RuleMiner::InitStarRuleUnitContainer() {
 void RuleMiner::InitPathRuleUnitContainer() {
   path_rule_unit_container_.resize(path_patterns_.size());
   for (size_t i = 0; i < path_patterns_.size(); i++) {
-    const auto& path_pattern = path_patterns_[i];
+    auto path_pattern = path_patterns_[i];
     path_rule_unit_container_[i].resize(path_pattern.size());
     // Do not assign constant predicate to the center vertex.
     for (size_t j = 1; j < path_pattern.size(); j++) {
@@ -205,8 +205,7 @@ void RuleMiner::InitPathRuleUnitContainer() {
       }
       const auto& attr_bucket_by_vlabel =
           index_collection_.GetAttributeBucketByVertexLabel(label);
-      const auto& const_pred_by_attr_id =
-          constant_predicate_container_.at(label);
+      auto const_pred_by_attr_id = constant_predicate_container_.at(label);
       // Compute the max attribute id.
       VertexAttributeID max_attr_id = 0;
       for (const auto& const_pred : const_pred_by_attr_id) {
@@ -216,13 +215,13 @@ void RuleMiner::InitPathRuleUnitContainer() {
       for (const auto& const_pred_pair : const_pred_by_attr_id) {
         VertexAttributeID attr_id = const_pred_pair.first;
         auto const_pred = const_pred_pair.second;
-        const auto& value_bucket = attr_bucket_by_vlabel.at(attr_id);
+        auto value_bucket = attr_bucket_by_vlabel.at(attr_id);
         // TODO: we do not reserve space beforehand for star rule unit because
         // not every attribute value has enough support. Optimize it in the
         // future if possible.
         for (const auto& value_bucket_pair : value_bucket) {
           VertexAttributeValue value = value_bucket_pair.first;
-          const auto& valid_vertices = value_bucket_pair.second;
+          auto valid_vertices = value_bucket_pair.second;
           if (valid_vertices.size() <
               Configurations::Get()->star_support_threshold_) {
             continue;
@@ -365,8 +364,8 @@ std::vector<ConcreteVariablePredicate> RuleMiner::InstantiateVariablePredicates(
     const GCR& gcr,
     const std::vector<VariablePredicate>& variable_predicates) const {
   std::vector<ConcreteVariablePredicate> results;
-  auto left_path_rules = gcr.get_left_star().get_path_rules();
-  auto right_path_rules = gcr.get_right_star().get_path_rules();
+  const auto& left_path_rules = gcr.get_left_star().get_path_rules();
+  const auto& right_path_rules = gcr.get_right_star().get_path_rules();
   for (const auto& predicate : variable_predicates) {
     auto target_left_label = predicate.get_lhs_label();
     auto target_right_label = predicate.get_rhs_label();
