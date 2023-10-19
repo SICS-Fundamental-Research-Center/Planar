@@ -32,6 +32,7 @@ void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension,
   
   auto index_collection = left_star_.get_index_collection();
   // Update left valid vertices.
+  std::vector<std::unordered_set<VertexID>> bucket;
   for (const auto& bucket : left_star_.get_valid_vertex_bucket()) {
     for (const auto& vid : bucket) {
       bool match_status = TestStarRule(graph, left_star_, vid);
