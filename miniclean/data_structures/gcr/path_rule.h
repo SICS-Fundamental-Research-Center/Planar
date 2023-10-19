@@ -147,7 +147,8 @@ class StarRule {
   const IndexCollection& index_collection_;
 
   std::vector<std::unordered_set<VertexID>> valid_vertex_buckets_;
-  std::vector<std::unordered_set<VertexID>> valid_vertex_bucket_diffs_;
+  std::list<std::vector<std::unordered_set<VertexID>>>
+      valid_vertex_bucket_diffs_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

@@ -29,7 +29,7 @@ void GCR::VerticalExtend(const GCRVerticalExtension& vertical_extension,
   } else {
     AddPathRuleToRigthStar(vertical_extension.path_rule);
   }
-
+  
   auto index_collection = left_star_.get_index_collection();
   // Update left valid vertices.
   for (const auto& bucket : left_star_.get_valid_vertex_bucket()) {
