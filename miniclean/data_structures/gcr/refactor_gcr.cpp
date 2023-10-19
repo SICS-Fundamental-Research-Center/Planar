@@ -84,7 +84,7 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
   }
 }
 
-const std::pair<size_t, size_t>& GCR::ComputeMatchAndSupport(
+std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
     const MiniCleanCSRGraph& graph) {
   size_t support = 0;
   size_t match = 0;
@@ -166,22 +166,38 @@ bool GCR::TestVariablePredicate(
     const MiniCleanCSRGraph& graph,
     const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
     VertexID right_vid) const {
+  const auto& index_collection = left_star_.get_index_collection();
+
   auto left_path_id = variable_predicate.get_left_path_index();
   auto right_path_id = variable_predicate.get_right_path_index();
   auto left_vertex_id = variable_predicate.get_left_vertex_index();
   auto right_vertex_id = variable_predicate.get_right_vertex_index();
   auto left_attr_id = variable_predicate.get_left_attribute_id();
   auto right_attr_id = variable_predicate.get_right_attribute_id();
-  auto left_pattern_id =
-      left_star_.get_path_rules()[left_path_id].get_path_pattern_id();
-  auto right_pattern_id =
-      left_star_.get_path_rules()[right_path_id].get_path_pattern_id();
-
-  const auto& index_collection = left_star_.get_index_collection();
-  const auto& left_path_instances =
-      index_collection.GetPathInstanceBucket(left_vid, left_pattern_id);
-  const auto& right_path_instances =
-      index_collection.GetPathInstanceBucket(right_vid, right_pattern_id);
+  PathPatternID left_pattern_id = 0;
+  PathInstanceBucket left_path_instances;
+  if (!left_star_.get_path_rules().empty()) {
+    left_pattern_id =
+        left_star_.get_path_rules()[left_path_id].get_path_pattern_id();
+    left_path_instances =
+        index_collection.GetPathInstanceBucket(left_vid, left_pattern_id);
+  } else {
+    PathInstance left_instance;
+    left_instance.emplace_back(left_vid);
+    left_path_instances.emplace_back(left_instance);
+  }
+  PathPatternID right_pattern_id = 0;
+  PathInstanceBucket right_path_instances;
+  if (!right_star_.get_path_rules().empty()) {
+    right_pattern_id =
+        right_star_.get_path_rules()[right_path_id].get_path_pattern_id();
+    right_path_instances =
+        index_collection.GetPathInstanceBucket(right_vid, right_pattern_id);
+  } else {
+    PathInstance right_instance;
+    right_instance.emplace_back(right_vid);
+    right_path_instances.emplace_back(right_instance);
+  }
 
   for (const auto& left_instance : left_path_instances) {
     for (const auto& right_instance : right_path_instances) {

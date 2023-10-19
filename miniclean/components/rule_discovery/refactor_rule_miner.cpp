@@ -253,7 +253,8 @@ void RuleMiner::MineGCRs() {
           for (const auto& horizontal_extension : horizontal_extensions) {
             gcr.ExtendHorizontally(horizontal_extension, graph_);
             // Compute support of GCR
-            const auto& match_result = gcr.ComputeMatchAndSupport(graph_);
+            std::pair<size_t, size_t> match_result =
+                gcr.ComputeMatchAndSupport(graph_);
             size_t support = match_result.second;
             float confidence = static_cast<float>(match_result.first) / support;
             // If support < threshold, continue.
@@ -261,7 +262,8 @@ void RuleMiner::MineGCRs() {
             // If support, confidenc >= threshold, write back to disk.
             if (support >= Configurations::Get()->support_threshold_ &&
                 confidence >= Configurations::Get()->confidence_threshold_) {
-              LOG_INFO("Mined a valid GCR.");
+              LOG_INFO("Mined a valid GCR. Support: ", support,
+                       " Confidence: ", confidence);
               continue;
             }
             // If support >= threshold, confidence < threshold, go to next

@@ -53,6 +53,8 @@ class GCR {
   using MiniCleanCSRGraph =
       sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
   using PathPattern = sics::graph::miniclean::common::PathPattern;
+  using PathInstance = std::vector<VertexID>;
+  using PathInstanceBucket = std::vector<PathInstance>;
 
  public:
   GCR(const StarRule& left_star, const StarRule& right_star)
@@ -112,7 +114,7 @@ class GCR {
   void ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
                           const MiniCleanCSRGraph& graph);
   // TODO: this function should be more rigorous.
-  const std::pair<size_t, size_t>& ComputeMatchAndSupport(
+  std::pair<size_t, size_t> ComputeMatchAndSupport(
       const MiniCleanCSRGraph& graph);
 
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
