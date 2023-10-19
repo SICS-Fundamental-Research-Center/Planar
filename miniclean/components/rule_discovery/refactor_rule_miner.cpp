@@ -245,18 +245,16 @@ void RuleMiner::MineGCRs() {
       for (size_t ls = 0; ls < star_rules_[ll].size(); ls++) {
         size_t j_start = (ll == rl) ? ls : 0;
         for (size_t rs = j_start; rs < star_rules_[rl].size(); rs++) {
+          // Build GCR and initiaize star rules.
           GCR gcr = GCR(star_rules_[ll][ls], star_rules_[rl][rs]);
           // Horizontally extend the GCR.
           std::vector<GCRHorizontalExtension> horizontal_extensions =
               ComputeHorizontalExtensions(gcr, true);
           for (const auto& horizontal_extension : horizontal_extensions) {
-            gcr.HorizontalExtend(horizontal_extension);
+            gcr.ExtendHorizontally(horizontal_extension, graph_);
             // Compute support of GCR
-
             // If support < threshold, continue.
-
-            // If support >= threshold, confidence >= threshold, write back to
-            // disk.
+            // If support, confidenc >= threshold, write back to disk.
           }
           // If support >= threshold, confidence < threshold, go to next level.
           ExtendGCR(&gcr);
@@ -280,14 +278,14 @@ void RuleMiner::ExtendGCR(GCR* gcr) const {
   for (const auto& vertical_extension : vertical_extensions) {
     // Vertical extension.
     gcr->Backup();
-    gcr->VerticalExtend(vertical_extension);
+    gcr->ExtendVertically(vertical_extension);
     // Compute horizontal extensions.
     std::vector<GCRHorizontalExtension> horizontal_extensions =
         ComputeHorizontalExtensions(*gcr, vertical_extension.extend_to_left);
 
     for (const auto& horizontal_extension : horizontal_extensions) {
       // Horizontal extension.
-      gcr->HorizontalExtend(horizontal_extension);
+      gcr->ExtendHorizontally(horizontal_extension, graph_);
       // Compute support of GCR
 
       // If support < threshold, continue.
@@ -352,23 +350,6 @@ std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
     return extensions;
   }
 
-  // Compute left and right bias.
-  auto left_path_rules = gcr.get_left_star().get_path_rules();
-  auto right_path_rules = gcr.get_right_star().get_path_rules();
-  size_t lhs_start_path_index = 0;
-  size_t rhs_start_path_index = 0;
-  size_t lhs_start_vertex_index = 0;
-  size_t rhs_start_vertex_index = 0;
-  if (from_left) {
-    // Choose the last path rule from the left star.
-    lhs_start_path_index = left_path_rules.size() - 1;
-    // Skip the center vertex.
-    lhs_start_vertex_index = 1;
-  } else {
-    rhs_start_path_index = right_path_rules.size() - 1;
-    rhs_start_vertex_index = 1;
-  }
-
   // Assign consequence.
   std::vector<ConcreteVariablePredicate> c_consequences =
       InstantiateVariablePredicates(gcr, consequence_predicates_);
@@ -376,9 +357,7 @@ std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
   // Assign variable predicates.
   // Note that, unlike constant predicates which can be inherited from the
   // previous GCR, variable predicates need to be enumerated from scratch.
-  extensions = ExtendVariablePredicates(
-      gcr, c_consequences, lhs_start_path_index, rhs_start_path_index,
-      lhs_start_vertex_index, rhs_start_vertex_index);
+  extensions = ExtendVariablePredicates(gcr, c_consequences);
   return extensions;
 }
 
@@ -435,9 +414,8 @@ std::vector<ConcreteVariablePredicate> RuleMiner::InstantiateVariablePredicates(
 }
 
 std::vector<GCRHorizontalExtension> RuleMiner::ExtendVariablePredicates(
-    const GCR& gcr, const std::vector<ConcreteVariablePredicate>& consequences,
-    size_t lhs_start_path_index, size_t rhs_start_path_index,
-    size_t lhs_start_vertex_index, size_t rhs_start_vertex_index) const {
+    const GCR& gcr,
+    const std::vector<ConcreteVariablePredicate>& consequences) const {
   std::vector<GCRHorizontalExtension> extensions;
   // Check the available number of variable predicates.
   size_t const_pred_num = gcr.get_constant_predicate_count();
