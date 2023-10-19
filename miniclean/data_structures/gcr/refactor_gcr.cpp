@@ -112,16 +112,16 @@ void GCR::InitializeBuckets(
   const auto& index_collection = left_star_.get_index_collection();
   const auto& left_label = c_variable_predicate.get_left_label();
   const auto& left_attr_id = c_variable_predicate.get_left_attribute_id();
-  const auto& left_label_buckts =
+  const auto& left_label_buckets =
       index_collection.GetAttributeBucketByVertexLabel(left_label);
   const auto& right_label = c_variable_predicate.get_right_label();
   const auto& right_attr_id = c_variable_predicate.get_right_attribute_id();
-  const auto& right_label_buckts =
+  const auto& right_label_buckets =
       index_collection.GetAttributeBucketByVertexLabel(right_label);
   const auto& left_value_bucket_size =
-      left_label_buckts.at(left_attr_id).size();
+      left_label_buckets.at(left_attr_id).size();
   const auto& right_value_bucket_size =
-      right_label_buckts.at(right_attr_id).size();
+      right_label_buckets.at(right_attr_id).size();
 
   if (left_value_bucket_size != right_value_bucket_size) {
     LOG_FATAL("The value bucket size of left and right are not equal.");
