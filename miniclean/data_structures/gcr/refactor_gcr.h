@@ -121,7 +121,7 @@ class GCR {
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
                         bool consider_consequence) const;
 
-  bool PathMatching(const PathPattern path_pattern,
+  bool PathMatching(const PathPattern& path_pattern,
                     const MiniCleanCSRGraph& graph, size_t vertex_id,
                     size_t edge_id) const;
 
