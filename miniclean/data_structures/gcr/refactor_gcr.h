@@ -98,9 +98,9 @@ class GCR {
 
   void Backup();
   void Recover();
-  void VerticalExtend(const GCRVerticalExtension& vertical_extension);
-  void HorizontalExtend(const GCRHorizontalExtension& horizontal_extension,
-                        const MiniCleanCSRGraph& graph);
+  void ExtendVertically(const GCRVerticalExtension& vertical_extension);
+  void ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
+                          const MiniCleanCSRGraph& graph);
 
   ConcreteVariablePredicate ConcretizeVariablePredicate(
       const VariablePredicate& variable_predicate, uint8_t left_path_index,

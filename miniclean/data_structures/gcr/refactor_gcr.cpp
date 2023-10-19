@@ -19,7 +19,7 @@ void GCR::Recover() {
   // TODO: Implement it.
 }
 
-void GCR::VerticalExtend(const GCRVerticalExtension& vertical_extension) {
+void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension) {
   if (vertical_extension.extend_to_left) {
     AddPathRuleToLeftStar(vertical_extension.path_rule);
   } else {
@@ -28,8 +28,8 @@ void GCR::VerticalExtend(const GCRVerticalExtension& vertical_extension) {
   // Update vertex set.
 }
 
-void GCR::HorizontalExtend(const GCRHorizontalExtension& horizontal_extension,
-                           const MiniCleanCSRGraph& graph) {
+void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
+                             const MiniCleanCSRGraph& graph) {
   set_consequence(horizontal_extension.consequence);
   for (const auto& c_variable_predicate :
        horizontal_extension.variable_predicates) {
@@ -137,13 +137,15 @@ void GCR::InitializeBuckets(
   const auto& right_valid_vertex_bucket = right_star_.get_valid_vertex_bucket();
   for (const auto& left_bucket : left_valid_vertex_bucket) {
     for (const auto& vid : left_bucket) {
-      const auto& value = graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
+      const auto& value =
+          graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
       new_left_valid_vertex_bucket[value].emplace(vid);
     }
   }
   for (const auto& right_bucket : right_valid_vertex_bucket) {
     for (const auto& vid : right_bucket) {
-      const auto& value = graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
+      const auto& value =
+          graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
       new_right_valid_vertex_bucket[value].emplace(vid);
     }
   }
