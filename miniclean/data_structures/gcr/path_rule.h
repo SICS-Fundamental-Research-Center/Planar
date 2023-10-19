@@ -27,6 +27,8 @@ class PathRule {
       sics::graph::miniclean::common::VertexAttributeValue;
   using IndexCollection =
       sics::graph::miniclean::components::preprocessor::IndexCollection;
+  using PathInstance = std::vector<VertexID>;
+  using PathInstanceBucket = std::vector<PathInstance>;
 
  public:
   PathRule() = default;
@@ -64,6 +66,13 @@ class PathRule {
   // Compose with another path rule with the same path pattern.
   void ComposeWith(const PathRule& other);
 
+  // This function returns the index of path instance if matching successfully.
+  // Otherwise, it would return sizeof(path instances).
+  size_t TestPathRule(const MiniCleanCSRGraph& graph,
+                      const PathInstanceBucket& path_instance_bucket,
+                      const std::vector<size_t>& visited,
+                      size_t start_pos) const;
+
  private:
   size_t path_pattern_id_;
   // The first element is the index of vertex in the pattern;
@@ -81,6 +90,10 @@ class StarRule {
       sics::graph::miniclean::common::VertexAttributeValue;
   using IndexCollection =
       sics::graph::miniclean::components::preprocessor::IndexCollection;
+  using MiniCleanCSRGraph =
+      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+  using PathPatternID = sics::graph::miniclean::common::PathPatternID;
+  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
 
  public:
   StarRule(VertexLabel center_label, const IndexCollection& index_collection)
@@ -116,6 +129,15 @@ class StarRule {
     return valid_vertex_buckets_;
   }
 
+  std::vector<std::unordered_set<VertexID>>* get_mutable_valid_vertex_bucket() {
+    return &valid_vertex_buckets_;
+  }
+
+  std::list<std::vector<std::unordered_set<VertexID>>>*
+  get_mutable_valid_vertex_bucket_diffs() {
+    return &valid_vertex_bucket_diffs_;
+  }
+
   void UpdateValidVertexBucket(
       std::vector<std::unordered_set<VertexID>>&& new_valid_vertex_bucket) {
     valid_vertex_buckets_ = std::move(new_valid_vertex_bucket);
@@ -134,11 +156,13 @@ class StarRule {
                        std::unordered_set<VertexID>* comp_set,
                        std::unordered_set<VertexID>* diff_set);
 
-  void Backup();
+  void Backup(const MiniCleanCSRGraph& graph,
+              const VertexAttributeID& vertex_attr_id);
   void Recover();
 
  private:
   std::unordered_set<VertexID> ComputeValidCenters();
+  bool TestStarRule(const MiniCleanCSRGraph& graph, VertexID center_id) const;
 
   size_t predicate_count_;
   VertexLabel center_label_;

@@ -249,14 +249,26 @@ void RuleMiner::MineGCRs() {
           // Horizontally extend the GCR.
           std::vector<GCRHorizontalExtension> horizontal_extensions =
               ComputeHorizontalExtensions(gcr, true);
+          bool should_extend = false;
           for (const auto& horizontal_extension : horizontal_extensions) {
             gcr.ExtendHorizontally(horizontal_extension, graph_);
             // Compute support of GCR
+            const auto& match_result = gcr.ComputeMatchAndSupport(graph_);
+            size_t support = match_result.second;
+            float confidence = static_cast<float>(match_result.first) / support;
             // If support < threshold, continue.
+            if (support < Configurations::Get()->support_threshold_) continue;
             // If support, confidenc >= threshold, write back to disk.
+            if (support >= Configurations::Get()->support_threshold_ &&
+                confidence >= Configurations::Get()->confidence_threshold_) {
+              LOG_INFO("Mined a valid GCR.");
+              continue;
+            }
+            // If support >= threshold, confidence < threshold, go to next
+            // level.
+            should_extend = true;
           }
-          // If support >= threshold, confidence < threshold, go to next level.
-          ExtendGCR(&gcr);
+          if (should_extend) ExtendGCR(&gcr);
         }
       }
     }
@@ -276,23 +288,31 @@ void RuleMiner::ExtendGCR(GCR* gcr) const {
   // Compute horizontal extensions for each vertical extension.
   for (const auto& vertical_extension : vertical_extensions) {
     // Vertical extension.
-    gcr->Backup();
     gcr->ExtendVertically(vertical_extension, graph_);
     // Compute horizontal extensions.
     std::vector<GCRHorizontalExtension> horizontal_extensions =
         ComputeHorizontalExtensions(*gcr, vertical_extension.extend_to_left);
-
+    bool should_extend = false;
     for (const auto& horizontal_extension : horizontal_extensions) {
       // Horizontal extension.
       gcr->ExtendHorizontally(horizontal_extension, graph_);
       // Compute support of GCR
-
+      const auto& match_result = gcr->ComputeMatchAndSupport(graph_);
+      size_t support = match_result.second;
+      float confidence = static_cast<float>(match_result.first) / support;
       // If support < threshold, continue.
-
-      // If support >= threshold, confidence >= threshold, write back to disk.
+      if (support < Configurations::Get()->support_threshold_) continue;
+      // If support, confidenc >= threshold, write back to disk.
+      if (support >= Configurations::Get()->support_threshold_ &&
+          confidence >= Configurations::Get()->confidence_threshold_) {
+        LOG_INFO("Mined a valid GCR.");
+        continue;
+      }
+      // If support >= threshold, confidence < threshold, go to next level.
+      should_extend = true;
     }
-    // If support >= threshold, confidence < threshold, go to next level.
-    ExtendGCR(gcr);
+    if (should_extend) ExtendGCR(gcr);
+    // Each time we extend vertically, we need to recover the star rules.
     gcr->Recover();
   }
 }
