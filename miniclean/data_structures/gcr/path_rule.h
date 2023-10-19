@@ -115,9 +115,9 @@ class StarRule {
     return valid_vertex_buckets_;
   }
 
-  const void UpdateValidVertexBucket(
-      std::vector<std::unordered_set<VertexID>>* new_valid_vertex_bucket) {
-    std::swap(valid_vertex_buckets_, *new_valid_vertex_bucket);
+  void UpdateValidVertexBucket(
+      std::vector<std::unordered_set<VertexID>>&& new_valid_vertex_bucket) {
+    valid_vertex_buckets_ = std::move(new_valid_vertex_bucket);
   }
 
   void AddPathRule(const PathRule& path_rule) {

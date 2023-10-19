@@ -78,8 +78,8 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
   size_t match = 0;
 
   bool preconditions_match = true;
-  auto left_bucket = left_star_.get_valid_vertex_bucket();
-  auto right_bucket = right_star_.get_valid_vertex_bucket();
+  const auto& left_bucket = left_star_.get_valid_vertex_bucket();
+  const auto& right_bucket = right_star_.get_valid_vertex_bucket();
   for (size_t i = 0; i < left_bucket.size(); i++) {
     for (const auto& left_vertex : left_bucket[i]) {
       for (const auto& right_vertex : right_bucket[i]) {
@@ -109,18 +109,19 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
 void GCR::InitializeBuckets(
     const MiniCleanCSRGraph& graph,
     const ConcreteVariablePredicate& c_variable_predicate) {
-  auto index_collection = left_star_.get_index_collection();
-
-  auto left_label = c_variable_predicate.get_left_label();
-  auto left_attr_id = c_variable_predicate.get_left_attribute_id();
-  auto left_label_buckts =
+  const auto& index_collection = left_star_.get_index_collection();
+  const auto& left_label = c_variable_predicate.get_left_label();
+  const auto& left_attr_id = c_variable_predicate.get_left_attribute_id();
+  const auto& left_label_buckts =
       index_collection.GetAttributeBucketByVertexLabel(left_label);
-  auto right_label = c_variable_predicate.get_right_label();
-  auto right_attr_id = c_variable_predicate.get_right_attribute_id();
-  auto right_label_buckts =
+  const auto& right_label = c_variable_predicate.get_right_label();
+  const auto& right_attr_id = c_variable_predicate.get_right_attribute_id();
+  const auto& right_label_buckts =
       index_collection.GetAttributeBucketByVertexLabel(right_label);
-  auto left_value_bucket_size = left_label_buckts[left_attr_id].size();
-  auto right_value_bucket_size = right_label_buckts[right_attr_id].size();
+  const auto& left_value_bucket_size =
+      left_label_buckts.at(left_attr_id).size();
+  const auto& right_value_bucket_size =
+      right_label_buckts.at(right_attr_id).size();
 
   if (left_value_bucket_size != right_value_bucket_size) {
     LOG_FATAL("The value bucket size of left and right are not equal.");
@@ -132,23 +133,23 @@ void GCR::InitializeBuckets(
   new_left_valid_vertex_bucket.resize(left_value_bucket_size);
   new_right_valid_vertex_bucket.resize(right_value_bucket_size);
 
-  auto left_valid_vertex_bucket = left_star_.get_valid_vertex_bucket();
-  auto right_valid_vertex_bucket = right_star_.get_valid_vertex_bucket();
+  const auto& left_valid_vertex_bucket = left_star_.get_valid_vertex_bucket();
+  const auto& right_valid_vertex_bucket = right_star_.get_valid_vertex_bucket();
   for (const auto& left_bucket : left_valid_vertex_bucket) {
     for (const auto& vid : left_bucket) {
-      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
+      const auto& value = graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
       new_left_valid_vertex_bucket[value].emplace(vid);
     }
   }
   for (const auto& right_bucket : right_valid_vertex_bucket) {
     for (const auto& vid : right_bucket) {
-      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
+      const auto& value = graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
       new_right_valid_vertex_bucket[value].emplace(vid);
     }
   }
 
-  left_star_.UpdateValidVertexBucket(&new_left_valid_vertex_bucket);
-  right_star_.UpdateValidVertexBucket(&new_right_valid_vertex_bucket);
+  left_star_.UpdateValidVertexBucket(std::move(new_left_valid_vertex_bucket));
+  right_star_.UpdateValidVertexBucket(std::move(new_right_valid_vertex_bucket));
 }
 
 bool GCR::TestStarRule(const MiniCleanCSRGraph& graph,
@@ -160,33 +161,30 @@ bool GCR::TestVariablePredicate(
     const MiniCleanCSRGraph& graph,
     const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
     VertexID right_vid) const {
-  auto left_path_id = variable_predicate.get_left_path_index();
-  auto right_path_id = variable_predicate.get_right_path_index();
-  auto left_vertex_id = variable_predicate.get_left_vertex_index();
-  auto right_vertex_id = variable_predicate.get_right_vertex_index();
-  auto left_attr_id = variable_predicate.get_left_attribute_id();
-  auto right_attr_id = variable_predicate.get_right_attribute_id();
-  auto left_pattern_id =
+  const auto& left_path_id = variable_predicate.get_left_path_index();
+  const auto& right_path_id = variable_predicate.get_right_path_index();
+  const auto& left_vertex_id = variable_predicate.get_left_vertex_index();
+  const auto& right_vertex_id = variable_predicate.get_right_vertex_index();
+  const auto& left_attr_id = variable_predicate.get_left_attribute_id();
+  const auto& right_attr_id = variable_predicate.get_right_attribute_id();
+  const auto& left_pattern_id =
       left_star_.get_path_rules()[left_path_id].get_path_pattern_id();
-  auto right_pattern_id =
+  const auto& right_pattern_id =
       left_star_.get_path_rules()[right_path_id].get_path_pattern_id();
 
-  auto left_bucket = left_star_.get_valid_vertex_bucket();
-  auto right_bucket = right_star_.get_valid_vertex_bucket();
-  auto index_collection = left_star_.get_index_collection();
-
-  auto left_path_instances =
+  const auto& index_collection = left_star_.get_index_collection();
+  const auto& left_path_instances =
       index_collection.GetPathInstanceBucket(left_vid, left_pattern_id);
-  auto right_path_instances =
+  const auto& right_path_instances =
       index_collection.GetPathInstanceBucket(right_vid, right_pattern_id);
 
   for (const auto& left_instance : left_path_instances) {
     for (const auto& right_instance : right_path_instances) {
       VertexID lvid = left_instance[left_vertex_id];
       VertexID rvid = right_instance[right_vertex_id];
-      auto left_value =
+      const auto& left_value =
           graph.GetVertexAttributeValuesByLocalID(lvid)[left_attr_id];
-      auto right_value =
+      const auto& right_value =
           graph.GetVertexAttributeValuesByLocalID(rvid)[right_attr_id];
       if (variable_predicate.Test(left_value, right_value)) {
         return true;
