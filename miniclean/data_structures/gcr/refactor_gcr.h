@@ -112,10 +112,10 @@ class GCR {
 
   void Backup();
   void Recover();
-  void VerticalExtend(const GCRVerticalExtension& vertical_extension,
+  void ExtendVertically(const GCRVerticalExtension& vertical_extension,
                       const MiniCleanCSRGraph& graph);
-  void HorizontalExtend(const GCRHorizontalExtension& horizontal_extension,
-                        const MiniCleanCSRGraph& graph);
+  void ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
+                          const MiniCleanCSRGraph& graph);
 
   ConcreteVariablePredicate ConcretizeVariablePredicate(
       const VariablePredicate& variable_predicate, uint8_t left_path_index,
@@ -136,7 +136,7 @@ class GCR {
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
                         bool consider_consequence) const;
 
-  bool PathMatching(const PathPattern path_pattern,
+  bool PathMatching(const PathPattern& path_pattern,
                     const MiniCleanCSRGraph& graph, size_t vertex_id,
                     size_t edge_id) const;
 
