@@ -17,7 +17,8 @@ typedef enum : uint8_t {
 class ConstantPredicate {
  private:
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
-  using VertexAttributeValue = sics::graph::miniclean::common::VertexAttributeValue;
+  using VertexAttributeValue =
+      sics::graph::miniclean::common::VertexAttributeValue;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
@@ -59,7 +60,8 @@ class ConstantPredicate {
 class VariablePredicate {
  private:
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
-  using VertexAttributeValue = sics::graph::miniclean::common::VertexAttributeValue;
+  using VertexAttributeValue =
+      sics::graph::miniclean::common::VertexAttributeValue;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
@@ -113,7 +115,8 @@ class VariablePredicate {
 class ConcreteVariablePredicate {
  private:
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
-  using VertexAttributeValue = sics::graph::miniclean::common::VertexAttributeValue;
+  using VertexAttributeValue =
+      sics::graph::miniclean::common::VertexAttributeValue;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
@@ -154,12 +157,11 @@ class ConcreteVariablePredicate {
     return variable_predicate_.get_operator_type();
   }
 
-  // TODO: Prefer free (inline) functions over static functions. 
+  // TODO: Prefer free (inline) functions over static functions.
   //       Reference: core/util/pointer_cast.h.
   static bool TestCompatibility(
       const std::vector<ConcreteVariablePredicate>& lhs_predicates,
       const std::vector<ConcreteVariablePredicate>& rhs_predicates);
-
 
   bool Test(VertexAttributeValue rhs, VertexAttributeValue lhs) const {
     return variable_predicate_.Test(rhs, lhs);

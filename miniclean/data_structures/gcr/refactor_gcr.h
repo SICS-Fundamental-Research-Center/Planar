@@ -160,8 +160,7 @@ class GCR {
       const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
       VertexID right_vid) const;
 
-  size_t TestPathRule(const MiniCleanCSRGraph& graph,
-                      const PathRule& path_rule,
+  size_t TestPathRule(const MiniCleanCSRGraph& graph, const PathRule& path_rule,
                       const PathInstanceBucket& path_instance_bucket,
                       const std::vector<size_t>& visited,
                       size_t start_pos) const;
