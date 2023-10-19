@@ -40,6 +40,7 @@ class PathRule {
 
   size_t get_path_pattern_id() const { return path_pattern_id_; }
 
+  // TODO: replace the std::pair with `ConcreteConstantPredicate`.
   const std::vector<std::pair<uint8_t, ConstantPredicate>>&
   get_constant_predicates() const {
     return constant_predicates_;

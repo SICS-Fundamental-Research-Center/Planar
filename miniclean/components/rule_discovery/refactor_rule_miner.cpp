@@ -278,7 +278,7 @@ void RuleMiner::ExtendGCR(GCR* gcr) const {
   for (const auto& vertical_extension : vertical_extensions) {
     // Vertical extension.
     gcr->Backup();
-    gcr->VerticalExtend(vertical_extension);
+    gcr->VerticalExtend(vertical_extension, graph_);
     // Compute horizontal extensions.
     std::vector<GCRHorizontalExtension> horizontal_extensions =
         ComputeHorizontalExtensions(*gcr, vertical_extension.extend_to_left);

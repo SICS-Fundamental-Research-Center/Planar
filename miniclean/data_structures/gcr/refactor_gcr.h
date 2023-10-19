@@ -55,8 +55,8 @@ class GCR {
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using PathRuleUnitContainer =
       std::vector<std::vector<std::vector<std::vector<std::vector<PathRule>>>>>;
-  // using BucketID = std::pair<std::pair<VertexLabel, VertexAttributeID>,
-  //                            std::pair<VertexLabel, VertexAttributeID>>;
+  using PathInstance = std::vector<VertexID>;
+  using PathInstanceBucket = std::vector<PathInstance>;
 
  public:
   GCR(const StarRule& left_star, const StarRule& right_star)
@@ -112,7 +112,8 @@ class GCR {
 
   void Backup();
   void Recover();
-  void VerticalExtend(const GCRVerticalExtension& vertical_extension);
+  void VerticalExtend(const GCRVerticalExtension& vertical_extension,
+                      const MiniCleanCSRGraph& graph);
   void HorizontalExtend(const GCRHorizontalExtension& horizontal_extension,
                         const MiniCleanCSRGraph& graph);
 
@@ -158,6 +159,12 @@ class GCR {
       const MiniCleanCSRGraph& graph,
       const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
       VertexID right_vid) const;
+
+  size_t TestPathRule(const MiniCleanCSRGraph& graph,
+                      const PathRule& path_rule,
+                      const PathInstanceBucket& path_instance_bucket,
+                      const std::vector<size_t>& visited,
+                      size_t start_pos) const;
 
   StarRule left_star_;
   StarRule right_star_;
