@@ -54,14 +54,10 @@ class RuleMiner {
   using ConstantPredicateContainer =
       std::map<VertexLabel, std::map<VertexAttributeID, ConstantPredicate>>;
   using Configurations = sics::graph::miniclean::common::Configurations;
-  // First item: consequence predicate.
-  // Second item: variable predicates.
-  using GCRHorizontalExtension =
-      std::pair<ConcreteVariablePredicate,
-                std::vector<ConcreteVariablePredicate>>;
-  // First item: whether extend to left or right.
-  // Second item: path rule.
-  using GCRVerticalExtension = std::pair<bool, PathRule>;
+  using GCRVerticalExtension = sics::graph::miniclean::data_structures::gcr::
+      refactor::GCRVerticalExtension;
+  using GCRHorizontalExtension = sics::graph::miniclean::data_structures::gcr::
+      refactor::GCRHorizontalExtension;
 
  public:
   RuleMiner(MiniCleanCSRGraph& graph) : graph_(graph) {}
@@ -119,42 +115,30 @@ class RuleMiner {
     }
   }
   void ExtendGCR(GCR* gcr) const;
-  void ComputeVerticalExtensions(
-      const GCR& gcr, std::vector<GCRVerticalExtension>* extensions) const;
-  void ComputeHorizontalExtensions(
-      const GCR& gcr, bool from_left,
-      std::vector<GCRHorizontalExtension>* extensions) const;
-  void ExtendConsequences(
-      const GCR& gcr, size_t lhs_start_path_index, size_t rhs_start_path_index,
-      size_t lhs_start_vertex_index, size_t rhs_start_vertex_index,
-      std::vector<ConcreteVariablePredicate>* consequences) const;
-  void ExtendVariablePredicates(
+  std::vector<GCRVerticalExtension> ComputeVerticalExtensions(
+      const GCR& gcr) const;
+  std::vector<GCRHorizontalExtension> ComputeHorizontalExtensions(
+      const GCR& gcr, bool from_left) const;
+  std::vector<ConcreteVariablePredicate> InstantiateVariablePredicates(
+      const GCR& gcr,
+      const std::vector<VariablePredicate>& variable_predicates) const;
+  std::vector<GCRHorizontalExtension> ExtendVariablePredicates(
       const GCR& gcr,
       const std::vector<ConcreteVariablePredicate>& consequences,
       size_t lhs_start_path_index, size_t rhs_start_path_index,
-      size_t lhs_start_vertex_index, size_t rhs_start_vertex_index,
-      std::vector<GCRHorizontalExtension>* extensions) const;
-  void GenerateVariablePredicates(
+      size_t lhs_start_vertex_index, size_t rhs_start_vertex_index) const;
+  std::vector<GCRHorizontalExtension> MergeHorizontalExtensions(
       const GCR& gcr,
-      const std::vector<ConcreteVariablePredicate>& consequences,
-      VariablePredicate variable_predicate, size_t lhs_start_path_index,
-      size_t rhs_start_path_index, size_t lhs_start_vertex_index,
-      size_t rhs_start_vertex_index,
-      std::vector<ConcreteVariablePredicate>* c_variable_predicates,
-      std::vector<ConcreteVariablePredicate>* o_variable_predicates) const;
-  void MergeHorizontalExtensions(
-      const GCR& gcr,
-      const std::vector<ConcreteVariablePredicate>& consequences,
+      const std::vector<ConcreteVariablePredicate>& c_consequences,
       std::vector<std::vector<ConcreteVariablePredicate>> c_variable_predicates,
-      std::vector<std::vector<ConcreteVariablePredicate>> o_variable_predicates,
-      size_t available_var_pred_num,
-      std::vector<GCRHorizontalExtension>* extensions) const;
+      size_t available_var_pred_num) const;
   void EnumerateValidVariablePredicates(
       const std::vector<ConcreteVariablePredicate>& variable_predicates,
       size_t start_idx, size_t max_item_num,
-      std::vector<ConcreteVariablePredicate>& intermediate_result,
+      std::vector<ConcreteVariablePredicate>* intermediate_result,
       std::vector<std::vector<ConcreteVariablePredicate>>*
           valid_variable_predicates) const;
+  size_t ComputeCombinationNum(size_t n, size_t k) const;
 
  private:
   MiniCleanCSRGraph& graph_;
