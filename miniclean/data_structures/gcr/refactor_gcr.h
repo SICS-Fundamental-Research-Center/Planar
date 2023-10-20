@@ -53,8 +53,6 @@ class GCR {
   using MiniCleanCSRGraph =
       sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
   using PathPattern = sics::graph::miniclean::common::PathPattern;
-  using PathRuleUnitContainer =
-      std::vector<std::vector<std::vector<std::vector<std::vector<PathRule>>>>>;
   using PathInstance = std::vector<VertexID>;
   using PathInstanceBucket = std::vector<PathInstance>;
 
@@ -110,60 +108,28 @@ class GCR {
     return left_count + right_count;
   }
 
-  void Backup();
   void Recover();
   void ExtendVertically(const GCRVerticalExtension& vertical_extension,
-                      const MiniCleanCSRGraph& graph);
+                        const MiniCleanCSRGraph& graph);
   void ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
                           const MiniCleanCSRGraph& graph);
-
-  ConcreteVariablePredicate ConcretizeVariablePredicate(
-      const VariablePredicate& variable_predicate, uint8_t left_path_index,
-      uint8_t left_vertex_index, uint8_t right_path_index,
-      uint8_t right_vertex_index) const {
-    ConcreteVariablePredicate concrete_variable_predicate(
-        variable_predicate, left_path_index, left_vertex_index,
-        right_path_index, right_vertex_index);
-    return concrete_variable_predicate;
-  }
-
+  // TODO: this function should be more rigorous.
   std::pair<size_t, size_t> ComputeMatchAndSupport(
       const MiniCleanCSRGraph& graph);
-
-  // Return the number of precondition predicates.
-  size_t CountPreconditions() const;
 
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
                         bool consider_consequence) const;
 
-  bool PathMatching(const PathPattern& path_pattern,
-                    const MiniCleanCSRGraph& graph, size_t vertex_id,
-                    size_t edge_id) const;
-
  private:
-  std::vector<std::vector<std::pair<size_t, size_t>>>
-  ComputeVariablePredicateInstances() const;
-  void EnumerateVariablePredicateInstances(
-      std::vector<std::vector<std::pair<size_t, size_t>>>& value_pair_vec,
-      size_t variable_predicate_index,
-      std::vector<std::pair<size_t, size_t>>& current_value_pair_vec,
-      std::vector<std::vector<std::pair<size_t, size_t>>>* var_pred_instances)
-      const;
-  std::vector<std::pair<size_t, size_t>> ComputeAttributeValuePair(
-      const ConcreteVariablePredicate& variable_predicate) const;
+  void Backup(const MiniCleanCSRGraph& graph,
+              const VertexAttributeID& left_vertex_attr_id,
+              const VertexAttributeID& right_vertex_attr_id);
   void InitializeBuckets(const MiniCleanCSRGraph& graph,
                          const ConcreteVariablePredicate& c_variable_predicate);
-  bool TestStarRule(const MiniCleanCSRGraph& graph, const StarRule& star_rule,
-                    VertexID center_id) const;
   bool TestVariablePredicate(
       const MiniCleanCSRGraph& graph,
       const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
       VertexID right_vid) const;
-
-  size_t TestPathRule(const MiniCleanCSRGraph& graph, const PathRule& path_rule,
-                      const PathInstanceBucket& path_instance_bucket,
-                      const std::vector<size_t>& visited,
-                      size_t start_pos) const;
 
   StarRule left_star_;
   StarRule right_star_;

@@ -8,18 +8,18 @@ bool ConcreteVariablePredicate::TestCompatibility(
   for (const auto& lhs_predicate : lhs_predicates) {
     uint8_t left_path_index = lhs_predicate.get_left_path_index();
     uint8_t left_vertex_index = lhs_predicate.get_left_vertex_index();
-    const auto& left_attribute_id = lhs_predicate.get_left_attribute_id();
+    auto left_attribute_id = lhs_predicate.get_left_attribute_id();
     uint8_t right_path_index = lhs_predicate.get_right_path_index();
     uint8_t right_vertex_index = lhs_predicate.get_right_vertex_index();
-    const auto& right_attribute_id = lhs_predicate.get_right_attribute_id();
+    auto right_attribute_id = lhs_predicate.get_right_attribute_id();
 
     for (const auto& rhs_predicate : rhs_predicates) {
       uint8_t comp_left_path_index = rhs_predicate.get_left_path_index();
       uint8_t comp_left_vertex_index = rhs_predicate.get_left_vertex_index();
-      const auto& comp_left_attribute_id = rhs_predicate.get_left_attribute_id();
+      auto comp_left_attribute_id = rhs_predicate.get_left_attribute_id();
       uint8_t comp_right_path_index = rhs_predicate.get_right_path_index();
       uint8_t comp_right_vertex_index = rhs_predicate.get_right_vertex_index();
-      const auto& comp_right_attribute_id = rhs_predicate.get_right_attribute_id();
+      auto comp_right_attribute_id = rhs_predicate.get_right_attribute_id();
       if ((left_path_index == comp_left_path_index &&
            left_vertex_index == comp_left_vertex_index &&
            left_attribute_id == comp_left_attribute_id) ||
