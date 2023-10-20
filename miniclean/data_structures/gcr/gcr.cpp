@@ -1,133 +1,234 @@
 #include "miniclean/data_structures/gcr/gcr.h"
 
-#include <mutex>
+#include <map>
 
-#include "core/util/logging.h"
+#include "miniclean/common/types.h"
+#include "miniclean/data_structures/gcr/predicate.h"
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
-using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
-using VertexAttributeValue =
-    sics::graph::miniclean::common::VertexAttributeValue;
+using PathPattern = sics::graph::miniclean::common::PathPattern;
 using PathPatternID = sics::graph::miniclean::common::PathPatternID;
+using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+using VertexID = sics::graph::miniclean::common::VertexID;
 
-void GCR::Init(
-    MiniCleanCSRGraph* graph,
-    std::vector<std::vector<std::vector<VertexID>>>& path_instances) {
-  ThreadPool thread_pool(20);
-
-  size_t num_segments = 5;
-  TaskPackage task_package;
-  task_package.reserve(num_segments * num_segments);
-
-  for (size_t i = 0; i < num_segments * num_segments; i++) {
-    task_package.emplace_back(std::bind(&GCR::InitTask, this, graph,
-                                        &path_instances, num_segments, i));
-  }
-
-  thread_pool.SubmitSync(task_package);
-  task_package.clear();
+void GCR::Backup(const MiniCleanCSRGraph& graph,
+                 const VertexAttributeID& left_vertex_attr_id,
+                 const VertexAttributeID& right_vertex_attr_id) {
+  left_star_.Backup(graph, left_vertex_attr_id);
+  right_star_.Backup(graph, right_vertex_attr_id);
 }
 
-void GCR::InitTask(
-    MiniCleanCSRGraph* graph,
-    std::vector<std::vector<std::vector<VertexID>>>* path_instances,
-    size_t num_segments, size_t task_id) {
-  // Retrieve path instances of left and right path pattern.
-  std::vector<std::vector<VertexID>>* left_path_instances =
-      &(*path_instances)[dual_pattern_.first.front()];
-  std::vector<std::vector<VertexID>>* right_path_instances =
-      &(*path_instances)[dual_pattern_.second.front()];
+void GCR::Recover() {
+  left_star_.Recover();
+  right_star_.Recover();
+}
 
-  std::list<std::pair<std::list<PathInstanceID>, std::list<PathInstanceID>>>
-      local_gcr_instances;
+void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension,
+                           const MiniCleanCSRGraph& graph) {
+  if (vertical_extension.extend_to_left) {
+    AddPathRuleToLeftStar(vertical_extension.path_rule);
+  } else {
+    AddPathRuleToRigthStar(vertical_extension.path_rule);
+  }
+  // Update vertex buckets.
+  Backup(graph, bucket_id_.left_attribute_id, bucket_id_.right_attribute_id);
+}
 
-  size_t left_segment_size = left_path_instances->size() / num_segments + 1;
-  size_t right_segment_size = right_path_instances->size() / num_segments + 1;
-
-  // TODO: (bai-wenchao) A unique pair of center can at most contribute 1
-  // support. Fix this mistake when instance tree is built.
-  size_t local_support = 0;
-  size_t local_match = 0;
-
-  size_t left_segment_id = task_id / num_segments;
-  size_t right_segment_id = task_id % num_segments;
-
-  for (PathInstanceID i = left_segment_id * left_segment_size;
-       i < (left_segment_id + 1) * left_segment_size; i++) {
-    for (PathInstanceID j = right_segment_id * right_segment_size;
-         j < (right_segment_id + 1) * right_segment_size; j++) {
-      if (i >= left_path_instances->size() ||
-          j >= right_path_instances->size()) {
-        break;
+void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
+                             const MiniCleanCSRGraph& graph) {
+  set_consequence(horizontal_extension.consequence);
+  for (const auto& c_variable_predicate :
+       horizontal_extension.variable_predicates) {
+    AddVariablePredicateToBack(c_variable_predicate);
+  }
+  // Update vertex buckets.
+  // 1. Check whether the previous buckets can be reused.
+  if (bucket_id_.left_label != MAX_VERTEX_ID) {
+    // Have initialized buckets.
+    for (const auto& c_variable_predicate :
+         horizontal_extension.variable_predicates) {
+      if (c_variable_predicate.get_left_label() == bucket_id_.left_label &&
+          c_variable_predicate.get_left_attribute_id() ==
+              bucket_id_.left_attribute_id &&
+          c_variable_predicate.get_right_label() == bucket_id_.right_label &&
+          c_variable_predicate.get_right_attribute_id() ==
+              bucket_id_.right_attribute_id) {
+        // Can reuse the buckets, return directly.
+        return;
       }
-      bool is_precondition_satisfied = true;
-      bool is_consequence_satisfied = true;
-      // Check preconditions.
-      for (const auto& precondition : preconditions_) {
-        if (precondition->get_predicate_type() == kConstantPredicate) {
-          ConstantPredicate* constant_precondition =
-              dynamic_cast<ConstantPredicate*>(precondition);
-          if (constant_precondition->is_in_lhs_pattern()) {
-            is_precondition_satisfied = constant_precondition->ConstantCompare(
-                graph, (*left_path_instances)[i]);
-          } else {
-            is_precondition_satisfied = constant_precondition->ConstantCompare(
-                graph, (*right_path_instances)[j]);
-          }
-          if (!is_precondition_satisfied) {
-            break;
-          }
-        } else if (precondition->get_predicate_type() == kVariablePredicate) {
-          VariablePredicate* variable_precondition =
-              dynamic_cast<VariablePredicate*>(precondition);
-
-          is_precondition_satisfied = variable_precondition->VariableCompare(
-              graph, (*left_path_instances)[i], (*right_path_instances)[j]);
-
-          if (!is_precondition_satisfied) {
-            break;
-          }
-        } else {
-          LOG_FATAL("Unsupported predicate type.");
-        }
-      }
-      if (!is_precondition_satisfied) {
-        continue;
-      }
-      local_match++;
-      // Check consequences.
-      if (consequence_->get_predicate_type() == kConstantPredicate) {
-        ConstantPredicate* constant_consequence =
-            dynamic_cast<ConstantPredicate*>(consequence_);
-        if (constant_consequence->is_in_lhs_pattern()) {
-          is_consequence_satisfied = constant_consequence->ConstantCompare(
-              graph, (*left_path_instances)[i]);
-        } else {
-          is_consequence_satisfied = constant_consequence->ConstantCompare(
-              graph, (*right_path_instances)[j]);
-        }
-      } else if (consequence_->get_predicate_type() == kVariablePredicate) {
-        VariablePredicate* variable_consequence =
-            dynamic_cast<VariablePredicate*>(consequence_);
-        is_consequence_satisfied = variable_consequence->VariableCompare(
-            graph, (*left_path_instances)[i], (*right_path_instances)[j]);
-      } else {
-        LOG_FATAL("Unsupported predicate type.");
-      }
-
-      if (is_consequence_satisfied) {
-        local_support++;
-        local_gcr_instances.push_back(std::make_pair(
-            std::list<PathInstanceID>{i}, std::list<PathInstanceID>{j}));
-      }
-
-      std::lock_guard<std::mutex> lock(mutex_);
-      set_local_support(local_support);
-      set_local_match(local_match);
-      AddGCRInstancesToBack(local_gcr_instances);
     }
   }
+  // 2. Re-bucketing.
+  // TODO: Determine which variable predicate is the best choice to
+  // re-bucketing.
+  for (const auto& c_variable_predicate :
+       horizontal_extension.variable_predicates) {
+    // Check whether the predicate located at the centers.
+    if (c_variable_predicate.get_left_path_index() != 0 ||
+        c_variable_predicate.get_left_vertex_index() != 0 ||
+        c_variable_predicate.get_right_path_index() != 0 ||
+        c_variable_predicate.get_right_vertex_index() != 0)
+      continue;
+    // Set the bucket id.
+    bucket_id_.left_label = c_variable_predicate.get_left_label();
+    bucket_id_.left_attribute_id = c_variable_predicate.get_left_attribute_id();
+    bucket_id_.right_label = c_variable_predicate.get_right_label();
+    bucket_id_.right_attribute_id =
+        c_variable_predicate.get_right_attribute_id();
+    // Initialize buckets.
+    InitializeBuckets(graph, c_variable_predicate);
+    return;
+  }
+}
+
+std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
+    const MiniCleanCSRGraph& graph) {
+  size_t support = 0;
+  size_t match = 0;
+
+  bool preconditions_match = true;
+  const auto& left_bucket = left_star_.get_valid_vertex_bucket();
+  const auto& right_bucket = right_star_.get_valid_vertex_bucket();
+  for (size_t i = 0; i < left_bucket.size(); i++) {
+    for (const auto& left_vertex : left_bucket[i]) {
+      for (const auto& right_vertex : right_bucket[i]) {
+        // Test preconditions.
+        preconditions_match = true;
+        for (const auto& variable_predicate : variable_predicates_) {
+          if (!TestVariablePredicate(graph, variable_predicate, left_vertex,
+                                     right_vertex)) {
+            preconditions_match = false;
+            break;
+          }
+        }
+        if (preconditions_match) {
+          support++;
+          // Test consequence.
+          if (TestVariablePredicate(graph, consequence_, left_vertex,
+                                    right_vertex)) {
+            match++;
+          }
+        }
+      }
+    }
+  }
+  return std::make_pair(match, support);
+}
+
+void GCR::InitializeBuckets(
+    const MiniCleanCSRGraph& graph,
+    const ConcreteVariablePredicate& c_variable_predicate) {
+  const auto& index_collection = left_star_.get_index_collection();
+  auto left_label = c_variable_predicate.get_left_label();
+  auto left_attr_id = c_variable_predicate.get_left_attribute_id();
+  const auto& left_label_buckets =
+      index_collection.GetAttributeBucketByVertexLabel(left_label);
+  auto right_label = c_variable_predicate.get_right_label();
+  auto right_attr_id = c_variable_predicate.get_right_attribute_id();
+  const auto& right_label_buckets =
+      index_collection.GetAttributeBucketByVertexLabel(right_label);
+  auto left_value_bucket_size = left_label_buckets.at(left_attr_id).size();
+  auto right_value_bucket_size = right_label_buckets.at(right_attr_id).size();
+
+  if (left_value_bucket_size != right_value_bucket_size) {
+    LOG_FATAL("The value bucket size of left and right are not equal.");
+  }
+
+  std::vector<std::unordered_set<VertexID>> new_left_valid_vertex_bucket;
+  std::vector<std::unordered_set<VertexID>> new_right_valid_vertex_bucket;
+
+  new_left_valid_vertex_bucket.resize(left_value_bucket_size);
+  new_right_valid_vertex_bucket.resize(right_value_bucket_size);
+
+  const auto& left_valid_vertex_bucket = left_star_.get_valid_vertex_bucket();
+  const auto& right_valid_vertex_bucket = right_star_.get_valid_vertex_bucket();
+  for (const auto& left_bucket : left_valid_vertex_bucket) {
+    for (const auto& vid : left_bucket) {
+      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
+      new_left_valid_vertex_bucket[value].emplace(vid);
+    }
+  }
+  for (const auto& right_bucket : right_valid_vertex_bucket) {
+    for (const auto& vid : right_bucket) {
+      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
+      new_right_valid_vertex_bucket[value].emplace(vid);
+    }
+  }
+
+  left_star_.UpdateValidVertexBucket(std::move(new_left_valid_vertex_bucket));
+  right_star_.UpdateValidVertexBucket(std::move(new_right_valid_vertex_bucket));
+}
+
+bool GCR::TestVariablePredicate(
+    const MiniCleanCSRGraph& graph,
+    const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
+    VertexID right_vid) const {
+  const auto& index_collection = left_star_.get_index_collection();
+
+  auto left_path_id = variable_predicate.get_left_path_index();
+  auto right_path_id = variable_predicate.get_right_path_index();
+  auto left_vertex_id = variable_predicate.get_left_vertex_index();
+  auto right_vertex_id = variable_predicate.get_right_vertex_index();
+  auto left_attr_id = variable_predicate.get_left_attribute_id();
+  auto right_attr_id = variable_predicate.get_right_attribute_id();
+  PathPatternID left_pattern_id = 0;
+  PathInstanceBucket left_path_instances;
+  if (!left_star_.get_path_rules().empty()) {
+    left_pattern_id =
+        left_star_.get_path_rules()[left_path_id].get_path_pattern_id();
+    left_path_instances =
+        index_collection.GetPathInstanceBucket(left_vid, left_pattern_id);
+  } else {
+    PathInstance left_instance;
+    left_instance.emplace_back(left_vid);
+    left_path_instances.emplace_back(left_instance);
+  }
+  PathPatternID right_pattern_id = 0;
+  PathInstanceBucket right_path_instances;
+  if (!right_star_.get_path_rules().empty()) {
+    right_pattern_id =
+        right_star_.get_path_rules()[right_path_id].get_path_pattern_id();
+    right_path_instances =
+        index_collection.GetPathInstanceBucket(right_vid, right_pattern_id);
+  } else {
+    PathInstance right_instance;
+    right_instance.emplace_back(right_vid);
+    right_path_instances.emplace_back(right_instance);
+  }
+
+  for (const auto& left_instance : left_path_instances) {
+    for (const auto& right_instance : right_path_instances) {
+      VertexID lvid = left_instance[left_vertex_id];
+      VertexID rvid = right_instance[right_vertex_id];
+      auto left_value =
+          graph.GetVertexAttributeValuesByLocalID(lvid)[left_attr_id];
+      auto right_value =
+          graph.GetVertexAttributeValuesByLocalID(rvid)[right_attr_id];
+      if (variable_predicate.Test(left_value, right_value)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+bool GCR::IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
+                           bool consider_consequence) const {
+  std::vector<ConcreteVariablePredicate> variable_predicates;
+  variable_predicates.reserve(1);
+  variable_predicates.emplace_back(variable_predicate);
+  bool compatibilty = ConcreteVariablePredicate::TestCompatibility(
+      variable_predicates, variable_predicates_);
+  if (consider_consequence) {
+    std::vector<ConcreteVariablePredicate> consequences;
+    consequences.reserve(1);
+    consequences.emplace_back(consequence_);
+    compatibilty = compatibilty && ConcreteVariablePredicate::TestCompatibility(
+                                       variable_predicates, consequences);
+  }
+  return compatibilty;
 }
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

@@ -12,6 +12,7 @@ typedef uint32_t VertexID;
 // TODO (bai-wenchao): uint8_t is enough, change the vertex_label format.
 typedef uint8_t VertexLabel;
 typedef uint8_t EdgeLabel;
+typedef uint64_t EdgeIndex;
 
 // Pattern Vertex ID:
 //   ID of a vertex in a star pattern.

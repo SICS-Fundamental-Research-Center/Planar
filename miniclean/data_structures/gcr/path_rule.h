@@ -5,7 +5,7 @@
 
 #include "miniclean/common/types.h"
 #include "miniclean/components/preprocessor/index_collection.h"
-#include "miniclean/data_structures/gcr/refactor_predicate.h"
+#include "miniclean/data_structures/gcr/predicate.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 namespace sics::graph::miniclean::data_structures::gcr {
@@ -19,7 +19,7 @@ class PathRule {
   using PathPatternID = sics::graph::miniclean::common::PathPatternID;
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using ConstantPredicate =
-      sics::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate;
+      sics::graph::miniclean::data_structures::gcr::ConstantPredicate;
   using MiniCleanCSRGraph =
       sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
   using VertexID = sics::graph::miniclean::common::VertexID;
@@ -85,7 +85,7 @@ class StarRule {
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
   using VertexID = sics::graph::miniclean::common::VertexID;
   using ConstantPredicate =
-      sics::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate;
+      sics::graph::miniclean::data_structures::gcr::ConstantPredicate;
   using VertexAttributeValue =
       sics::graph::miniclean::common::VertexAttributeValue;
   using IndexCollection =
