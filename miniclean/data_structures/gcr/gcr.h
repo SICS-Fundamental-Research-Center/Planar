@@ -120,6 +120,10 @@ class GCR {
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
                         bool consider_consequence) const;
 
+  const std::string GetGCRInfo(
+      const std::vector<PathPattern>& path_patterns) const;
+  void SaveGCRToTxt(std::string path, std::string gcr_info) const;
+
  private:
   void Backup(const MiniCleanCSRGraph& graph,
               const VertexAttributeID& left_vertex_attr_id,
