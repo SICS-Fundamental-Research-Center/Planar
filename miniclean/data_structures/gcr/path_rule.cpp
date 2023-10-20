@@ -94,8 +94,7 @@ size_t StarRule::ComputeInitSupport() {
        attr_bucket_by_vlabel0.at(vattr_id0).at(vattr_value0)) {
     bool valid = true;
     for (size_t i = 1; i < constant_predicates_.size(); i++) {
-      if (constant_predicates_[i].get_operator_type() !=
-          refactor::OperatorType::kEq) {
+      if (constant_predicates_[i].get_operator_type() != OperatorType::kEq) {
         LOG_FATAL("Only support constant predicates with operator type kEq.");
       }
       auto vlabel = constant_predicates_[i].get_vertex_label();
@@ -137,8 +136,7 @@ std::unordered_set<VertexID> StarRule::ComputeValidCenters() {
   valid_centers = attr_bucket_by_vlabel0.at(vattr_id0).at(vattr_value0);
   // Compute the intersection.
   for (size_t i = 1; i < constant_predicates_.size(); i++) {
-    if (constant_predicates_[i].get_operator_type() !=
-        refactor::OperatorType::kEq) {
+    if (constant_predicates_[i].get_operator_type() != OperatorType::kEq) {
       LOG_FATAL("Only support constant predicates with operator type kEq.");
     }
     auto vlabel = constant_predicates_[i].get_vertex_label();

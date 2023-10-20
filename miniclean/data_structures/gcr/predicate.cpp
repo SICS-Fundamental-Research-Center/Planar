@@ -1,6 +1,6 @@
-#include "miniclean/data_structures/gcr/refactor_predicate.h"
+#include "miniclean/data_structures/gcr/predicate.h"
 
-namespace sics::graph::miniclean::data_structures::gcr::refactor {
+namespace sics::graph::miniclean::data_structures::gcr {
 
 bool ConcreteVariablePredicate::TestCompatibility(
     const std::vector<ConcreteVariablePredicate>& lhs_predicates,
@@ -32,4 +32,4 @@ bool ConcreteVariablePredicate::TestCompatibility(
   }
   return true;
 }
-}  // namespace sics::graph::miniclean::data_structures::gcr::refactor
+}  // namespace sics::graph::miniclean::data_structures::gcr
