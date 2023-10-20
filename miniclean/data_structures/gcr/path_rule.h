@@ -67,11 +67,11 @@ class PathRule {
   void ComposeWith(const PathRule& other);
 
   // This function returns the index of path instance if matching successfully.
-  // Otherwise, it would return sizeof(path instances).
-  size_t TestPathRule(const MiniCleanCSRGraph& graph,
-                      const PathInstanceBucket& path_instance_bucket,
-                      const std::vector<size_t>& visited,
-                      size_t start_pos) const;
+  // Otherwise, it would return the number of path instances.
+  size_t GetPathRuleIndex(const MiniCleanCSRGraph& graph,
+                          const PathInstanceBucket& path_instance_bucket,
+                          const std::vector<size_t>& visited,
+                          size_t start_pos) const;
 
  private:
   size_t path_pattern_id_;

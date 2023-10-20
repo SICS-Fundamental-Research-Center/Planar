@@ -34,10 +34,10 @@ size_t PathRule::ComputeInitSupport() {
   return 0;
 }
 
-size_t PathRule::TestPathRule(const MiniCleanCSRGraph& graph,
-                              const PathInstanceBucket& path_instance_bucket,
-                              const std::vector<size_t>& visited,
-                              size_t start_pos) const {
+size_t PathRule::GetPathRuleIndex(
+    const MiniCleanCSRGraph& graph,
+    const PathInstanceBucket& path_instance_bucket,
+    const std::vector<size_t>& visited, size_t start_pos) const {
   for (size_t i = start_pos; i < path_instance_bucket.size(); i++) {
     // Check whether i has been visited.
     for (const auto& visited_pos : visited) {
@@ -223,7 +223,7 @@ bool StarRule::TestStarRule(const MiniCleanCSRGraph& graph,
     match_stack.reserve(path_rules.size());
 
     size_t start_pos =
-        path_rules[0].TestPathRule(graph, path_instances, match_stack, 0);
+        path_rules[0].GetPathRuleIndex(graph, path_instances, match_stack, 0);
     if (start_pos == path_instances.size()) return false;
     match_stack.push_back(start_pos);
 
@@ -232,12 +232,13 @@ bool StarRule::TestStarRule(const MiniCleanCSRGraph& graph,
       if (match_stack.size() == path_rules.size()) break;
       // Check the next path rule.
       size_t next_matched_position =
-          path_rules[match_stack.size()].TestPathRule(graph, path_instances,
-                                                      match_stack, 0);
+          path_rules[match_stack.size()].GetPathRuleIndex(graph, path_instances,
+                                                          match_stack, 0);
       while (match_stack.size() > 0 &&
              next_matched_position == path_instances.size()) {
-        next_matched_position = path_rules[match_stack.size() - 1].TestPathRule(
-            graph, path_instances, match_stack, match_stack.back() + 1);
+        next_matched_position =
+            path_rules[match_stack.size() - 1].GetPathRuleIndex(
+                graph, path_instances, match_stack, match_stack.back() + 1);
         match_stack.pop_back();
       }
       if (next_matched_position == path_instances.size()) return false;
