@@ -1,6 +1,7 @@
 #ifndef MINICLEAN_DATA_STRUCTURES_GCR_PATH_RULE_H_
 #define MINICLEAN_DATA_STRUCTURES_GCR_PATH_RULE_H_
 
+#include <map>
 #include <unordered_set>
 
 #include "miniclean/common/types.h"
@@ -23,6 +24,9 @@ class PathRule {
   using MiniCleanCSRGraph =
       sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
   using VertexID = sics::graph::miniclean::common::VertexID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
   using VertexAttributeValue =
       sics::graph::miniclean::common::VertexAttributeValue;
   using IndexCollection =
@@ -73,6 +77,9 @@ class PathRule {
                           const std::vector<size_t>& visited,
                           size_t start_pos) const;
 
+  std::string GetInfoString(
+      const std::vector<PathPattern>& path_patterns) const;
+
  private:
   size_t path_pattern_id_;
   // The first element is the index of vertex in the pattern;
@@ -92,6 +99,7 @@ class StarRule {
       sics::graph::miniclean::components::preprocessor::IndexCollection;
   using MiniCleanCSRGraph =
       sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+  using PathPattern = sics::graph::miniclean::common::PathPattern;
   using PathPatternID = sics::graph::miniclean::common::PathPatternID;
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
 
@@ -159,6 +167,9 @@ class StarRule {
   void Backup(const MiniCleanCSRGraph& graph,
               const VertexAttributeID& vertex_attr_id);
   void Recover();
+
+  std::string GetInfoString(
+      const std::vector<PathPattern>& path_patterns) const;
 
  private:
   std::unordered_set<VertexID> ComputeValidCenters();

@@ -264,6 +264,9 @@ void RuleMiner::MineGCRs() {
                 confidence >= Configurations::Get()->confidence_threshold_) {
               LOG_INFO("Mined a valid GCR. Support: ", support,
                        " Confidence: ", confidence);
+              std::string gcr_info = gcr.GetInfoString(path_patterns_);
+              LOG_INFO(gcr_info);
+              gcr.SaveToFile(Configurations::Get()->gcr_path, gcr_info);
               continue;
             }
             // If support >= threshold, confidence < threshold, go to next
@@ -307,7 +310,11 @@ void RuleMiner::ExtendGCR(GCR* gcr) const {
       // If support, confidenc >= threshold, write back to disk.
       if (support >= Configurations::Get()->support_threshold_ &&
           confidence >= Configurations::Get()->confidence_threshold_) {
-        LOG_INFO("Mined a valid GCR.");
+        LOG_INFO("Mined a valid GCR. Support: ", support,
+                 " Confidence: ", confidence);
+        std::string gcr_info = gcr->GetInfoString(path_patterns_);
+        LOG_INFO(gcr_info);
+        gcr->SaveToFile(Configurations::Get()->gcr_path, gcr_info);
         continue;
       }
       // If support >= threshold, confidence < threshold, go to next level.

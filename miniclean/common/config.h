@@ -2,6 +2,7 @@
 #define GRAPH_SYSTEMS_MINICLEAN_COMMON_CONFIG_H_
 
 #include <cstddef>
+#include <string>
 
 namespace sics::graph::miniclean::common {
 
@@ -28,6 +29,8 @@ class Configurations {
   float confidence_threshold_ = 0.7;
 
   size_t max_variable_predicate_num_ = 1;
+
+  std::string gcr_path = "data/imdb/results/gcr.txt";
 
  private:
   Configurations() = default;

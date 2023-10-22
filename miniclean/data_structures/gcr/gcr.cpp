@@ -231,4 +231,53 @@ bool GCR::IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
   return compatibilty;
 }
 
+std::string GCR::GetInfoString(
+    const std::vector<PathPattern>& path_patterns) const {
+  std::stringstream ss;
+
+  ss << "===GCR info===" << std::endl;
+  ss << "Left star: " << std::endl;
+  ss << left_star_.GetInfoString(path_patterns);
+  ss << "Right star: " << std::endl;
+  ss << right_star_.GetInfoString(path_patterns);
+  ss << "Variable predicates: " << std::endl;
+  for (const auto& var_pred : variable_predicates_) {
+    uint8_t left_path_id = var_pred.get_left_path_index();
+    uint8_t left_vertex_id = var_pred.get_left_vertex_index();
+    uint8_t right_path_id = var_pred.get_right_path_index();
+    uint8_t right_vertex_id = var_pred.get_right_vertex_index();
+    VertexAttributeID left_attr_id = var_pred.get_left_attribute_id();
+    VertexAttributeID right_attr_id = var_pred.get_right_attribute_id();
+    VertexLabel left_label = var_pred.get_left_label();
+    VertexLabel right_label = var_pred.get_right_label();
+    OperatorType op_type = var_pred.get_operator_type();
+    ss << "Left path id: " << static_cast<int>(left_path_id)
+       << ", left vertex id: " << static_cast<int>(left_vertex_id)
+       << ", right path id: " << static_cast<int>(right_path_id)
+       << ", right vertex id: " << static_cast<int>(right_vertex_id)
+       << std::endl;
+    ss << static_cast<int>(left_label) << "( " << static_cast<int>(left_attr_id)
+       << " )";
+    if (op_type == OperatorType::kEq) {
+      ss << " = ";
+    } else if (op_type == OperatorType::kGt) {
+      ss << " > ";
+    }
+    ss << static_cast<int>(right_label) << "( "
+       << static_cast<int>(right_attr_id) << " )" << std::endl;
+    ss << "---------------------" << std::endl;
+  }
+  ss << "===End of this GCR===" << std::endl;
+
+  return ss.str();
+}
+
+void GCR::SaveToFile(const std::string& path,
+                     const std::string& gcr_info) const {
+  std::ofstream out_file;
+  out_file.open(path, std::ios::app);
+  out_file << gcr_info;
+  out_file.close();
+}
+
 }  // namespace sics::graph::miniclean::data_structures::gcr

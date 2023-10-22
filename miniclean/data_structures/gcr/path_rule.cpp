@@ -56,6 +56,48 @@ size_t PathRule::GetPathRuleIndex(
   return path_instance_bucket.size();
 }
 
+std::string PathRule::GetInfoString(
+    const std::vector<PathPattern>& path_patterns) const {
+  std::stringstream ss;
+  // Group constant predicates according to their vertex positions.
+  std::map<uint8_t, std::vector<ConstantPredicate>> const_pred_by_vertex_pos;
+  for (const auto& const_pred_pair : constant_predicates_) {
+    if (const_pred_by_vertex_pos.find(const_pred_pair.first) ==
+        const_pred_by_vertex_pos.end())
+      const_pred_by_vertex_pos.emplace(const_pred_pair.first,
+                                       std::vector<ConstantPredicate>());
+    const_pred_by_vertex_pos[const_pred_pair.first].emplace_back(
+        const_pred_pair.second);
+  }
+  for (size_t i = 0; i < path_patterns[path_pattern_id_].size(); i++) {
+    VertexLabel vlabel = std::get<0>(path_patterns[path_pattern_id_][i]);
+    EdgeLabel elabel = std::get<1>(path_patterns[path_pattern_id_][i]);
+    ss << vlabel << "( ";
+    for (const auto& pred : const_pred_by_vertex_pos.at(i)) {
+      VertexLabel p_vlabel = pred.get_vertex_label();
+      VertexAttributeID p_vattr_id = pred.get_vertex_attribute_id();
+      ss << p_vlabel << "[" << p_vattr_id << "]";
+      OperatorType operator_type = pred.get_operator_type();
+      if (operator_type == OperatorType::kEq) {
+        ss << " = ";
+      } else if (operator_type == OperatorType::kGt) {
+        ss << " > ";
+      } else {
+        LOG_FATAL("Unsupported operator type: ", operator_type);
+      }
+      VertexAttributeValue p_vattr_value = pred.get_constant_value();
+      ss << p_vattr_value << ", ";
+    }
+    ss << ") ";
+    if (elabel == MAX_EDGE_LABEL) {
+      ss << std::endl;
+      break;
+    }
+    ss << "--> < " << elabel << " > ";
+  }
+  return ss.str();
+}
+
 void StarRule::ComposeWith(const StarRule& other) {
   // Check whether two star rules have th same path pattern.
   if (center_label_ != other.center_label_) {
@@ -205,6 +247,8 @@ bool StarRule::TestStarRule(const MiniCleanCSRGraph& graph,
   std::map<PathPatternID, std::vector<PathRule>> path_rule_map;
   for (const auto& path_rule : path_rules_) {
     auto path_pattern_id = path_rule.get_path_pattern_id();
+    if (path_rule_map.find(path_pattern_id) == path_rule_map.end())
+      path_rule_map.emplace(path_pattern_id, std::vector<PathRule>());
     path_rule_map[path_pattern_id].emplace_back(path_rule);
   }
   // Procss path rules that have the same path pattern id.
@@ -245,4 +289,35 @@ bool StarRule::TestStarRule(const MiniCleanCSRGraph& graph,
   }
   return true;
 }
+
+std::string StarRule::GetInfoString(
+    const std::vector<PathPattern>& path_patterns) const {
+  std::stringstream ss;
+
+  ss << "Star Center: ";
+  for (const auto& pred : constant_predicates_) {
+    VertexLabel vlabel = pred.get_vertex_label();
+    VertexAttributeID vattr_id = pred.get_vertex_attribute_id();
+    ss << vlabel << "[" << vattr_id << "]";
+    OperatorType operator_type = pred.get_operator_type();
+    if (operator_type == OperatorType::kEq) {
+      ss << " = ";
+    } else if (operator_type == OperatorType::kGt) {
+      ss << " > ";
+    } else {
+      LOG_FATAL("Unsupported operator type: ", operator_type);
+    }
+    VertexAttributeValue vattr_value = pred.get_constant_value();
+    ss << vattr_value << ", ";
+  }
+  ss << std::endl;
+
+  for (size_t i = 0; i < path_rules_.size(); i++) {
+    ss << "Path rule " << i << ": "
+       << path_rules_[i].GetInfoString(path_patterns) << std::endl;
+  }
+
+  return ss.str();
+}
+
 }  // namespace sics::graph::miniclean::data_structures::gcr
