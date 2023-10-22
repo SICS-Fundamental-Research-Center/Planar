@@ -77,7 +77,7 @@ class PathRule {
                           const std::vector<size_t>& visited,
                           size_t start_pos) const;
 
-  const std::string GetPathRuleInfo(
+  std::string GetInfoString(
       const std::vector<PathPattern>& path_patterns) const;
 
  private:
@@ -168,7 +168,7 @@ class StarRule {
               const VertexAttributeID& vertex_attr_id);
   void Recover();
 
-  const std::string GetStarRuleInfo(
+  std::string GetInfoString(
       const std::vector<PathPattern>& path_patterns) const;
 
  private:

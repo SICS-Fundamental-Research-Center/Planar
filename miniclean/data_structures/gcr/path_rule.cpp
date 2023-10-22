@@ -56,12 +56,16 @@ size_t PathRule::GetPathRuleIndex(
   return path_instance_bucket.size();
 }
 
-const std::string PathRule::GetPathRuleInfo(
+std::string PathRule::GetInfoString(
     const std::vector<PathPattern>& path_patterns) const {
   std::stringstream ss;
   // Group constant predicates according to their vertex positions.
   std::map<uint8_t, std::vector<ConstantPredicate>> const_pred_by_vertex_pos;
   for (const auto& const_pred_pair : constant_predicates_) {
+    if (const_pred_by_vertex_pos.find(const_pred_pair.first) ==
+        const_pred_by_vertex_pos.end())
+      const_pred_by_vertex_pos.emplace(const_pred_pair.first,
+                                       std::vector<ConstantPredicate>());
     const_pred_by_vertex_pos[const_pred_pair.first].emplace_back(
         const_pred_pair.second);
   }
@@ -243,6 +247,8 @@ bool StarRule::TestStarRule(const MiniCleanCSRGraph& graph,
   std::map<PathPatternID, std::vector<PathRule>> path_rule_map;
   for (const auto& path_rule : path_rules_) {
     auto path_pattern_id = path_rule.get_path_pattern_id();
+    if (path_rule_map.find(path_pattern_id) == path_rule_map.end())
+      path_rule_map.emplace(path_pattern_id, std::vector<PathRule>());
     path_rule_map[path_pattern_id].emplace_back(path_rule);
   }
   // Procss path rules that have the same path pattern id.
@@ -284,7 +290,7 @@ bool StarRule::TestStarRule(const MiniCleanCSRGraph& graph,
   return true;
 }
 
-const std::string StarRule::GetStarRuleInfo(
+std::string StarRule::GetInfoString(
     const std::vector<PathPattern>& path_patterns) const {
   std::stringstream ss;
 
@@ -308,7 +314,7 @@ const std::string StarRule::GetStarRuleInfo(
 
   for (size_t i = 0; i < path_rules_.size(); i++) {
     ss << "Path rule " << i << ": "
-       << path_rules_[i].GetPathRuleInfo(path_patterns) << std::endl;
+       << path_rules_[i].GetInfoString(path_patterns) << std::endl;
   }
 
   return ss.str();

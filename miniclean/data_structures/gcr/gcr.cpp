@@ -231,19 +231,15 @@ bool GCR::IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
   return compatibilty;
 }
 
-const std::string GCR::GetGCRInfo(
+std::string GCR::GetInfoString(
     const std::vector<PathPattern>& path_patterns) const {
   std::stringstream ss;
 
   ss << "===GCR info===" << std::endl;
   ss << "Left star: " << std::endl;
-  for (const auto& path_rule : left_star_.get_path_rules()) {
-    ss << path_rule.GetPathRuleInfo(path_patterns) << std::endl;
-  }
+  ss << left_star_.GetInfoString(path_patterns);
   ss << "Right star: " << std::endl;
-  for (const auto& path_rule : right_star_.get_path_rules()) {
-    ss << path_rule.GetPathRuleInfo(path_patterns) << std::endl;
-  }
+  ss << right_star_.GetInfoString(path_patterns);
   ss << "Variable predicates: " << std::endl;
   for (const auto& var_pred : variable_predicates_) {
     uint8_t left_path_id = var_pred.get_left_path_index();
@@ -276,7 +272,8 @@ const std::string GCR::GetGCRInfo(
   return ss.str();
 }
 
-void GCR::SaveGCRToTxt(std::string path, std::string gcr_info) const {
+void GCR::SaveToFile(const std::string& path,
+                     const std::string& gcr_info) const {
   std::ofstream out_file;
   out_file.open(path, std::ios::app);
   out_file << gcr_info;
