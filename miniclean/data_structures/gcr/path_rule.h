@@ -2,8 +2,11 @@
 #define MINICLEAN_DATA_STRUCTURES_GCR_PATH_RULE_H_
 
 #include <map>
+#include <mutex>
 #include <unordered_set>
 
+#include "core/common/multithreading/task.h"
+#include "core/common/multithreading/thread_pool.h"
 #include "miniclean/common/types.h"
 #include "miniclean/components/preprocessor/index_collection.h"
 #include "miniclean/data_structures/gcr/predicate.h"
@@ -33,6 +36,9 @@ class PathRule {
       sics::graph::miniclean::components::preprocessor::IndexCollection;
   using PathInstance = std::vector<VertexID>;
   using PathInstanceBucket = std::vector<PathInstance>;
+  using Task = sics::graph::core::common::Task;
+  using TaskPackage = sics::graph::core::common::TaskPackage;
+  using ThreadPool = sics::graph::core::common::ThreadPool;
 
  public:
   PathRule() = default;
@@ -57,7 +63,7 @@ class PathRule {
     constant_predicates_.emplace_back(vertex_index, constant_predicate);
   }
 
-  size_t ComputeInitSupport();
+  size_t ComputeInitSupportSeq();
 
   bool PopConstantPredicate() {
     if (!constant_predicates_.empty()) {
@@ -102,6 +108,9 @@ class StarRule {
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using PathPatternID = sics::graph::miniclean::common::PathPatternID;
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using Task = sics::graph::core::common::Task;
+  using TaskPackage = sics::graph::core::common::TaskPackage;
+  using ThreadPool = sics::graph::core::common::ThreadPool;
 
  public:
   StarRule(VertexLabel center_label, const IndexCollection& index_collection)
@@ -159,13 +168,12 @@ class StarRule {
   void ComposeWith(const StarRule& other);
 
   void InitializeStarRule();
-  size_t ComputeInitSupport();
+  size_t ComputeInitSupportSeq();
   void SetIntersection(std::unordered_set<VertexID>* base_set,
                        std::unordered_set<VertexID>* comp_set,
                        std::unordered_set<VertexID>* diff_set);
 
-  void Backup(const MiniCleanCSRGraph& graph,
-              const VertexAttributeID& vertex_attr_id);
+  void Backup(const MiniCleanCSRGraph& graph);
   void Recover();
 
   std::string GetInfoString(
@@ -174,6 +182,9 @@ class StarRule {
  private:
   std::unordered_set<VertexID> ComputeValidCenters();
   bool TestStarRule(const MiniCleanCSRGraph& graph, VertexID center_id) const;
+  TaskPackage GetComputingInitSupportTaskPackage(size_t num_tasks,
+                                                 std::mutex* mtx,
+                                                 size_t* support);
 
   size_t predicate_count_;
   VertexLabel center_label_;

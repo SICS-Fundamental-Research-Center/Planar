@@ -245,27 +245,34 @@ void RuleMiner::MineGCRs() {
         size_t j_start = (ll == rl) ? ls : 0;
         for (size_t rs = j_start; rs < star_rules_[rl].size(); rs++) {
           // Build GCR and initiaize star rules.
-          GCR gcr = GCR(star_rules_[ll][ls], star_rules_[rl][rs]);
+          GCR gcr(star_rules_[ll][ls], star_rules_[rl][rs]);
           // Horizontally extend the GCR.
           std::vector<GCRHorizontalExtension> horizontal_extensions =
               ComputeHorizontalExtensions(gcr, true);
           bool should_extend = false;
           for (const auto& horizontal_extension : horizontal_extensions) {
             gcr.ExtendHorizontally(horizontal_extension, graph_);
+            std::string gcr_info = gcr.GetInfoString(path_patterns_);
+            LOG_INFO(gcr_info);
             // Compute support of GCR
             std::pair<size_t, size_t> match_result =
-                gcr.ComputeMatchAndSupport(graph_);
+                gcr.ComputeMatchAndSupportSeq(graph_);
+            size_t match = match_result.first;
             size_t support = match_result.second;
+            float match_lb =
+                static_cast<float>(Configurations::Get()->support_threshold_) *
+                Configurations::Get()->confidence_threshold_;
             float confidence = static_cast<float>(match_result.first) / support;
+            LOG_INFO("Support: ", support, " Match: ", match,
+                     " Confidence: ", confidence);
             // If support < threshold, continue.
             if (support < Configurations::Get()->support_threshold_) continue;
+            // If match < match lb, continue.
+            if (match < match_lb) continue;
             // If support, confidenc >= threshold, write back to disk.
             if (support >= Configurations::Get()->support_threshold_ &&
                 confidence >= Configurations::Get()->confidence_threshold_) {
-              LOG_INFO("Mined a valid GCR. Support: ", support,
-                       " Confidence: ", confidence);
               std::string gcr_info = gcr.GetInfoString(path_patterns_);
-              LOG_INFO(gcr_info);
               gcr.SaveToFile(Configurations::Get()->gcr_path, gcr_info);
               continue;
             }
@@ -281,6 +288,7 @@ void RuleMiner::MineGCRs() {
 }
 
 void RuleMiner::ExtendGCR(GCR* gcr) const {
+  LOG_INFO("Extend to next level.");
   // Check whether the GCR should be extended.
   if (gcr->get_left_star().get_path_rules().size() +
           gcr->get_right_star().get_path_rules().size() >=
@@ -301,19 +309,25 @@ void RuleMiner::ExtendGCR(GCR* gcr) const {
     for (const auto& horizontal_extension : horizontal_extensions) {
       // Horizontal extension.
       gcr->ExtendHorizontally(horizontal_extension, graph_);
+      std::string gcr_info = gcr->GetInfoString(path_patterns_);
+      LOG_INFO(gcr_info);
       // Compute support of GCR
-      const auto& match_result = gcr->ComputeMatchAndSupport(graph_);
+      const auto& match_result = gcr->ComputeMatchAndSupportSeq(graph_);
+      size_t match = match_result.first;
       size_t support = match_result.second;
+      float match_lb =
+          static_cast<float>(Configurations::Get()->support_threshold_) *
+          Configurations::Get()->confidence_threshold_;
       float confidence = static_cast<float>(match_result.first) / support;
+      LOG_INFO("Support: ", support, " Match: ", match,
+               " Confidence: ", confidence);
       // If support < threshold, continue.
       if (support < Configurations::Get()->support_threshold_) continue;
+      // If match < match lb, continue.
+      if (match < match_lb) continue;
       // If support, confidenc >= threshold, write back to disk.
       if (support >= Configurations::Get()->support_threshold_ &&
           confidence >= Configurations::Get()->confidence_threshold_) {
-        LOG_INFO("Mined a valid GCR. Support: ", support,
-                 " Confidence: ", confidence);
-        std::string gcr_info = gcr->GetInfoString(path_patterns_);
-        LOG_INFO(gcr_info);
         gcr->SaveToFile(Configurations::Get()->gcr_path, gcr_info);
         continue;
       }

@@ -1,6 +1,10 @@
 #ifndef MINICLEAN_DATA_STRUCTURES_GCR_GCR_H_
 #define MINICLEAN_DATA_STRUCTURES_GCR_GCR_H_
 
+#include <mutex>
+
+#include "core/common/multithreading/task.h"
+#include "core/common/multithreading/thread_pool.h"
 #include "miniclean/data_structures/gcr/path_rule.h"
 #include "miniclean/data_structures/gcr/predicate.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
@@ -55,10 +59,13 @@ class GCR {
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using PathInstance = std::vector<VertexID>;
   using PathInstanceBucket = std::vector<PathInstance>;
+  using Task = sics::graph::core::common::Task;
+  using TaskPackage = sics::graph::core::common::TaskPackage;
+  using ThreadPool = sics::graph::core::common::ThreadPool;
 
  public:
   GCR(const StarRule& left_star, const StarRule& right_star)
-      : left_star_(left_star), right_star_(right_star) {
+      : left_star_(left_star), right_star_(right_star), support_(0), match_(0) {
     left_star_.InitializeStarRule();
     right_star_.InitializeStarRule();
     bucket_id_ = BucketID(MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID,
@@ -114,7 +121,7 @@ class GCR {
   void ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
                           const MiniCleanCSRGraph& graph);
   // TODO: this function should be more rigorous.
-  std::pair<size_t, size_t> ComputeMatchAndSupport(
+  std::pair<size_t, size_t> ComputeMatchAndSupportSeq(
       const MiniCleanCSRGraph& graph);
 
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
@@ -125,15 +132,16 @@ class GCR {
   void SaveToFile(const std::string& path, const std::string& gcr_info) const;
 
  private:
-  void Backup(const MiniCleanCSRGraph& graph,
-              const VertexAttributeID& left_vertex_attr_id,
-              const VertexAttributeID& right_vertex_attr_id);
+  void Backup(const MiniCleanCSRGraph& graph);
   void InitializeBuckets(const MiniCleanCSRGraph& graph,
                          const ConcreteVariablePredicate& c_variable_predicate);
   bool TestVariablePredicate(
       const MiniCleanCSRGraph& graph,
       const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
       VertexID right_vid) const;
+
+  TaskPackage GetVerifyingTaskPackage(const MiniCleanCSRGraph& graph,
+                                      size_t parallelism, size_t num_tasks);
 
   StarRule left_star_;
   StarRule right_star_;
@@ -142,6 +150,11 @@ class GCR {
   ConcreteVariablePredicate consequence_;
 
   BucketID bucket_id_;
+
+  size_t support_;
+  size_t match_;
+
+  std::mutex mtx_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

@@ -2,6 +2,7 @@
 #define MINICLEAN_COMPONENTS_RULE_DISCOVERY_RULE_MINER_H_
 
 #include <map>
+#include <mutex>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -63,7 +64,6 @@ class RuleMiner {
 
   void LoadGraph(const std::string& graph_path);
   void LoadIndexCollection(const std::string& workspace_path);
-  void LoadPathInstances(const std::string& path_instances_path);
   // Path rule contains:
   //   - a path pattern
   //   - several constant predicates on its non-center vertices.
@@ -100,7 +100,7 @@ class RuleMiner {
         }
         // Check support.
         if (check_support) {
-          size_t support = composed_item.ComputeInitSupport();
+          size_t support = composed_item.ComputeInitSupportSeq();
           if (support < Configurations::Get()->star_support_threshold_) {
             intermediate_result->pop_back();
             continue;
@@ -152,6 +152,8 @@ class RuleMiner {
   std::vector<std::vector<PathRule>> path_rules_;
 
   std::vector<GCR> varified_gcrs_;
+
+  std::mutex mtx_;
 };
 }  // namespace sics::graph::miniclean::components::rule_discovery
 

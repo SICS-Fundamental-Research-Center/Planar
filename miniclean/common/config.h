@@ -22,8 +22,8 @@ class Configurations {
     return instance_;
   }
 
-  size_t max_predicate_num_ = 4;
-  size_t max_path_num_ = 6;
+  size_t max_predicate_num_ = 3;
+  size_t max_path_num_ = 2;
   size_t star_support_threshold_ = 700;
   size_t support_threshold_ = 5000;
   float confidence_threshold_ = 0.7;
