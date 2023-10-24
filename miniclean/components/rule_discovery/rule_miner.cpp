@@ -271,7 +271,7 @@ TaskPackage RuleMiner::GetRuleMiningTaskPackage() const {
               gcr.ExtendHorizontally(horizontal_extension, graph_);
               // Compute support of GCR
               std::pair<size_t, size_t> match_result =
-                  gcr.ComputeMatchAndSupportSeq(graph_);
+                  gcr.ComputeMatchAndSupport(graph_);
               size_t match = match_result.first;
               size_t support = match_result.second;
               float match_lb = static_cast<float>(
