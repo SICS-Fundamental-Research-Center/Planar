@@ -114,7 +114,7 @@ class GCR {
   void ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
                           const MiniCleanCSRGraph& graph);
   // TODO: this function should be more rigorous.
-  std::pair<size_t, size_t> ComputeMatchAndSupportSeq(
+  std::pair<size_t, size_t> ComputeMatchAndSupport(
       const MiniCleanCSRGraph& graph);
 
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
