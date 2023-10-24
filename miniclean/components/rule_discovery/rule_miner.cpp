@@ -256,7 +256,7 @@ void RuleMiner::MineGCRs() {
             LOG_INFO(gcr_info);
             // Compute support of GCR
             std::pair<size_t, size_t> match_result =
-                gcr.ComputeMatchAndSupportSeq(graph_);
+                gcr.ComputeMatchAndSupport(graph_);
             size_t match = match_result.first;
             size_t support = match_result.second;
             float match_lb =
@@ -312,7 +312,7 @@ void RuleMiner::ExtendGCR(GCR* gcr) const {
       std::string gcr_info = gcr->GetInfoString(path_patterns_);
       LOG_INFO(gcr_info);
       // Compute support of GCR
-      const auto& match_result = gcr->ComputeMatchAndSupportSeq(graph_);
+      const auto& match_result = gcr->ComputeMatchAndSupport(graph_);
       size_t match = match_result.first;
       size_t support = match_result.second;
       float match_lb =

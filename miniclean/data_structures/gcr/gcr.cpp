@@ -94,7 +94,7 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
   }
 }
 
-std::pair<size_t, size_t> GCR::ComputeMatchAndSupportSeq(
+std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
     const MiniCleanCSRGraph& graph) {
   // Reset support and match.
   support_ = 0;
