@@ -237,8 +237,8 @@ void RuleMiner::InitPathRuleUnitContainer() {
   }
 }
 
-void RuleMiner::MineGCRsPar() {
-  ThreadPool thread_pool(20);
+void RuleMiner::MineGCRsPar(uint32_t parallelism) {
+  ThreadPool thread_pool(parallelism);
   TaskPackage task_package = GetRuleMiningTaskPackage();
   thread_pool.SubmitSync(task_package);
   task_package.clear();
@@ -283,20 +283,28 @@ TaskPackage RuleMiner::GetRuleMiningTaskPackage() const {
                   gcr.GetInfoString(path_patterns_, match, support, confidence);
               LOG_INFO(gcr_info);
               // If support < threshold, continue.
-              if (support < Configurations::Get()->support_threshold_) continue;
+              if (support < Configurations::Get()->support_threshold_) {
+                gcr.Recover(true);
+                continue;
+              }
               // If match < match lb, continue.
-              if (match < match_lb) continue;
+              if (match < match_lb) {
+                gcr.Recover(true);
+                continue;
+              }
               // If support, confidenc >= threshold, write back to disk.
               if (support >= Configurations::Get()->support_threshold_ &&
                   confidence >= Configurations::Get()->confidence_threshold_) {
                 std::string gcr_info = gcr.GetInfoString(path_patterns_, match,
                                                          support, confidence);
                 gcr.SaveToFile(Configurations::Get()->gcr_path, gcr_info);
+                gcr.Recover(true);
                 continue;
               }
               // If support >= threshold, confidence < threshold, go to next
               // level.
               ExtendGCR(&gcr);
+              gcr.Recover(true);
             }
           };
           task_package.emplace_back(task);
@@ -337,20 +345,28 @@ void RuleMiner::MineGCRs() {
                 gcr.GetInfoString(path_patterns_, match, support, confidence);
             LOG_INFO(gcr_info);
             // If support < threshold, continue.
-            if (support < Configurations::Get()->support_threshold_) continue;
+            if (support < Configurations::Get()->support_threshold_) {
+              gcr.Recover(true);
+              continue;
+            }
             // If match < match lb, continue.
-            if (match < match_lb) continue;
+            if (match < match_lb) {
+              gcr.Recover(true);
+              continue;
+            }
             // If support, confidenc >= threshold, write back to disk.
             if (support >= Configurations::Get()->support_threshold_ &&
                 confidence >= Configurations::Get()->confidence_threshold_) {
               std::string gcr_info =
                   gcr.GetInfoString(path_patterns_, match, support, confidence);
               gcr.SaveToFile(Configurations::Get()->gcr_path, gcr_info);
+              gcr.Recover(true);
               continue;
             }
             // If support >= threshold, confidence < threshold, go to next
             // level.
             ExtendGCR(&gcr);
+            gcr.Recover(true);
           }
         }
       }
@@ -391,20 +407,27 @@ void RuleMiner::ExtendGCR(GCR* gcr) const {
           gcr->GetInfoString(path_patterns_, match, support, confidence);
       LOG_INFO(gcr_info);
       // If support < threshold, continue.
-      if (support < Configurations::Get()->support_threshold_) continue;
+      if (support < Configurations::Get()->support_threshold_) {
+        gcr->Recover(true);
+        continue;
+      }
       // If match < match lb, continue.
-      if (match < match_lb) continue;
+      if (match < match_lb) {
+        gcr->Recover(true);
+        continue;
+      }
       // If support, confidenc >= threshold, write back to disk.
       if (support >= Configurations::Get()->support_threshold_ &&
           confidence >= Configurations::Get()->confidence_threshold_) {
         gcr->SaveToFile(Configurations::Get()->gcr_path, gcr_info);
+        gcr->Recover(true);
         continue;
       }
       // If support >= threshold, confidence < threshold, go to next level.
       ExtendGCR(gcr);
-      // Each time we extend vertically, we need to recover the star rules.
-      gcr->Recover();
+      gcr->Recover(true);
     }
+    gcr->Recover(false);
   }
 }
 

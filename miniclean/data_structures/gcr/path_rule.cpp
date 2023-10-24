@@ -100,7 +100,7 @@ std::string PathRule::GetInfoString(
       ss << std::endl;
       break;
     }
-    ss << "--> < " << static_cast<int>(elabel) << " > --> ";
+    ss << "--> <" << static_cast<int>(elabel) << "> --> ";
   }
   return ss.str();
 }

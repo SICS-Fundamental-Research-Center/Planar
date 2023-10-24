@@ -72,7 +72,7 @@ class RuleMiner {
   void PrepareGCRComponents(const std::string& workspace_path);
 
   void MineGCRs();
-  void MineGCRsPar();
+  void MineGCRsPar(uint32_t parallelism);
 
  private:
   void LoadPathPatterns(const std::string& path_patterns_path);
