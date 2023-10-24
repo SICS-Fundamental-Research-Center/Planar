@@ -164,8 +164,7 @@ class StarRule {
                        std::unordered_set<VertexID>* comp_set,
                        std::unordered_set<VertexID>* diff_set);
 
-  void Backup(const MiniCleanCSRGraph& graph,
-              const VertexAttributeID& vertex_attr_id);
+  void Backup(const MiniCleanCSRGraph& graph);
   void Recover();
 
   std::string GetInfoString(

@@ -58,7 +58,7 @@ class GCR {
 
  public:
   GCR(const StarRule& left_star, const StarRule& right_star)
-      : left_star_(left_star), right_star_(right_star) {
+      : left_star_(left_star), right_star_(right_star), support_(0), match_(0) {
     left_star_.InitializeStarRule();
     right_star_.InitializeStarRule();
     bucket_id_ = BucketID(MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID,
@@ -125,9 +125,7 @@ class GCR {
   void SaveToFile(const std::string& path, const std::string& gcr_info) const;
 
  private:
-  void Backup(const MiniCleanCSRGraph& graph,
-              const VertexAttributeID& left_vertex_attr_id,
-              const VertexAttributeID& right_vertex_attr_id);
+  void Backup(const MiniCleanCSRGraph& graph);
   void InitializeBuckets(const MiniCleanCSRGraph& graph,
                          const ConcreteVariablePredicate& c_variable_predicate);
   bool TestVariablePredicate(
@@ -142,6 +140,9 @@ class GCR {
   ConcreteVariablePredicate consequence_;
 
   BucketID bucket_id_;
+
+  size_t support_;
+  size_t match_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

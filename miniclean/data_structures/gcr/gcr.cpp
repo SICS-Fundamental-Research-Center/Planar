@@ -12,11 +12,9 @@ using PathPatternID = sics::graph::miniclean::common::PathPatternID;
 using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 using VertexID = sics::graph::miniclean::common::VertexID;
 
-void GCR::Backup(const MiniCleanCSRGraph& graph,
-                 const VertexAttributeID& left_vertex_attr_id,
-                 const VertexAttributeID& right_vertex_attr_id) {
-  left_star_.Backup(graph, left_vertex_attr_id);
-  right_star_.Backup(graph, right_vertex_attr_id);
+void GCR::Backup(const MiniCleanCSRGraph& graph) {
+  left_star_.Backup(graph);
+  right_star_.Backup(graph);
 }
 
 void GCR::Recover() {
@@ -32,7 +30,7 @@ void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension,
     AddPathRuleToRigthStar(vertical_extension.path_rule);
   }
   // Update vertex buckets.
-  Backup(graph, bucket_id_.left_attribute_id, bucket_id_.right_attribute_id);
+  Backup(graph);
 }
 
 void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
@@ -42,50 +40,65 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
        horizontal_extension.variable_predicates) {
     AddVariablePredicateToBack(c_variable_predicate);
   }
+  const auto& index_collection = left_star_.get_index_collection();
   // Update vertex buckets.
-  // 1. Check whether the previous buckets can be reused.
-  if (bucket_id_.left_label != MAX_VERTEX_ID) {
-    // Have initialized buckets.
-    for (const auto& c_variable_predicate :
-         horizontal_extension.variable_predicates) {
-      if (c_variable_predicate.get_left_label() == bucket_id_.left_label &&
-          c_variable_predicate.get_left_attribute_id() ==
-              bucket_id_.left_attribute_id &&
-          c_variable_predicate.get_right_label() == bucket_id_.right_label &&
-          c_variable_predicate.get_right_attribute_id() ==
-              bucket_id_.right_attribute_id) {
-        // Can reuse the buckets, return directly.
-        return;
+  // Check previous buckets.
+  size_t max_bucket_num = 0;
+  ConcreteVariablePredicate max_bucket_num_variable_predicate;
+  bool should_rebucket = false;
+  if (bucket_id_.left_label != MAX_VERTEX_LABEL) {
+    max_bucket_num =
+        index_collection.GetAttributeBucketByVertexLabel(bucket_id_.left_label)
+            .at(bucket_id_.left_attribute_id)
+            .size();
+  }
+  for (const auto& c_variable_predicat :
+       horizontal_extension.variable_predicates) {
+    auto left_path_index = c_variable_predicat.get_left_path_index();
+    auto right_path_index = c_variable_predicat.get_right_path_index();
+    auto left_vertex_index = c_variable_predicat.get_left_vertex_index();
+    auto right_vertex_index = c_variable_predicat.get_right_vertex_index();
+    auto left_label = c_variable_predicat.get_left_label();
+    auto right_label = c_variable_predicat.get_right_label();
+    auto left_attr_id = c_variable_predicat.get_left_attribute_id();
+    auto right_attr_id = c_variable_predicat.get_right_attribute_id();
+    if (left_path_index != 0 || left_vertex_index != 0 ||
+        right_path_index != 0 || right_vertex_index != 0)
+      continue;
+    size_t bucket_size =
+        index_collection.GetAttributeBucketByVertexLabel(left_label)
+            .at(left_attr_id)
+            .size();
+    if (bucket_size > max_bucket_num) {
+      max_bucket_num = bucket_size;
+      max_bucket_num_variable_predicate = c_variable_predicat;
+      if (bucket_id_.left_label == left_label &&
+          bucket_id_.left_attribute_id == left_attr_id &&
+          bucket_id_.right_label == right_label &&
+          bucket_id_.right_attribute_id == right_attr_id) {
+        should_rebucket = false;
+      } else {
+        should_rebucket = true;
       }
     }
   }
-  // 2. Re-bucketing.
-  // TODO: Determine which variable predicate is the best choice to
-  // re-bucketing.
-  for (const auto& c_variable_predicate :
-       horizontal_extension.variable_predicates) {
-    // Check whether the predicate located at the centers.
-    if (c_variable_predicate.get_left_path_index() != 0 ||
-        c_variable_predicate.get_left_vertex_index() != 0 ||
-        c_variable_predicate.get_right_path_index() != 0 ||
-        c_variable_predicate.get_right_vertex_index() != 0)
-      continue;
-    // Set the bucket id.
-    bucket_id_.left_label = c_variable_predicate.get_left_label();
-    bucket_id_.left_attribute_id = c_variable_predicate.get_left_attribute_id();
-    bucket_id_.right_label = c_variable_predicate.get_right_label();
+  if (should_rebucket) {
+    bucket_id_.left_label = max_bucket_num_variable_predicate.get_left_label();
+    bucket_id_.left_attribute_id =
+        max_bucket_num_variable_predicate.get_left_attribute_id();
+    bucket_id_.right_label =
+        max_bucket_num_variable_predicate.get_right_label();
     bucket_id_.right_attribute_id =
-        c_variable_predicate.get_right_attribute_id();
-    // Initialize buckets.
-    InitializeBuckets(graph, c_variable_predicate);
-    return;
+        max_bucket_num_variable_predicate.get_right_attribute_id();
+    InitializeBuckets(graph, max_bucket_num_variable_predicate);
   }
 }
 
 std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
     const MiniCleanCSRGraph& graph) {
-  size_t support = 0;
-  size_t match = 0;
+  // Reset support and match.
+  support_ = 0;
+  match_ = 0;
 
   bool preconditions_match = true;
   const auto& left_bucket = left_star_.get_valid_vertex_bucket();
@@ -103,17 +116,17 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
           }
         }
         if (preconditions_match) {
-          support++;
+          support_++;
           // Test consequence.
           if (TestVariablePredicate(graph, consequence_, left_vertex,
                                     right_vertex)) {
-            match++;
+            match_++;
           }
         }
       }
     }
   }
-  return std::make_pair(match, support);
+  return std::make_pair(match_, support_);
 }
 
 void GCR::InitializeBuckets(
@@ -170,8 +183,18 @@ bool GCR::TestVariablePredicate(
   auto right_path_id = variable_predicate.get_right_path_index();
   auto left_vertex_id = variable_predicate.get_left_vertex_index();
   auto right_vertex_id = variable_predicate.get_right_vertex_index();
+  auto left_label = variable_predicate.get_left_label();
+  auto right_label = variable_predicate.get_right_label();
   auto left_attr_id = variable_predicate.get_left_attribute_id();
   auto right_attr_id = variable_predicate.get_right_attribute_id();
+
+  if (left_label == bucket_id_.left_label &&
+      left_attr_id == bucket_id_.left_attribute_id &&
+      right_label == bucket_id_.right_label &&
+      right_attr_id == bucket_id_.right_attribute_id) {
+    return true;
+  }
+
   PathPatternID left_pattern_id = 0;
   PathInstanceBucket left_path_instances;
   if (!left_star_.get_path_rules().empty()) {
@@ -180,9 +203,7 @@ bool GCR::TestVariablePredicate(
     left_path_instances =
         index_collection.GetPathInstanceBucket(left_vid, left_pattern_id);
   } else {
-    PathInstance left_instance;
-    left_instance.emplace_back(left_vid);
-    left_path_instances.emplace_back(left_instance);
+    left_path_instances = {{left_vid}};
   }
   PathPatternID right_pattern_id = 0;
   PathInstanceBucket right_path_instances;
@@ -192,15 +213,21 @@ bool GCR::TestVariablePredicate(
     right_path_instances =
         index_collection.GetPathInstanceBucket(right_vid, right_pattern_id);
   } else {
-    PathInstance right_instance;
-    right_instance.emplace_back(right_vid);
-    right_path_instances.emplace_back(right_instance);
+    right_path_instances = {{right_vid}};
   }
 
   for (const auto& left_instance : left_path_instances) {
     for (const auto& right_instance : right_path_instances) {
       VertexID lvid = left_instance[left_vertex_id];
       VertexID rvid = right_instance[right_vertex_id];
+      if (left_attr_id == MAX_VERTEX_ATTRIBUTE_ID) {
+        if (right_attr_id != MAX_VERTEX_ATTRIBUTE_ID) {
+          LOG_FATAL(
+              "Left attribute id is MAX_VERTEX_ATTRIBUTE_ID, but right "
+              "attribute id is not.");
+        }
+        return lvid == rvid;
+      }
       auto left_value =
           graph.GetVertexAttributeValuesByLocalID(lvid)[left_attr_id];
       auto right_value =
@@ -267,6 +294,30 @@ std::string GCR::GetInfoString(
        << static_cast<int>(right_attr_id) << " )" << std::endl;
     ss << "---------------------" << std::endl;
   }
+  ss << "Consequence: " << std::endl;
+  uint8_t left_path_id = consequence_.get_left_path_index();
+  uint8_t left_vertex_id = consequence_.get_left_vertex_index();
+  uint8_t right_path_id = consequence_.get_right_path_index();
+  uint8_t right_vertex_id = consequence_.get_right_vertex_index();
+  VertexAttributeID left_attr_id = consequence_.get_left_attribute_id();
+  VertexAttributeID right_attr_id = consequence_.get_right_attribute_id();
+  VertexLabel left_label = consequence_.get_left_label();
+  VertexLabel right_label = consequence_.get_right_label();
+  OperatorType op_type = consequence_.get_operator_type();
+  ss << "Left path id: " << static_cast<int>(left_path_id)
+     << ", left vertex id: " << static_cast<int>(left_vertex_id)
+     << ", right path id: " << static_cast<int>(right_path_id)
+     << ", right vertex id: " << static_cast<int>(right_vertex_id) << std::endl;
+  ss << static_cast<int>(left_label) << "( " << static_cast<int>(left_attr_id)
+     << " )";
+  if (op_type == OperatorType::kEq) {
+    ss << " = ";
+  } else if (op_type == OperatorType::kGt) {
+    ss << " > ";
+  }
+  ss << static_cast<int>(right_label) << "( " << static_cast<int>(right_attr_id)
+     << " )" << std::endl;
+  ss << "---------------------" << std::endl;
   ss << "===End of this GCR===" << std::endl;
 
   return ss.str();

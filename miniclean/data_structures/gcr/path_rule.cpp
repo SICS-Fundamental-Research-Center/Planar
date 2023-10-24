@@ -38,20 +38,24 @@ size_t PathRule::GetPathRuleIndex(
     const MiniCleanCSRGraph& graph,
     const PathInstanceBucket& path_instance_bucket,
     const std::vector<size_t>& visited, size_t start_pos) const {
+  if (constant_predicates_.empty()) return start_pos;
   for (size_t i = start_pos; i < path_instance_bucket.size(); i++) {
     // Check whether i has been visited.
     for (const auto& visited_pos : visited) {
       if (visited_pos == i) continue;
     }
     auto path_instance = path_instance_bucket[i];
+    bool valid = true;
     for (const auto& const_pred : constant_predicates_) {
       auto vertex_id = path_instance[const_pred.first];
       auto vertex_value = graph.GetVertexAttributeValuesByLocalID(
           vertex_id)[const_pred.second.get_vertex_attribute_id()];
-      if (vertex_value == const_pred.second.get_constant_value()) {
-        return i;
+      if (vertex_value != const_pred.second.get_constant_value()) {
+        valid = false;
+        break;
       }
     }
+    if (valid) return i;
   }
   return path_instance_bucket.size();
 }
@@ -72,28 +76,31 @@ std::string PathRule::GetInfoString(
   for (size_t i = 0; i < path_patterns[path_pattern_id_].size(); i++) {
     VertexLabel vlabel = std::get<0>(path_patterns[path_pattern_id_][i]);
     EdgeLabel elabel = std::get<1>(path_patterns[path_pattern_id_][i]);
-    ss << vlabel << "( ";
-    for (const auto& pred : const_pred_by_vertex_pos.at(i)) {
-      VertexLabel p_vlabel = pred.get_vertex_label();
-      VertexAttributeID p_vattr_id = pred.get_vertex_attribute_id();
-      ss << p_vlabel << "[" << p_vattr_id << "]";
-      OperatorType operator_type = pred.get_operator_type();
-      if (operator_type == OperatorType::kEq) {
-        ss << " = ";
-      } else if (operator_type == OperatorType::kGt) {
-        ss << " > ";
-      } else {
-        LOG_FATAL("Unsupported operator type: ", operator_type);
+    ss << static_cast<int>(vlabel) << "( ";
+    if (const_pred_by_vertex_pos.find(i) != const_pred_by_vertex_pos.end()) {
+      for (const auto& pred : const_pred_by_vertex_pos.at(i)) {
+        VertexLabel p_vlabel = pred.get_vertex_label();
+        VertexAttributeID p_vattr_id = pred.get_vertex_attribute_id();
+        ss << static_cast<int>(p_vlabel) << "[" << static_cast<int>(p_vattr_id)
+           << "]";
+        OperatorType operator_type = pred.get_operator_type();
+        if (operator_type == OperatorType::kEq) {
+          ss << " = ";
+        } else if (operator_type == OperatorType::kGt) {
+          ss << " > ";
+        } else {
+          LOG_FATAL("Unsupported operator type: ", operator_type);
+        }
+        VertexAttributeValue p_vattr_value = pred.get_constant_value();
+        ss << static_cast<int>(p_vattr_value) << ", ";
       }
-      VertexAttributeValue p_vattr_value = pred.get_constant_value();
-      ss << p_vattr_value << ", ";
     }
     ss << ") ";
     if (elabel == MAX_EDGE_LABEL) {
       ss << std::endl;
       break;
     }
-    ss << "--> < " << elabel << " > ";
+    ss << "--> < " << static_cast<int>(elabel) << " > --> ";
   }
   return ss.str();
 }
@@ -207,20 +214,20 @@ void StarRule::SetIntersection(std::unordered_set<VertexID>* base_set,
   }
 }
 
-void StarRule::Backup(const MiniCleanCSRGraph& graph,
-                      const VertexAttributeID& vertex_attr_id) {
+void StarRule::Backup(const MiniCleanCSRGraph& graph) {
   std::list<std::vector<std::unordered_set<VertexID>>> bucket_diff;
   bucket_diff.resize(1);
   bucket_diff.front().resize(valid_vertex_buckets_.size());
-  for (auto& bucket : valid_vertex_buckets_) {
-    for (auto it = bucket.begin(); it != bucket.end();) {
+  for (size_t i = 0; i < valid_vertex_buckets_.size(); i++) {
+    for (auto it = valid_vertex_buckets_[i].begin();
+         it != valid_vertex_buckets_[i].end();) {
       bool match_status = TestStarRule(graph, *it);
       if (match_status) {
         it++;
       } else {
         // Move this vertex to the diff bucket.
-        bucket_diff.front()[vertex_attr_id].emplace(*it);
-        it = bucket.erase(it);
+        bucket_diff.front()[i].emplace(*it);
+        it = valid_vertex_buckets_[i].erase(it);
       }
     }
   }
@@ -298,7 +305,7 @@ std::string StarRule::GetInfoString(
   for (const auto& pred : constant_predicates_) {
     VertexLabel vlabel = pred.get_vertex_label();
     VertexAttributeID vattr_id = pred.get_vertex_attribute_id();
-    ss << vlabel << "[" << vattr_id << "]";
+    ss << static_cast<int>(vlabel) << "[" << static_cast<int>(vattr_id) << "]";
     OperatorType operator_type = pred.get_operator_type();
     if (operator_type == OperatorType::kEq) {
       ss << " = ";

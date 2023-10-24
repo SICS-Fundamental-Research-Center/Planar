@@ -63,7 +63,6 @@ class RuleMiner {
 
   void LoadGraph(const std::string& graph_path);
   void LoadIndexCollection(const std::string& workspace_path);
-  void LoadPathInstances(const std::string& path_instances_path);
   // Path rule contains:
   //   - a path pattern
   //   - several constant predicates on its non-center vertices.
@@ -150,8 +149,6 @@ class RuleMiner {
   PathRuleUnitContainer path_rule_unit_container_;
   std::vector<std::vector<StarRule>> star_rules_;
   std::vector<std::vector<PathRule>> path_rules_;
-
-  std::vector<GCR> varified_gcrs_;
 };
 }  // namespace sics::graph::miniclean::components::rule_discovery
 
