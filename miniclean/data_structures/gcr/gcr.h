@@ -1,10 +1,6 @@
 #ifndef MINICLEAN_DATA_STRUCTURES_GCR_GCR_H_
 #define MINICLEAN_DATA_STRUCTURES_GCR_GCR_H_
 
-#include <mutex>
-
-#include "core/common/multithreading/task.h"
-#include "core/common/multithreading/thread_pool.h"
 #include "miniclean/data_structures/gcr/path_rule.h"
 #include "miniclean/data_structures/gcr/predicate.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
@@ -59,9 +55,6 @@ class GCR {
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using PathInstance = std::vector<VertexID>;
   using PathInstanceBucket = std::vector<PathInstance>;
-  using Task = sics::graph::core::common::Task;
-  using TaskPackage = sics::graph::core::common::TaskPackage;
-  using ThreadPool = sics::graph::core::common::ThreadPool;
 
  public:
   GCR(const StarRule& left_star, const StarRule& right_star)
@@ -140,9 +133,6 @@ class GCR {
       const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
       VertexID right_vid) const;
 
-  TaskPackage GetVerifyingTaskPackage(const MiniCleanCSRGraph& graph,
-                                      size_t parallelism, size_t num_tasks);
-
   StarRule left_star_;
   StarRule right_star_;
 
@@ -153,8 +143,6 @@ class GCR {
 
   size_t support_;
   size_t match_;
-
-  std::mutex mtx_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

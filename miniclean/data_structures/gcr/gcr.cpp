@@ -11,7 +11,6 @@ using PathPattern = sics::graph::miniclean::common::PathPattern;
 using PathPatternID = sics::graph::miniclean::common::PathPatternID;
 using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 using VertexID = sics::graph::miniclean::common::VertexID;
-using TaskPackage = sics::graph::core::common::TaskPackage;
 
 void GCR::Backup(const MiniCleanCSRGraph& graph) {
   left_star_.Backup(graph);

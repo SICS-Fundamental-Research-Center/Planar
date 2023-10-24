@@ -7,7 +7,6 @@
 namespace sics::graph::miniclean::data_structures::gcr {
 
 using VertexID = sics::graph::miniclean::common::VertexID;
-using TaskPackage = sics::graph::core::common::TaskPackage;
 
 PathRule::PathRule(PathPatternID path_pattern_id, size_t vertex_pos,
                    ConstantPredicate constant_predicate,
@@ -30,7 +29,7 @@ void PathRule::ComposeWith(const PathRule& other) {
   }
 }
 
-size_t PathRule::ComputeInitSupportSeq() {
+size_t PathRule::ComputeInitSupport() {
   LOG_FATAL("Not implemented yet.");
   return 0;
 }
@@ -128,7 +127,7 @@ void StarRule::InitializeStarRule() {
   valid_vertex_buckets_.emplace_back(ComputeValidCenters());
 }
 
-size_t StarRule::ComputeInitSupportSeq() {
+size_t StarRule::ComputeInitSupport() {
   if (constant_predicates_.empty()) {
     std::pair<VertexID, VertexID> vertex_range =
         index_collection_.GetVertexRangeByLabelID(center_label_);

@@ -2,7 +2,6 @@
 #define MINICLEAN_COMPONENTS_RULE_DISCOVERY_RULE_MINER_H_
 
 #include <map>
-#include <mutex>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -100,7 +99,7 @@ class RuleMiner {
         }
         // Check support.
         if (check_support) {
-          size_t support = composed_item.ComputeInitSupportSeq();
+          size_t support = composed_item.ComputeInitSupport();
           if (support < Configurations::Get()->star_support_threshold_) {
             intermediate_result->pop_back();
             continue;
@@ -150,10 +149,6 @@ class RuleMiner {
   PathRuleUnitContainer path_rule_unit_container_;
   std::vector<std::vector<StarRule>> star_rules_;
   std::vector<std::vector<PathRule>> path_rules_;
-
-  std::vector<GCR> varified_gcrs_;
-
-  std::mutex mtx_;
 };
 }  // namespace sics::graph::miniclean::components::rule_discovery
 
