@@ -258,11 +258,14 @@ bool GCR::IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
   return compatibilty;
 }
 
-std::string GCR::GetInfoString(
-    const std::vector<PathPattern>& path_patterns) const {
+std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
+                               size_t match, size_t support,
+                               float confidence) const {
   std::stringstream ss;
 
   ss << "===GCR info===" << std::endl;
+  ss << "Match: " << match << " Support: " << support
+     << " Confidence: " << confidence << std::endl;
   ss << "Left star: " << std::endl;
   ss << left_star_.GetInfoString(path_patterns);
   ss << "Right star: " << std::endl;

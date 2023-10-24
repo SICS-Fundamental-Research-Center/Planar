@@ -252,8 +252,6 @@ void RuleMiner::MineGCRs() {
           bool should_extend = false;
           for (const auto& horizontal_extension : horizontal_extensions) {
             gcr.ExtendHorizontally(horizontal_extension, graph_);
-            std::string gcr_info = gcr.GetInfoString(path_patterns_);
-            LOG_INFO(gcr_info);
             // Compute support of GCR
             std::pair<size_t, size_t> match_result =
                 gcr.ComputeMatchAndSupportSeq(graph_);
@@ -263,8 +261,9 @@ void RuleMiner::MineGCRs() {
                 static_cast<float>(Configurations::Get()->support_threshold_) *
                 Configurations::Get()->confidence_threshold_;
             float confidence = static_cast<float>(match_result.first) / support;
-            LOG_INFO("Support: ", support, " Match: ", match,
-                     " Confidence: ", confidence);
+            std::string gcr_info =
+                gcr.GetInfoString(path_patterns_, match, support, confidence);
+            LOG_INFO(gcr_info);
             // If support < threshold, continue.
             if (support < Configurations::Get()->support_threshold_) continue;
             // If match < match lb, continue.
@@ -272,7 +271,8 @@ void RuleMiner::MineGCRs() {
             // If support, confidenc >= threshold, write back to disk.
             if (support >= Configurations::Get()->support_threshold_ &&
                 confidence >= Configurations::Get()->confidence_threshold_) {
-              std::string gcr_info = gcr.GetInfoString(path_patterns_);
+              std::string gcr_info =
+                  gcr.GetInfoString(path_patterns_, match, support, confidence);
               gcr.SaveToFile(Configurations::Get()->gcr_path, gcr_info);
               continue;
             }
@@ -309,8 +309,6 @@ void RuleMiner::ExtendGCR(GCR* gcr) const {
     for (const auto& horizontal_extension : horizontal_extensions) {
       // Horizontal extension.
       gcr->ExtendHorizontally(horizontal_extension, graph_);
-      std::string gcr_info = gcr->GetInfoString(path_patterns_);
-      LOG_INFO(gcr_info);
       // Compute support of GCR
       const auto& match_result = gcr->ComputeMatchAndSupportSeq(graph_);
       size_t match = match_result.first;
@@ -319,8 +317,9 @@ void RuleMiner::ExtendGCR(GCR* gcr) const {
           static_cast<float>(Configurations::Get()->support_threshold_) *
           Configurations::Get()->confidence_threshold_;
       float confidence = static_cast<float>(match_result.first) / support;
-      LOG_INFO("Support: ", support, " Match: ", match,
-               " Confidence: ", confidence);
+      std::string gcr_info =
+          gcr->GetInfoString(path_patterns_, match, support, confidence);
+      LOG_INFO(gcr_info);
       // If support < threshold, continue.
       if (support < Configurations::Get()->support_threshold_) continue;
       // If match < match lb, continue.

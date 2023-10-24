@@ -120,8 +120,9 @@ class GCR {
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
                         bool consider_consequence) const;
 
-  std::string GetInfoString(
-      const std::vector<PathPattern>& path_patterns) const;
+  std::string GetInfoString(const std::vector<PathPattern>& path_patterns,
+                            size_t match, size_t support,
+                            float confidence) const;
   void SaveToFile(const std::string& path, const std::string& gcr_info) const;
 
  private:
