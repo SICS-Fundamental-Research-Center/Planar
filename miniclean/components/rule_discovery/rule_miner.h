@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "core/common/multithreading/task.h"
 #include "miniclean/common/config.h"
 #include "miniclean/common/types.h"
 #include "miniclean/components/preprocessor/index_collection.h"
@@ -57,6 +58,7 @@ class RuleMiner {
       sics::graph::miniclean::data_structures::gcr::GCRVerticalExtension;
   using GCRHorizontalExtension =
       sics::graph::miniclean::data_structures::gcr::GCRHorizontalExtension;
+  using TaskPackage = sics::graph::core::common::TaskPackage;
 
  public:
   RuleMiner(MiniCleanCSRGraph& graph) : graph_(graph) {}
@@ -70,6 +72,7 @@ class RuleMiner {
   void PrepareGCRComponents(const std::string& workspace_path);
 
   void MineGCRs();
+  void MineGCRsPar();
 
  private:
   void LoadPathPatterns(const std::string& path_patterns_path);
@@ -135,6 +138,7 @@ class RuleMiner {
       std::vector<std::vector<ConcreteVariablePredicate>>*
           valid_variable_predicates) const;
   size_t ComputeCombinationNum(size_t n, size_t k) const;
+  TaskPackage GetRuleMiningTaskPackage() const;
 
  private:
   MiniCleanCSRGraph& graph_;

@@ -264,6 +264,7 @@ std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
   std::stringstream ss;
 
   ss << "===GCR info===" << std::endl;
+  ss << "Thread ID: " << folly::getCurrentThreadID() << std::endl;
   ss << "Match: " << match << " Support: " << support
      << " Confidence: " << confidence << std::endl;
   ss << "Left star: " << std::endl;
