@@ -476,9 +476,9 @@ std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
   // TODO: Can we reserve space beforehand?
   std::vector<GCRHorizontalExtension> extensions;
   // Check whether the number of predicates exceeds the limit.
-  // `>=` since we need to reserve space for consequence.
+  // `+1` since we need to reserve space for consequence.
   if (gcr.get_constant_predicate_count() +
-          gcr.get_variable_predicates().size() >=
+          gcr.get_variable_predicates().size() + 1 >=
       Configurations::Get()->max_predicate_num_) {
     return extensions;
   }
