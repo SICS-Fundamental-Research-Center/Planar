@@ -12,25 +12,47 @@ using PathPatternID = sics::graph::miniclean::common::PathPatternID;
 using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 using VertexID = sics::graph::miniclean::common::VertexID;
 
-void GCR::Backup(const MiniCleanCSRGraph& graph) {
-  left_star_.Backup(graph);
-  right_star_.Backup(graph);
+void GCR::Backup(const MiniCleanCSRGraph& graph, bool added_to_left_star) {
+  if (added_to_left_star) {
+    left_star_.Backup(graph);
+  } else {
+    right_star_.Backup(graph);
+  }
 }
 
-void GCR::Recover() {
-  left_star_.Recover();
-  right_star_.Recover();
+void GCR::Recover(bool horizontal_recover) {
+  if (horizontal_recover) {
+    size_t horizontal_backup_num = horizontal_extension_log_.back();
+    horizontal_extension_log_.pop_back();
+    for (size_t i = 0; i < horizontal_backup_num; i++) {
+      variable_predicates_.pop_back();
+    }
+  } else {
+    bool extend_to_left = vertical_extension_log_.back();
+    vertical_extension_log_.pop_back();
+    if (extend_to_left) {
+      left_star_.RemoveLastPathRule();
+      left_star_.Recover();
+    } else {
+      right_star_.RemoveLastPathRule();
+      right_star_.Recover();
+    }
+  }
 }
 
 void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension,
                            const MiniCleanCSRGraph& graph) {
   if (vertical_extension.extend_to_left) {
+    vertical_extension_log_.push_back(true);
     AddPathRuleToLeftStar(vertical_extension.path_rule);
+    // Update vertex buckets.
+    Backup(graph, true);
   } else {
+    vertical_extension_log_.push_back(false);
     AddPathRuleToRigthStar(vertical_extension.path_rule);
+    // Update vertex buckets.
+    Backup(graph, false);
   }
-  // Update vertex buckets.
-  Backup(graph);
 }
 
 void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
@@ -40,6 +62,8 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
        horizontal_extension.variable_predicates) {
     AddVariablePredicateToBack(c_variable_predicate);
   }
+  horizontal_extension_log_.push_back(
+      horizontal_extension.variable_predicates.size());
   const auto& index_collection = left_star_.get_index_collection();
   // Update vertex buckets.
   // Check previous buckets.
@@ -258,11 +282,15 @@ bool GCR::IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
   return compatibilty;
 }
 
-std::string GCR::GetInfoString(
-    const std::vector<PathPattern>& path_patterns) const {
+std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
+                               size_t match, size_t support,
+                               float confidence) const {
   std::stringstream ss;
 
   ss << "===GCR info===" << std::endl;
+  ss << "Thread ID: " << folly::getCurrentThreadID() << std::endl;
+  ss << "Match: " << match << " Support: " << support
+     << " Confidence: " << confidence << std::endl;
   ss << "Left star: " << std::endl;
   ss << left_star_.GetInfoString(path_patterns);
   ss << "Right star: " << std::endl;

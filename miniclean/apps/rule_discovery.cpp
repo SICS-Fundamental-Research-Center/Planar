@@ -11,6 +11,8 @@ using MiniCleanCSRGraph =
     sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
 
 DEFINE_string(workspace_path, "", "workspace_path");
+DEFINE_uint32(parallelism, std::thread::hardware_concurrency(),
+              "number of threads for rule discovery");
 
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -36,7 +38,7 @@ int main(int argc, char* argv[]) {
   LOG_INFO("Prepare GCR Components done.");
 
   LOG_INFO("Start mining...");
-  rule_miner.MineGCRs();
+  rule_miner.MineGCRsPar(FLAGS_parallelism);
   LOG_INFO("Mining done.");
 
   gflags::ShutDownCommandLineFlags();

@@ -1,6 +1,8 @@
 #ifndef MINICLEAN_DATA_STRUCTURES_GCR_GCR_H_
 #define MINICLEAN_DATA_STRUCTURES_GCR_GCR_H_
 
+#include <list>
+
 #include "miniclean/data_structures/gcr/path_rule.h"
 #include "miniclean/data_structures/gcr/predicate.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
@@ -108,7 +110,7 @@ class GCR {
     return left_count + right_count;
   }
 
-  void Recover();
+  void Recover(bool horizontal_recover);
   void ExtendVertically(const GCRVerticalExtension& vertical_extension,
                         const MiniCleanCSRGraph& graph);
   void ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
@@ -120,12 +122,13 @@ class GCR {
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
                         bool consider_consequence) const;
 
-  std::string GetInfoString(
-      const std::vector<PathPattern>& path_patterns) const;
+  std::string GetInfoString(const std::vector<PathPattern>& path_patterns,
+                            size_t match, size_t support,
+                            float confidence) const;
   void SaveToFile(const std::string& path, const std::string& gcr_info) const;
 
  private:
-  void Backup(const MiniCleanCSRGraph& graph);
+  void Backup(const MiniCleanCSRGraph& graph, bool added_to_left_star);
   void InitializeBuckets(const MiniCleanCSRGraph& graph,
                          const ConcreteVariablePredicate& c_variable_predicate);
   bool TestVariablePredicate(
@@ -138,6 +141,11 @@ class GCR {
 
   std::vector<ConcreteVariablePredicate> variable_predicates_;
   ConcreteVariablePredicate consequence_;
+
+  // item value is the number of variable predicates that added to the GCR.
+  std::list<size_t> horizontal_extension_log_;
+  // `true` if added to left star, `false` if added to right star.
+  std::list<bool> vertical_extension_log_;
 
   BucketID bucket_id_;
 

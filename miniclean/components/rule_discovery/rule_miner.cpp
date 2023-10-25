@@ -31,6 +31,9 @@ using GCRVerticalExtension =
     sics::graph::miniclean::data_structures::gcr::GCRVerticalExtension;
 using GCRHorizontalExtension =
     sics::graph::miniclean::data_structures::gcr::GCRHorizontalExtension;
+using Task = sics::graph::core::common::Task;
+using TaskPackage = sics::graph::core::common::TaskPackage;
+using ThreadPool = sics::graph::core::common::ThreadPool;
 
 void RuleMiner::LoadGraph(const std::string& graph_path) {
   // Prepare reader.
@@ -234,6 +237,84 @@ void RuleMiner::InitPathRuleUnitContainer() {
   }
 }
 
+void RuleMiner::MineGCRsPar(uint32_t parallelism) {
+  ThreadPool thread_pool(parallelism);
+  TaskPackage task_package = GetRuleMiningTaskPackage();
+  thread_pool.SubmitSync(task_package);
+  task_package.clear();
+}
+
+TaskPackage RuleMiner::GetRuleMiningTaskPackage() const {
+  TaskPackage task_package;
+  size_t rule_size = 0;
+  for (const auto& rule : star_rules_) {
+    rule_size += rule.size();
+  }
+  size_t gcr_num = (rule_size + 1) * rule_size / 2;
+  task_package.reserve(gcr_num);
+  for (size_t l_label = 0; l_label < star_rules_.size(); l_label++) {
+    if (star_rules_[l_label].empty()) continue;
+    for (size_t r_label = l_label; r_label < star_rules_.size(); r_label++) {
+      if (star_rules_[r_label].empty()) continue;
+      VertexLabel ll = std::get<0>(path_patterns_[l_label][0]);
+      VertexLabel rl = std::get<0>(path_patterns_[r_label][0]);
+      for (size_t ls = 0; ls < star_rules_[ll].size(); ls++) {
+        size_t j_start = (ll == rl) ? ls : 0;
+        for (size_t rs = j_start; rs < star_rules_[rl].size(); rs++) {
+          Task task = [&, ll, ls, rl, rs]() {
+            // Build GCR and initiaize star rules.
+            GCR gcr(star_rules_[ll][ls], star_rules_[rl][rs]);
+            // Horizontally extend the GCR.
+            std::vector<GCRHorizontalExtension> horizontal_extensions =
+                ComputeHorizontalExtensions(gcr, true);
+            for (const auto& horizontal_extension : horizontal_extensions) {
+              gcr.ExtendHorizontally(horizontal_extension, graph_);
+              // Compute support of GCR
+              std::pair<size_t, size_t> match_result =
+                  gcr.ComputeMatchAndSupport(graph_);
+              size_t match = match_result.first;
+              size_t support = match_result.second;
+              float match_lb = static_cast<float>(
+                                   Configurations::Get()->support_threshold_) *
+                               Configurations::Get()->confidence_threshold_;
+              float confidence =
+                  static_cast<float>(match_result.first) / support;
+              std::string gcr_info =
+                  gcr.GetInfoString(path_patterns_, match, support, confidence);
+              LOG_INFO(gcr_info);
+              // If support < threshold, continue.
+              if (support < Configurations::Get()->support_threshold_) {
+                gcr.Recover(true);
+                continue;
+              }
+              // If match < match lb, continue.
+              if (match < match_lb) {
+                gcr.Recover(true);
+                continue;
+              }
+              // If support, confidenc >= threshold, write back to disk.
+              if (support >= Configurations::Get()->support_threshold_ &&
+                  confidence >= Configurations::Get()->confidence_threshold_) {
+                std::string gcr_info = gcr.GetInfoString(path_patterns_, match,
+                                                         support, confidence);
+                gcr.SaveToFile(Configurations::Get()->gcr_path, gcr_info);
+                gcr.Recover(true);
+                continue;
+              }
+              // If support >= threshold, confidence < threshold, go to next
+              // level.
+              ExtendGCR(&gcr);
+              gcr.Recover(true);
+            }
+          };
+          task_package.emplace_back(task);
+        }
+      }
+    }
+  }
+  return task_package;
+}
+
 void RuleMiner::MineGCRs() {
   for (size_t l_label = 0; l_label < star_rules_.size(); l_label++) {
     if (star_rules_[l_label].empty()) continue;
@@ -249,11 +330,8 @@ void RuleMiner::MineGCRs() {
           // Horizontally extend the GCR.
           std::vector<GCRHorizontalExtension> horizontal_extensions =
               ComputeHorizontalExtensions(gcr, true);
-          bool should_extend = false;
           for (const auto& horizontal_extension : horizontal_extensions) {
             gcr.ExtendHorizontally(horizontal_extension, graph_);
-            std::string gcr_info = gcr.GetInfoString(path_patterns_);
-            LOG_INFO(gcr_info);
             // Compute support of GCR
             std::pair<size_t, size_t> match_result =
                 gcr.ComputeMatchAndSupport(graph_);
@@ -263,24 +341,33 @@ void RuleMiner::MineGCRs() {
                 static_cast<float>(Configurations::Get()->support_threshold_) *
                 Configurations::Get()->confidence_threshold_;
             float confidence = static_cast<float>(match_result.first) / support;
-            LOG_INFO("Support: ", support, " Match: ", match,
-                     " Confidence: ", confidence);
+            std::string gcr_info =
+                gcr.GetInfoString(path_patterns_, match, support, confidence);
+            LOG_INFO(gcr_info);
             // If support < threshold, continue.
-            if (support < Configurations::Get()->support_threshold_) continue;
+            if (support < Configurations::Get()->support_threshold_) {
+              gcr.Recover(true);
+              continue;
+            }
             // If match < match lb, continue.
-            if (match < match_lb) continue;
+            if (match < match_lb) {
+              gcr.Recover(true);
+              continue;
+            }
             // If support, confidenc >= threshold, write back to disk.
             if (support >= Configurations::Get()->support_threshold_ &&
                 confidence >= Configurations::Get()->confidence_threshold_) {
-              std::string gcr_info = gcr.GetInfoString(path_patterns_);
+              std::string gcr_info =
+                  gcr.GetInfoString(path_patterns_, match, support, confidence);
               gcr.SaveToFile(Configurations::Get()->gcr_path, gcr_info);
+              gcr.Recover(true);
               continue;
             }
             // If support >= threshold, confidence < threshold, go to next
             // level.
-            should_extend = true;
+            ExtendGCR(&gcr);
+            gcr.Recover(true);
           }
-          if (should_extend) ExtendGCR(&gcr);
         }
       }
     }
@@ -305,12 +392,9 @@ void RuleMiner::ExtendGCR(GCR* gcr) const {
     // Compute horizontal extensions.
     std::vector<GCRHorizontalExtension> horizontal_extensions =
         ComputeHorizontalExtensions(*gcr, vertical_extension.extend_to_left);
-    bool should_extend = false;
     for (const auto& horizontal_extension : horizontal_extensions) {
       // Horizontal extension.
       gcr->ExtendHorizontally(horizontal_extension, graph_);
-      std::string gcr_info = gcr->GetInfoString(path_patterns_);
-      LOG_INFO(gcr_info);
       // Compute support of GCR
       const auto& match_result = gcr->ComputeMatchAndSupport(graph_);
       size_t match = match_result.first;
@@ -319,24 +403,31 @@ void RuleMiner::ExtendGCR(GCR* gcr) const {
           static_cast<float>(Configurations::Get()->support_threshold_) *
           Configurations::Get()->confidence_threshold_;
       float confidence = static_cast<float>(match_result.first) / support;
-      LOG_INFO("Support: ", support, " Match: ", match,
-               " Confidence: ", confidence);
+      std::string gcr_info =
+          gcr->GetInfoString(path_patterns_, match, support, confidence);
+      LOG_INFO(gcr_info);
       // If support < threshold, continue.
-      if (support < Configurations::Get()->support_threshold_) continue;
+      if (support < Configurations::Get()->support_threshold_) {
+        gcr->Recover(true);
+        continue;
+      }
       // If match < match lb, continue.
-      if (match < match_lb) continue;
+      if (match < match_lb) {
+        gcr->Recover(true);
+        continue;
+      }
       // If support, confidenc >= threshold, write back to disk.
       if (support >= Configurations::Get()->support_threshold_ &&
           confidence >= Configurations::Get()->confidence_threshold_) {
         gcr->SaveToFile(Configurations::Get()->gcr_path, gcr_info);
+        gcr->Recover(true);
         continue;
       }
       // If support >= threshold, confidence < threshold, go to next level.
-      should_extend = true;
+      ExtendGCR(gcr);
+      gcr->Recover(true);
     }
-    if (should_extend) ExtendGCR(gcr);
-    // Each time we extend vertically, we need to recover the star rules.
-    gcr->Recover();
+    gcr->Recover(false);
   }
 }
 
@@ -385,9 +476,9 @@ std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
   // TODO: Can we reserve space beforehand?
   std::vector<GCRHorizontalExtension> extensions;
   // Check whether the number of predicates exceeds the limit.
-  // `>=` since we need to reserve space for consequence.
+  // `+1` since we need to reserve space for consequence.
   if (gcr.get_constant_predicate_count() +
-          gcr.get_variable_predicates().size() >=
+          gcr.get_variable_predicates().size() + 1 >=
       Configurations::Get()->max_predicate_num_) {
     return extensions;
   }
