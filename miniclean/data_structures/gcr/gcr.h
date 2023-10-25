@@ -1,6 +1,8 @@
 #ifndef MINICLEAN_DATA_STRUCTURES_GCR_GCR_H_
 #define MINICLEAN_DATA_STRUCTURES_GCR_GCR_H_
 
+#include <list>
+
 #include "miniclean/data_structures/gcr/path_rule.h"
 #include "miniclean/data_structures/gcr/predicate.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
@@ -141,9 +143,9 @@ class GCR {
   ConcreteVariablePredicate consequence_;
 
   // item value is the number of variable predicates that added to the GCR.
-  std::vector<size_t> horizontal_extension_log_;
+  std::list<size_t> horizontal_extension_log_;
   // `true` if added to left star, `false` if added to right star.
-  std::vector<bool> vertical_extension_log_;
+  std::list<bool> vertical_extension_log_;
 
   BucketID bucket_id_;
 

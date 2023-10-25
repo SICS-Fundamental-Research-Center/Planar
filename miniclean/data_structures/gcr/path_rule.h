@@ -156,7 +156,7 @@ class StarRule {
     predicate_count_ += path_rule.get_constant_predicates().size();
   }
 
-  void PopPathRule() {
+  void RemoveLastPathRule() {
     if (path_rules_.empty()) LOG_FATAL("Path rule is empty.");
     path_rules_.pop_back();
   }

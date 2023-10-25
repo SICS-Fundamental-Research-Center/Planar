@@ -31,10 +31,10 @@ void GCR::Recover(bool horizontal_recover) {
     bool extend_to_left = vertical_extension_log_.back();
     vertical_extension_log_.pop_back();
     if (extend_to_left) {
-      left_star_.PopPathRule();
+      left_star_.RemoveLastPathRule();
       left_star_.Recover();
     } else {
-      right_star_.PopPathRule();
+      right_star_.RemoveLastPathRule();
       right_star_.Recover();
     }
   }
