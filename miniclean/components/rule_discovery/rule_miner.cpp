@@ -307,6 +307,8 @@ void RuleMiner::ExecuteRuleMining(
   if (support < Configurations::Get()->support_threshold_) return;
   // If match < match lb, return.
   if (match < match_lb) return;
+  // If confidence < min_confidence, return.
+  if (confidence < Configurations::Get()->min_confidence_) return;
   // If support, confidenc >= threshold, write back to disk.
   if (support >= Configurations::Get()->support_threshold_ &&
       confidence >= Configurations::Get()->confidence_threshold_) {
@@ -365,6 +367,11 @@ void RuleMiner::MineGCRs() {
             }
             // If match < match lb, continue.
             if (match < match_lb) {
+              gcr.Recover(true);
+              continue;
+            }
+            // If confidence < min confidence, continue.
+            if (confidence < Configurations::Get()->min_confidence_) {
               gcr.Recover(true);
               continue;
             }
@@ -430,6 +437,11 @@ void RuleMiner::ExtendGCR(GCR* gcr, std::ofstream& gcr_result_file) {
       }
       // If match < match lb, continue.
       if (match < match_lb) {
+        gcr->Recover(true);
+        continue;
+      }
+      // If confidence < min confidence, continue.
+      if (confidence < Configurations::Get()->min_confidence_) {
         gcr->Recover(true);
         continue;
       }

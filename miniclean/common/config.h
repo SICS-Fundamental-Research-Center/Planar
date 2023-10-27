@@ -27,6 +27,7 @@ class Configurations {
   size_t star_support_threshold_ = 700;
   size_t support_threshold_ = 5000;
   float confidence_threshold_ = 0.95;
+  float min_confidence_ = 0.1;
 
   size_t max_variable_predicate_num_ = 1;
 
