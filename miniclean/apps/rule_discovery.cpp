@@ -16,11 +16,12 @@ DEFINE_uint32(parallelism, std::thread::hardware_concurrency(),
               "number of threads for rule discovery");
 
 int main(int argc, char* argv[]) {
-  sics::graph::core::util::InitOrDie(
-      sics::graph::core::util::DefaultConfigWithLogFile(
-          Configurations::Get()->rule_discovery_log_path));
-
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  std::string log_path = Configurations::Get()->rule_discovery_log_path +
+                         std::to_string(FLAGS_parallelism) + ".log";
+  sics::graph::core::util::InitOrDie(
+      sics::graph::core::util::DefaultConfigWithLogFile(log_path));
 
   // Initialize graph.
   YAML::Node metadata =

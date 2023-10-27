@@ -31,7 +31,7 @@ class Configurations {
 
   size_t max_variable_predicate_num_ = 1;
 
-  std::string rule_discovery_log_path = "data/imdb/log/rule_discovery.log";
+  std::string rule_discovery_log_path = "data/imdb/log/rule_discovery";
 
  private:
   Configurations() = default;
