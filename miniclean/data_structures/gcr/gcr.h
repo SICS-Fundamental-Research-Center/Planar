@@ -110,6 +110,10 @@ class GCR {
     return left_count + right_count;
   }
 
+  size_t get_variable_predicate_count() const {
+    return variable_predicates_.size();
+  }
+
   void Recover(bool horizontal_recover);
   void ExtendVertically(const GCRVerticalExtension& vertical_extension,
                         const MiniCleanCSRGraph& graph);

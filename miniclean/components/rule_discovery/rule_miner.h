@@ -116,7 +116,7 @@ class RuleMiner {
       }
     }
   }
-  void ExtendGCR(GCR* gcr, std::ofstream& gcr_result_file);
+  void ExtendGCR(GCR* gcr);
   std::vector<GCRVerticalExtension> ComputeVerticalExtensions(
       const GCR& gcr) const;
   std::vector<GCRHorizontalExtension> ComputeHorizontalExtensions(
@@ -140,7 +140,6 @@ class RuleMiner {
           valid_variable_predicates) const;
   size_t ComputeCombinationNum(size_t n, size_t k) const;
   void ExecuteRuleMining(GCR gcr, const GCRHorizontalExtension& extension,
-                         std::ofstream& gcr_result_file,
                          size_t* pending_tasks);
 
  private:
@@ -158,7 +157,6 @@ class RuleMiner {
   std::vector<std::vector<PathRule>> path_rules_;
 
   std::mutex rule_discovery_mtx_;
-  std::mutex gcr_result_file_mtx_;
   std::condition_variable cv_;
 };
 }  // namespace sics::graph::miniclean::components::rule_discovery

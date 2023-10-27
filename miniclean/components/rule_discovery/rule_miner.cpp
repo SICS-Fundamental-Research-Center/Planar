@@ -240,9 +240,6 @@ void RuleMiner::InitPathRuleUnitContainer() {
 void RuleMiner::MineGCRsPar(uint32_t parallelism) {
   ThreadPool thread_pool(parallelism);
 
-  std::ofstream gcr_result_file;
-  gcr_result_file.open(Configurations::Get()->gcr_path, std::ios::app);
-
   std::vector<TaskPackage> task_packages;
   size_t rule_size = 0;
   for (const auto& rule : star_rules_) {
@@ -252,6 +249,7 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
   task_packages.resize(gcr_num);
   size_t task_package_id = 0;
   size_t pending_tasks = 0;
+  size_t* pending_tasks_ptr = &pending_tasks;
 
   for (size_t l_label = 0; l_label < star_rules_.size(); l_label++) {
     if (star_rules_[l_label].empty()) continue;
@@ -271,9 +269,8 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
             LOG_FATAL("task_package_id >= task_packages.size()");
           }
           for (const auto& horizontal_extension : horizontal_extensions) {
-            Task task = [&, gcr, horizontal_extension]() {
-              ExecuteRuleMining(gcr, horizontal_extension, gcr_result_file,
-                                &pending_tasks);
+            Task task = [this, gcr, horizontal_extension, pending_tasks_ptr]() {
+              ExecuteRuleMining(gcr, horizontal_extension, pending_tasks_ptr);
             };
             task_packages[task_package_id].emplace_back(task);
           }
@@ -286,12 +283,13 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
   }
   std::unique_lock<std::mutex> lck(rule_discovery_mtx_);
   cv_.wait(lck, [&] { return pending_tasks == 0; });
-  gcr_result_file.close();
 }
 
 void RuleMiner::ExecuteRuleMining(
     GCR gcr, const GCRHorizontalExtension& horizontal_extension,
-    std::ofstream& gcr_result_file, size_t* pending_tasks) {
+    size_t* pending_task_ptr) {
+  auto start = std::chrono::system_clock::now();
+
   gcr.ExtendHorizontally(horizontal_extension, graph_);
   std::pair<size_t, size_t> match_result = gcr.ComputeMatchAndSupport(graph_);
   size_t match = match_result.first;
@@ -299,10 +297,9 @@ void RuleMiner::ExecuteRuleMining(
   float match_lb =
       static_cast<float>(Configurations::Get()->support_threshold_) *
       Configurations::Get()->confidence_threshold_;
-  float confidence = static_cast<float>(match_result.first) / support;
-  std::string gcr_info =
-      gcr.GetInfoString(path_patterns_, match, support, confidence);
-  LOG_INFO(gcr_info);
+  float confidence = 0;
+  if (support != 0)
+    confidence = static_cast<float>(match_result.first) / support;
   // If support < threshold, return.
   if (support < Configurations::Get()->support_threshold_) return;
   // If match < match lb, return.
@@ -314,24 +311,28 @@ void RuleMiner::ExecuteRuleMining(
       confidence >= Configurations::Get()->confidence_threshold_) {
     std::string gcr_info =
         gcr.GetInfoString(path_patterns_, match, support, confidence);
-    // Write to disk.
-    std::lock_guard<std::mutex> lck(gcr_result_file_mtx_);
-    gcr_result_file << gcr_info;
+    LOG_INFO(gcr_info);
     return;
   }
   // If support >= threshold, confidence < threshold, go to next
   // level.
-  ExtendGCR(&gcr, gcr_result_file);
+  ExtendGCR(&gcr);
 
   std::lock_guard<std::mutex> lck(rule_discovery_mtx_);
-  (*pending_tasks)--;
-  if (*pending_tasks == 0) cv_.notify_all();
+  (*pending_task_ptr)--;
+  if (*pending_task_ptr == 0) cv_.notify_all();
+
+  auto end = std::chrono::system_clock::now();
+
+  auto duration =
+      std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+          .count() /
+      (double)CLOCKS_PER_SEC;
+
+  LOG_INFO("Task finished in ", duration, " seconds.");
 }
 
 void RuleMiner::MineGCRs() {
-  std::ofstream gcr_result_file;
-  gcr_result_file.open(Configurations::Get()->gcr_path, std::ios::app);
-
   for (size_t l_label = 0; l_label < star_rules_.size(); l_label++) {
     if (star_rules_[l_label].empty()) continue;
     for (size_t r_label = l_label; r_label < star_rules_.size(); r_label++) {
@@ -356,10 +357,9 @@ void RuleMiner::MineGCRs() {
             float match_lb =
                 static_cast<float>(Configurations::Get()->support_threshold_) *
                 Configurations::Get()->confidence_threshold_;
-            float confidence = static_cast<float>(match_result.first) / support;
-            std::string gcr_info =
-                gcr.GetInfoString(path_patterns_, match, support, confidence);
-            LOG_INFO(gcr_info);
+            float confidence = 0;
+            if (support != 0)
+              confidence = static_cast<float>(match_result.first) / support;
             // If support < threshold, continue.
             if (support < Configurations::Get()->support_threshold_) {
               gcr.Recover(true);
@@ -380,17 +380,15 @@ void RuleMiner::MineGCRs() {
                 confidence >= Configurations::Get()->confidence_threshold_) {
               std::string gcr_info =
                   gcr.GetInfoString(path_patterns_, match, support, confidence);
-              {
-                std::lock_guard<std::mutex> lck(gcr_result_file_mtx_);
-                gcr_result_file << gcr_info;
-              }
+              LOG_INFO(gcr_info);
               gcr.Recover(true);
               continue;
             }
             // If support >= threshold, confidence < threshold, go to next
             // level.
-            ExtendGCR(&gcr, gcr_result_file);
+            ExtendGCR(&gcr);
             gcr.Recover(true);
+            LOG_INFO("Recover to previous level.");
           }
         }
       }
@@ -398,7 +396,7 @@ void RuleMiner::MineGCRs() {
   }
 }
 
-void RuleMiner::ExtendGCR(GCR* gcr, std::ofstream& gcr_result_file) {
+void RuleMiner::ExtendGCR(GCR* gcr) {
   LOG_INFO("Extend to next level.");
   // Check whether the GCR should be extended.
   if (gcr->get_left_star().get_path_rules().size() +
@@ -426,10 +424,9 @@ void RuleMiner::ExtendGCR(GCR* gcr, std::ofstream& gcr_result_file) {
       float match_lb =
           static_cast<float>(Configurations::Get()->support_threshold_) *
           Configurations::Get()->confidence_threshold_;
-      float confidence = static_cast<float>(match_result.first) / support;
-      std::string gcr_info =
-          gcr->GetInfoString(path_patterns_, match, support, confidence);
-      LOG_INFO(gcr_info);
+      float confidence = 0;
+      if (support != 0)
+        confidence = static_cast<float>(match_result.first) / support;
       // If support < threshold, continue.
       if (support < Configurations::Get()->support_threshold_) {
         gcr->Recover(true);
@@ -448,15 +445,14 @@ void RuleMiner::ExtendGCR(GCR* gcr, std::ofstream& gcr_result_file) {
       // If support, confidenc >= threshold, write back to disk.
       if (support >= Configurations::Get()->support_threshold_ &&
           confidence >= Configurations::Get()->confidence_threshold_) {
-        {
-          std::lock_guard<std::mutex> lck(gcr_result_file_mtx_);
-          gcr_result_file << gcr_info;
-        }
+        std::string gcr_info =
+            gcr->GetInfoString(path_patterns_, match, support, confidence);
+        LOG_INFO(gcr_info);
         gcr->Recover(true);
         continue;
       }
       // If support >= threshold, confidence < threshold, go to next level.
-      ExtendGCR(gcr, gcr_result_file);
+      ExtendGCR(gcr);
       gcr->Recover(true);
     }
     gcr->Recover(false);
@@ -507,21 +503,12 @@ std::vector<GCRHorizontalExtension> RuleMiner::ComputeHorizontalExtensions(
   // Result to return.
   // TODO: Can we reserve space beforehand?
   std::vector<GCRHorizontalExtension> extensions;
-  // Check whether the number of predicates exceeds the limit.
-  // `+1` since we need to reserve space for consequence.
-  if (gcr.get_constant_predicate_count() +
-          gcr.get_variable_predicates().size() + 1 >=
-      Configurations::Get()->max_predicate_num_) {
-    return extensions;
-  }
 
   // Assign consequence.
   std::vector<ConcreteVariablePredicate> c_consequences =
       InstantiateVariablePredicates(gcr, consequence_predicates_);
 
   // Assign variable predicates.
-  // Note that, unlike constant predicates which can be inherited from the
-  // previous GCR, variable predicates need to be enumerated from scratch.
   extensions = ExtendVariablePredicates(gcr, c_consequences);
   return extensions;
 }
@@ -584,11 +571,12 @@ std::vector<GCRHorizontalExtension> RuleMiner::ExtendVariablePredicates(
   std::vector<GCRHorizontalExtension> extensions;
   // Check the available number of variable predicates.
   size_t const_pred_num = gcr.get_constant_predicate_count();
+  size_t var_pred_num = gcr.get_variable_predicate_count();
   size_t consequence_num = 1;
-  size_t available_var_pred_num =
-      std::min(Configurations::Get()->max_predicate_num_ - const_pred_num -
-                   consequence_num,
-               Configurations::Get()->max_variable_predicate_num_);
+  size_t available_var_pred_num = std::min(
+      Configurations::Get()->max_predicate_num_ - const_pred_num -
+          var_pred_num - consequence_num,
+      Configurations::Get()->max_variable_predicate_num_ - var_pred_num);
   if (available_var_pred_num < 0) {
     LOG_FATAL("Available variable predicate number < 0");
   }
