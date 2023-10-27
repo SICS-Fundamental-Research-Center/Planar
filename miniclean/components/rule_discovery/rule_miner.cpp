@@ -271,10 +271,11 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
             LOG_FATAL("task_package_id >= task_packages.size()");
           }
           for (const auto& horizontal_extension : horizontal_extensions) {
-            task_packages[task_package_id].emplace_back(
-                std::bind(&RuleMiner::ExecuteRuleMining, this, gcr,
-                          horizontal_extension, std::ref(gcr_result_file),
-                          &pending_tasks));
+            Task task = [&, gcr, horizontal_extension]() {
+              ExecuteRuleMining(gcr, horizontal_extension, gcr_result_file,
+                                &pending_tasks);
+            };
+            task_packages[task_package_id].emplace_back(task);
           }
           pending_tasks += task_packages[task_package_id].size();
           thread_pool.SubmitAsync(task_packages[task_package_id]);
