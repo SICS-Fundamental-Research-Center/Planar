@@ -353,12 +353,4 @@ std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
   return ss.str();
 }
 
-void GCR::SaveToFile(const std::string& path,
-                     const std::string& gcr_info) const {
-  std::ofstream out_file;
-  out_file.open(path, std::ios::app);
-  out_file << gcr_info;
-  out_file.close();
-}
-
 }  // namespace sics::graph::miniclean::data_structures::gcr

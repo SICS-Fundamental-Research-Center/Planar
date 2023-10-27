@@ -125,7 +125,6 @@ class GCR {
   std::string GetInfoString(const std::vector<PathPattern>& path_patterns,
                             size_t match, size_t support,
                             float confidence) const;
-  void SaveToFile(const std::string& path, const std::string& gcr_info) const;
 
  private:
   void Backup(const MiniCleanCSRGraph& graph, bool added_to_left_star);
