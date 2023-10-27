@@ -183,12 +183,14 @@ void GCR::InitializeBuckets(
   for (const auto& left_bucket : left_valid_vertex_bucket) {
     for (const auto& vid : left_bucket) {
       auto value = graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
+      if (value == MAX_VERTEX_ATTRIBUTE_VALUE) continue;
       new_left_valid_vertex_bucket[value].emplace(vid);
     }
   }
   for (const auto& right_bucket : right_valid_vertex_bucket) {
     for (const auto& vid : right_bucket) {
       auto value = graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
+      if (value == MAX_VERTEX_ATTRIBUTE_VALUE) continue;
       new_right_valid_vertex_bucket[value].emplace(vid);
     }
   }
