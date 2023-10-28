@@ -313,15 +313,15 @@ std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
        << ", right path id: " << static_cast<int>(right_path_id)
        << ", right vertex id: " << static_cast<int>(right_vertex_id)
        << std::endl;
-    ss << static_cast<int>(left_label) << "( " << static_cast<int>(left_attr_id)
-       << " )";
+    ss << static_cast<int>(left_label) << "[" << static_cast<int>(left_attr_id)
+       << "]";
     if (op_type == OperatorType::kEq) {
       ss << " = ";
     } else if (op_type == OperatorType::kGt) {
       ss << " > ";
     }
-    ss << static_cast<int>(right_label) << "( "
-       << static_cast<int>(right_attr_id) << " )" << std::endl;
+    ss << static_cast<int>(right_label) << "["
+       << static_cast<int>(right_attr_id) << "]" << std::endl;
     ss << "---------------------" << std::endl;
   }
   ss << "Consequence: " << std::endl;
@@ -338,15 +338,15 @@ std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
      << ", left vertex id: " << static_cast<int>(left_vertex_id)
      << ", right path id: " << static_cast<int>(right_path_id)
      << ", right vertex id: " << static_cast<int>(right_vertex_id) << std::endl;
-  ss << static_cast<int>(left_label) << "( " << static_cast<int>(left_attr_id)
-     << " )";
+  ss << static_cast<int>(left_label) << "[" << static_cast<int>(left_attr_id)
+     << "]";
   if (op_type == OperatorType::kEq) {
     ss << " = ";
   } else if (op_type == OperatorType::kGt) {
     ss << " > ";
   }
-  ss << static_cast<int>(right_label) << "( " << static_cast<int>(right_attr_id)
-     << " )" << std::endl;
+  ss << static_cast<int>(right_label) << "[" << static_cast<int>(right_attr_id)
+     << "]" << std::endl;
   ss << "---------------------" << std::endl;
   ss << "===End of this GCR===" << std::endl;
 
