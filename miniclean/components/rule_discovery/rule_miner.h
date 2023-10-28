@@ -2,6 +2,7 @@
 #define MINICLEAN_COMPONENTS_RULE_DISCOVERY_RULE_MINER_H_
 
 #include <map>
+#include <mutex>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -115,7 +116,7 @@ class RuleMiner {
       }
     }
   }
-  void ExtendGCR(GCR* gcr) const;
+  void ExtendGCR(GCR* gcr);
   std::vector<GCRVerticalExtension> ComputeVerticalExtensions(
       const GCR& gcr) const;
   std::vector<GCRHorizontalExtension> ComputeHorizontalExtensions(
@@ -138,7 +139,8 @@ class RuleMiner {
       std::vector<std::vector<ConcreteVariablePredicate>>*
           valid_variable_predicates) const;
   size_t ComputeCombinationNum(size_t n, size_t k) const;
-  TaskPackage GetRuleMiningTaskPackage() const;
+  void ExecuteRuleMining(GCR gcr, const GCRHorizontalExtension& extension,
+                         size_t* pending_tasks);
 
  private:
   MiniCleanCSRGraph& graph_;
@@ -153,6 +155,9 @@ class RuleMiner {
   PathRuleUnitContainer path_rule_unit_container_;
   std::vector<std::vector<StarRule>> star_rules_;
   std::vector<std::vector<PathRule>> path_rules_;
+
+  std::mutex rule_discovery_mtx_;
+  std::condition_variable cv_;
 };
 }  // namespace sics::graph::miniclean::components::rule_discovery
 

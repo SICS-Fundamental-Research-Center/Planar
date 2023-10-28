@@ -183,12 +183,14 @@ void GCR::InitializeBuckets(
   for (const auto& left_bucket : left_valid_vertex_bucket) {
     for (const auto& vid : left_bucket) {
       auto value = graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
+      if (value == MAX_VERTEX_ATTRIBUTE_VALUE) continue;
       new_left_valid_vertex_bucket[value].emplace(vid);
     }
   }
   for (const auto& right_bucket : right_valid_vertex_bucket) {
     for (const auto& vid : right_bucket) {
       auto value = graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
+      if (value == MAX_VERTEX_ATTRIBUTE_VALUE) continue;
       new_right_valid_vertex_bucket[value].emplace(vid);
     }
   }
@@ -349,14 +351,6 @@ std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
   ss << "===End of this GCR===" << std::endl;
 
   return ss.str();
-}
-
-void GCR::SaveToFile(const std::string& path,
-                     const std::string& gcr_info) const {
-  std::ofstream out_file;
-  out_file.open(path, std::ios::app);
-  out_file << gcr_info;
-  out_file.close();
 }
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

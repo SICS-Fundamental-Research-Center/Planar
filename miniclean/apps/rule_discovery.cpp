@@ -9,6 +9,7 @@ using RuleMiner = sics::graph::miniclean::components::rule_discovery::RuleMiner;
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph =
     sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+using Configurations = sics::graph::miniclean::common::Configurations;
 
 DEFINE_string(workspace_path, "", "workspace_path");
 DEFINE_uint32(parallelism, std::thread::hardware_concurrency(),
@@ -16,6 +17,11 @@ DEFINE_uint32(parallelism, std::thread::hardware_concurrency(),
 
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  std::string log_path = Configurations::Get()->rule_discovery_log_path +
+                         std::to_string(FLAGS_parallelism) + ".log";
+  sics::graph::core::util::InitOrDie(
+      sics::graph::core::util::DefaultConfigWithLogFile(log_path));
 
   // Initialize graph.
   YAML::Node metadata =
