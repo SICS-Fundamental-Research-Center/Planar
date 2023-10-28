@@ -240,57 +240,48 @@ void RuleMiner::InitPathRuleUnitContainer() {
 void RuleMiner::MineGCRsPar(uint32_t parallelism) {
   ThreadPool thread_pool(parallelism);
 
-  std::vector<TaskPackage> task_packages;
-  size_t rule_size = 0;
-  for (const auto& rule : star_rules_) {
-    rule_size += rule.size();
-  }
-  size_t gcr_num = (rule_size + 1) * rule_size / 2;
-  task_packages.resize(gcr_num);
-  size_t task_package_id = 0;
-  size_t pending_tasks = 0;
-  size_t* pending_tasks_ptr = &pending_tasks;
+  TaskPackage task_package;
 
   for (size_t l_label = 0; l_label < star_rules_.size(); l_label++) {
     if (star_rules_[l_label].empty()) continue;
     for (size_t r_label = l_label; r_label < star_rules_.size(); r_label++) {
       if (star_rules_[r_label].empty()) continue;
-      VertexLabel ll = std::get<0>(path_patterns_[l_label][0]);
-      VertexLabel rl = std::get<0>(path_patterns_[r_label][0]);
-      for (size_t ls = 0; ls < star_rules_[ll].size(); ls++) {
-        size_t j_start = (ll == rl) ? ls : 0;
-        for (size_t rs = j_start; rs < star_rules_[rl].size(); rs++) {
+      for (size_t ls = 0; ls < star_rules_[l_label].size(); ls++) {
+        size_t j_start = (l_label == r_label) ? ls : 0;
+        if (l_label != 0 || r_label != 0)
+          LOG_FATAL("l_label != 0 || r_label != 0");
+        if (j_start != ls) LOG_FATAL("j_start != ls");
+        for (size_t rs = j_start; rs < star_rules_[r_label].size(); rs++) {
           // Build GCR and initiaize star rules.
-          GCR gcr(star_rules_[ll][ls], star_rules_[rl][rs]);
+          GCR gcr(star_rules_[l_label][ls], star_rules_[r_label][rs]);
           // Horizontally extend the GCR.
           std::vector<GCRHorizontalExtension> horizontal_extensions =
               ComputeHorizontalExtensions(gcr, true);
-          if (task_package_id >= task_packages.size()) {
-            LOG_FATAL("task_package_id >= task_packages.size()");
-          }
-          for (const auto& horizontal_extension : horizontal_extensions) {
-            Task task = [this, gcr, horizontal_extension, pending_tasks_ptr]() {
-              ExecuteRuleMining(gcr, horizontal_extension, pending_tasks_ptr);
+          size_t horizontal_extension_num = horizontal_extensions.size();
+          for (size_t i = 0; i < horizontal_extension_num; i++) {
+            auto horizontal_extension = horizontal_extensions[i];
+            Task task = [this, gcr, horizontal_extension, i,
+                         horizontal_extension_num]() {
+              ExecuteRuleMining(gcr, horizontal_extension, i,
+                                horizontal_extension_num);
             };
-            task_packages[task_package_id].emplace_back(task);
+            task_package.emplace_back(task);
           }
-          pending_tasks += task_packages[task_package_id].size();
-          thread_pool.SubmitAsync(task_packages[task_package_id]);
-          task_package_id++;
         }
       }
     }
   }
-  std::unique_lock<std::mutex> lck(rule_discovery_mtx_);
-  cv_.wait(lck, [&] { return pending_tasks == 0; });
+  LOG_INFO("Collected ", task_package.size(), " task packages.");
+  thread_pool.SubmitSync(task_package);
 }
 
 void RuleMiner::ExecuteRuleMining(
     GCR gcr, const GCRHorizontalExtension& horizontal_extension,
-    size_t* pending_task_ptr) {
+    size_t horizontal_extension_id, size_t horizontal_extension_num) {
   auto start = std::chrono::system_clock::now();
 
-  gcr.ExtendHorizontally(horizontal_extension, graph_);
+  gcr.ExtendHorizontally(horizontal_extension, graph_, horizontal_extension_id,
+                         horizontal_extension_num);
   std::pair<size_t, size_t> match_result = gcr.ComputeMatchAndSupport(graph_);
   size_t match = match_result.first;
   size_t support = match_result.second;
@@ -318,10 +309,6 @@ void RuleMiner::ExecuteRuleMining(
   // level.
   ExtendGCR(&gcr);
 
-  std::lock_guard<std::mutex> lck(rule_discovery_mtx_);
-  (*pending_task_ptr)--;
-  if (*pending_task_ptr == 0) cv_.notify_all();
-
   auto end = std::chrono::system_clock::now();
 
   auto duration =
@@ -347,8 +334,9 @@ void RuleMiner::MineGCRs() {
           // Horizontally extend the GCR.
           std::vector<GCRHorizontalExtension> horizontal_extensions =
               ComputeHorizontalExtensions(gcr, true);
-          for (const auto& horizontal_extension : horizontal_extensions) {
-            gcr.ExtendHorizontally(horizontal_extension, graph_);
+          for (size_t i = 0; i < horizontal_extensions.size(); i++) {
+            gcr.ExtendHorizontally(horizontal_extensions[i], graph_, i,
+                                   horizontal_extensions.size());
             // Compute support of GCR
             std::pair<size_t, size_t> match_result =
                 gcr.ComputeMatchAndSupport(graph_);
@@ -397,7 +385,6 @@ void RuleMiner::MineGCRs() {
 }
 
 void RuleMiner::ExtendGCR(GCR* gcr) {
-  LOG_INFO("Extend to next level.");
   // Check whether the GCR should be extended.
   if (gcr->get_left_star().get_path_rules().size() +
           gcr->get_right_star().get_path_rules().size() >=
@@ -408,15 +395,18 @@ void RuleMiner::ExtendGCR(GCR* gcr) {
   std::vector<GCRVerticalExtension> vertical_extensions =
       ComputeVerticalExtensions(*gcr);
   // Compute horizontal extensions for each vertical extension.
-  for (const auto& vertical_extension : vertical_extensions) {
+  for (size_t i = 0; i < vertical_extensions.size(); i++) {
     // Vertical extension.
-    gcr->ExtendVertically(vertical_extension, graph_);
+    gcr->ExtendVertically(vertical_extensions[i], graph_, i,
+                          vertical_extensions.size());
     // Compute horizontal extensions.
     std::vector<GCRHorizontalExtension> horizontal_extensions =
-        ComputeHorizontalExtensions(*gcr, vertical_extension.extend_to_left);
-    for (const auto& horizontal_extension : horizontal_extensions) {
+        ComputeHorizontalExtensions(*gcr,
+                                    vertical_extensions[i].extend_to_left);
+    for (size_t j = 0; j < horizontal_extensions.size(); j++) {
       // Horizontal extension.
-      gcr->ExtendHorizontally(horizontal_extension, graph_);
+      gcr->ExtendHorizontally(horizontal_extensions[j], graph_, j,
+                              horizontal_extensions.size());
       // Compute support of GCR
       const auto& match_result = gcr->ComputeMatchAndSupport(graph_);
       size_t match = match_result.first;
