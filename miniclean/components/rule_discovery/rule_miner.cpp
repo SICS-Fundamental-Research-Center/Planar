@@ -285,16 +285,11 @@ void RuleMiner::ExecuteRuleMining(
   std::pair<size_t, size_t> match_result = gcr.ComputeMatchAndSupport(graph_);
   size_t match = match_result.first;
   size_t support = match_result.second;
-  float match_lb =
-      static_cast<float>(Configurations::Get()->support_threshold_) *
-      Configurations::Get()->confidence_threshold_;
   float confidence = 0;
-  if (support != 0)
-    confidence = static_cast<float>(match_result.first) / support;
+  if (match != 0)
+    confidence = static_cast<float>(support) / match;
   // If support < threshold, return.
   if (support < Configurations::Get()->support_threshold_) return;
-  // If match < match lb, return.
-  if (match < match_lb) return;
   // If confidence < min_confidence, return.
   if (confidence < Configurations::Get()->min_confidence_) return;
   // If support, confidenc >= threshold, write back to disk.
@@ -342,19 +337,11 @@ void RuleMiner::MineGCRs() {
                 gcr.ComputeMatchAndSupport(graph_);
             size_t match = match_result.first;
             size_t support = match_result.second;
-            float match_lb =
-                static_cast<float>(Configurations::Get()->support_threshold_) *
-                Configurations::Get()->confidence_threshold_;
             float confidence = 0;
-            if (support != 0)
-              confidence = static_cast<float>(match_result.first) / support;
+            if (match != 0)
+              confidence = static_cast<float>(support) / match;
             // If support < threshold, continue.
             if (support < Configurations::Get()->support_threshold_) {
-              gcr.Recover(true);
-              continue;
-            }
-            // If match < match lb, continue.
-            if (match < match_lb) {
               gcr.Recover(true);
               continue;
             }
@@ -411,19 +398,11 @@ void RuleMiner::ExtendGCR(GCR* gcr) {
       const auto& match_result = gcr->ComputeMatchAndSupport(graph_);
       size_t match = match_result.first;
       size_t support = match_result.second;
-      float match_lb =
-          static_cast<float>(Configurations::Get()->support_threshold_) *
-          Configurations::Get()->confidence_threshold_;
       float confidence = 0;
-      if (support != 0)
-        confidence = static_cast<float>(match_result.first) / support;
+      if (match != 0)
+        confidence = static_cast<float>(support) / match;
       // If support < threshold, continue.
       if (support < Configurations::Get()->support_threshold_) {
-        gcr->Recover(true);
-        continue;
-      }
-      // If match < match lb, continue.
-      if (match < match_lb) {
         gcr->Recover(true);
         continue;
       }

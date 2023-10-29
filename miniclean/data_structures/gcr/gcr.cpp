@@ -149,11 +149,11 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
           }
         }
         if (preconditions_match) {
-          support_++;
+          match_++;
           // Test consequence.
           if (TestVariablePredicate(graph, consequence_, left_vertex,
                                     right_vertex)) {
-            match_++;
+            support_++;
           }
         }
       }
