@@ -45,8 +45,8 @@ void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension,
                            const MiniCleanCSRGraph& graph,
                            size_t vertical_extension_id,
                            size_t vertical_extension_num) {
-  mining_progress_log_.push_back(
-      std::make_pair(vertical_extension_id, vertical_extension_num));
+  mining_progress_log_.emplace_back(vertical_extension_id,
+                                    vertical_extension_num);
   if (vertical_extension.extend_to_left) {
     vertical_extension_log_.push_back(true);
     AddPathRuleToLeftStar(vertical_extension.path_rule);
@@ -71,8 +71,8 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
   }
   horizontal_extension_log_.push_back(
       horizontal_extension.variable_predicates.size());
-  mining_progress_log_.push_back(
-      std::make_pair(horizontal_extension_id, horizontal_extension_num));
+  mining_progress_log_.emplace_back(horizontal_extension_id,
+                                    horizontal_extension_num);
   const auto& index_collection = left_star_.get_index_collection();
   // Update vertex buckets.
   // Check previous buckets.

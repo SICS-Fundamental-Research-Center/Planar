@@ -73,7 +73,7 @@ class GCR {
     // vertical extension).
     mining_progress_log_.reserve((Configurations::Get()->max_path_num_ + 1) *
                                  2);
-    mining_progress_log_.push_back(std::make_pair(0, 1));
+    mining_progress_log_.emplace_back(0, 1);
   }
 
   void AddVariablePredicateToBack(
