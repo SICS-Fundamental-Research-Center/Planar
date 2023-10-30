@@ -2,7 +2,6 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <fstream>
 #include <set>
 
 #include "core/common/multithreading/thread_pool.h"
@@ -239,8 +238,8 @@ void RuleMiner::InitPathRuleUnitContainer() {
 
 void RuleMiner::MineGCRsPar(uint32_t parallelism) {
   ThreadPool thread_pool(parallelism);
-
-  TaskPackage task_package;
+  size_t pending_tasks_num = 0;
+  size_t* pending_tasks_num_ptr = &pending_tasks_num;
 
   for (size_t l_label = 0; l_label < star_rules_.size(); l_label++) {
     if (star_rules_[l_label].empty()) continue;
@@ -248,9 +247,6 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
       if (star_rules_[r_label].empty()) continue;
       for (size_t ls = 0; ls < star_rules_[l_label].size(); ls++) {
         size_t j_start = (l_label == r_label) ? ls : 0;
-        if (l_label != 0 || r_label != 0)
-          LOG_FATAL("l_label != 0 || r_label != 0");
-        if (j_start != ls) LOG_FATAL("j_start != ls");
         for (size_t rs = j_start; rs < star_rules_[r_label].size(); rs++) {
           // Build GCR and initiaize star rules.
           GCR gcr(star_rules_[l_label][ls], star_rules_[r_label][rs]);
@@ -261,23 +257,27 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
           for (size_t i = 0; i < horizontal_extension_num; i++) {
             auto horizontal_extension = horizontal_extensions[i];
             Task task = [this, gcr, horizontal_extension, i,
-                         horizontal_extension_num]() {
+                         horizontal_extension_num, pending_tasks_num_ptr]() {
               ExecuteRuleMining(gcr, horizontal_extension, i,
-                                horizontal_extension_num);
+                                horizontal_extension_num,
+                                pending_tasks_num_ptr);
             };
-            task_package.emplace_back(task);
+            pending_tasks_num++;
+            thread_pool.SubmitAsync(std::move(task));
           }
         }
       }
     }
   }
-  LOG_INFO("Collected ", task_package.size(), " task packages.");
-  thread_pool.SubmitSync(task_package);
+
+  std::unique_lock<std::mutex> lck(rule_discovery_mtx_);
+  cv_.wait(lck, [&] { return pending_tasks_num == 0; });
 }
 
 void RuleMiner::ExecuteRuleMining(
     GCR gcr, const GCRHorizontalExtension& horizontal_extension,
-    size_t horizontal_extension_id, size_t horizontal_extension_num) {
+    size_t horizontal_extension_id, size_t horizontal_extension_num,
+    size_t* pending_tasks_num_ptr) {
   auto start = std::chrono::system_clock::now();
 
   gcr.ExtendHorizontally(horizontal_extension, graph_, horizontal_extension_id,
@@ -286,18 +286,38 @@ void RuleMiner::ExecuteRuleMining(
   size_t match = match_result.first;
   size_t support = match_result.second;
   float confidence = 0;
-  if (match != 0)
-    confidence = static_cast<float>(support) / match;
+  if (match != 0) confidence = static_cast<float>(support) / match;
   // If support < threshold, return.
-  if (support < Configurations::Get()->support_threshold_) return;
-  // If confidence < min_confidence, return.
-  if (confidence < Configurations::Get()->min_confidence_) return;
+  if (support < Configurations::Get()->support_threshold_ ||
+      confidence < Configurations::Get()->min_confidence_) {
+    auto end = std::chrono::system_clock::now();
+    auto duration =
+        std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+            .count() /
+        (double)CLOCKS_PER_SEC;
+    LOG_INFO("Task finished in ", duration, " seconds.");
+    std::lock_guard<std::mutex> lck(rule_discovery_mtx_);
+    (*pending_tasks_num_ptr)--;
+    LOG_INFO("Task remains: ", *pending_tasks_num_ptr);
+    if (*pending_tasks_num_ptr == 0) cv_.notify_all();
+    return;
+  }
   // If support, confidenc >= threshold, write back to disk.
   if (support >= Configurations::Get()->support_threshold_ &&
       confidence >= Configurations::Get()->confidence_threshold_) {
     std::string gcr_info =
         gcr.GetInfoString(path_patterns_, match, support, confidence);
     LOG_INFO(gcr_info);
+    auto end = std::chrono::system_clock::now();
+    auto duration =
+        std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+            .count() /
+        (double)CLOCKS_PER_SEC;
+    LOG_INFO("Task finished in ", duration, " seconds.");
+    std::lock_guard<std::mutex> lck(rule_discovery_mtx_);
+    (*pending_tasks_num_ptr)--;
+    LOG_INFO("Task remains: ", *pending_tasks_num_ptr);
+    if (*pending_tasks_num_ptr == 0) cv_.notify_all();
     return;
   }
   // If support >= threshold, confidence < threshold, go to next
@@ -312,6 +332,11 @@ void RuleMiner::ExecuteRuleMining(
       (double)CLOCKS_PER_SEC;
 
   LOG_INFO("Task finished in ", duration, " seconds.");
+
+  std::lock_guard<std::mutex> lck(rule_discovery_mtx_);
+  (*pending_tasks_num_ptr)--;
+  LOG_INFO("Task remains: ", *pending_tasks_num_ptr);
+  if (*pending_tasks_num_ptr == 0) cv_.notify_all();
 }
 
 void RuleMiner::MineGCRs() {
@@ -338,8 +363,7 @@ void RuleMiner::MineGCRs() {
             size_t match = match_result.first;
             size_t support = match_result.second;
             float confidence = 0;
-            if (match != 0)
-              confidence = static_cast<float>(support) / match;
+            if (match != 0) confidence = static_cast<float>(support) / match;
             // If support < threshold, continue.
             if (support < Configurations::Get()->support_threshold_) {
               gcr.Recover(true);
@@ -399,8 +423,7 @@ void RuleMiner::ExtendGCR(GCR* gcr) {
       size_t match = match_result.first;
       size_t support = match_result.second;
       float confidence = 0;
-      if (match != 0)
-        confidence = static_cast<float>(support) / match;
+      if (match != 0) confidence = static_cast<float>(support) / match;
       // If support < threshold, continue.
       if (support < Configurations::Get()->support_threshold_) {
         gcr->Recover(true);

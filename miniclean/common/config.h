@@ -24,14 +24,14 @@ class Configurations {
 
   size_t max_predicate_num_ = 3;
   size_t max_path_num_ = 2;
-  size_t star_support_threshold_ = 2;
-  size_t support_threshold_ = 2;
-  float confidence_threshold_ = 0.01;
-  float min_confidence_ = 0;
+  size_t star_support_threshold_ = 700;
+  size_t support_threshold_ = 2000;
+  float confidence_threshold_ = 0.90;
+  float min_confidence_ = 0.1;
 
   size_t max_variable_predicate_num_ = 1;
 
-  std::string rule_discovery_log_path = "data/small_imdb/log/rule_discovery";
+  std::string rule_discovery_log_path = "data/imdb/log/rule_discovery";
 
  private:
   Configurations() = default;

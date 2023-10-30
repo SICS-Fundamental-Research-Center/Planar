@@ -142,7 +142,8 @@ class RuleMiner {
   void ExecuteRuleMining(GCR gcr,
                          const GCRHorizontalExtension& horizontal_extension,
                          size_t horizontal_extension_id,
-                         size_t horizontal_extension_num);
+                         size_t horizontal_extension_num,
+                         size_t* pending_tasks_num_ptr);
 
  private:
   MiniCleanCSRGraph& graph_;
