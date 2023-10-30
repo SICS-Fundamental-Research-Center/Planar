@@ -2,7 +2,9 @@
 #define MINICLEAN_DATA_STRUCTURES_GCR_GCR_H_
 
 #include <list>
+#include <vector>
 
+#include "miniclean/common/config.h"
 #include "miniclean/data_structures/gcr/path_rule.h"
 #include "miniclean/data_structures/gcr/predicate.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
@@ -57,6 +59,7 @@ class GCR {
   using PathPattern = sics::graph::miniclean::common::PathPattern;
   using PathInstance = std::vector<VertexID>;
   using PathInstanceBucket = std::vector<PathInstance>;
+  using Configurations = sics::graph::miniclean::common::Configurations;
 
  public:
   GCR(const StarRule& left_star, const StarRule& right_star)
@@ -65,6 +68,12 @@ class GCR {
     right_star_.InitializeStarRule();
     bucket_id_ = BucketID(MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID,
                           MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID);
+    // First item is <vertical extension id, vertical extension num>.
+    // Their value is (0, 1) since we start with two isolated star centers (one
+    // vertical extension).
+    mining_progress_log_.reserve((Configurations::Get()->max_path_num_ + 1) *
+                                 2);
+    mining_progress_log_.emplace_back(0, 1);
   }
 
   void AddVariablePredicateToBack(
@@ -116,9 +125,13 @@ class GCR {
 
   void Recover(bool horizontal_recover);
   void ExtendVertically(const GCRVerticalExtension& vertical_extension,
-                        const MiniCleanCSRGraph& graph);
+                        const MiniCleanCSRGraph& graph,
+                        size_t vertical_extension_id,
+                        size_t vertical_extension_num);
   void ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
-                          const MiniCleanCSRGraph& graph);
+                          const MiniCleanCSRGraph& graph,
+                          size_t horizontal_extension_id,
+                          size_t horizontal_extension_num);
   // TODO: this function should be more rigorous.
   std::pair<size_t, size_t> ComputeMatchAndSupport(
       const MiniCleanCSRGraph& graph);
@@ -149,6 +162,8 @@ class GCR {
   std::list<size_t> horizontal_extension_log_;
   // `true` if added to left star, `false` if added to right star.
   std::list<bool> vertical_extension_log_;
+
+  std::vector<std::pair<size_t, size_t>> mining_progress_log_;
 
   BucketID bucket_id_;
 

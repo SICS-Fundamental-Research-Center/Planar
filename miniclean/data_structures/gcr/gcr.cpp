@@ -38,10 +38,15 @@ void GCR::Recover(bool horizontal_recover) {
       right_star_.Recover();
     }
   }
+  mining_progress_log_.pop_back();
 }
 
 void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension,
-                           const MiniCleanCSRGraph& graph) {
+                           const MiniCleanCSRGraph& graph,
+                           size_t vertical_extension_id,
+                           size_t vertical_extension_num) {
+  mining_progress_log_.emplace_back(vertical_extension_id,
+                                    vertical_extension_num);
   if (vertical_extension.extend_to_left) {
     vertical_extension_log_.push_back(true);
     AddPathRuleToLeftStar(vertical_extension.path_rule);
@@ -56,7 +61,9 @@ void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension,
 }
 
 void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
-                             const MiniCleanCSRGraph& graph) {
+                             const MiniCleanCSRGraph& graph,
+                             size_t horizontal_extension_id,
+                             size_t horizontal_extension_num) {
   set_consequence(horizontal_extension.consequence);
   for (const auto& c_variable_predicate :
        horizontal_extension.variable_predicates) {
@@ -64,6 +71,8 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
   }
   horizontal_extension_log_.push_back(
       horizontal_extension.variable_predicates.size());
+  mining_progress_log_.emplace_back(horizontal_extension_id,
+                                    horizontal_extension_num);
   const auto& index_collection = left_star_.get_index_collection();
   // Update vertex buckets.
   // Check previous buckets.
@@ -140,11 +149,11 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
           }
         }
         if (preconditions_match) {
-          support_++;
+          match_++;
           // Test consequence.
           if (TestVariablePredicate(graph, consequence_, left_vertex,
                                     right_vertex)) {
-            match_++;
+            support_++;
           }
         }
       }
@@ -288,9 +297,31 @@ std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
                                size_t match, size_t support,
                                float confidence) const {
   std::stringstream ss;
+  if (mining_progress_log_.size() % 2 == 1) LOG_FATAL("Wrong mining progress.");
 
   ss << "===GCR info===" << std::endl;
   ss << "Thread ID: " << folly::getCurrentThreadID() << std::endl;
+  ss << "-------------Progress Info----------------" << std::endl;
+  float progress = 0;
+  float base = 1;
+  for (size_t i = 0; i < mining_progress_log_.size(); i += 2) {
+    size_t vertical_extension_id = mining_progress_log_[i].first;
+    size_t vertical_extension_num = mining_progress_log_[i].second;
+    size_t horizontal_extension_id = mining_progress_log_[i + 1].first;
+    size_t horizontal_extension_num = mining_progress_log_[i + 1].second;
+    ss << "Level: " << i / 2
+       << "; Vertical extension: " << vertical_extension_id << "/"
+       << vertical_extension_num
+       << "; Horizontal extension: " << horizontal_extension_id << "/"
+       << horizontal_extension_num << std::endl;
+    progress += base * vertical_extension_id / vertical_extension_num;
+    base /= vertical_extension_num;
+    progress += base * horizontal_extension_id / horizontal_extension_num;
+    base /= horizontal_extension_num;
+  }
+  progress *= 100;
+  ss << "Estimated mining progress: " << progress << "%" << std::endl;
+  ss << "-------------------------------------------" << std::endl;
   ss << "Match: " << match << " Support: " << support
      << " Confidence: " << confidence << std::endl;
   ss << "Left star: " << std::endl;
@@ -313,15 +344,15 @@ std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
        << ", right path id: " << static_cast<int>(right_path_id)
        << ", right vertex id: " << static_cast<int>(right_vertex_id)
        << std::endl;
-    ss << static_cast<int>(left_label) << "( " << static_cast<int>(left_attr_id)
-       << " )";
+    ss << static_cast<int>(left_label) << "[" << static_cast<int>(left_attr_id)
+       << "]";
     if (op_type == OperatorType::kEq) {
       ss << " = ";
     } else if (op_type == OperatorType::kGt) {
       ss << " > ";
     }
-    ss << static_cast<int>(right_label) << "( "
-       << static_cast<int>(right_attr_id) << " )" << std::endl;
+    ss << static_cast<int>(right_label) << "["
+       << static_cast<int>(right_attr_id) << "]" << std::endl;
     ss << "---------------------" << std::endl;
   }
   ss << "Consequence: " << std::endl;
@@ -338,15 +369,15 @@ std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
      << ", left vertex id: " << static_cast<int>(left_vertex_id)
      << ", right path id: " << static_cast<int>(right_path_id)
      << ", right vertex id: " << static_cast<int>(right_vertex_id) << std::endl;
-  ss << static_cast<int>(left_label) << "( " << static_cast<int>(left_attr_id)
-     << " )";
+  ss << static_cast<int>(left_label) << "[" << static_cast<int>(left_attr_id)
+     << "]";
   if (op_type == OperatorType::kEq) {
     ss << " = ";
   } else if (op_type == OperatorType::kGt) {
     ss << " > ";
   }
-  ss << static_cast<int>(right_label) << "( " << static_cast<int>(right_attr_id)
-     << " )" << std::endl;
+  ss << static_cast<int>(right_label) << "[" << static_cast<int>(right_attr_id)
+     << "]" << std::endl;
   ss << "---------------------" << std::endl;
   ss << "===End of this GCR===" << std::endl;
 

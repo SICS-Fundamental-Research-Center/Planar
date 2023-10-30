@@ -139,8 +139,11 @@ class RuleMiner {
       std::vector<std::vector<ConcreteVariablePredicate>>*
           valid_variable_predicates) const;
   size_t ComputeCombinationNum(size_t n, size_t k) const;
-  void ExecuteRuleMining(GCR gcr, const GCRHorizontalExtension& extension,
-                         size_t* pending_tasks);
+  void ExecuteRuleMining(GCR gcr,
+                         const GCRHorizontalExtension& horizontal_extension,
+                         size_t horizontal_extension_id,
+                         size_t horizontal_extension_num,
+                         size_t* pending_tasks_num_ptr);
 
  private:
   MiniCleanCSRGraph& graph_;
