@@ -279,6 +279,7 @@ void RuleMiner::ExecuteRuleMining(
     size_t horizontal_extension_id, size_t horizontal_extension_num,
     size_t* pending_tasks_num_ptr) {
   auto start = std::chrono::system_clock::now();
+  auto last_activated_timestamp = std::chrono::system_clock::now();
 
   gcr.ExtendHorizontally(horizontal_extension, graph_, horizontal_extension_id,
                          horizontal_extension_num);
@@ -287,7 +288,7 @@ void RuleMiner::ExecuteRuleMining(
   size_t support = match_result.second;
   float confidence = 0;
   if (match != 0) confidence = static_cast<float>(support) / match;
-  // If support < threshold, return.
+  // If support < threshold, or confidence < threshold, return.
   if (support < Configurations::Get()->support_threshold_ ||
       confidence < Configurations::Get()->min_confidence_) {
     auto end = std::chrono::system_clock::now();
@@ -322,7 +323,7 @@ void RuleMiner::ExecuteRuleMining(
   }
   // If support >= threshold, confidence < threshold, go to next
   // level.
-  ExtendGCR(&gcr);
+  ExtendGCR(&gcr, last_activated_timestamp, true);
 
   auto end = std::chrono::system_clock::now();
 
@@ -385,7 +386,7 @@ void RuleMiner::MineGCRs() {
             }
             // If support >= threshold, confidence < threshold, go to next
             // level.
-            ExtendGCR(&gcr);
+            ExtendGCR(&gcr, std::chrono::system_clock::now(), false);
             gcr.Recover(true);
             LOG_INFO("Recover to previous level.");
           }
@@ -395,13 +396,19 @@ void RuleMiner::MineGCRs() {
   }
 }
 
-void RuleMiner::ExtendGCR(GCR* gcr) {
+void RuleMiner::ExtendGCR(
+    GCR* gcr,
+    const std::chrono::time_point<std::chrono::system_clock>&
+        last_activated_time,
+    bool test_freeze_time) {
   // Check whether the GCR should be extended.
   if (gcr->get_left_star().get_path_rules().size() +
           gcr->get_right_star().get_path_rules().size() >=
       Configurations::Get()->max_path_num_) {
     return;
   }
+
+  auto last_activation_timestamp = last_activated_time;
   // Compute vertical extensions.
   std::vector<GCRVerticalExtension> vertical_extensions =
       ComputeVerticalExtensions(*gcr);
@@ -424,27 +431,50 @@ void RuleMiner::ExtendGCR(GCR* gcr) {
       size_t support = match_result.second;
       float confidence = 0;
       if (match != 0) confidence = static_cast<float>(support) / match;
-      // If support < threshold, continue.
-      if (support < Configurations::Get()->support_threshold_) {
-        gcr->Recover(true);
-        continue;
-      }
-      // If confidence < min confidence, continue.
-      if (confidence < Configurations::Get()->min_confidence_) {
-        gcr->Recover(true);
-        continue;
-      }
+
       // If support, confidenc >= threshold, write back to disk.
       if (support >= Configurations::Get()->support_threshold_ &&
           confidence >= Configurations::Get()->confidence_threshold_) {
+        last_activation_timestamp = std::chrono::system_clock::now();
         std::string gcr_info =
             gcr->GetInfoString(path_patterns_, match, support, confidence);
         LOG_INFO(gcr_info);
         gcr->Recover(true);
         continue;
       }
+
+      // Check whether the GCR should be extended.
+      auto current_time = std::chrono::system_clock::now();
+      auto freeze_time =
+          std::chrono::duration_cast<std::chrono::microseconds>(
+              current_time - last_activation_timestamp)
+              .count() /
+          (double)CLOCKS_PER_SEC;
+      if (freeze_time >= Configurations::Get()->max_freeze_time &&
+          test_freeze_time) {
+        return;
+      }
+
+      // If support < threshold or confidence < min confidence, continue.
+      if (support < Configurations::Get()->support_threshold_ ||
+          confidence < Configurations::Get()->min_confidence_) {
+        gcr->Recover(true);
+        continue;
+      }
+
       // If support >= threshold, confidence < threshold, go to next level.
-      ExtendGCR(gcr);
+      ExtendGCR(gcr, last_activation_timestamp, test_freeze_time);
+      // Double check whether the GCR should be extended.
+      auto now = std::chrono::system_clock::now();
+      auto freeze_duration =
+          std::chrono::duration_cast<std::chrono::microseconds>(
+              now - last_activation_timestamp)
+              .count() /
+          (double)CLOCKS_PER_SEC;
+      if (freeze_duration >= Configurations::Get()->max_freeze_time &&
+          test_freeze_time) {
+        return;
+      }
       gcr->Recover(true);
     }
     gcr->Recover(false);
