@@ -136,6 +136,20 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
   bool preconditions_match = true;
   const auto& left_bucket = left_star_.get_valid_vertex_bucket();
   const auto& right_bucket = right_star_.get_valid_vertex_bucket();
+
+  // If bucket.size == 1, return size of intersection set.
+  if (left_bucket.size() == 1) {
+    if (right_bucket.size() != 1)
+      LOG_FATAL("Unequal bucket nums between left side and right side.");
+    for (auto it = left_bucket[0].begin(); it != left_bucket[0].end(); ++it) {
+      if (right_bucket[0].count(*it) > 0) {
+        ++support_;
+        ++match_;
+      }
+    }
+    return std::make_pair(match_, support_);
+  }
+
   for (size_t i = 0; i < left_bucket.size(); i++) {
     for (const auto& left_vertex : left_bucket[i]) {
       for (const auto& right_vertex : right_bucket[i]) {

@@ -116,7 +116,10 @@ class RuleMiner {
       }
     }
   }
-  void ExtendGCR(GCR* gcr);
+
+  void ExtendGCR(GCR* gcr,
+                 const std::chrono::time_point<std::chrono::system_clock>&
+                     last_activated_time, bool test_freeze_time);
   std::vector<GCRVerticalExtension> ComputeVerticalExtensions(
       const GCR& gcr) const;
   std::vector<GCRHorizontalExtension> ComputeHorizontalExtensions(
