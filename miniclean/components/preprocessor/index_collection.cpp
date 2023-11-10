@@ -41,32 +41,6 @@ void VertexAttributeSegment::LoadAttributeBucket(
   bucket_by_value_.emplace(vlabel, attribute_bucket);
 }
 
-void VertexAttributeSegment::LoadAttributeBlock(
-    VertexLabel vlabel, const std::string& workspace_dir,
-    const std::vector<VertexAttributeID>& attribute_id_list,
-    const std::vector<std::string>& block_path_list,
-    const std::vector<std::string>& block_offset_path_list) {
-  AttributeBlock attribute_block;
-  for (size_t i = 0; i < attribute_id_list.size(); i++) {
-    std::vector<VertexID> block;
-    std::vector<uint32_t> block_offset;
-
-    LoadBinFile<VertexID>(workspace_dir + '/' + block_path_list[i], block);
-    LoadBinFile<uint32_t>(workspace_dir + '/' + block_offset_path_list[i],
-                          block_offset);
-
-    ValueBlock value_block;
-    value_block.reserve(block_offset.size());
-    for (size_t j = 1; j < block_offset.size(); j++) {
-      value_block.emplace_back(
-          std::vector<VertexID>(block.begin() + block_offset[j - 1],
-                                block.begin() + block_offset[j]));
-    }
-    attribute_block.emplace(attribute_id_list[i], value_block);
-  }
-  block_by_range_.emplace(vlabel, attribute_block);
-}
-
 void PathPatternIndex::BuildPathPatternIndex(
     const std::string& path_instances_path,
     const std::string& graph_config_path, const std::string& path_pattern_path,
