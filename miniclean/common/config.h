@@ -33,7 +33,7 @@ class Configurations {
   // If we cannot mine a gcr in 600 seconds, we will give up.
   size_t max_freeze_time = 600;
 
-  std::string rule_discovery_log_path = "data/imdb/log/rule_discovery";
+  std::string rule_discovery_log_path = "data/small_imdb/log/rule_discovery";
 
  private:
   Configurations() = default;
