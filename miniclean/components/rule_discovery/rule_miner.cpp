@@ -32,7 +32,6 @@ using GCRHorizontalExtension =
     sics::graph::miniclean::data_structures::gcr::GCRHorizontalExtension;
 using Task = sics::graph::core::common::Task;
 using TaskPackage = sics::graph::core::common::TaskPackage;
-using ThreadPool = sics::graph::core::common::ThreadPool;
 
 void RuleMiner::LoadGraph(const std::string& graph_path) {
   // Prepare reader.
@@ -238,8 +237,25 @@ void RuleMiner::InitPathRuleUnitContainer() {
 
 void RuleMiner::MineGCRsPar(uint32_t parallelism) {
   ThreadPool thread_pool(parallelism);
-  size_t pending_tasks_num = 0;
-  size_t* pending_tasks_num_ptr = &pending_tasks_num;
+  ThreadPool* thread_pool_ptr = &thread_pool;
+  std::atomic<uint32_t> pending_tasks_num{0};
+  std::atomic<uint32_t>* pending_tasks_num_ptr = &pending_tasks_num;
+  std::atomic<uint32_t> total_tasks_num{0};
+  std::atomic<uint32_t>* total_tasks_num_ptr = &total_tasks_num;
+
+  // Timer thread.
+  Task timer = [this, pending_tasks_num_ptr]() {
+    while (*pending_tasks_num_ptr == 0)
+      ;
+    while (true && *pending_tasks_num_ptr > 0) {
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+      ++current_timestamp_;
+    }
+  };
+  thread_pool.SubmitAsync(std::move(timer));
+
+  std::map<GCR*, GCR> activated_gcr_instances;
+  std::map<GCR*, GCR>* activated_gcr_instances_ptr = &activated_gcr_instances;
 
   for (size_t l_label = 0; l_label < star_rules_.size(); l_label++) {
     if (star_rules_[l_label].empty()) continue;
@@ -255,14 +271,22 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
               ComputeHorizontalExtensions(gcr, true);
           size_t horizontal_extension_num = horizontal_extensions.size();
           for (size_t i = 0; i < horizontal_extension_num; i++) {
+            GCR gcr_cp = gcr;
+            GCR* gcr_cp_ptr = &gcr_cp;
+            // register this gcr instance.
+            activated_gcr_instances.emplace(gcr_cp_ptr, gcr_cp);
             auto horizontal_extension = horizontal_extensions[i];
-            Task task = [this, gcr, horizontal_extension, i,
-                         horizontal_extension_num, pending_tasks_num_ptr]() {
-              ExecuteRuleMining(gcr, horizontal_extension, i,
-                                horizontal_extension_num,
-                                pending_tasks_num_ptr);
+            Task task = [this, gcr_cp_ptr, horizontal_extension, i,
+                         horizontal_extension_num, pending_tasks_num_ptr,
+                         total_tasks_num_ptr, thread_pool_ptr,
+                         activated_gcr_instances_ptr]() {
+              ExecuteRuleMining(gcr_cp_ptr, horizontal_extension, i,
+                                horizontal_extension_num, pending_tasks_num_ptr,
+                                total_tasks_num_ptr, thread_pool_ptr,
+                                activated_gcr_instances_ptr);
             };
             pending_tasks_num++;
+            total_tasks_num++;
             thread_pool.SubmitAsync(std::move(task));
           }
         }
@@ -272,18 +296,26 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
 
   std::unique_lock<std::mutex> lck(rule_discovery_mtx_);
   cv_.wait(lck, [&] { return pending_tasks_num == 0; });
+  LOG_INFO("Total tasks: ", total_tasks_num);
 }
 
 void RuleMiner::ExecuteRuleMining(
-    GCR gcr, const GCRHorizontalExtension& horizontal_extension,
+    GCR* gcr, const GCRHorizontalExtension& horizontal_extension,
     size_t horizontal_extension_id, size_t horizontal_extension_num,
-    size_t* pending_tasks_num_ptr) {
-  auto start = std::chrono::system_clock::now();
-  auto last_activated_timestamp = std::chrono::system_clock::now();
+    std::atomic<uint32_t>* pending_tasks_num_ptr,
+    std::atomic<uint32_t>* total_tasks_num_ptr, ThreadPool* thread_pool,
+    std::map<GCR*, GCR>* activated_gcr_instances_ptr) {
+  auto current_timestamp = current_timestamp_.load();
 
-  gcr.ExtendHorizontally(horizontal_extension, graph_, horizontal_extension_id,
-                         horizontal_extension_num);
-  std::pair<size_t, size_t> match_result = gcr.ComputeMatchAndSupport(graph_);
+  auto start = std::chrono::system_clock::now();
+
+  (*activated_gcr_instances_ptr)
+      .at(gcr)
+      .ExtendHorizontally(horizontal_extension, graph_, horizontal_extension_id,
+                          horizontal_extension_num);
+
+  std::pair<size_t, size_t> match_result =
+      (*activated_gcr_instances_ptr).at(gcr).ComputeMatchAndSupport(graph_);
   size_t match = match_result.first;
   size_t support = match_result.second;
   float confidence = 0;
@@ -298,16 +330,19 @@ void RuleMiner::ExecuteRuleMining(
         (double)CLOCKS_PER_SEC;
     LOG_INFO("Task finished in ", duration, " seconds.");
     std::lock_guard<std::mutex> lck(rule_discovery_mtx_);
+    activated_gcr_instances_ptr->erase(gcr);
     (*pending_tasks_num_ptr)--;
-    LOG_INFO("Task remains: ", *pending_tasks_num_ptr);
-    if (*pending_tasks_num_ptr == 0) cv_.notify_all();
+    LOG_INFO("Task remains: ", (*pending_tasks_num_ptr).load());
+    if ((*pending_tasks_num_ptr).load() == 0) cv_.notify_all();
     return;
   }
   // If support, confidenc >= threshold, write back to disk.
   if (support >= Configurations::Get()->support_threshold_ &&
       confidence >= Configurations::Get()->confidence_threshold_) {
     std::string gcr_info =
-        gcr.GetInfoString(path_patterns_, match, support, confidence);
+        (*activated_gcr_instances_ptr)
+            .at(gcr)
+            .GetInfoString(path_patterns_, match, support, confidence);
     LOG_INFO(gcr_info);
     auto end = std::chrono::system_clock::now();
     auto duration =
@@ -316,14 +351,16 @@ void RuleMiner::ExecuteRuleMining(
         (double)CLOCKS_PER_SEC;
     LOG_INFO("Task finished in ", duration, " seconds.");
     std::lock_guard<std::mutex> lck(rule_discovery_mtx_);
+    activated_gcr_instances_ptr->erase(gcr);
     (*pending_tasks_num_ptr)--;
-    LOG_INFO("Task remains: ", *pending_tasks_num_ptr);
-    if (*pending_tasks_num_ptr == 0) cv_.notify_all();
+    LOG_INFO("Task remains: ", (*pending_tasks_num_ptr).load());
+    if ((*pending_tasks_num_ptr).load() == 0) cv_.notify_all();
     return;
   }
   // If support >= threshold, confidence < threshold, go to next
   // level.
-  ExtendGCR(&gcr, last_activated_timestamp, true);
+  ExtendGCR(gcr, current_timestamp, pending_tasks_num_ptr, total_tasks_num_ptr,
+            thread_pool, activated_gcr_instances_ptr);
 
   auto end = std::chrono::system_clock::now();
 
@@ -336,11 +373,18 @@ void RuleMiner::ExecuteRuleMining(
 
   std::lock_guard<std::mutex> lck(rule_discovery_mtx_);
   (*pending_tasks_num_ptr)--;
-  LOG_INFO("Task remains: ", *pending_tasks_num_ptr);
-  if (*pending_tasks_num_ptr == 0) cv_.notify_all();
+  LOG_INFO("Task remains: ", (*pending_tasks_num_ptr).load());
+  if ((*pending_tasks_num_ptr).load() == 0) cv_.notify_all();
 }
 
 void RuleMiner::MineGCRs() {
+  ThreadPool thread_pool(1);
+
+  std::atomic<uint32_t> pending_tasks_num{0};
+  std::atomic<uint32_t>* pending_tasks_num_ptr = &pending_tasks_num;
+  std::atomic<uint32_t> total_tasks_num{0};
+  std::atomic<uint32_t>* total_tasks_num_ptr = &total_tasks_num;
+
   for (size_t l_label = 0; l_label < star_rules_.size(); l_label++) {
     if (star_rules_[l_label].empty()) continue;
     for (size_t r_label = l_label; r_label < star_rules_.size(); r_label++) {
@@ -386,7 +430,12 @@ void RuleMiner::MineGCRs() {
             }
             // If support >= threshold, confidence < threshold, go to next
             // level.
-            ExtendGCR(&gcr, std::chrono::system_clock::now(), false);
+            std::map<GCR*, GCR> activated_gcr_instances;
+            std::map<GCR*, GCR>* activated_gcr_instances_ptr =
+                &activated_gcr_instances;
+            ExtendGCR(&gcr, current_timestamp_.load(), pending_tasks_num_ptr,
+                      total_tasks_num_ptr, &thread_pool,
+                      activated_gcr_instances_ptr);
             gcr.Recover(true);
             LOG_INFO("Recover to previous level.");
           }
@@ -396,89 +445,115 @@ void RuleMiner::MineGCRs() {
   }
 }
 
-void RuleMiner::ExtendGCR(
-    GCR* gcr,
-    const std::chrono::time_point<std::chrono::system_clock>&
-        last_activated_time,
-    bool test_freeze_time) {
+void RuleMiner::ExtendGCR(GCR* gcr, const uint32_t task_start_time,
+                          std::atomic<uint32_t>* pending_tasks_num_ptr,
+                          std::atomic<uint32_t>* total_tasks_num_ptr,
+                          ThreadPool* thread_pool,
+                          std::map<GCR*, GCR>* activated_gcr_instances_ptr) {
   // Check whether the GCR should be extended.
-  if (gcr->get_left_star().get_path_rules().size() +
-          gcr->get_right_star().get_path_rules().size() >=
+  if ((*activated_gcr_instances_ptr)
+              .at(gcr)
+              .get_left_star()
+              .get_path_rules()
+              .size() +
+          (*activated_gcr_instances_ptr)
+              .at(gcr)
+              .get_right_star()
+              .get_path_rules()
+              .size() >=
       Configurations::Get()->max_path_num_) {
     return;
   }
-
-  auto last_activation_timestamp = last_activated_time;
   // Compute vertical extensions.
   std::vector<GCRVerticalExtension> vertical_extensions =
-      ComputeVerticalExtensions(*gcr);
+      ComputeVerticalExtensions((*activated_gcr_instances_ptr).at(gcr));
   // Compute horizontal extensions for each vertical extension.
   for (size_t i = 0; i < vertical_extensions.size(); i++) {
-    // Vertical extension.
-    gcr->ExtendVertically(vertical_extensions[i], graph_, i,
-                          vertical_extensions.size());
-    // Compute horizontal extensions.
-    std::vector<GCRHorizontalExtension> horizontal_extensions =
-        ComputeHorizontalExtensions(*gcr,
-                                    vertical_extensions[i].extend_to_left);
-    for (size_t j = 0; j < horizontal_extensions.size(); j++) {
-      // Horizontal extension.
-      gcr->ExtendHorizontally(horizontal_extensions[j], graph_, j,
-                              horizontal_extensions.size());
-      // Compute support of GCR
-      const auto& match_result = gcr->ComputeMatchAndSupport(graph_);
-      size_t match = match_result.first;
-      size_t support = match_result.second;
-      float confidence = 0;
-      if (match != 0) confidence = static_cast<float>(support) / match;
+    // Check the execution time of this task. Packaging the rest of the task if
+    // the execution time has exeeded the limit.
 
-      // If support, confidenc >= threshold, write back to disk.
-      if (support >= Configurations::Get()->support_threshold_ &&
-          confidence >= Configurations::Get()->confidence_threshold_) {
-        last_activation_timestamp = std::chrono::system_clock::now();
-        std::string gcr_info =
-            gcr->GetInfoString(path_patterns_, match, support, confidence);
-        LOG_INFO(gcr_info);
-        gcr->Recover(true);
-        continue;
-      }
-
-      // Check whether the GCR should be extended.
-      auto current_time = std::chrono::system_clock::now();
-      auto freeze_time =
-          std::chrono::duration_cast<std::chrono::microseconds>(
-              current_time - last_activation_timestamp)
-              .count() /
-          (double)CLOCKS_PER_SEC;
-      if (freeze_time >= Configurations::Get()->max_freeze_time &&
-          test_freeze_time) {
-        return;
-      }
-
-      // If support < threshold or confidence < min confidence, continue.
-      if (support < Configurations::Get()->support_threshold_ ||
-          confidence < Configurations::Get()->min_confidence_) {
-        gcr->Recover(true);
-        continue;
-      }
-
-      // If support >= threshold, confidence < threshold, go to next level.
-      ExtendGCR(gcr, last_activation_timestamp, test_freeze_time);
-      // Double check whether the GCR should be extended.
-      auto now = std::chrono::system_clock::now();
-      auto freeze_duration =
-          std::chrono::duration_cast<std::chrono::microseconds>(
-              now - last_activation_timestamp)
-              .count() /
-          (double)CLOCKS_PER_SEC;
-      if (freeze_duration >= Configurations::Get()->max_freeze_time &&
-          test_freeze_time) {
-        return;
-      }
-      gcr->Recover(true);
+    if (current_timestamp_.load() - task_start_time >=
+        Configurations::Get()->max_exe_time) {
+      // Register the GCR
+      activated_gcr_instances_ptr->emplace(
+          gcr, (*activated_gcr_instances_ptr).at(gcr));
+      Task task =
+          std::bind([this, gcr, vertical_extensions, i, task_start_time,
+                     pending_tasks_num_ptr, total_tasks_num_ptr, thread_pool,
+                     activated_gcr_instances_ptr]() mutable {
+            for (size_t j = i; j < vertical_extensions.size(); j++) {
+              VerifyGCRWithVerticalExtension(
+                  gcr, vertical_extensions[j], j, vertical_extensions.size(),
+                  task_start_time, pending_tasks_num_ptr, total_tasks_num_ptr,
+                  thread_pool, activated_gcr_instances_ptr);
+            }
+          });
+      (*pending_tasks_num_ptr)++;
+      (*total_tasks_num_ptr)++;
+      thread_pool->SubmitAsync(std::move(task));
+      return;
     }
-    gcr->Recover(false);
+    VerifyGCRWithVerticalExtension(gcr, vertical_extensions[i], i,
+                                   vertical_extensions.size(), task_start_time,
+                                   pending_tasks_num_ptr, total_tasks_num_ptr,
+                                   thread_pool, activated_gcr_instances_ptr);
   }
+}
+
+void RuleMiner::VerifyGCRWithVerticalExtension(
+    GCR* gcr, const GCRVerticalExtension& ve, size_t vertical_extension_id,
+    size_t vertical_extension_num, uint32_t task_start_time,
+    std::atomic<uint32_t>* pending_tasks_num_ptr,
+    std::atomic<uint32_t>* total_tasks_num_ptr, ThreadPool* thread_pool,
+    std::map<GCR*, GCR>* activated_gcr_instances_ptr) {
+  // Vertical extension.
+  (*activated_gcr_instances_ptr)
+      .at(gcr)
+      .ExtendVertically(ve, graph_, vertical_extension_id,
+                        vertical_extension_num);
+  // Compute horizontal extensions.
+  std::vector<GCRHorizontalExtension> horizontal_extensions =
+      ComputeHorizontalExtensions((*activated_gcr_instances_ptr).at(gcr),
+                                  ve.extend_to_left);
+  for (size_t j = 0; j < horizontal_extensions.size(); j++) {
+    // Horizontal extension.
+    (*activated_gcr_instances_ptr)
+        .at(gcr)
+        .ExtendHorizontally(horizontal_extensions[j], graph_, j,
+                            horizontal_extensions.size());
+    // Compute support of GCR
+    const auto& match_result =
+        (*activated_gcr_instances_ptr).at(gcr).ComputeMatchAndSupport(graph_);
+    size_t match = match_result.first;
+    size_t support = match_result.second;
+    float confidence = 0;
+    if (match != 0) confidence = static_cast<float>(support) / match;
+
+    // If support, confidenc >= threshold, write back to disk.
+    if (support >= Configurations::Get()->support_threshold_ &&
+        confidence >= Configurations::Get()->confidence_threshold_) {
+      std::string gcr_info =
+          (*activated_gcr_instances_ptr)
+              .at(gcr)
+              .GetInfoString(path_patterns_, match, support, confidence);
+      LOG_INFO(gcr_info);
+      (*activated_gcr_instances_ptr).at(gcr).Recover(true);
+      continue;
+    }
+
+    // If support < threshold or confidence < min confidence, continue.
+    if (support < Configurations::Get()->support_threshold_ ||
+        confidence < Configurations::Get()->min_confidence_) {
+      (*activated_gcr_instances_ptr).at(gcr).Recover(true);
+      continue;
+    }
+
+    // If support >= threshold, confidence < threshold, go to next level.
+    ExtendGCR(gcr, task_start_time, pending_tasks_num_ptr, total_tasks_num_ptr,
+              thread_pool, activated_gcr_instances_ptr);
+    (*activated_gcr_instances_ptr).at(gcr).Recover(true);
+  }
+  (*activated_gcr_instances_ptr).at(gcr).Recover(false);
 }
 
 std::vector<GCRVerticalExtension> RuleMiner::ComputeVerticalExtensions(
