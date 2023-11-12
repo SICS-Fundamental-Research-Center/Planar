@@ -118,6 +118,8 @@ class StarRule {
     constant_predicates_.emplace_back(constant_predicate);
   }
 
+  void Destory();
+
   VertexLabel get_center_label() const { return center_label_; }
 
   const std::vector<ConstantPredicate>& get_constant_predicates() const {

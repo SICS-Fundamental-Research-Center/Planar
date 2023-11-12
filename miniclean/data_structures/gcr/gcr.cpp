@@ -12,6 +12,23 @@ using PathPatternID = sics::graph::miniclean::common::PathPatternID;
 using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 using VertexID = sics::graph::miniclean::common::VertexID;
 
+void GCR::Init() {
+  left_star_.InitializeStarRule();
+  right_star_.InitializeStarRule();
+  bucket_id_ = BucketID(MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID,
+                        MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID);
+  // First item is <vertical extension id, vertical extension num>.
+  // Their value is (0, 1) since we start with two isolated star centers (one
+  // vertical extension).
+  mining_progress_log_.reserve((Configurations::Get()->max_path_num_ + 1) * 2);
+  mining_progress_log_.emplace_back(0, 1);
+}
+
+void GCR::Destory() {
+  left_star_.Destory();
+  right_star_.Destory();
+}
+
 void GCR::Backup(const MiniCleanCSRGraph& graph, bool added_to_left_star) {
   if (added_to_left_star) {
     left_star_.Backup(graph);

@@ -120,17 +120,16 @@ class RuleMiner {
     }
   }
 
-  void ExtendGCR(GCR* gcr, const uint32_t current_timestamp,
+  // Return value: true if the thread should quit.
+  bool ExtendGCR(GCR* gcr, const uint32_t current_timestamp,
                  std::atomic<uint32_t>* pending_tasks_num_ptr,
                  std::atomic<uint32_t>* total_tasks_num_ptr,
-                 ThreadPool* thread_pool,
-                 std::map<GCR*, GCR>* activated_gcr_instances_ptr);
-  void VerifyGCRWithVerticalExtension(
+                 ThreadPool* thread_pool);
+  bool VerifyGCRWithVerticalExtension(
       GCR* gcr, const GCRVerticalExtension& ve, size_t vertical_extension_id,
       size_t vertical_extension_num, uint32_t task_start_time,
       std::atomic<uint32_t>* pending_tasks_num_ptr,
-      std::atomic<uint32_t>* total_tasks_num_ptr, ThreadPool* thread_pool,
-      std::map<GCR*, GCR>* activated_gcr_instances_ptr);
+      std::atomic<uint32_t>* total_tasks_num_ptr, ThreadPool* thread_pool);
 
   std::vector<GCRVerticalExtension> ComputeVerticalExtensions(
       const GCR& gcr) const;
@@ -160,8 +159,7 @@ class RuleMiner {
                          size_t horizontal_extension_num,
                          std::atomic<uint32_t>* pending_tasks_num_ptr,
                          std::atomic<uint32_t>* total_tasks_num_ptr,
-                         ThreadPool* thread_pool,
-                         std::map<GCR*, GCR>* activated_gcr_instances_ptr);
+                         ThreadPool* thread_pool);
 
  private:
   MiniCleanCSRGraph& graph_;

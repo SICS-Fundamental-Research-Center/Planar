@@ -63,18 +63,14 @@ class GCR {
 
  public:
   GCR(const StarRule& left_star, const StarRule& right_star)
-      : left_star_(left_star), right_star_(right_star), support_(0), match_(0) {
-    left_star_.InitializeStarRule();
-    right_star_.InitializeStarRule();
-    bucket_id_ = BucketID(MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID,
-                          MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID);
-    // First item is <vertical extension id, vertical extension num>.
-    // Their value is (0, 1) since we start with two isolated star centers (one
-    // vertical extension).
-    mining_progress_log_.reserve((Configurations::Get()->max_path_num_ + 1) *
-                                 2);
-    mining_progress_log_.emplace_back(0, 1);
-  }
+      : left_star_(left_star),
+        right_star_(right_star),
+        support_(0),
+        match_(0) {}
+
+  void Init();
+
+  void Destory();
 
   void AddVariablePredicateToBack(
       const ConcreteVariablePredicate& variable_predicate) {
@@ -142,6 +138,8 @@ class GCR {
   std::string GetInfoString(const std::vector<PathPattern>& path_patterns,
                             size_t match, size_t support,
                             float confidence) const;
+
+  GCR* get_ptr() { return this; }
 
  private:
   void Backup(const MiniCleanCSRGraph& graph, bool added_to_left_star);

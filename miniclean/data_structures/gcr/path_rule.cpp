@@ -105,6 +105,20 @@ std::string PathRule::GetInfoString(
   return ss.str();
 }
 
+void StarRule::Destory() {
+  for (size_t i = 0; i < valid_vertex_buckets_.size(); i++) {
+    valid_vertex_buckets_[i].clear();
+  }
+  valid_vertex_buckets_.clear();
+  for (auto& diff : valid_vertex_bucket_diffs_) {
+    for (auto& bucket : diff) {
+      bucket.clear();
+    }
+    diff.clear();
+  }
+  valid_vertex_bucket_diffs_.clear();
+}
+
 void StarRule::ComposeWith(const StarRule& other) {
   // Check whether two star rules have th same path pattern.
   if (center_label_ != other.center_label_) {
@@ -301,7 +315,7 @@ std::string StarRule::GetInfoString(
     const std::vector<PathPattern>& path_patterns) const {
   std::stringstream ss;
 
-  ss << "Star Center: ";
+  ss << "Star Center: " << center_label_ << " ";
   for (const auto& pred : constant_predicates_) {
     VertexLabel vlabel = pred.get_vertex_label();
     VertexAttributeID vattr_id = pred.get_vertex_attribute_id();
