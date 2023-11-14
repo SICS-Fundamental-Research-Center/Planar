@@ -146,6 +146,11 @@ class GCR {
     return variable_predicates_.size();
   }
 
+  const std::vector<std::pair<size_t, size_t>>& get_mining_progress_log()
+      const {
+    return mining_progress_log_;
+  }
+
   void Recover(bool horizontal_recover);
   void ExtendVertically(const GCRVerticalExtension& vertical_extension,
                         const MiniCleanCSRGraph& graph,

@@ -153,28 +153,94 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
   const auto& left_bucket = left_star_.get_valid_vertex_bucket();
   const auto& right_bucket = right_star_.get_valid_vertex_bucket();
 
-  // If bucket.size == 1, return size of intersection set.
+  if (left_bucket.size() == 0 || right_bucket.size() == 0) {
+    LOGF_FATAL("Empty bucket, left bucket.size: {}, right bucket.size: {}",
+               left_bucket.size(), right_bucket.size());
+  }
+
   if (left_bucket.size() == 1) {
     if (right_bucket.size() != 1)
       LOG_FATAL("Unequal bucket nums between left side and right side.");
-    for (auto it = left_bucket[0].begin(); it != left_bucket[0].end(); ++it) {
-      if (right_bucket[0].count(*it) > 0) {
-        ++support;
-        ++match;
+    // Bucketing for temporary usage.
+    auto left_path_index = consequence_.get_left_path_index();
+    auto right_path_index = consequence_.get_right_path_index();
+    auto left_vertex_index = consequence_.get_left_vertex_index();
+    auto right_vertex_index = consequence_.get_right_vertex_index();
+    auto left_label = consequence_.get_left_label();
+    auto right_label = consequence_.get_right_label();
+    auto left_attr_id = consequence_.get_left_attribute_id();
+    auto right_attr_id = consequence_.get_right_attribute_id();
+    if (left_attr_id == MAX_VERTEX_ATTRIBUTE_ID ||
+        right_attr_id == MAX_VERTEX_ATTRIBUTE_ID) {
+      // Compute the intersection of the two buckets.
+      for (const auto& vid : left_bucket[0]) {
+        if (right_bucket[0].count(vid) > 0) {
+          support++;
+        }
       }
+      return std::make_pair(left_bucket[0].size() * right_bucket[0].size(),
+                            support);
     }
-    return std::make_pair(match, support);
+    if (left_path_index != 0 || left_vertex_index != 0 ||
+        right_path_index != 0 || right_vertex_index != 0)
+      LOG_FATAL("Invalid consequence: Not located in the center node.");
+    const auto& index_collection = left_star_.get_index_collection();
+    size_t bucket_size =
+        index_collection.GetAttributeBucketByVertexLabel(left_label)
+            .at(left_attr_id)
+            .size();
+    size_t right_bucket_size =
+        index_collection.GetAttributeBucketByVertexLabel(right_label)
+            .at(right_attr_id)
+            .size();
+    if (bucket_size != right_bucket_size)
+      LOG_FATAL("Unequal bucket size between left side and right side.");
+    std::vector<size_t> left_bucket_tmp(bucket_size, 0);
+    std::vector<size_t> right_bucket_tmp(bucket_size, 0);
+    // Scan the left bucket.
+    for (const auto& vid : left_bucket[0]) {
+      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
+      if (value == MAX_VERTEX_ATTRIBUTE_VALUE) {
+        LOG_FATAL("Invalid attribute value: MAX_VERTEX_ATTRIBUTE_VALUE.");
+      }
+      left_bucket_tmp[value]++;
+    }
+    // Scan the right bucket.
+    for (const auto& vid : right_bucket[0]) {
+      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
+      if (value == MAX_VERTEX_ATTRIBUTE_VALUE) {
+        LOG_FATAL("Invalid attribute value: MAX_VERTEX_ATTRIBUTE_VALUE.");
+      }
+      right_bucket_tmp[value]++;
+    }
+    // Compute support.
+    for (size_t i = 0; i < bucket_size; i++) {
+      support += left_bucket_tmp[i] * right_bucket_tmp[i];
+    }
+    return std::make_pair(bucket_size * bucket_size, support);
   }
 
   if (left_bucket.size() != right_bucket.size())
     LOG_FATAL("Unequal bucket nums between left side and right side.");
+  size_t counter_o = 0;
   for (size_t i = 0; i < left_bucket.size(); i++) {
-    for (auto iter_l = left_bucket[i].begin(); iter_l != left_bucket[i].end(); iter_l++) {
-      for (auto iter_r = right_bucket[i].begin(); iter_r != right_bucket[i].end(); iter_r++) {
+    for (auto iter_l = left_bucket[i].begin(); iter_l != left_bucket[i].end();
+         iter_l++) {
+      for (auto iter_r = right_bucket[i].begin();
+           iter_r != right_bucket[i].end(); iter_r++) {
+        ++counter_o;
         // Test preconditions.
         preconditions_match = true;
-        if (left_bucket[i].size() == 0 || right_bucket[i].size() == 0) {
-          LOG_INFO("Empty bucket.");
+        if (left_bucket.size() == 0 || right_bucket.size() == 0 ||
+            left_bucket[i].size() == 0 || right_bucket[i].size() == 0) {
+          LOGF_INFO(
+              "Empty inner bucket, left bucket.size: {}, right bucket.size: "
+              "{}, counter: {}",
+              left_bucket.size(), right_bucket.size(), counter_o - 1);
+          LOGF_FATAL(
+              "Empty inner bucket, left bucket.size: {}, right bucket.size: "
+              "{}, counter: {}",
+              left_bucket.size(), right_bucket.size(), counter_o - 1);
         }
         for (const auto& variable_predicate : variable_predicates_) {
           if (!TestVariablePredicate(graph, variable_predicate, *iter_l,
@@ -186,8 +252,7 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
         if (preconditions_match) {
           match++;
           // Test consequence.
-          if (TestVariablePredicate(graph, consequence_, *iter_l,
-                                    *iter_r)) {
+          if (TestVariablePredicate(graph, consequence_, *iter_l, *iter_r)) {
             support++;
           }
         }
@@ -359,9 +424,11 @@ std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
   ss << "-------------------------------------------" << std::endl;
   ss << "Match: " << match << " Support: " << support
      << " Confidence: " << confidence << std::endl;
-  ss << "Left star: " << (size_t) &left_star_ << std::endl;
+  ss << "Left star: " << (size_t) & (left_star_.get_valid_vertex_bucket())
+                                        << std::endl;
   ss << left_star_.GetInfoString(path_patterns);
-  ss << "Right star: " << (size_t) &right_star_ << std::endl;
+  ss << "Right star: " << (size_t) & (right_star_.get_valid_vertex_bucket())
+                                         << std::endl;
   ss << right_star_.GetInfoString(path_patterns);
   ss << "Variable predicates: " << std::endl;
   for (const auto& var_pred : variable_predicates_) {

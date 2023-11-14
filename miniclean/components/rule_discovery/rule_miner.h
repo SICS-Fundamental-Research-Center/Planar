@@ -121,12 +121,12 @@ class RuleMiner {
   }
 
   // Return value: true if the thread should quit.
-  bool ExtendGCR(GCR* gcr, const uint32_t current_timestamp,
+  bool ExtendGCR(GCR* gcr_ptr, const uint32_t current_timestamp,
                  std::atomic<uint32_t>* pending_tasks_num_ptr,
                  std::atomic<uint32_t>* total_tasks_num_ptr,
                  ThreadPool* thread_pool);
   bool VerifyGCRWithVerticalExtension(
-      GCR* gcr, const GCRVerticalExtension& ve, size_t vertical_extension_id,
+      GCR* gcr_ptr, const GCRVerticalExtension& ve, size_t vertical_extension_id,
       size_t vertical_extension_num, uint32_t task_start_time,
       std::atomic<uint32_t>* pending_tasks_num_ptr,
       std::atomic<uint32_t>* total_tasks_num_ptr, ThreadPool* thread_pool);
@@ -153,10 +153,7 @@ class RuleMiner {
       std::vector<std::vector<ConcreteVariablePredicate>>*
           valid_variable_predicates) const;
   size_t ComputeCombinationNum(size_t n, size_t k) const;
-  void ExecuteRuleMining(GCR* gcr,
-                         const GCRHorizontalExtension& horizontal_extension,
-                         size_t horizontal_extension_id,
-                         size_t horizontal_extension_num,
+  void ExecuteRuleMining(GCR* gcr_ptr,
                          std::atomic<uint32_t>* pending_tasks_num_ptr,
                          std::atomic<uint32_t>* total_tasks_num_ptr,
                          ThreadPool* thread_pool);
