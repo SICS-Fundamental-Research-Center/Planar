@@ -32,7 +32,7 @@ class Configurations {
   size_t max_variable_predicate_num_ = 1;
   // If the task cannot be finished in 300s, we will package the rest of it as a
   // new task and submit the task package to the thread pool.
-  size_t max_exe_time = 10;
+  size_t max_exe_time = 60;
 
   std::string rule_discovery_log_path = "data/small_imdb/log/rule_discovery";
 

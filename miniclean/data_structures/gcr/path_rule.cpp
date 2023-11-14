@@ -106,8 +106,8 @@ std::string PathRule::GetInfoString(
 }
 
 void StarRule::Destory() {
-  for (size_t i = 0; i < valid_vertex_buckets_.size(); i++) {
-    valid_vertex_buckets_[i].clear();
+  for (auto & valid_vertex_bucket : valid_vertex_buckets_) {
+    valid_vertex_bucket.clear();
   }
   valid_vertex_buckets_.clear();
   for (auto& diff : valid_vertex_bucket_diffs_) {
@@ -139,6 +139,9 @@ void StarRule::ComposeWith(const StarRule& other) {
 
 void StarRule::InitializeStarRule() {
   valid_vertex_buckets_.emplace_back(ComputeValidCenters());
+  if (valid_vertex_buckets_.size() != 1) {
+    LOG_FATAL("Unsuccessful initialization of star rule.");
+  }
 }
 
 size_t StarRule::ComputeInitSupport() {
@@ -332,6 +335,8 @@ std::string StarRule::GetInfoString(
     ss << vattr_value << ", ";
   }
   ss << std::endl;
+
+  ss << "Bucket size: " << valid_vertex_buckets_.size() << std::endl;
 
   for (size_t i = 0; i < path_rules_.size(); i++) {
     ss << "Path rule " << i << ": "

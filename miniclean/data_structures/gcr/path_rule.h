@@ -148,6 +148,10 @@ class StarRule {
     return &valid_vertex_bucket_diffs_;
   }
 
+  void AddConstantPredicateToBack(const ConstantPredicate& constant_predicate) {
+    constant_predicates_.emplace_back(constant_predicate);
+  }
+
   void UpdateValidVertexBucket(
       std::vector<std::unordered_set<VertexID>>&& new_valid_vertex_bucket) {
     valid_vertex_buckets_ = std::move(new_valid_vertex_bucket);

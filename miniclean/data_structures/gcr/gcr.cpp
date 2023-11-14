@@ -145,10 +145,9 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
 }
 
 std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
-    const MiniCleanCSRGraph& graph) {
-  // Reset support and match.
-  support_ = 0;
-  match_ = 0;
+    const MiniCleanCSRGraph& graph) const {
+  size_t support = 0;
+  size_t match = 0;
 
   bool preconditions_match = true;
   const auto& left_bucket = left_star_.get_valid_vertex_bucket();
@@ -160,37 +159,42 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
       LOG_FATAL("Unequal bucket nums between left side and right side.");
     for (auto it = left_bucket[0].begin(); it != left_bucket[0].end(); ++it) {
       if (right_bucket[0].count(*it) > 0) {
-        ++support_;
-        ++match_;
+        ++support;
+        ++match;
       }
     }
-    return std::make_pair(match_, support_);
+    return std::make_pair(match, support);
   }
 
+  if (left_bucket.size() != right_bucket.size())
+    LOG_FATAL("Unequal bucket nums between left side and right side.");
   for (size_t i = 0; i < left_bucket.size(); i++) {
-    for (const auto& left_vertex : left_bucket[i]) {
-      for (const auto& right_vertex : right_bucket[i]) {
+    for (auto iter_l = left_bucket[i].begin(); iter_l != left_bucket[i].end(); iter_l++) {
+      for (auto iter_r = right_bucket[i].begin(); iter_r != right_bucket[i].end(); iter_r++) {
         // Test preconditions.
         preconditions_match = true;
+        if (left_bucket[i].size() == 0 || right_bucket[i].size() == 0) {
+          LOG_INFO("Empty bucket.");
+        }
         for (const auto& variable_predicate : variable_predicates_) {
-          if (!TestVariablePredicate(graph, variable_predicate, left_vertex,
-                                     right_vertex)) {
+          if (!TestVariablePredicate(graph, variable_predicate, *iter_l,
+                                     *iter_r)) {
             preconditions_match = false;
             break;
           }
         }
         if (preconditions_match) {
-          match_++;
+          match++;
           // Test consequence.
-          if (TestVariablePredicate(graph, consequence_, left_vertex,
-                                    right_vertex)) {
-            support_++;
+          if (TestVariablePredicate(graph, consequence_, *iter_l,
+                                    *iter_r)) {
+            support++;
           }
         }
       }
     }
   }
-  return std::make_pair(match_, support_);
+  return std::make_pair(match, support);
 }
 
 void GCR::InitializeBuckets(
@@ -224,14 +228,14 @@ void GCR::InitializeBuckets(
     for (const auto& vid : left_bucket) {
       auto value = graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
       if (value == MAX_VERTEX_ATTRIBUTE_VALUE) continue;
-      new_left_valid_vertex_bucket[value].emplace(vid);
+      new_left_valid_vertex_bucket.at(value).emplace(vid);
     }
   }
   for (const auto& right_bucket : right_valid_vertex_bucket) {
     for (const auto& vid : right_bucket) {
       auto value = graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
       if (value == MAX_VERTEX_ATTRIBUTE_VALUE) continue;
-      new_right_valid_vertex_bucket[value].emplace(vid);
+      new_right_valid_vertex_bucket.at(value).emplace(vid);
     }
   }
 
@@ -355,9 +359,9 @@ std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
   ss << "-------------------------------------------" << std::endl;
   ss << "Match: " << match << " Support: " << support
      << " Confidence: " << confidence << std::endl;
-  ss << "Left star: " << std::endl;
+  ss << "Left star: " << (size_t) &left_star_ << std::endl;
   ss << left_star_.GetInfoString(path_patterns);
-  ss << "Right star: " << std::endl;
+  ss << "Right star: " << (size_t) &right_star_ << std::endl;
   ss << right_star_.GetInfoString(path_patterns);
   ss << "Variable predicates: " << std::endl;
   for (const auto& var_pred : variable_predicates_) {

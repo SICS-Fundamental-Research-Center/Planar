@@ -16,6 +16,16 @@ struct GCRHorizontalExtension {
       const ConcreteVariablePredicate& consequence,
       const std::vector<ConcreteVariablePredicate>& variable_predicates)
       : consequence(consequence), variable_predicates(variable_predicates) {}
+  std::string GetInfoString() const {
+    std::stringstream ss;
+    ss << "Consequence: " << std::endl;
+    ss << consequence.GetInfoString() << std::endl;
+    ss << "Variable predicates: " << std::endl;
+    for (const auto& variable_predicate : variable_predicates) {
+      ss << variable_predicate.GetInfoString() << std::endl;
+    }
+    return ss.str();
+  }
   ConcreteVariablePredicate consequence;
   std::vector<ConcreteVariablePredicate> variable_predicates;
 };
@@ -23,6 +33,15 @@ struct GCRHorizontalExtension {
 struct GCRVerticalExtension {
   GCRVerticalExtension(bool extend_to_left, const PathRule& path_rule)
       : extend_to_left(extend_to_left), path_rule(path_rule) {}
+  std::string GetInfoString(
+      const std::vector<sics::graph::miniclean::common::PathPattern>&
+          path_patterns) const {
+    std::stringstream ss;
+    ss << "Extend to left: " << extend_to_left << std::endl;
+    ss << "Path rule: " << std::endl;
+    ss << path_rule.GetInfoString(path_patterns) << std::endl;
+    return ss.str();
+  }
   bool extend_to_left;
   PathRule path_rule;
 };
@@ -60,13 +79,21 @@ class GCR {
   using PathInstance = std::vector<VertexID>;
   using PathInstanceBucket = std::vector<PathInstance>;
   using Configurations = sics::graph::miniclean::common::Configurations;
+  using IndexCollection =
+      sics::graph::miniclean::components::preprocessor::IndexCollection;
 
  public:
-  GCR(const StarRule& left_star, const StarRule& right_star)
-      : left_star_(left_star),
-        right_star_(right_star),
-        support_(0),
-        match_(0) {}
+  GCR(const StarRule& left_star, const StarRule& right_star,
+      const IndexCollection& index_collection)
+      : left_star_(left_star.get_center_label(), index_collection),
+        right_star_(right_star.get_center_label(), index_collection) {
+    for (const auto& const_pred : left_star.get_constant_predicates()) {
+      left_star_.AddConstantPredicateToBack(const_pred);
+    }
+    for (const auto& const_pred : right_star.get_constant_predicates()) {
+      right_star_.AddConstantPredicateToBack(const_pred);
+    }
+  }
 
   void Init();
 
@@ -130,7 +157,7 @@ class GCR {
                           size_t horizontal_extension_num);
   // TODO: this function should be more rigorous.
   std::pair<size_t, size_t> ComputeMatchAndSupport(
-      const MiniCleanCSRGraph& graph);
+      const MiniCleanCSRGraph& graph) const;
 
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
                         bool consider_consequence) const;
@@ -164,9 +191,6 @@ class GCR {
   std::vector<std::pair<size_t, size_t>> mining_progress_log_;
 
   BucketID bucket_id_;
-
-  size_t support_;
-  size_t match_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

@@ -104,6 +104,8 @@ class VariablePredicate {
     }
   }
 
+  std::string GetInfoString() const;
+
  private:
   VertexLabel lhs_label_;
   VertexLabel rhs_label_;
@@ -166,6 +168,8 @@ class ConcreteVariablePredicate {
   bool Test(VertexAttributeValue rhs, VertexAttributeValue lhs) const {
     return variable_predicate_.Test(rhs, lhs);
   }
+
+  std::string GetInfoString() const;
 
  private:
   VariablePredicate variable_predicate_;
