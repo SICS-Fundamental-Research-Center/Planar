@@ -270,8 +270,22 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
           GCR* gcr_ptr = activated_gcr_instances.back().get_ptr();
           Task task = [this, gcr_ptr, pending_tasks_num_ptr,
                        total_tasks_num_ptr, thread_pool_ptr]() {
+            auto start = std::chrono::system_clock::now();
             ExecuteRuleMining(gcr_ptr, pending_tasks_num_ptr,
                               total_tasks_num_ptr, thread_pool_ptr);
+            auto end = std::chrono::system_clock::now();
+
+            auto duration =
+                std::chrono::duration_cast<std::chrono::microseconds>(end -
+                                                                      start)
+                    .count() /
+                (double)CLOCKS_PER_SEC;
+            
+            LOG_INFO("Task finished in ", duration, " seconds.");
+            std::lock_guard<std::mutex> lck(rule_discovery_mtx_);
+            (*pending_tasks_num_ptr)--;
+            LOG_INFO("Task remains: ", (*pending_tasks_num_ptr).load());
+            if ((*pending_tasks_num_ptr).load() == 0) cv_.notify_all();
           };
           pending_tasks_num++;
           total_tasks_num++;
@@ -291,14 +305,10 @@ void RuleMiner::ExecuteRuleMining(GCR* gcr_ptr,
                                   std::atomic<uint32_t>* total_tasks_num_ptr,
                                   ThreadPool* thread_pool) {
   auto current_timestamp = current_timestamp_.load();
-  auto start = std::chrono::system_clock::now();
-
   gcr_ptr->Init();
-
   // Compute Horizontal extensions
   std::vector<GCRHorizontalExtension> horizontal_extensions =
       ComputeHorizontalExtensions(*gcr_ptr, true);
-
   for (size_t i = 0; i < horizontal_extensions.size(); i++) {
     gcr_ptr->ExtendHorizontally(horizontal_extensions[i], graph_, i,
                                 horizontal_extensions.size());
@@ -323,25 +333,14 @@ void RuleMiner::ExecuteRuleMining(GCR* gcr_ptr,
       gcr_ptr->Recover(true);
       continue;
     }
-
     // If support >= threshold, confidence < threshold, go to next
     // level.
     bool should_quit =
         ExtendGCR(gcr_ptr, current_timestamp, pending_tasks_num_ptr,
                   total_tasks_num_ptr, thread_pool);
-    if (should_quit) break;
+    if (should_quit) return;
     gcr_ptr->Recover(true);
   }
-  auto end = std::chrono::system_clock::now();
-  auto duration =
-      std::chrono::duration_cast<std::chrono::microseconds>(end - start)
-          .count() /
-      (double)CLOCKS_PER_SEC;
-  LOG_INFO("Task finished in ", duration, " seconds.");
-  std::lock_guard<std::mutex> lck(rule_discovery_mtx_);
-  (*pending_tasks_num_ptr)--;
-  LOG_INFO("Task remains: ", (*pending_tasks_num_ptr).load());
-  if ((*pending_tasks_num_ptr).load() == 0) cv_.notify_all();
 }
 
 void RuleMiner::MineGCRs() {
@@ -429,17 +428,19 @@ bool RuleMiner::ExtendGCR(GCR* gcr_ptr, const uint32_t task_start_time,
     // the execution time has exeeded the limit.
     uint32_t crt_timestamp = current_timestamp_.load();
     if (crt_timestamp - task_start_time >=
-                     Configurations::Get()->max_exe_time) {
+        Configurations::Get()->max_exe_time) {
       Task task = std::bind([this, gcr_ptr, vertical_extensions, i,
                              crt_timestamp, pending_tasks_num_ptr,
                              total_tasks_num_ptr, thread_pool]() {
+        auto start = std::chrono::system_clock::now();
         for (size_t j = i; j < vertical_extensions.size(); j++) {
           bool should_quit = VerifyGCRWithVerticalExtension(
               gcr_ptr, vertical_extensions[j], j, vertical_extensions.size(),
               crt_timestamp, pending_tasks_num_ptr, total_tasks_num_ptr,
               thread_pool);
-          if (should_quit) return true;
+          if (should_quit) break;
         }
+        auto end = std::chrono::system_clock::now();
       });
       (*pending_tasks_num_ptr)++;
       (*total_tasks_num_ptr)++;
