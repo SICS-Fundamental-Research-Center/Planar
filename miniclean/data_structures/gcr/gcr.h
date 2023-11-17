@@ -83,21 +83,18 @@ class GCR {
       sics::graph::miniclean::components::preprocessor::IndexCollection;
 
  public:
-  GCR(const StarRule& left_star, const StarRule& right_star,
-      const IndexCollection& index_collection)
-      : left_star_(left_star.get_center_label(), index_collection),
-        right_star_(right_star.get_center_label(), index_collection) {
-    for (const auto& const_pred : left_star.get_constant_predicates()) {
-      left_star_.AddConstantPredicateToBack(const_pred);
-    }
-    for (const auto& const_pred : right_star.get_constant_predicates()) {
-      right_star_.AddConstantPredicateToBack(const_pred);
-    }
-  }
+  GCR(const StarRule& left_star, const StarRule& right_star)
+      : left_star_(left_star), right_star_(right_star) {}
+
+  GCR(const GCR& other)
+      : left_star_(other.left_star_),
+        right_star_(other.right_star_),
+        variable_predicates_(other.variable_predicates_),
+        consequence_(other.consequence_),
+        mining_progress_log_(other.mining_progress_log_),
+        bucket_id_(other.bucket_id_) {}
 
   void Init();
-
-  void Destory();
 
   void AddVariablePredicateToBack(
       const ConcreteVariablePredicate& variable_predicate) {
@@ -137,8 +134,8 @@ class GCR {
   }
 
   size_t get_constant_predicate_count() const {
-    size_t left_count = left_star_.get_predicate_count();
-    size_t right_count = right_star_.get_predicate_count();
+    size_t left_count = left_star_.get_constant_predicate_count();
+    size_t right_count = right_star_.get_constant_predicate_count();
     return left_count + right_count;
   }
 
@@ -151,7 +148,6 @@ class GCR {
     return mining_progress_log_;
   }
 
-  void Recover(bool horizontal_recover);
   void ExtendVertically(const GCRVerticalExtension& vertical_extension,
                         const MiniCleanCSRGraph& graph,
                         size_t vertical_extension_id,
@@ -174,7 +170,6 @@ class GCR {
   GCR* get_ptr() { return this; }
 
  private:
-  void Backup(const MiniCleanCSRGraph& graph, bool added_to_left_star);
   void InitializeBuckets(const MiniCleanCSRGraph& graph,
                          const ConcreteVariablePredicate& c_variable_predicate);
   bool TestVariablePredicate(
@@ -187,11 +182,6 @@ class GCR {
 
   std::vector<ConcreteVariablePredicate> variable_predicates_;
   ConcreteVariablePredicate consequence_;
-
-  // item value is the number of variable predicates that added to the GCR.
-  std::list<size_t> horizontal_extension_log_;
-  // `true` if added to left star, `false` if added to right star.
-  std::list<bool> vertical_extension_log_;
 
   std::vector<std::pair<size_t, size_t>> mining_progress_log_;
 

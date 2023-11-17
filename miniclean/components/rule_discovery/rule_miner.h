@@ -75,7 +75,6 @@ class RuleMiner {
   // It's used to compose with a GCR.
   void PrepareGCRComponents(const std::string& workspace_path);
 
-  void MineGCRs();
   void MineGCRsPar(uint32_t parallelism);
 
  private:
@@ -120,17 +119,6 @@ class RuleMiner {
     }
   }
 
-  // Return value: true if the thread should quit.
-  bool ExtendGCR(GCR* gcr_ptr, const uint32_t current_timestamp,
-                 std::atomic<uint32_t>* pending_tasks_num_ptr,
-                 std::atomic<uint32_t>* total_tasks_num_ptr,
-                 ThreadPool* thread_pool);
-  bool VerifyGCRWithVerticalExtension(
-      GCR* gcr_ptr, const GCRVerticalExtension& ve, size_t vertical_extension_id,
-      size_t vertical_extension_num, uint32_t task_start_time,
-      std::atomic<uint32_t>* pending_tasks_num_ptr,
-      std::atomic<uint32_t>* total_tasks_num_ptr, ThreadPool* thread_pool);
-
   std::vector<GCRVerticalExtension> ComputeVerticalExtensions(
       const GCR& gcr) const;
   std::vector<GCRHorizontalExtension> ComputeHorizontalExtensions(
@@ -153,7 +141,19 @@ class RuleMiner {
       std::vector<std::vector<ConcreteVariablePredicate>>*
           valid_variable_predicates) const;
   size_t ComputeCombinationNum(size_t n, size_t k) const;
-  void ExecuteRuleMining(GCR* gcr_ptr,
+
+  // The return value is the `task start time`.
+  //    1. If the task has not hit the time limit, then return the original
+  //       `task start time`;
+  //    2. Return `current_timestamp_.load()` otherwise.
+  uint32_t MineGCRHorizontally(std::shared_ptr<GCR> parent_gcr_ptr,
+                               uint32_t task_start_time,
+                               std::atomic<uint32_t>* pending_tasks_num_ptr,
+                               std::atomic<uint32_t>* total_tasks_num_ptr,
+                               ThreadPool* thread_pool);
+
+  void MineGCRVertically(std::shared_ptr<GCR> parent_gcr_ptr,
+                         uint32_t task_start_time,
                          std::atomic<uint32_t>* pending_tasks_num_ptr,
                          std::atomic<uint32_t>* total_tasks_num_ptr,
                          ThreadPool* thread_pool);

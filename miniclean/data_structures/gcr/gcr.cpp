@@ -24,40 +24,6 @@ void GCR::Init() {
   mining_progress_log_.emplace_back(0, 1);
 }
 
-void GCR::Destory() {
-  left_star_.Destory();
-  right_star_.Destory();
-}
-
-void GCR::Backup(const MiniCleanCSRGraph& graph, bool added_to_left_star) {
-  if (added_to_left_star) {
-    left_star_.Backup(graph);
-  } else {
-    right_star_.Backup(graph);
-  }
-}
-
-void GCR::Recover(bool horizontal_recover) {
-  if (horizontal_recover) {
-    size_t horizontal_backup_num = horizontal_extension_log_.back();
-    horizontal_extension_log_.pop_back();
-    for (size_t i = 0; i < horizontal_backup_num; i++) {
-      variable_predicates_.pop_back();
-    }
-  } else {
-    bool extend_to_left = vertical_extension_log_.back();
-    vertical_extension_log_.pop_back();
-    if (extend_to_left) {
-      left_star_.RemoveLastPathRule();
-      left_star_.Recover();
-    } else {
-      right_star_.RemoveLastPathRule();
-      right_star_.Recover();
-    }
-  }
-  mining_progress_log_.pop_back();
-}
-
 void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension,
                            const MiniCleanCSRGraph& graph,
                            size_t vertical_extension_id,
@@ -65,15 +31,11 @@ void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension,
   mining_progress_log_.emplace_back(vertical_extension_id,
                                     vertical_extension_num);
   if (vertical_extension.extend_to_left) {
-    vertical_extension_log_.push_back(true);
     AddPathRuleToLeftStar(vertical_extension.path_rule);
-    // Update vertex buckets.
-    Backup(graph, true);
+    left_star_.UpdateValidVertexBucket(graph);
   } else {
-    vertical_extension_log_.push_back(false);
     AddPathRuleToRigthStar(vertical_extension.path_rule);
-    // Update vertex buckets.
-    Backup(graph, false);
+    right_star_.UpdateValidVertexBucket(graph);
   }
 }
 
@@ -86,8 +48,6 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
        horizontal_extension.variable_predicates) {
     AddVariablePredicateToBack(c_variable_predicate);
   }
-  horizontal_extension_log_.push_back(
-      horizontal_extension.variable_predicates.size());
   mining_progress_log_.emplace_back(horizontal_extension_id,
                                     horizontal_extension_num);
   const auto& index_collection = left_star_.get_index_collection();
@@ -96,6 +56,7 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
   size_t max_bucket_num = 0;
   ConcreteVariablePredicate max_bucket_num_variable_predicate;
   bool should_rebucket = false;
+  // Get current bucket num and store it in
   if (bucket_id_.left_label != MAX_VERTEX_LABEL) {
     max_bucket_num =
         index_collection.GetAttributeBucketByVertexLabel(bucket_id_.left_label)
@@ -119,6 +80,10 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
         index_collection.GetAttributeBucketByVertexLabel(left_label)
             .at(left_attr_id)
             .size();
+    if (index_collection.GetAttributeBucketByVertexLabel(right_label)
+            .at(right_attr_id)
+            .size() != bucket_size)
+      LOG_FATAL("Unequal bucket size between left side and right side.");
     if (bucket_size > max_bucket_num) {
       max_bucket_num = bucket_size;
       max_bucket_num_variable_predicate = c_variable_predicat;
@@ -222,26 +187,13 @@ std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
 
   if (left_bucket.size() != right_bucket.size())
     LOG_FATAL("Unequal bucket nums between left side and right side.");
-  size_t counter_o = 0;
   for (size_t i = 0; i < left_bucket.size(); i++) {
     for (auto iter_l = left_bucket[i].begin(); iter_l != left_bucket[i].end();
          iter_l++) {
       for (auto iter_r = right_bucket[i].begin();
            iter_r != right_bucket[i].end(); iter_r++) {
-        ++counter_o;
         // Test preconditions.
         preconditions_match = true;
-        if (left_bucket.size() == 0 || right_bucket.size() == 0 ||
-            left_bucket[i].size() == 0 || right_bucket[i].size() == 0) {
-          LOGF_INFO(
-              "Empty inner bucket, left bucket.size: {}, right bucket.size: "
-              "{}, counter: {}",
-              left_bucket.size(), right_bucket.size(), counter_o - 1);
-          LOGF_FATAL(
-              "Empty inner bucket, left bucket.size: {}, right bucket.size: "
-              "{}, counter: {}",
-              left_bucket.size(), right_bucket.size(), counter_o - 1);
-        }
         for (const auto& variable_predicate : variable_predicates_) {
           if (!TestVariablePredicate(graph, variable_predicate, *iter_l,
                                      *iter_r)) {

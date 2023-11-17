@@ -105,20 +105,6 @@ std::string PathRule::GetInfoString(
   return ss.str();
 }
 
-void StarRule::Destory() {
-  for (auto & valid_vertex_bucket : valid_vertex_buckets_) {
-    valid_vertex_bucket.clear();
-  }
-  valid_vertex_buckets_.clear();
-  for (auto& diff : valid_vertex_bucket_diffs_) {
-    for (auto& bucket : diff) {
-      bucket.clear();
-    }
-    diff.clear();
-  }
-  valid_vertex_bucket_diffs_.clear();
-}
-
 void StarRule::ComposeWith(const StarRule& other) {
   // Check whether two star rules have th same path pattern.
   if (center_label_ != other.center_label_) {
@@ -134,7 +120,7 @@ void StarRule::ComposeWith(const StarRule& other) {
   for (const auto& other_constant_predicate : other_constant_predicates) {
     constant_predicates_.emplace_back(other_constant_predicate);
   }
-  predicate_count_ += other.predicate_count_;
+  constant_predicate_count_ += other.constant_predicate_count_;
 }
 
 void StarRule::InitializeStarRule() {
@@ -231,40 +217,6 @@ void StarRule::SetIntersection(std::unordered_set<VertexID>* base_set,
   }
 }
 
-void StarRule::Backup(const MiniCleanCSRGraph& graph) {
-  std::list<std::vector<std::unordered_set<VertexID>>> bucket_diff;
-  bucket_diff.resize(1);
-  bucket_diff.front().resize(valid_vertex_buckets_.size());
-  for (size_t i = 0; i < valid_vertex_buckets_.size(); i++) {
-    for (auto it = valid_vertex_buckets_[i].begin();
-         it != valid_vertex_buckets_[i].end();) {
-      bool match_status = TestStarRule(graph, *it);
-      if (match_status) {
-        it++;
-      } else {
-        // Move this vertex to the diff bucket.
-        bucket_diff.front()[i].emplace(*it);
-        it = valid_vertex_buckets_[i].erase(it);
-      }
-    }
-  }
-  valid_vertex_bucket_diffs_.splice(valid_vertex_bucket_diffs_.end(),
-                                    bucket_diff);
-}
-
-void StarRule::Recover() {
-  if (valid_vertex_bucket_diffs_.empty()) {
-    LOG_FATAL("No bucket diffs to recover.");
-  }
-  auto latest_diff = valid_vertex_bucket_diffs_.back();
-  for (size_t i = 0; i < latest_diff.size(); i++) {
-    for (const auto& vid : latest_diff[i]) {
-      valid_vertex_buckets_[i].insert(vid);
-    }
-  }
-  valid_vertex_bucket_diffs_.pop_back();
-}
-
 bool StarRule::TestStarRule(const MiniCleanCSRGraph& graph,
                             VertexID center_id) const {
   // Group path rules according to their path pattern ids.
@@ -312,6 +264,19 @@ bool StarRule::TestStarRule(const MiniCleanCSRGraph& graph,
     }
   }
   return true;
+}
+
+void StarRule::UpdateValidVertexBucket(const MiniCleanCSRGraph& graph) {
+  for (size_t i = 0; i < valid_vertex_buckets_.size(); i++) {
+    for (auto it = valid_vertex_buckets_[i].begin();
+         it != valid_vertex_buckets_[i].end();) {
+      if (TestStarRule(graph, *it)) {
+        ++it;
+      } else {
+        it = valid_vertex_buckets_[i].erase(it);
+      }
+    }
+  }
 }
 
 std::string StarRule::GetInfoString(

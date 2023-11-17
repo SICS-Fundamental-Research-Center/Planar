@@ -105,20 +105,27 @@ class StarRule {
 
  public:
   StarRule(VertexLabel center_label, const IndexCollection& index_collection)
-      : predicate_count_(0),
+      : constant_predicate_count_(0),
         center_label_(center_label),
         index_collection_(index_collection) {}
+
   StarRule(VertexLabel center_label, ConstantPredicate constant_predicate,
            VertexAttributeValue attribute_value,
            const IndexCollection& index_collection)
-      : predicate_count_(1),
+      : constant_predicate_count_(1),
         center_label_(center_label),
         index_collection_(index_collection) {
     constant_predicate.set_constant_value(attribute_value);
     constant_predicates_.emplace_back(constant_predicate);
   }
 
-  void Destory();
+  StarRule(const StarRule& other) : index_collection_(other.index_collection_) {
+    constant_predicate_count_ = other.constant_predicate_count_;
+    center_label_ = other.center_label_;
+    constant_predicates_ = other.constant_predicates_;
+    path_rules_ = other.path_rules_;
+    valid_vertex_buckets_ = other.valid_vertex_buckets_;
+  }
 
   VertexLabel get_center_label() const { return center_label_; }
 
@@ -126,7 +133,9 @@ class StarRule {
     return constant_predicates_;
   }
 
-  size_t get_predicate_count() const { return predicate_count_; }
+  size_t get_constant_predicate_count() const {
+    return constant_predicate_count_;
+  }
 
   const std::vector<PathRule>& get_path_rules() const { return path_rules_; }
 
@@ -143,11 +152,6 @@ class StarRule {
     return &valid_vertex_buckets_;
   }
 
-  std::list<std::vector<std::unordered_set<VertexID>>>*
-  get_mutable_valid_vertex_bucket_diffs() {
-    return &valid_vertex_bucket_diffs_;
-  }
-
   void AddConstantPredicateToBack(const ConstantPredicate& constant_predicate) {
     constant_predicates_.emplace_back(constant_predicate);
   }
@@ -157,9 +161,11 @@ class StarRule {
     valid_vertex_buckets_ = std::move(new_valid_vertex_bucket);
   }
 
+  void UpdateValidVertexBucket(const MiniCleanCSRGraph& graph);
+
   void AddPathRule(const PathRule& path_rule) {
     path_rules_.emplace_back(path_rule);
-    predicate_count_ += path_rule.get_constant_predicates().size();
+    constant_predicate_count_ += path_rule.get_constant_predicates().size();
   }
 
   void RemoveLastPathRule() {
@@ -175,9 +181,6 @@ class StarRule {
                        std::unordered_set<VertexID>* comp_set,
                        std::unordered_set<VertexID>* diff_set);
 
-  void Backup(const MiniCleanCSRGraph& graph);
-  void Recover();
-
   std::string GetInfoString(
       const std::vector<PathPattern>& path_patterns) const;
 
@@ -185,15 +188,13 @@ class StarRule {
   std::unordered_set<VertexID> ComputeValidCenters();
   bool TestStarRule(const MiniCleanCSRGraph& graph, VertexID center_id) const;
 
-  size_t predicate_count_;
+  size_t constant_predicate_count_;
   VertexLabel center_label_;
   std::vector<ConstantPredicate> constant_predicates_;
   std::vector<PathRule> path_rules_;
   const IndexCollection& index_collection_;
 
   std::vector<std::unordered_set<VertexID>> valid_vertex_buckets_;
-  std::list<std::vector<std::unordered_set<VertexID>>>
-      valid_vertex_bucket_diffs_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr
