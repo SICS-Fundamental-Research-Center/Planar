@@ -30,9 +30,9 @@ class Configurations {
   float min_confidence_ = 0.1;
 
   size_t max_variable_predicate_num_ = 1;
-  // If the number of the pending tasks is less than 10, we will package the
-  // subtasks and submit the task package to the thread pool.
-  size_t min_pending_tasks_ = 10;
+  // If the number of the pending tasks is less than `min_pending_tasks`, we
+  // will package the subtasks and submit the task package to the thread pool.
+  size_t min_pending_tasks_ = 20;
 
   std::string rule_discovery_log_path = "data/small_imdb/log/rule_discovery";
 

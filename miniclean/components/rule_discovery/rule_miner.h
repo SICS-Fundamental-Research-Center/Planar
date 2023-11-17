@@ -143,10 +143,10 @@ class RuleMiner {
   size_t ComputeCombinationNum(size_t n, size_t k) const;
 
   void MineGCRHorizontally(std::shared_ptr<GCR> parent_gcr_ptr,
-                               uint32_t task_start_time,
-                               std::atomic<uint32_t>* pending_tasks_num_ptr,
-                               std::atomic<uint32_t>* total_tasks_num_ptr,
-                               ThreadPool* thread_pool);
+                           uint32_t task_start_time,
+                           std::atomic<uint32_t>* pending_tasks_num_ptr,
+                           std::atomic<uint32_t>* total_tasks_num_ptr,
+                           ThreadPool* thread_pool);
 
   void MineGCRVertically(std::shared_ptr<GCR> parent_gcr_ptr,
                          uint32_t task_start_time,
