@@ -298,7 +298,7 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
   LOG_INFO("Total tasks: ", total_tasks_num.load());
 }
 
-uint32_t RuleMiner::MineGCRHorizontally(
+void RuleMiner::MineGCRHorizontally(
     std::shared_ptr<GCR> parent_gcr_ptr, uint32_t task_start_time,
     std::atomic<uint32_t>* pending_tasks_num_ptr,
     std::atomic<uint32_t>* total_tasks_num_ptr, ThreadPool* thread_pool) {
@@ -352,8 +352,9 @@ uint32_t RuleMiner::MineGCRHorizontally(
       if ((*pending_tasks_num_ptr).load() == 0) cv_.notify_all();
     }
   };
-  // Timeout flag.
-  bool timeout_flag = false;
+  // Pending flag.
+  bool pending_flag = thread_pool->GetPendingTaskCount() <=
+                      Configurations::Get()->min_pending_tasks_;
   // Perform horizontal extension.
   TaskPackage task_package;
   for (size_t i = 0; i < horizontal_extensions.size(); i++) {
@@ -362,16 +363,7 @@ uint32_t RuleMiner::MineGCRHorizontally(
     // Extend horizontally.
     child_gcr_ptr->ExtendHorizontally(horizontal_extensions[i], graph_, i,
                                       horizontal_extensions.size());
-    // Check whether current task hits the time limit.
-    if (!timeout_flag) {
-      uint32_t exe_time = current_timestamp_.load() - task_start_time;
-      if (exe_time >= Configurations::Get()->max_exe_time_) {
-        timeout_flag = true;
-        LOGF_INFO("Hit timeout limit, duration = {}. Collecting new tasks...",
-                  exe_time);
-      }
-    }
-    if (timeout_flag) {
+    if (pending_flag) {
       task_start_time = current_timestamp_.load();
       Task task =
           std::bind(verify_and_extend, child_gcr_ptr, task_start_time, true);
@@ -386,12 +378,6 @@ uint32_t RuleMiner::MineGCRHorizontally(
     *total_tasks_num_ptr += task_package.size();
     thread_pool->SubmitAsync(task_package);
     LOGF_INFO("Submit {} tasks.", task_package.size());
-  }
-
-  if (timeout_flag) {
-    return current_timestamp_.load();
-  } else {
-    return task_start_time;
   }
 }
 
@@ -416,9 +402,8 @@ void RuleMiner::MineGCRVertically(std::shared_ptr<GCR> gcr_ptr,
     // Extend the GCR vertically.
     child_gcr_ptr->ExtendVertically(vertical_extensions[i], graph_, i,
                                     vertical_extensions.size());
-    task_start_time = MineGCRHorizontally(child_gcr_ptr, task_start_time,
-                                          pending_tasks_num_ptr,
-                                          total_tasks_num_ptr, thread_pool);
+    MineGCRHorizontally(child_gcr_ptr, task_start_time, pending_tasks_num_ptr,
+                        total_tasks_num_ptr, thread_pool);
   }
 }
 
