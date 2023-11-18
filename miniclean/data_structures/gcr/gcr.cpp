@@ -12,33 +12,16 @@ using PathPatternID = sics::graph::miniclean::common::PathPatternID;
 using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 using VertexID = sics::graph::miniclean::common::VertexID;
 
-void GCR::Backup(const MiniCleanCSRGraph& graph, bool added_to_left_star) {
-  if (added_to_left_star) {
-    left_star_.Backup(graph);
-  } else {
-    right_star_.Backup(graph);
-  }
-}
-
-void GCR::Recover(bool horizontal_recover) {
-  if (horizontal_recover) {
-    size_t horizontal_backup_num = horizontal_extension_log_.back();
-    horizontal_extension_log_.pop_back();
-    for (size_t i = 0; i < horizontal_backup_num; i++) {
-      variable_predicates_.pop_back();
-    }
-  } else {
-    bool extend_to_left = vertical_extension_log_.back();
-    vertical_extension_log_.pop_back();
-    if (extend_to_left) {
-      left_star_.RemoveLastPathRule();
-      left_star_.Recover();
-    } else {
-      right_star_.RemoveLastPathRule();
-      right_star_.Recover();
-    }
-  }
-  mining_progress_log_.pop_back();
+void GCR::Init() {
+  left_star_.InitializeStarRule();
+  right_star_.InitializeStarRule();
+  bucket_id_ = BucketID(MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID,
+                        MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID);
+  // First item is <vertical extension id, vertical extension num>.
+  // Their value is (0, 1) since we start with two isolated star centers (one
+  // vertical extension).
+  mining_progress_log_.reserve((Configurations::Get()->max_path_num_ + 1) * 2);
+  mining_progress_log_.emplace_back(0, 1);
 }
 
 void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension,
@@ -48,15 +31,11 @@ void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension,
   mining_progress_log_.emplace_back(vertical_extension_id,
                                     vertical_extension_num);
   if (vertical_extension.extend_to_left) {
-    vertical_extension_log_.push_back(true);
     AddPathRuleToLeftStar(vertical_extension.path_rule);
-    // Update vertex buckets.
-    Backup(graph, true);
+    left_star_.UpdateValidVertexBucket(graph);
   } else {
-    vertical_extension_log_.push_back(false);
     AddPathRuleToRigthStar(vertical_extension.path_rule);
-    // Update vertex buckets.
-    Backup(graph, false);
+    right_star_.UpdateValidVertexBucket(graph);
   }
 }
 
@@ -69,8 +48,6 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
        horizontal_extension.variable_predicates) {
     AddVariablePredicateToBack(c_variable_predicate);
   }
-  horizontal_extension_log_.push_back(
-      horizontal_extension.variable_predicates.size());
   mining_progress_log_.emplace_back(horizontal_extension_id,
                                     horizontal_extension_num);
   const auto& index_collection = left_star_.get_index_collection();
@@ -79,6 +56,7 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
   size_t max_bucket_num = 0;
   ConcreteVariablePredicate max_bucket_num_variable_predicate;
   bool should_rebucket = false;
+  // Get current bucket num and store it in
   if (bucket_id_.left_label != MAX_VERTEX_LABEL) {
     max_bucket_num =
         index_collection.GetAttributeBucketByVertexLabel(bucket_id_.left_label)
@@ -102,6 +80,10 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
         index_collection.GetAttributeBucketByVertexLabel(left_label)
             .at(left_attr_id)
             .size();
+    if (index_collection.GetAttributeBucketByVertexLabel(right_label)
+            .at(right_attr_id)
+            .size() != bucket_size)
+      LOG_FATAL("Unequal bucket size between left side and right side.");
     if (bucket_size > max_bucket_num) {
       max_bucket_num = bucket_size;
       max_bucket_num_variable_predicate = c_variable_predicat;
@@ -128,52 +110,108 @@ void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
 }
 
 std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
-    const MiniCleanCSRGraph& graph) {
-  // Reset support and match.
-  support_ = 0;
-  match_ = 0;
+    const MiniCleanCSRGraph& graph) const {
+  size_t support = 0;
+  size_t match = 0;
 
   bool preconditions_match = true;
   const auto& left_bucket = left_star_.get_valid_vertex_bucket();
   const auto& right_bucket = right_star_.get_valid_vertex_bucket();
 
-  // If bucket.size == 1, return size of intersection set.
+  if (left_bucket.size() == 0 || right_bucket.size() == 0) {
+    LOGF_FATAL("Empty bucket, left bucket.size: {}, right bucket.size: {}",
+               left_bucket.size(), right_bucket.size());
+  }
+
   if (left_bucket.size() == 1) {
     if (right_bucket.size() != 1)
       LOG_FATAL("Unequal bucket nums between left side and right side.");
-    for (auto it = left_bucket[0].begin(); it != left_bucket[0].end(); ++it) {
-      if (right_bucket[0].count(*it) > 0) {
-        ++support_;
-        ++match_;
+    // Bucketing for temporary usage.
+    auto left_path_index = consequence_.get_left_path_index();
+    auto right_path_index = consequence_.get_right_path_index();
+    auto left_vertex_index = consequence_.get_left_vertex_index();
+    auto right_vertex_index = consequence_.get_right_vertex_index();
+    auto left_label = consequence_.get_left_label();
+    auto right_label = consequence_.get_right_label();
+    auto left_attr_id = consequence_.get_left_attribute_id();
+    auto right_attr_id = consequence_.get_right_attribute_id();
+    if (left_attr_id == MAX_VERTEX_ATTRIBUTE_ID ||
+        right_attr_id == MAX_VERTEX_ATTRIBUTE_ID) {
+      // Compute the intersection of the two buckets.
+      for (const auto& vid : left_bucket[0]) {
+        if (right_bucket[0].count(vid) > 0) {
+          support++;
+        }
       }
+      return std::make_pair(left_bucket[0].size() * right_bucket[0].size(),
+                            support);
     }
-    return std::make_pair(match_, support_);
+    if (left_path_index != 0 || left_vertex_index != 0 ||
+        right_path_index != 0 || right_vertex_index != 0)
+      LOG_FATAL("Invalid consequence: Not located in the center node.");
+    const auto& index_collection = left_star_.get_index_collection();
+    size_t bucket_size =
+        index_collection.GetAttributeBucketByVertexLabel(left_label)
+            .at(left_attr_id)
+            .size();
+    size_t right_bucket_size =
+        index_collection.GetAttributeBucketByVertexLabel(right_label)
+            .at(right_attr_id)
+            .size();
+    if (bucket_size != right_bucket_size)
+      LOG_FATAL("Unequal bucket size between left side and right side.");
+    std::vector<size_t> left_bucket_tmp(bucket_size, 0);
+    std::vector<size_t> right_bucket_tmp(bucket_size, 0);
+    // Scan the left bucket.
+    for (const auto& vid : left_bucket[0]) {
+      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
+      if (value == MAX_VERTEX_ATTRIBUTE_VALUE) {
+        LOG_FATAL("Invalid attribute value: MAX_VERTEX_ATTRIBUTE_VALUE.");
+      }
+      left_bucket_tmp[value]++;
+    }
+    // Scan the right bucket.
+    for (const auto& vid : right_bucket[0]) {
+      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
+      if (value == MAX_VERTEX_ATTRIBUTE_VALUE) {
+        LOG_FATAL("Invalid attribute value: MAX_VERTEX_ATTRIBUTE_VALUE.");
+      }
+      right_bucket_tmp[value]++;
+    }
+    // Compute support.
+    for (size_t i = 0; i < bucket_size; i++) {
+      support += left_bucket_tmp[i] * right_bucket_tmp[i];
+    }
+    return std::make_pair(bucket_size * bucket_size, support);
   }
 
+  if (left_bucket.size() != right_bucket.size())
+    LOG_FATAL("Unequal bucket nums between left side and right side.");
   for (size_t i = 0; i < left_bucket.size(); i++) {
-    for (const auto& left_vertex : left_bucket[i]) {
-      for (const auto& right_vertex : right_bucket[i]) {
+    for (auto iter_l = left_bucket[i].begin(); iter_l != left_bucket[i].end();
+         iter_l++) {
+      for (auto iter_r = right_bucket[i].begin();
+           iter_r != right_bucket[i].end(); iter_r++) {
         // Test preconditions.
         preconditions_match = true;
         for (const auto& variable_predicate : variable_predicates_) {
-          if (!TestVariablePredicate(graph, variable_predicate, left_vertex,
-                                     right_vertex)) {
+          if (!TestVariablePredicate(graph, variable_predicate, *iter_l,
+                                     *iter_r)) {
             preconditions_match = false;
             break;
           }
         }
         if (preconditions_match) {
-          match_++;
+          match++;
           // Test consequence.
-          if (TestVariablePredicate(graph, consequence_, left_vertex,
-                                    right_vertex)) {
-            support_++;
+          if (TestVariablePredicate(graph, consequence_, *iter_l, *iter_r)) {
+            support++;
           }
         }
       }
     }
   }
-  return std::make_pair(match_, support_);
+  return std::make_pair(match, support);
 }
 
 void GCR::InitializeBuckets(
@@ -207,14 +245,14 @@ void GCR::InitializeBuckets(
     for (const auto& vid : left_bucket) {
       auto value = graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
       if (value == MAX_VERTEX_ATTRIBUTE_VALUE) continue;
-      new_left_valid_vertex_bucket[value].emplace(vid);
+      new_left_valid_vertex_bucket.at(value).emplace(vid);
     }
   }
   for (const auto& right_bucket : right_valid_vertex_bucket) {
     for (const auto& vid : right_bucket) {
       auto value = graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
       if (value == MAX_VERTEX_ATTRIBUTE_VALUE) continue;
-      new_right_valid_vertex_bucket[value].emplace(vid);
+      new_right_valid_vertex_bucket.at(value).emplace(vid);
     }
   }
 
@@ -338,9 +376,11 @@ std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
   ss << "-------------------------------------------" << std::endl;
   ss << "Match: " << match << " Support: " << support
      << " Confidence: " << confidence << std::endl;
-  ss << "Left star: " << std::endl;
+  ss << "Left star: " << (size_t) & (left_star_.get_valid_vertex_bucket())
+                                        << std::endl;
   ss << left_star_.GetInfoString(path_patterns);
-  ss << "Right star: " << std::endl;
+  ss << "Right star: " << (size_t) & (right_star_.get_valid_vertex_bucket())
+                                         << std::endl;
   ss << right_star_.GetInfoString(path_patterns);
   ss << "Variable predicates: " << std::endl;
   for (const auto& var_pred : variable_predicates_) {

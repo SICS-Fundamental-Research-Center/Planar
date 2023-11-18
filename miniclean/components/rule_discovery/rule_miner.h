@@ -1,6 +1,7 @@
 #ifndef MINICLEAN_COMPONENTS_RULE_DISCOVERY_RULE_MINER_H_
 #define MINICLEAN_COMPONENTS_RULE_DISCOVERY_RULE_MINER_H_
 
+#include <atomic>
 #include <map>
 #include <mutex>
 #include <set>
@@ -9,6 +10,7 @@
 #include <vector>
 
 #include "core/common/multithreading/task.h"
+#include "core/common/multithreading/thread_pool.h"
 #include "miniclean/common/config.h"
 #include "miniclean/common/types.h"
 #include "miniclean/components/preprocessor/index_collection.h"
@@ -60,9 +62,11 @@ class RuleMiner {
   using GCRHorizontalExtension =
       sics::graph::miniclean::data_structures::gcr::GCRHorizontalExtension;
   using TaskPackage = sics::graph::core::common::TaskPackage;
+  using ThreadPool = sics::graph::core::common::ThreadPool;
 
  public:
-  RuleMiner(MiniCleanCSRGraph& graph) : graph_(graph) {}
+  RuleMiner(MiniCleanCSRGraph* graph_ptr)
+      : graph_ptr_(graph_ptr), current_timestamp_(0) {}
 
   void LoadGraph(const std::string& graph_path);
   void LoadIndexCollection(const std::string& workspace_path);
@@ -72,7 +76,6 @@ class RuleMiner {
   // It's used to compose with a GCR.
   void PrepareGCRComponents(const std::string& workspace_path);
 
-  void MineGCRs();
   void MineGCRsPar(uint32_t parallelism);
 
  private:
@@ -117,9 +120,6 @@ class RuleMiner {
     }
   }
 
-  void ExtendGCR(GCR* gcr,
-                 const std::chrono::time_point<std::chrono::system_clock>&
-                     last_activated_time, bool test_freeze_time);
   std::vector<GCRVerticalExtension> ComputeVerticalExtensions(
       const GCR& gcr) const;
   std::vector<GCRHorizontalExtension> ComputeHorizontalExtensions(
@@ -142,14 +142,25 @@ class RuleMiner {
       std::vector<std::vector<ConcreteVariablePredicate>>*
           valid_variable_predicates) const;
   size_t ComputeCombinationNum(size_t n, size_t k) const;
-  void ExecuteRuleMining(GCR gcr,
-                         const GCRHorizontalExtension& horizontal_extension,
-                         size_t horizontal_extension_id,
-                         size_t horizontal_extension_num,
-                         size_t* pending_tasks_num_ptr);
+
+  // The return value is the `task start time`.
+  //    1. If the task has not hit the time limit, then return the original
+  //       `task start time`;
+  //    2. Return `current_timestamp_.load()` otherwise.
+  uint32_t MineGCRHorizontally(std::shared_ptr<GCR> parent_gcr_ptr,
+                               uint32_t task_start_time,
+                               std::atomic_uint32_t* pending_tasks_num_ptr,
+                               std::atomic_uint32_t* total_tasks_num_ptr,
+                               ThreadPool* thread_pool);
+
+  void MineGCRVertically(std::shared_ptr<GCR> parent_gcr_ptr,
+                         uint32_t task_start_time,
+                         std::atomic_uint32_t* pending_tasks_num_ptr,
+                         std::atomic_uint32_t* total_tasks_num_ptr,
+                         ThreadPool* thread_pool);
 
  private:
-  MiniCleanCSRGraph& graph_;
+  MiniCleanCSRGraph* graph_ptr_;
   std::vector<PathPattern> path_patterns_;
   IndexCollection index_collection_;
   ConstantPredicateContainer constant_predicate_container_;
@@ -162,7 +173,10 @@ class RuleMiner {
   std::vector<std::vector<StarRule>> star_rules_;
   std::vector<std::vector<PathRule>> path_rules_;
 
+  std::atomic_uint32_t current_timestamp_;
+
   std::mutex rule_discovery_mtx_;
+  std::mutex gcr_register_mtx_;
   std::condition_variable cv_;
 };
 }  // namespace sics::graph::miniclean::components::rule_discovery

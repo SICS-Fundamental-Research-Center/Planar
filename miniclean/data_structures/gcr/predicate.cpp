@@ -2,6 +2,33 @@
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
+std::string VariablePredicate::GetInfoString() const {
+  std::stringstream ss;
+
+  ss << "VariablePredicate: " << std::endl;
+  ss << "LHS Label: " << static_cast<int>(lhs_label_) << ", LHS AttrID: "
+     << static_cast<int>(lhs_attribute_id_) << std::endl;
+  ss << "RHS Label: " << static_cast<int>(rhs_label_) << ", RHS AttrID: "
+     << static_cast<int>(rhs_attribute_id_) << std::endl;
+
+  return ss.str();
+}
+
+std::string ConcreteVariablePredicate::GetInfoString() const {
+  std::stringstream ss;
+
+  ss << "ConcreteVariablePredicate: " << std::endl;
+  ss << "Left path index: " << static_cast<int>(left_path_index_)
+     << ", Left vertex index: " << static_cast<int>(left_vertex_index_)
+     << std::endl;
+  ss << "Right path index: " << static_cast<int>(right_path_index_)
+     << ", Right vertex index: " << static_cast<int>(right_vertex_index_)
+     << std::endl;
+  ss << variable_predicate_.GetInfoString();
+
+  return ss.str();
+}
+
 bool ConcreteVariablePredicate::TestCompatibility(
     const std::vector<ConcreteVariablePredicate>& lhs_predicates,
     const std::vector<ConcreteVariablePredicate>& rhs_predicates) {

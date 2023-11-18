@@ -16,6 +16,16 @@ struct GCRHorizontalExtension {
       const ConcreteVariablePredicate& consequence,
       const std::vector<ConcreteVariablePredicate>& variable_predicates)
       : consequence(consequence), variable_predicates(variable_predicates) {}
+  std::string GetInfoString() const {
+    std::stringstream ss;
+    ss << "Consequence: " << std::endl;
+    ss << consequence.GetInfoString() << std::endl;
+    ss << "Variable predicates: " << std::endl;
+    for (const auto& variable_predicate : variable_predicates) {
+      ss << variable_predicate.GetInfoString() << std::endl;
+    }
+    return ss.str();
+  }
   ConcreteVariablePredicate consequence;
   std::vector<ConcreteVariablePredicate> variable_predicates;
 };
@@ -23,6 +33,15 @@ struct GCRHorizontalExtension {
 struct GCRVerticalExtension {
   GCRVerticalExtension(bool extend_to_left, const PathRule& path_rule)
       : extend_to_left(extend_to_left), path_rule(path_rule) {}
+  std::string GetInfoString(
+      const std::vector<sics::graph::miniclean::common::PathPattern>&
+          path_patterns) const {
+    std::stringstream ss;
+    ss << "Extend to left: " << extend_to_left << std::endl;
+    ss << "Path rule: " << std::endl;
+    ss << path_rule.GetInfoString(path_patterns) << std::endl;
+    return ss.str();
+  }
   bool extend_to_left;
   PathRule path_rule;
 };
@@ -60,21 +79,15 @@ class GCR {
   using PathInstance = std::vector<VertexID>;
   using PathInstanceBucket = std::vector<PathInstance>;
   using Configurations = sics::graph::miniclean::common::Configurations;
+  using IndexCollection =
+      sics::graph::miniclean::components::preprocessor::IndexCollection;
 
  public:
+  GCR() = default;
   GCR(const StarRule& left_star, const StarRule& right_star)
-      : left_star_(left_star), right_star_(right_star), support_(0), match_(0) {
-    left_star_.InitializeStarRule();
-    right_star_.InitializeStarRule();
-    bucket_id_ = BucketID(MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID,
-                          MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID);
-    // First item is <vertical extension id, vertical extension num>.
-    // Their value is (0, 1) since we start with two isolated star centers (one
-    // vertical extension).
-    mining_progress_log_.reserve((Configurations::Get()->max_path_num_ + 1) *
-                                 2);
-    mining_progress_log_.emplace_back(0, 1);
-  }
+      : left_star_(left_star), right_star_(right_star) {}
+
+  void Init();
 
   void AddVariablePredicateToBack(
       const ConcreteVariablePredicate& variable_predicate) {
@@ -114,8 +127,8 @@ class GCR {
   }
 
   size_t get_constant_predicate_count() const {
-    size_t left_count = left_star_.get_predicate_count();
-    size_t right_count = right_star_.get_predicate_count();
+    size_t left_count = left_star_.get_constant_predicate_count();
+    size_t right_count = right_star_.get_constant_predicate_count();
     return left_count + right_count;
   }
 
@@ -123,7 +136,11 @@ class GCR {
     return variable_predicates_.size();
   }
 
-  void Recover(bool horizontal_recover);
+  const std::vector<std::pair<size_t, size_t>>& get_mining_progress_log()
+      const {
+    return mining_progress_log_;
+  }
+
   void ExtendVertically(const GCRVerticalExtension& vertical_extension,
                         const MiniCleanCSRGraph& graph,
                         size_t vertical_extension_id,
@@ -134,7 +151,7 @@ class GCR {
                           size_t horizontal_extension_num);
   // TODO: this function should be more rigorous.
   std::pair<size_t, size_t> ComputeMatchAndSupport(
-      const MiniCleanCSRGraph& graph);
+      const MiniCleanCSRGraph& graph) const;
 
   bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
                         bool consider_consequence) const;
@@ -144,7 +161,6 @@ class GCR {
                             float confidence) const;
 
  private:
-  void Backup(const MiniCleanCSRGraph& graph, bool added_to_left_star);
   void InitializeBuckets(const MiniCleanCSRGraph& graph,
                          const ConcreteVariablePredicate& c_variable_predicate);
   bool TestVariablePredicate(
@@ -158,17 +174,9 @@ class GCR {
   std::vector<ConcreteVariablePredicate> variable_predicates_;
   ConcreteVariablePredicate consequence_;
 
-  // item value is the number of variable predicates that added to the GCR.
-  std::list<size_t> horizontal_extension_log_;
-  // `true` if added to left star, `false` if added to right star.
-  std::list<bool> vertical_extension_log_;
-
   std::vector<std::pair<size_t, size_t>> mining_progress_log_;
 
   BucketID bucket_id_;
-
-  size_t support_;
-  size_t match_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr
