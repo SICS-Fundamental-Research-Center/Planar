@@ -18,10 +18,10 @@ DEFINE_uint32(parallelism, std::thread::hardware_concurrency(),
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-//   std::string log_path = Configurations::Get()->rule_discovery_log_path +
-//                          std::to_string(FLAGS_parallelism) + ".log";
-//   sics::graph::core::util::InitOrDie(
-//       sics::graph::core::util::DefaultConfigWithLogFile(log_path));
+  std::string log_path = Configurations::Get()->rule_discovery_log_path +
+                         std::to_string(FLAGS_parallelism) + ".log";
+  sics::graph::core::util::InitOrDie(
+      sics::graph::core::util::DefaultConfigWithLogFile(log_path));
 
   // Initialize graph.
   YAML::Node metadata =
@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
   GraphMetadata graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
   MiniCleanCSRGraph graph(graph_metadata.GetSubgraphMetadata(0));
 
-  RuleMiner rule_miner(graph);
+  RuleMiner rule_miner(&graph);
 
   LOG_INFO("Loading graph...");
   rule_miner.LoadGraph(FLAGS_workspace_path);

@@ -121,14 +121,6 @@ class StarRule {
     constant_predicates_.emplace_back(constant_predicate);
   }
 
-  // StarRule(const StarRule& other) : index_collection_(other.index_collection_) {
-  //   constant_predicate_count_ = other.constant_predicate_count_;
-  //   center_label_ = other.center_label_;
-  //   constant_predicates_ = other.constant_predicates_;
-  //   path_rules_ = other.path_rules_;
-  //   valid_vertex_buckets_ = other.valid_vertex_buckets_;
-  // }
-
   VertexLabel get_center_label() const { return center_label_; }
 
   const std::vector<ConstantPredicate>& get_constant_predicates() const {

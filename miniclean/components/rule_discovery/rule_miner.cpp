@@ -43,7 +43,7 @@ void RuleMiner::LoadGraph(const std::string& graph_path) {
 
   // Initialize ReadMessage object.
   ReadMessage read_message;
-  read_message.graph_id = graph_.get_metadata().gid;
+  read_message.graph_id = graph_ptr_->get_metadata().gid;
   read_message.response_serialized = serialized_graph.get();
 
   // Read a subgraph.
@@ -51,7 +51,7 @@ void RuleMiner::LoadGraph(const std::string& graph_path) {
 
   // Deserialize the subgraph.
   ThreadPool thread_pool(1);
-  graph_.Deserialize(thread_pool, std::move(serialized_graph));
+  graph_ptr_->Deserialize(thread_pool, std::move(serialized_graph));
 }
 
 void RuleMiner::LoadIndexCollection(const std::string& workspace_path) {
@@ -238,10 +238,10 @@ void RuleMiner::InitPathRuleUnitContainer() {
 void RuleMiner::MineGCRsPar(uint32_t parallelism) {
   ThreadPool thread_pool(parallelism);
   ThreadPool* thread_pool_ptr = &thread_pool;
-  std::atomic<uint32_t> pending_tasks_num{0};
-  std::atomic<uint32_t>* pending_tasks_num_ptr = &pending_tasks_num;
-  std::atomic<uint32_t> total_tasks_num{0};
-  std::atomic<uint32_t>* total_tasks_num_ptr = &total_tasks_num;
+  std::atomic_uint32_t pending_tasks_num{0};
+  std::atomic_uint32_t* pending_tasks_num_ptr = &pending_tasks_num;
+  std::atomic_uint32_t total_tasks_num{0};
+  std::atomic_uint32_t* total_tasks_num_ptr = &total_tasks_num;
 
   // Timer thread.
   Task timer = [this, pending_tasks_num_ptr]() {
@@ -300,8 +300,8 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
 
 uint32_t RuleMiner::MineGCRHorizontally(
     std::shared_ptr<GCR> parent_gcr_ptr, uint32_t task_start_time,
-    std::atomic<uint32_t>* pending_tasks_num_ptr,
-    std::atomic<uint32_t>* total_tasks_num_ptr, ThreadPool* thread_pool) {
+    std::atomic_uint32_t* pending_tasks_num_ptr,
+    std::atomic_uint32_t* total_tasks_num_ptr, ThreadPool* thread_pool) {
   // Compute Horizontal extensions
   std::vector<GCRHorizontalExtension> horizontal_extensions =
       ComputeHorizontalExtensions(*parent_gcr_ptr, true);
@@ -313,7 +313,7 @@ uint32_t RuleMiner::MineGCRHorizontally(
     auto ms_start = current_timestamp_.load();
     // Verify the GCR.
     std::pair<size_t, size_t> match_result =
-        gcr_ptr->ComputeMatchAndSupport(graph_);
+        gcr_ptr->ComputeMatchAndSupport(*graph_ptr_);
     auto ms_end = current_timestamp_.load();
     if (ms_end - ms_start > 20) {
       LOG_INFO("Match and support computation time: ", ms_end - ms_start,
@@ -360,7 +360,7 @@ uint32_t RuleMiner::MineGCRHorizontally(
     // Copy the parent node.
     std::shared_ptr<GCR> child_gcr_ptr = std::make_shared<GCR>(*parent_gcr_ptr);
     // Extend horizontally.
-    child_gcr_ptr->ExtendHorizontally(horizontal_extensions[i], graph_, i,
+    child_gcr_ptr->ExtendHorizontally(horizontal_extensions[i], *graph_ptr_, i,
                                       horizontal_extensions.size());
     // Check whether current task hits the time limit.
     if (!timeout_flag) {
@@ -397,8 +397,8 @@ uint32_t RuleMiner::MineGCRHorizontally(
 
 void RuleMiner::MineGCRVertically(std::shared_ptr<GCR> gcr_ptr,
                                   uint32_t task_start_time,
-                                  std::atomic<uint32_t>* pending_tasks_num_ptr,
-                                  std::atomic<uint32_t>* total_tasks_num_ptr,
+                                  std::atomic_uint32_t* pending_tasks_num_ptr,
+                                  std::atomic_uint32_t* total_tasks_num_ptr,
                                   ThreadPool* thread_pool) {
   // Check whether the GCR should be extended.
   if (gcr_ptr->get_left_star().get_path_rules().size() +
@@ -414,7 +414,7 @@ void RuleMiner::MineGCRVertically(std::shared_ptr<GCR> gcr_ptr,
     // Copy the parent node.
     std::shared_ptr<GCR> child_gcr_ptr = std::make_shared<GCR>(*gcr_ptr);
     // Extend the GCR vertically.
-    child_gcr_ptr->ExtendVertically(vertical_extensions[i], graph_, i,
+    child_gcr_ptr->ExtendVertically(vertical_extensions[i], *graph_ptr_, i,
                                     vertical_extensions.size());
     task_start_time = MineGCRHorizontally(child_gcr_ptr, task_start_time,
                                           pending_tasks_num_ptr,
@@ -598,9 +598,7 @@ std::vector<GCRHorizontalExtension> RuleMiner::MergeHorizontalExtensions(
     std::vector<ConcreteVariablePredicate> empty_cvps;
     extensions.emplace_back(c_consequence, empty_cvps);
     for (const auto& c_variable_predicate : c_variable_predicates) {
-      std::vector<ConcreteVariablePredicate> c_consequence_vec;
-      c_consequence_vec.reserve(1);
-      c_consequence_vec.emplace_back(c_consequence);
+      std::vector<ConcreteVariablePredicate> c_consequence_vec{c_consequence};
       if (!ConcreteVariablePredicate::TestCompatibility(c_consequence_vec,
                                                         c_variable_predicate))
         continue;

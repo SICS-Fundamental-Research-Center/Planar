@@ -65,7 +65,8 @@ class RuleMiner {
   using ThreadPool = sics::graph::core::common::ThreadPool;
 
  public:
-  RuleMiner(MiniCleanCSRGraph& graph) : graph_(graph), current_timestamp_(0) {}
+  RuleMiner(MiniCleanCSRGraph* graph_ptr)
+      : graph_ptr_(graph_ptr), current_timestamp_(0) {}
 
   void LoadGraph(const std::string& graph_path);
   void LoadIndexCollection(const std::string& workspace_path);
@@ -148,18 +149,18 @@ class RuleMiner {
   //    2. Return `current_timestamp_.load()` otherwise.
   uint32_t MineGCRHorizontally(std::shared_ptr<GCR> parent_gcr_ptr,
                                uint32_t task_start_time,
-                               std::atomic<uint32_t>* pending_tasks_num_ptr,
-                               std::atomic<uint32_t>* total_tasks_num_ptr,
+                               std::atomic_uint32_t* pending_tasks_num_ptr,
+                               std::atomic_uint32_t* total_tasks_num_ptr,
                                ThreadPool* thread_pool);
 
   void MineGCRVertically(std::shared_ptr<GCR> parent_gcr_ptr,
                          uint32_t task_start_time,
-                         std::atomic<uint32_t>* pending_tasks_num_ptr,
-                         std::atomic<uint32_t>* total_tasks_num_ptr,
+                         std::atomic_uint32_t* pending_tasks_num_ptr,
+                         std::atomic_uint32_t* total_tasks_num_ptr,
                          ThreadPool* thread_pool);
 
  private:
-  MiniCleanCSRGraph& graph_;
+  MiniCleanCSRGraph* graph_ptr_;
   std::vector<PathPattern> path_patterns_;
   IndexCollection index_collection_;
   ConstantPredicateContainer constant_predicate_container_;
@@ -172,7 +173,7 @@ class RuleMiner {
   std::vector<std::vector<StarRule>> star_rules_;
   std::vector<std::vector<PathRule>> path_rules_;
 
-  std::atomic<uint32_t> current_timestamp_;
+  std::atomic_uint32_t current_timestamp_;
 
   std::mutex rule_discovery_mtx_;
   std::mutex gcr_register_mtx_;

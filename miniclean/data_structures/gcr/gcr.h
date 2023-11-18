@@ -87,14 +87,6 @@ class GCR {
   GCR(const StarRule& left_star, const StarRule& right_star)
       : left_star_(left_star), right_star_(right_star) {}
 
-  // GCR(const GCR& other)
-  //     : left_star_(other.left_star_),
-  //       right_star_(other.right_star_),
-  //       variable_predicates_(other.variable_predicates_),
-  //       consequence_(other.consequence_),
-  //       mining_progress_log_(other.mining_progress_log_),
-  //       bucket_id_(other.bucket_id_) {}
-
   void Init();
 
   void AddVariablePredicateToBack(
@@ -167,8 +159,6 @@ class GCR {
   std::string GetInfoString(const std::vector<PathPattern>& path_patterns,
                             size_t match, size_t support,
                             float confidence) const;
-
-  GCR* get_ptr() { return this; }
 
  private:
   void InitializeBuckets(const MiniCleanCSRGraph& graph,
