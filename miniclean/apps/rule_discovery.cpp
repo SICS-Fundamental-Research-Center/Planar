@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
   GraphMetadata graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
   MiniCleanCSRGraph graph(graph_metadata.GetSubgraphMetadata(0));
 
-  RuleMiner rule_miner(graph);
+  RuleMiner rule_miner(&graph);
 
   LOG_INFO("Loading graph...");
   rule_miner.LoadGraph(FLAGS_workspace_path);
