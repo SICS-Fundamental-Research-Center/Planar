@@ -44,10 +44,10 @@ int main(int argc, char* argv[]) {
   LOG_INFO("Prepare GCR Components done.");
 
   LOG_INFO("Start mining...");
-  auto start = std::chrono::system_clock::now();
+  const auto start = std::chrono::system_clock::now();
   rule_miner.MineGCRsPar(FLAGS_parallelism);
-  auto end = std::chrono::system_clock::now();
-  auto duration =
+  const auto end = std::chrono::system_clock::now();
+  const auto duration =
       std::chrono::duration_cast<std::chrono::microseconds>(end - start)
           .count() /
       (double)CLOCKS_PER_SEC;
