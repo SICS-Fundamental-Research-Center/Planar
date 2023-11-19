@@ -65,8 +65,7 @@ class RuleMiner {
   using ThreadPool = sics::graph::core::common::ThreadPool;
 
  public:
-  RuleMiner(MiniCleanCSRGraph* graph_ptr)
-      : graph_ptr_(graph_ptr), current_timestamp_(0) {}
+  RuleMiner(MiniCleanCSRGraph* graph_ptr) : graph_ptr_(graph_ptr) {}
 
   void LoadGraph(const std::string& graph_path);
   void LoadIndexCollection(const std::string& workspace_path);
@@ -143,18 +142,12 @@ class RuleMiner {
           valid_variable_predicates) const;
   size_t ComputeCombinationNum(size_t n, size_t k) const;
 
-  // The return value is the `task start time`.
-  //    1. If the task has not hit the time limit, then return the original
-  //       `task start time`;
-  //    2. Return `current_timestamp_.load()` otherwise.
-  uint32_t MineGCRHorizontally(std::shared_ptr<GCR> parent_gcr_ptr,
-                               uint32_t task_start_time,
-                               std::atomic_uint32_t* pending_tasks_num_ptr,
-                               std::atomic_uint32_t* total_tasks_num_ptr,
-                               ThreadPool* thread_pool);
+  void MineGCRHorizontally(std::shared_ptr<GCR> parent_gcr_ptr,
+                           std::atomic_uint32_t* pending_tasks_num_ptr,
+                           std::atomic_uint32_t* total_tasks_num_ptr,
+                           ThreadPool* thread_pool);
 
   void MineGCRVertically(std::shared_ptr<GCR> parent_gcr_ptr,
-                         uint32_t task_start_time,
                          std::atomic_uint32_t* pending_tasks_num_ptr,
                          std::atomic_uint32_t* total_tasks_num_ptr,
                          ThreadPool* thread_pool);
@@ -172,8 +165,6 @@ class RuleMiner {
   PathRuleUnitContainer path_rule_unit_container_;
   std::vector<std::vector<StarRule>> star_rules_;
   std::vector<std::vector<PathRule>> path_rules_;
-
-  std::atomic_uint32_t current_timestamp_;
 
   std::mutex rule_discovery_mtx_;
   std::mutex gcr_register_mtx_;
