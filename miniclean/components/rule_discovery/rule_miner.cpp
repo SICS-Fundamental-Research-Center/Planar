@@ -243,17 +243,6 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
   std::atomic_uint32_t total_tasks_num{0};
   std::atomic_uint32_t* total_tasks_num_ptr = &total_tasks_num;
 
-  // Timer thread.
-  Task timer = [this, pending_tasks_num_ptr]() {
-    while (*pending_tasks_num_ptr == 0)
-      ;
-    while (true && *pending_tasks_num_ptr > 0) {
-      std::this_thread::sleep_for(std::chrono::seconds(1));
-      ++current_timestamp_;
-    }
-  };
-  thread_pool.SubmitAsync(std::move(timer));
-
   for (size_t l_label = 0; l_label < star_rules_.size(); l_label++) {
     if (star_rules_[l_label].empty()) continue;
     for (size_t r_label = l_label; r_label < star_rules_.size(); r_label++) {
@@ -268,13 +257,8 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
           Task task = std::bind(
               [this, pending_tasks_num_ptr, total_tasks_num_ptr,
                thread_pool_ptr](std::shared_ptr<GCR> parent_gcr_ptr) {
-                uint32_t task_start_time = current_timestamp_.load();
-                MineGCRHorizontally(parent_gcr_ptr, task_start_time,
-                                    pending_tasks_num_ptr, total_tasks_num_ptr,
-                                    thread_pool_ptr);
-                uint32_t task_end_time = current_timestamp_.load();
-                uint32_t task_execution_time = task_end_time - task_start_time;
-                LOG_INFO("Task finished in ", task_execution_time, " seconds.");
+                MineGCRHorizontally(parent_gcr_ptr, pending_tasks_num_ptr,
+                                    total_tasks_num_ptr, thread_pool_ptr);
                 std::lock_guard<std::mutex> lck(rule_discovery_mtx_);
                 (*pending_tasks_num_ptr)--;
                 LOGF_INFO(
@@ -295,30 +279,22 @@ void RuleMiner::MineGCRsPar(uint32_t parallelism) {
 
   std::unique_lock<std::mutex> lck(rule_discovery_mtx_);
   cv_.wait(lck, [&] { return pending_tasks_num == 0; });
-  LOG_INFO("Total tasks: ", total_tasks_num.load());
 }
 
-void RuleMiner::MineGCRHorizontally(
-    std::shared_ptr<GCR> parent_gcr_ptr, uint32_t task_start_time,
-    std::atomic_uint32_t* pending_tasks_num_ptr,
-    std::atomic_uint32_t* total_tasks_num_ptr, ThreadPool* thread_pool) {
+void RuleMiner::MineGCRHorizontally(std::shared_ptr<GCR> parent_gcr_ptr,
+                                    std::atomic_uint32_t* pending_tasks_num_ptr,
+                                    std::atomic_uint32_t* total_tasks_num_ptr,
+                                    ThreadPool* thread_pool) {
   // Compute Horizontal extensions
   std::vector<GCRHorizontalExtension> horizontal_extensions =
       ComputeHorizontalExtensions(*parent_gcr_ptr, true);
   // Define the subtask.
   auto verify_and_extend = [this, pending_tasks_num_ptr, total_tasks_num_ptr,
                             thread_pool](std::shared_ptr<GCR> gcr_ptr,
-                                         uint32_t task_start_time,
                                          bool is_subtask) {
-    auto ms_start = current_timestamp_.load();
     // Verify the GCR.
     std::pair<size_t, size_t> match_result =
         gcr_ptr->ComputeMatchAndSupport(*graph_ptr_);
-    auto ms_end = current_timestamp_.load();
-    if (ms_end - ms_start > 20) {
-      LOG_INFO("Match and support computation time: ", ms_end - ms_start,
-               " seconds.");
-    }
     size_t match = match_result.first;
     size_t support = match_result.second;
     float confidence = 0;
@@ -337,13 +313,10 @@ void RuleMiner::MineGCRHorizontally(
             Configurations::Get()->max_path_num_) {
       // If support >= threshold but confidence < threshold and the GCR has not
       // hit the depth limit, extend the GCR vertically.
-      MineGCRVertically(gcr_ptr, task_start_time, pending_tasks_num_ptr,
-                        total_tasks_num_ptr, thread_pool);
+      MineGCRVertically(gcr_ptr, pending_tasks_num_ptr, total_tasks_num_ptr,
+                        thread_pool);
     }
     if (is_subtask) {
-      uint32_t task_end_time = current_timestamp_.load();
-      uint32_t task_execution_time = task_end_time - task_start_time;
-      LOG_INFO("Task finished in ", task_execution_time, " seconds.");
       std::lock_guard<std::mutex> lck(rule_discovery_mtx_);
       (*pending_tasks_num_ptr)--;
       LOGF_INFO("Unfinished tasks: {}. Total tasks: {}. Pending task count: {}",
@@ -364,13 +337,11 @@ void RuleMiner::MineGCRHorizontally(
     child_gcr_ptr->ExtendHorizontally(horizontal_extensions[i], *graph_ptr_, i,
                                       horizontal_extensions.size());
     if (pending_flag) {
-      task_start_time = current_timestamp_.load();
-      Task task =
-          std::bind(verify_and_extend, child_gcr_ptr, task_start_time, true);
+      Task task = std::bind(verify_and_extend, child_gcr_ptr, true);
       task_package.push_back(task);
       continue;
     }
-    verify_and_extend(child_gcr_ptr, task_start_time, false);
+    verify_and_extend(child_gcr_ptr, false);
   }
   // If task package is not empty, submit tasks.
   if (!task_package.empty()) {
@@ -382,7 +353,6 @@ void RuleMiner::MineGCRHorizontally(
 }
 
 void RuleMiner::MineGCRVertically(std::shared_ptr<GCR> gcr_ptr,
-                                  uint32_t task_start_time,
                                   std::atomic_uint32_t* pending_tasks_num_ptr,
                                   std::atomic_uint32_t* total_tasks_num_ptr,
                                   ThreadPool* thread_pool) {
@@ -402,7 +372,7 @@ void RuleMiner::MineGCRVertically(std::shared_ptr<GCR> gcr_ptr,
     // Extend the GCR vertically.
     child_gcr_ptr->ExtendVertically(vertical_extensions[i], *graph_ptr_, i,
                                     vertical_extensions.size());
-    MineGCRHorizontally(child_gcr_ptr, task_start_time, pending_tasks_num_ptr,
+    MineGCRHorizontally(child_gcr_ptr, pending_tasks_num_ptr,
                         total_tasks_num_ptr, thread_pool);
   }
 }

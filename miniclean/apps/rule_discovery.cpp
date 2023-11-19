@@ -44,8 +44,15 @@ int main(int argc, char* argv[]) {
   LOG_INFO("Prepare GCR Components done.");
 
   LOG_INFO("Start mining...");
+  auto start = std::chrono::system_clock::now();
   rule_miner.MineGCRsPar(FLAGS_parallelism);
-  LOG_INFO("Mining done.");
+  auto end = std::chrono::system_clock::now();
+  auto duration =
+      std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+          .count() /
+      (double)CLOCKS_PER_SEC;
+  LOG_INFO("Mining done. Task execution time: " + std::to_string(duration) +
+           "s");
 
   gflags::ShutDownCommandLineFlags();
 }
