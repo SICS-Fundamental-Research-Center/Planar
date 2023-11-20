@@ -21,6 +21,8 @@ file(GLOB testfiles
         "${PROJECT_ROOT_DIR}/core/util/*_test.cpp"
         )
 
+find_package(LibLZMA REQUIRED)
+
 foreach (testfile ${testfiles})
     get_filename_component(filename ${testfile} NAME_WE)
     string(REPLACE "_test"
@@ -35,6 +37,7 @@ foreach (testfile ${testfiles})
             ${FOLLY_LIBRARIES}
             yaml-cpp::yaml-cpp
             gflags
+            LibLZMA::LibLZMA
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
     target_compile_definitions(${filename} PUBLIC TEST_DATA_DIR="${PROJECT_ROOT_DIR}/testfile")
