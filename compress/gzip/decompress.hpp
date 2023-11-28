@@ -1,4 +1,4 @@
-#include "core/tests/gzip/config.hpp"
+#include "config.hpp"
 // zlib
 #include <zlib.h>
 
