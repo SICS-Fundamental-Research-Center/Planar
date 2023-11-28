@@ -19,16 +19,17 @@
 # LZ4_INCLUDE_DIR
 # LZ4_LIBRARY
 #
-
-include(FindPackageHandleStandardArgs)
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    set(SNAPPY_ROOT_DIR "/usr")
+endif()
 
 find_library(SNAPPY_LIBRARY snappy
-        PATHS ${SNAPPY_LIBRARYDIR})
+        PATHS ${SNAPPY_ROOT_DIR}/include)
 
 find_path(SNAPPY_INCLUDE_DIR snappy.h
-        PATHS ${SNAPPY_INCLUDEDIR})
+        PATHS ${SNAPPY_ROOT_DIR}/lib)
 
-find_package_handle_standard_args(snappy DEFAULT_MSG
+find_package_handle_standard_args(Snappy DEFAULT_MSG
         SNAPPY_LIBRARY
         SNAPPY_INCLUDE_DIR)
 

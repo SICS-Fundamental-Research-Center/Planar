@@ -40,24 +40,38 @@
 #
 #mark_as_advanced(LZ4_INCLUDE_DIR LZ4_LIBRARY)
 #
-include(FindPackageHandleStandardArgs)
+# 设置LZ4的默认路径
 
-find_library(Lz4_LIBRARY Lz4
-        PATHS ${Lz4_LIBRARYDIR})
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    set(LZ4_ROOT_DIR "/usr")
+endif()
 
-find_path(Lz4_INCLUDE_DIR lz4.h
-        PATHS ${Lz4_INCLUDEDIR})
+# 查找LZ4库
+find_path(LZ4_INCLUDE_DIR lz4.h
+        PATHS ${LZ4_ROOT_DIR}/include
+        PATH_SUFFIXES lz4
+        )
 
-find_package_handle_standard_args(Lz4 DEFAULT_MSG
-        Lz4_LIBRARY
-        Lz4_INCLUDE_DIR)
+find_library(LZ4_LIBRARY NAMES lz4
+        PATHS ${LZ4_ROOT_DIR}/lib
+        )
 
-mark_as_advanced(
-        Lz4_LIBRARY
-        Lz4_INCLUDE_DIR)
+# 检查是否找到LZ4库和头文件
+if(LZ4_INCLUDE_DIR AND LZ4_LIBRARY)
+    set(LZ4_FOUND TRUE)
+else()
+    set(LZ4_FOUND FALSE)
+endif()
 
-if (Lz4_FOUND)
-    set(Lz4_LIBRARIES ${Lz4_LIBRARY})
-    set(Lz4_INCLUDE_DIRS ${Lz4_INCLUDE_DIR})
-    message(STATUS "Found Lz4 (include: ${Lz4_INCLUDE_DIRS}, library: ${Lz4_LIBRARIES})")
-endif ()
+# 导出LZ4的相关变量
+if(LZ4_FOUND)
+    set(LZ4_INCLUDE_DIRS ${LZ4_INCLUDE_DIR})
+    set(LZ4_LIBRARIES ${LZ4_LIBRARY})
+    message(STATUS "Found LZ4: ${LZ4_LIBRARIES}")
+endif()
+
+# 导出LZ4的相关变量到全局变量
+#if(NOT LZ4_FIND_QUIETLY)
+#    set(LZ4_INCLUDE_DIRS ${LZ4_INCLUDE_DIRS} CACHE PATH "LZ4 include directories")
+#    set(LZ4_LIBRARIES ${LZ4_LIBRARIES} CACHE FILEPATH "LZ4 libraries")
+#endif()

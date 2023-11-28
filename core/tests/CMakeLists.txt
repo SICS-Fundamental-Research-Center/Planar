@@ -27,7 +27,7 @@ find_package(ZLIB REQUIRED)
 
 find_package(Lz4 REQUIRED)
 
-find_package(snappy REQUIRED)
+find_package(Snappy REQUIRED)
 
 foreach (testfile ${testfiles})
     get_filename_component(filename ${testfile} NAME_WE)
@@ -45,7 +45,7 @@ foreach (testfile ${testfiles})
             gflags
             LibLZMA::LibLZMA
             ZLIB::ZLIB
-            ${Lz4_LIBRARY}
+            ${LZ4_LIBRARY}
             ${SNAPPY_LIBRARY}
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
