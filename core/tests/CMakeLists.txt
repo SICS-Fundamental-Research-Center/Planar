@@ -23,6 +23,12 @@ file(GLOB testfiles
 
 find_package(LibLZMA REQUIRED)
 
+find_package(ZLIB REQUIRED)
+
+find_package(Lz4 REQUIRED)
+
+find_package(snappy REQUIRED)
+
 foreach (testfile ${testfiles})
     get_filename_component(filename ${testfile} NAME_WE)
     string(REPLACE "_test"
@@ -38,6 +44,9 @@ foreach (testfile ${testfiles})
             yaml-cpp::yaml-cpp
             gflags
             LibLZMA::LibLZMA
+            ZLIB::ZLIB
+            ${Lz4_LIBRARY}
+            ${SNAPPY_LIBRARY}
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
     target_compile_definitions(${filename} PUBLIC TEST_DATA_DIR="${PROJECT_ROOT_DIR}/testfile")

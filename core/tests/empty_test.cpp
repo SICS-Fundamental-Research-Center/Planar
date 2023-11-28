@@ -2,12 +2,14 @@
 #include <lzma.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <fstream>
 
 #include "core/common/multithreading/task.h"
 #include "core/common/multithreading/thread_pool.h"
+#include "core/tests/gzip/compress.hpp"
+#include "core/tests/gzip/decompress.hpp"
+#include "core/tests/gzip/utils.hpp"
 #include "util/logging.h"
 
 namespace xyz::graph::core::tests {
@@ -23,13 +25,9 @@ class SampleTest : public ::testing::Test {
   std::string compress_file = data_dir + "/compress.txt";
 };
 
-TEST_F(SampleTest, SomeValuesAreAlwaysEqual) {
-  EXPECT_EQ(1, 1);
-  EXPECT_EQ(2, 2);
-  EXPECT_EQ("miao", "miao");
-}
+TEST_F(SampleTest, SomeValuesAreAlwaysEqual) { EXPECT_EQ(1, 1); }
 
-TEST_F(SampleTest, SimpleCompressAndDecompress) {
+TEST_F(SampleTest, XzTest) {
   // 原始数据
   FILE* file = fopen(compress_file.c_str(), "r");
   fseek(file, 0, SEEK_END);
@@ -91,7 +89,26 @@ TEST_F(SampleTest, SimpleCompressAndDecompress) {
   free(output_data);
 }
 
-TEST_F(SampleTest, LargeFileCompress) {
+TEST_F(SampleTest, GzipTest) {
+  std::string data = "hello";
+  const char* pointer = data.data();
+  std::size_t size = data.size();
+
+  // Check if compressed. Can check both gzip and zlib.
+  bool c = gzip::is_compressed(pointer, size);  // false
+  LOGF_INFO("is compressed: {}", c);
+  // Compress returns a std::string
+  std::string compressed_data = gzip::compress(pointer, size);
+
+  LOGF_INFO("compressed data size: {}", compressed_data.size());
+
+  // Decompress returns a std::string and decodes both zlib and gzip
+  const char* compressed_pointer = compressed_data.data();
+  std::string decompressed_data =
+      gzip::decompress(compressed_pointer, compressed_data.size());
+}
+
+TEST_F(SampleTest, XzLargeFileCompress) {
   size_t task_num = 8;
   std::string src_path = data_dir + "/0.bin";
   std::string path = data_dir + "/compress/";
@@ -183,7 +200,7 @@ TEST_F(SampleTest, LargeFileCompress) {
   //            std::chrono::duration<double>(time_end - time_begin).count());
 }
 
-TEST_F(SampleTest, LargeFileDecompress) {
+TEST_F(SampleTest, XzLargeFileDecompress) {
   size_t task_num = 8;
   std::string path = data_dir + "/compress/";
 
@@ -233,6 +250,112 @@ TEST_F(SampleTest, LargeFileDecompress) {
       if (pending_packages.fetch_sub(1) == 1) finish_cv.notify_all();
       return;
     });
+  }
+  finish_cv.wait(lck, [&] { return pending_packages.load() == 0; });
+
+  auto time_end = std::chrono::system_clock::now();
+
+  LOGF_INFO("Decompress time with {} cores : {}", task_num,
+            std::chrono::duration<double>(time_end - time_begin).count());
+}
+
+TEST_F(SampleTest, GzipLargeFileCompress) {
+  size_t task_num = 8;
+  std::string src_path = data_dir + "/0.bin";
+  std::string path = data_dir + "/compress/";
+
+  std::mutex mtx;
+  std::condition_variable finish_cv;
+  std::unique_lock<std::mutex> lck(mtx);
+  std::atomic<size_t> pending_packages(task_num);
+
+  auto thread_pool = core::common::ThreadPool(task_num);
+
+  auto time_b = std::chrono::system_clock::now();
+  // read src data
+  std::ifstream src_file(src_path, std::ios::binary);
+  if (!src_file) {
+    LOG_FATAL("Error opening bin file: ", path.c_str());
+  }
+
+  src_file.seekg(0, std::ios::end);
+  size_t file_size = src_file.tellg();
+  src_file.seekg(0, std::ios::beg);
+  auto src_data = (char*)malloc(file_size);
+  src_file.read(src_data, file_size);
+
+  auto time_e = std::chrono::system_clock::now();
+
+  LOGF_INFO("time used for normal read: {}",
+            std::chrono::duration<double>(time_e - time_b).count());
+
+  std::vector<char*> src_data_address(task_num);
+  std::vector<size_t> src_data_size(task_num);
+  size_t step = ceil((double)file_size / task_num);
+  for (int i = 0; i < task_num; i++) {
+    src_data_address[i] = src_data + i * step;
+    src_data_size[i] = step;
+    if (i == task_num - 1) {
+      src_data_size[i] = file_size - i * step;
+    }
+  }
+
+  LOG_INFO("begin compress");
+  for (size_t i = 0; i < task_num; i++) {
+    auto input_size = src_data_size[i];
+    auto input_data = src_data_address[i];
+    thread_pool.SubmitSync([i, input_size, input_data, path, &pending_packages,
+                            &finish_cv]() {
+      // compress one split file
+      auto output_data = gzip::compress(input_data, input_size);
+      LOGF_INFO("compress finished, from {}M to {}M", input_size,
+                output_data.size());
+      std::ofstream file(path + std::to_string(i) + ".bin", std::ios::binary);
+      file.write(output_data.data(), output_data.size());
+      if (pending_packages.fetch_sub(1) == 1) finish_cv.notify_all();
+      return;
+    });
+  }
+  finish_cv.wait(lck, [&] { return pending_packages.load() == 0; });
+}
+
+TEST_F(SampleTest, GzipLargeFileDecompress) {
+  size_t task_num = 8;
+  std::string path = data_dir + "/compress/";
+
+  std::mutex mtx;
+  std::condition_variable finish_cv;
+  std::unique_lock<std::mutex> lck(mtx);
+  std::atomic<size_t> pending_packages(task_num);
+  auto thread_pool = core::common::ThreadPool(task_num);
+  auto time_begin = std::chrono::system_clock::now();
+
+  std::vector<char*> output_datas(task_num);
+  std::vector<size_t> output_sizes(task_num);
+  for (int i = 0; i < task_num; i++) {
+    std::ifstream file(path + std::to_string(i) + ".bin", std::ios::binary);
+    file.seekg(0, std::ios::end);
+    size_t file_size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    auto src_data = (char*)malloc(file_size);
+    file.read(src_data, file_size);
+    output_datas[i] = src_data;
+    output_sizes[i] = file_size;
+  }
+
+  LOG_INFO("start decompress");
+  pending_packages.store(task_num);
+  for (size_t i = 0; i < task_num; i++) {
+    auto output_size = output_sizes[i];
+    auto output_data = output_datas[i];
+    thread_pool.SubmitSync(
+        [i, path, output_data, output_size, &finish_cv, &pending_packages]() {
+          auto decompress_data = gzip::decompress(output_data, output_size);
+          LOGF_INFO("{} decompress success, before size {}M after size {}M", i,
+                    output_size, decompress_data.size());
+          if (pending_packages.fetch_sub(1) == 1) finish_cv.notify_all();
+          return;
+        });
   }
   finish_cv.wait(lck, [&] { return pending_packages.load() == 0; });
 
