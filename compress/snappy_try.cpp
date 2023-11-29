@@ -1,6 +1,4 @@
-#include <gtest/gtest.h>
 #include <snappy.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <fstream>

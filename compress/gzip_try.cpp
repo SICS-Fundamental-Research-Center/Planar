@@ -1,5 +1,3 @@
-#include <gtest/gtest.h>
-#include <lzma.h>
 #include <stdlib.h>
 
 #include <fstream>
