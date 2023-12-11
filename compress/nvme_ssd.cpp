@@ -15,6 +15,14 @@ DEFINE_string(type, "normal", "normal read time mode");
 
 using namespace boost::chrono;
 
+void read_block(int i, char* buffer, size_t offset, size_t read_size,
+                std::string file_path) {
+  std::ifstream src_file(file_path, std::ios::binary);
+  src_file.seekg(offset, std::ios::beg);
+  src_file.read(buffer + offset, read_size);
+  return;
+}
+
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   auto file_path = FLAGS_i;
@@ -67,19 +75,26 @@ int main(int argc, char** argv) {
       }
     }
 
+    std::vector<std::thread> threads;
+
     for (int i = 0; i < parallelism; i++) {
       auto offset = offsets[i];
       auto read_size = read_sizes[i];
-      thread_pool.SubmitSync([i, buffer, offset, read_size, file_path,
-                              &pending_packages, &finish_cv]() {
-        std::ifstream src_file(file_path, std::ios::binary);
-        src_file.seekg(offset, std::ios::beg);
-        src_file.read(buffer + offset, read_size);
-        if (pending_packages.fetch_sub(1) == 1) finish_cv.notify_all();
-        return;
-      });
+      threads.push_back(
+          std::thread(read_block, i, buffer, offset, read_size, file_path));
+      //      thread_pool.SubmitSync([i, buffer, offset, read_size, file_path,
+      //                              &pending_packages, &finish_cv]() {
+      //        std::ifstream src_file(file_path, std::ios::binary);
+      //        src_file.seekg(offset, std::ios::beg);
+      //        src_file.read(buffer + offset, read_size);
+      //        if (pending_packages.fetch_sub(1) == 1) finish_cv.notify_all();
+      //        return;
+      //      });
     }
-    finish_cv.wait(lck, [&] { return pending_packages.load() == 0; });
+    //    finish_cv.wait(lck, [&] { return pending_packages.load() == 0; });
+    for (auto& t : threads) {
+      t.join();
+    }
     auto time_end = std::chrono::system_clock::now();
 
     LOGF_INFO("time used for normal read: {}",
