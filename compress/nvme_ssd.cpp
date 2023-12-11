@@ -90,5 +90,6 @@ int main(int argc, char** argv) {
   boost::chrono::nanoseconds duration = end - start;
   boost::chrono::milliseconds milli =
       boost::chrono::duration_cast<boost::chrono::milliseconds>(duration);
-  LOGF_INFO("boost time used for nvme read: {}", milli.count() / double(1000));
+  LOGF_INFO("boost time used for nvme read: {} {}", milli.count(),
+            duration.count());
 }
