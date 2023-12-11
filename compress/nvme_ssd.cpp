@@ -1,5 +1,7 @@
 #include <gflags/gflags.h>
 
+#include <boost/chrono.hpp>
+#include <boost/chrono/thread_clock.hpp>
 #include <fstream>
 #include <vector>
 
@@ -11,11 +13,15 @@ DEFINE_string(i, "0.bin", "compress file name");
 DEFINE_uint32(p, 8, "thread pool size");
 DEFINE_string(type, "normal", "normal read time mode");
 
+using namespace boost::chrono;
+
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   auto file_path = FLAGS_i;
   auto parallelism = FLAGS_p;
   auto mode = FLAGS_type;
+
+  thread_clock::time_point start = thread_clock::now();
 
   if (mode == "normal") {
     auto time_b = std::chrono::system_clock::now();
@@ -48,6 +54,8 @@ int main(int argc, char** argv) {
 
     auto buffer = (char*)malloc(file_size);
 
+    auto time_begin = std::chrono::system_clock::now();
+
     std::vector<size_t> offsets(parallelism);
     std::vector<size_t> read_sizes(parallelism);
     size_t step = ceil((double)file_size / parallelism);
@@ -59,7 +67,6 @@ int main(int argc, char** argv) {
       }
     }
 
-    auto time_begin = std::chrono::system_clock::now();
     for (int i = 0; i < parallelism; i++) {
       auto offset = offsets[i];
       auto read_size = read_sizes[i];
@@ -78,4 +85,10 @@ int main(int argc, char** argv) {
     LOGF_INFO("time used for normal read: {}",
               std::chrono::duration<double>(time_end - time_begin).count());
   }
+
+  thread_clock::time_point end = thread_clock::now();
+  boost::chrono::nanoseconds duration = end - start;
+  boost::chrono::milliseconds milli =
+      boost::chrono::duration_cast<boost::chrono::milliseconds>(duration);
+  LOGF_INFO("boost time used for nvme read: {}", milli.count() / double(1000));
 }

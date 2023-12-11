@@ -24,6 +24,8 @@ find_package(Lz4 REQUIRED)
 
 find_package(Snappy REQUIRED)
 
+find_package(Boost COMPONENTS chrono REQUIRED)
+
 foreach (COMPRESS_APP_SOURCE ${COMPRESS_APP_SOURCES})
     message(STATUS "Compress try: ${COMPRESS_APP_SOURCE}")
     get_filename_component(COMPRESS_APP_NAME ${COMPRESS_APP_SOURCE} NAME_WE)
@@ -37,5 +39,6 @@ foreach (COMPRESS_APP_SOURCE ${COMPRESS_APP_SOURCES})
             ZLIB::ZLIB
             ${LZ4_LIBRARIES}
             ${SNAPPY_LIBRARIES}
+            ${Boost_LIBRARIES}
             )
 endforeach ()
