@@ -18,9 +18,16 @@ using namespace boost::chrono;
 
 void read_block(int i, char* buffer, size_t offset, size_t read_size,
                 std::string file_path) {
+  thread_clock::time_point start = thread_clock::now();
   std::ifstream src_file(file_path, std::ios::binary);
   src_file.seekg(offset, std::ios::beg);
   src_file.read(buffer + offset, read_size);
+  thread_clock::time_point end = thread_clock::now();
+  boost::chrono::nanoseconds duration = end - start;
+  boost::chrono::milliseconds milli =
+      boost::chrono::duration_cast<boost::chrono::milliseconds>(duration);
+  LOGF_INFO("{} boost time used for nvme read: {} {}", i, milli.count(),
+            duration.count());
   return;
 }
 
@@ -29,8 +36,6 @@ int main(int argc, char** argv) {
   auto file_path = FLAGS_i;
   auto parallelism = FLAGS_p;
   auto mode = FLAGS_type;
-
-  thread_clock::time_point start = thread_clock::now();
 
   if (mode == "normal") {
     auto time_b = std::chrono::system_clock::now();
@@ -101,11 +106,4 @@ int main(int argc, char** argv) {
     LOGF_INFO("time used for normal read: {}",
               std::chrono::duration<double>(time_end - time_begin).count());
   }
-
-  thread_clock::time_point end = thread_clock::now();
-  boost::chrono::nanoseconds duration = end - start;
-  boost::chrono::milliseconds milli =
-      boost::chrono::duration_cast<boost::chrono::milliseconds>(duration);
-  LOGF_INFO("boost time used for nvme read: {} {}", milli.count(),
-            duration.count());
 }
