@@ -24,7 +24,7 @@ find_package(Lz4 REQUIRED)
 
 find_package(Snappy REQUIRED)
 
-find_package(Boost COMPONENTS chrono REQUIRED)
+find_package(Boost COMPONENTS chrono thread REQUIRED)
 
 foreach (COMPRESS_APP_SOURCE ${COMPRESS_APP_SOURCES})
     message(STATUS "Compress try: ${COMPRESS_APP_SOURCE}")

@@ -2,6 +2,7 @@
 
 #include <boost/chrono.hpp>
 #include <boost/chrono/thread_clock.hpp>
+#include <boost/thread.hpp>
 #include <fstream>
 #include <vector>
 
@@ -75,13 +76,13 @@ int main(int argc, char** argv) {
       }
     }
 
-    std::vector<std::thread> threads;
+    std::vector<boost::thread> threads;
 
     for (int i = 0; i < parallelism; i++) {
       auto offset = offsets[i];
       auto read_size = read_sizes[i];
       threads.push_back(
-          std::thread(read_block, i, buffer, offset, read_size, file_path));
+          boost::thread(read_block, i, buffer, offset, read_size, file_path));
       //      thread_pool.SubmitSync([i, buffer, offset, read_size, file_path,
       //                              &pending_packages, &finish_cv]() {
       //        std::ifstream src_file(file_path, std::ios::binary);
