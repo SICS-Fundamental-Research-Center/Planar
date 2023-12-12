@@ -43,6 +43,8 @@ class MiniCleanGraphMetadataTest : public ::testing::Test {
 
     metadata_.subgraphs = {subgraph_metadata_0_, subgraph_metadata_1_};
   }
+
+  // Shared data structures for test cases.
   MiniCleanGraphMetadata metadata_;
   MiniCleanSubgraphMetadata subgraph_metadata_0_;
   MiniCleanSubgraphMetadata subgraph_metadata_1_;
@@ -62,12 +64,8 @@ TEST_F(MiniCleanGraphMetadataTest, TestDecode) {
 
   // Load the test yaml file.
   YAML::Node metadata;
-  try {
-    metadata =
-        YAML::LoadFile(data_dir_ + "/output/miniclean_metadata_test/meta.yaml");
-  } catch (YAML::BadFile& e) {
-    GTEST_LOG_(ERROR) << e.msg;
-  }
+  EXPECT_NO_THROW(metadata = YAML::LoadFile(
+                      data_dir_ + "/output/miniclean_metadata_test/meta.yaml"));
 
   // Test the decoding.
   MiniCleanGraphMetadata graph_metadata = metadata.as<MiniCleanGraphMetadata>();
@@ -75,9 +73,9 @@ TEST_F(MiniCleanGraphMetadataTest, TestDecode) {
   EXPECT_EQ(graph_metadata.num_edges, metadata_.num_edges);
   EXPECT_EQ(graph_metadata.max_vidg, metadata_.max_vidg);
   EXPECT_EQ(graph_metadata.min_vidg, metadata_.min_vidg);
-  EXPECT_EQ(graph_metadata.num_border_vertices,
-  metadata_.num_border_vertices); EXPECT_EQ(graph_metadata.num_subgraphs,
-  metadata_.num_subgraphs); EXPECT_EQ(graph_metadata.vlabel_id_to_vidl_range,
+  EXPECT_EQ(graph_metadata.num_border_vertices, metadata_.num_border_vertices);
+  EXPECT_EQ(graph_metadata.num_subgraphs, metadata_.num_subgraphs);
+  EXPECT_EQ(graph_metadata.vlabel_id_to_vidl_range,
             metadata_.vlabel_id_to_vidl_range);
   for (size_t i = 0; i < graph_metadata.num_subgraphs; i++) {
     EXPECT_EQ(graph_metadata.subgraphs[i].gid, metadata_.subgraphs[i].gid);
@@ -96,8 +94,7 @@ TEST_F(MiniCleanGraphMetadataTest, TestDecode) {
     EXPECT_EQ(graph_metadata.subgraphs[i].vattr_id_to_file_path.size(),
               metadata_.subgraphs[i].vattr_id_to_file_path.size());
     for (size_t j = 0;
-         j < graph_metadata.subgraphs[i].vlabel_id_to_vidl_range.size(); j++)
-         {
+         j < graph_metadata.subgraphs[i].vlabel_id_to_vidl_range.size(); j++) {
       EXPECT_EQ(graph_metadata.subgraphs[i].vlabel_id_to_vidl_range[j].first,
                 metadata_.subgraphs[i].vlabel_id_to_vidl_range[j].first);
       EXPECT_EQ(graph_metadata.subgraphs[i].vlabel_id_to_vidl_range[j].second,
