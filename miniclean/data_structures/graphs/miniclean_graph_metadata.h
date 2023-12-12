@@ -21,9 +21,8 @@ struct MiniCleanSubgraphMetadata {
   VertexID num_vertices;
   EdgeIndex num_incoming_edges;
   EdgeIndex num_outgoing_edges;
-  // TODO (bai-wenchao): vidl or vidg?
-  VertexID max_vid;
-  VertexID min_vid;
+  VertexID max_vidg;
+  VertexID min_vidg;
   std::vector<std::pair<VertexID, VertexID>> vlabel_id_to_vidl_range;
   std::vector<std::string> vattr_id_to_file_path;
   std::vector<std::string> vattr_id_to_vattr_type;
@@ -59,8 +58,8 @@ struct convert<sics::graph::miniclean::data_structures::graphs::
     node["num_vertices"] = subgraph_metadata.num_vertices;
     node["num_incoming_edges"] = subgraph_metadata.num_incoming_edges;
     node["num_outgoing_edges"] = subgraph_metadata.num_outgoing_edges;
-    node["max_vid"] = subgraph_metadata.max_vid;
-    node["min_vid"] = subgraph_metadata.min_vid;
+    node["max_vid"] = subgraph_metadata.max_vidg;
+    node["min_vid"] = subgraph_metadata.min_vidg;
     for (const auto& pair : subgraph_metadata.vlabel_id_to_vidl_range) {
       node["vlabel_id_to_vidl_range"].push_back(pair);
     }
@@ -86,9 +85,9 @@ struct convert<sics::graph::miniclean::data_structures::graphs::
     subgraph_metadata.num_outgoing_edges =
         node["num_outgoing_edges"]
             .as<sics::graph::miniclean::common::EdgeIndex>();
-    subgraph_metadata.max_vid =
+    subgraph_metadata.max_vidg =
         node["max_vid"].as<sics::graph::miniclean::common::VertexID>();
-    subgraph_metadata.min_vid =
+    subgraph_metadata.min_vidg =
         node["min_vid"].as<sics::graph::miniclean::common::VertexID>();
     subgraph_metadata.vlabel_id_to_vidl_range.reserve(
         node["vlabel_id_to_vidl_range"].size());

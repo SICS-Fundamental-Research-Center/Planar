@@ -23,8 +23,8 @@ class MiniCleanGraphMetadataTest : public ::testing::Test {
     subgraph_metadata_0_.num_vertices = 7;
     subgraph_metadata_0_.num_incoming_edges = 15;
     subgraph_metadata_0_.num_outgoing_edges = 10;
-    subgraph_metadata_0_.max_vid = 6;
-    subgraph_metadata_0_.min_vid = 0;
+    subgraph_metadata_0_.max_vidg = 6;
+    subgraph_metadata_0_.min_vidg = 0;
     subgraph_metadata_0_.vlabel_id_to_vidl_range = {{0, 3}, {4, 7}};
     subgraph_metadata_0_.vattr_id_to_file_path = {"file/path-00",
                                                   "file/path-10"};
@@ -34,8 +34,8 @@ class MiniCleanGraphMetadataTest : public ::testing::Test {
     subgraph_metadata_1_.num_vertices = 6;
     subgraph_metadata_1_.num_incoming_edges = 8;
     subgraph_metadata_1_.num_outgoing_edges = 14;
-    subgraph_metadata_1_.max_vid = 9;
-    subgraph_metadata_1_.min_vid = 4;
+    subgraph_metadata_1_.max_vidg = 9;
+    subgraph_metadata_1_.min_vidg = 4;
     subgraph_metadata_1_.vlabel_id_to_vidl_range = {{0, 2}, {3, 6}};
     subgraph_metadata_1_.vattr_id_to_file_path = {"file/path-01",
                                                   "file/path-11"};
@@ -87,10 +87,10 @@ TEST_F(MiniCleanGraphMetadataTest, TestDecode) {
               metadata_.subgraphs[i].num_incoming_edges);
     EXPECT_EQ(graph_metadata.subgraphs[i].num_outgoing_edges,
               metadata_.subgraphs[i].num_outgoing_edges);
-    EXPECT_EQ(graph_metadata.subgraphs[i].max_vid,
-              metadata_.subgraphs[i].max_vid);
-    EXPECT_EQ(graph_metadata.subgraphs[i].min_vid,
-              metadata_.subgraphs[i].min_vid);
+    EXPECT_EQ(graph_metadata.subgraphs[i].max_vidg,
+              metadata_.subgraphs[i].max_vidg);
+    EXPECT_EQ(graph_metadata.subgraphs[i].min_vidg,
+              metadata_.subgraphs[i].min_vidg);
     EXPECT_EQ(graph_metadata.subgraphs[i].vlabel_id_to_vidl_range.size(),
               metadata_.subgraphs[i].vlabel_id_to_vidl_range.size());
     EXPECT_EQ(graph_metadata.subgraphs[i].vattr_id_to_file_path.size(),
