@@ -48,12 +48,12 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
   // CSR base pointer
   uint8_t* graph_base_pointer_;
   VertexID* vidl_to_vidg_base_pointer_;
-  VertexID* outgoing_vidl_base_pointer_;
-  VertexID* incoming_vidl_base_pointer_;
   VertexID* indegree_base_pointer_;
   VertexID* outdegree_base_pointer_;
   EdgeIndex* in_offset_base_pointer_;
   EdgeIndex* out_offset_base_pointer_;
+  VertexID* incoming_vidl_base_pointer_;
+  VertexID* outgoing_vidl_base_pointer_;
 
   // Graph attributes
   std::vector<uint8_t*> vattr_id_to_base_ptr_vec_;
