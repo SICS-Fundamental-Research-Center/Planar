@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
       auto decompress_size = decompress_sizes[i];
       boost::packaged_task<size_t> pt(boost::bind(
           read_block_with_lz4decompress, i, buffer, step, decompress_size,
-          file_path, parallelism, FLAGS_compress_parallelism));
+          dir, parallelism, FLAGS_compress_parallelism));
       auto fut = pt.get_future();
       futs.push_back(boost::move(fut));
       threads.push_back(
