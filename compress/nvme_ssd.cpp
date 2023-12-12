@@ -3,6 +3,7 @@
 #include <boost/chrono.hpp>
 #include <boost/chrono/thread_clock.hpp>
 #include <boost/thread.hpp>
+#include <boost/thread/future.hpp>
 #include <fstream>
 #include <vector>
 
@@ -16,8 +17,8 @@ DEFINE_string(type, "normal", "normal read time mode");
 
 using namespace boost::chrono;
 
-void read_block(int i, char* buffer, size_t offset, size_t read_size,
-                std::string file_path) {
+size_t read_block(int i, char* buffer, size_t offset, size_t read_size,
+                  std::string file_path) {
   thread_clock::time_point start = thread_clock::now();
   std::ifstream src_file(file_path, std::ios::binary);
   src_file.seekg(offset, std::ios::beg);
@@ -28,7 +29,7 @@ void read_block(int i, char* buffer, size_t offset, size_t read_size,
       boost::chrono::duration_cast<boost::chrono::milliseconds>(duration);
   LOGF_INFO("{} boost time used for nvme read: {} {}", i, milli.count(),
             duration.count());
-  return;
+  return duration.count();
 }
 
 int main(int argc, char** argv) {
@@ -82,12 +83,18 @@ int main(int argc, char** argv) {
     }
 
     std::vector<boost::thread> threads;
+    std::vector<boost::unique_future<size_t>> futs;
 
     for (int i = 0; i < parallelism; i++) {
       auto offset = offsets[i];
       auto read_size = read_sizes[i];
+
+      boost::packaged_task<size_t> pt(
+          boost::bind(read_block, i, buffer, offset, read_size, file_path));
+      auto fut = pt.get_future();
+      futs.push_back(boost::move(fut));
       threads.push_back(
-          boost::thread(read_block, i, buffer, offset, read_size, file_path));
+          boost::thread(boost::move(pt)));  // boost::move is necessary
       //      thread_pool.SubmitSync([i, buffer, offset, read_size, file_path,
       //                              &pending_packages, &finish_cv]() {
       //        std::ifstream src_file(file_path, std::ios::binary);
@@ -101,6 +108,11 @@ int main(int argc, char** argv) {
     for (auto& t : threads) {
       t.join();
     }
+    size_t res = 0;
+    for (auto& fut : futs) {
+      res += fut.get();
+    }
+    LOGF_INFO("total time used for nvme read: {} {}", res, res / double(1000000000));
     auto time_end = std::chrono::system_clock::now();
 
     LOGF_INFO("time used for normal read: {}",
