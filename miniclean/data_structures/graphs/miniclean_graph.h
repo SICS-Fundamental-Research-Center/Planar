@@ -27,9 +27,9 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
   using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
 
  public:
-  explicit MiniCleanGraph(MiniCleanGraphMetadata* metadata_ptr,
+  explicit MiniCleanGraph(const MiniCleanGraphMetadata metadata,
                           sics::graph::miniclean::common::GraphID gid)
-      : gid_(gid), metadata_ptr_(metadata_ptr) {}
+      : gid_(gid), metadata_(metadata) {}
   ~MiniCleanGraph() = default;
 
   std::unique_ptr<Serialized> Serialize(const TaskRunner& runner) override;
@@ -43,7 +43,7 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
   GraphID gid_;
 
   // Graph metadata
-  MiniCleanGraphMetadata* metadata_ptr_;
+  const MiniCleanGraphMetadata metadata_;
 
   // CSR base pointer
   uint8_t* graph_base_pointer_;
