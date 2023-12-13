@@ -290,7 +290,7 @@ int main(int argc, char** argv) {
         if (i + b < size) {
           dst[i + b] = a;
         } else {
-          dst[b] = a;
+          dst[i] = a;
         }
       }
     }
