@@ -275,10 +275,36 @@ int main(int argc, char** argv) {
     auto buffer_new = (char*)malloc(file_size);
 
     auto time_b2 = std::chrono::system_clock::now();
+
     if (op == "xor") {
-      buffer_new[0] = buffer[0];
-      for (int i = 1; i < file_size; i++) {
-        buffer_new[i] = buffer[i - 1] ^ buffer[i];
+      if (parallelism != 1) {
+        std::vector<std::thread> threads;
+        size_t step = ceil((double)file_size / parallelism);
+        for (int i = 0; i < parallelism; i++) {
+          auto offset = i * step;
+          auto size = step;
+          if (i == parallelism - 1) {
+            size = file_size - i * step;
+          }
+          threads.push_back(std::thread([buffer_new, buffer, offset, size]() {
+            auto idx = offset;
+            if (idx == 0) {
+              buffer_new[0] = buffer[0];
+              idx = 1;
+            }
+            for (int i = idx; i < idx + size; i++) {
+              buffer_new[i] = buffer[i - 1] ^ buffer[i];
+            }
+          }));
+        }
+        for (auto& t : threads) {
+          t.join();
+        }
+      } else {
+        buffer_new[0] = buffer[0];
+        for (int i = 1; i < file_size; i++) {
+          buffer_new[i] = buffer[i - 1] ^ buffer[i];
+        }
       }
     } else {
       auto size = file_size / 4;
