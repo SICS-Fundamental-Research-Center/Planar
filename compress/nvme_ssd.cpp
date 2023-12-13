@@ -288,12 +288,13 @@ int main(int argc, char** argv) {
           }
           threads.push_back(std::thread([buffer_new, buffer, offset, size]() {
             auto idx = offset;
-            if (idx == 0) {
-              buffer_new[0] = buffer[0];
-              idx = 1;
-            }
+//            if (idx == 0) {
+//              buffer_new[0] = buffer[0];
+//              idx = 1;
+//            }
             for (int i = idx; i < idx + size; i++) {
-              buffer_new[i] = buffer[i - 1] ^ buffer[i];
+//              buffer_new[i] = buffer[i - 1] ^ buffer[i];
+              buffer_new[i] = buffer[i] + 10;
             }
           }));
         }
