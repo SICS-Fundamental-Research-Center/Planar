@@ -35,8 +35,8 @@ size_t read_block(int i, char* buffer, size_t offset, size_t read_size,
   boost::chrono::nanoseconds duration = end - start;
   boost::chrono::milliseconds milli =
       boost::chrono::duration_cast<boost::chrono::milliseconds>(duration);
-  LOGF_INFO("{} boost time used for nvme read: {} {}", i, milli.count(),
-            duration.count());
+  //  LOGF_INFO("{} boost time used for nvme read: {} {}", i, milli.count(),
+  //            duration.count());
   return duration.count();
 }
 
@@ -74,15 +74,16 @@ size_t decompress_block(int i, char* buffer, char* dst, size_t offset,
   thread_clock::time_point start = thread_clock::now();
   auto ret =
       LZ4_decompress_safe(buffer, dst + offset, compress_size, decompress_size);
-  LOGF_INFO("{} decompress success, before size {} M after size {} M -- {} ", i,
-            compress_size, ret, decompress_size);
+  //  LOGF_INFO("{} decompress success, before size {} M after size {} M -- {}
+  //  ", i,
+  //            compress_size, ret, decompress_size);
 
   thread_clock::time_point end = thread_clock::now();
   boost::chrono::nanoseconds duration = end - start;
   boost::chrono::milliseconds milli =
       boost::chrono::duration_cast<boost::chrono::milliseconds>(duration);
-  LOGF_INFO("{} boost time used for nvme read: {} {}", i, milli.count(),
-            duration.count());
+  //  LOGF_INFO("{} boost time used for nvme read: {} {}", i, milli.count(),
+  //            duration.count());
   return duration.count();
 }
 
