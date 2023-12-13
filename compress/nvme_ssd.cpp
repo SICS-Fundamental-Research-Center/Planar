@@ -23,6 +23,8 @@ DEFINE_uint32(compress_parallelism, 32, "compress parallelism");
 DEFINE_uint32(ssd_parallelism, 1, "ssd parallelism");
 DEFINE_uint32(decompress_parallelism, 32, "decompress parallelism");
 
+DEFINE_string(op, "xor", "operation type");
+
 using namespace boost::chrono;
 
 size_t read_block(int i, char* buffer, size_t offset, size_t read_size,
@@ -96,6 +98,8 @@ int main(int argc, char** argv) {
   auto ssd_p = FLAGS_ssd_parallelism;
   auto decompress_p = FLAGS_decompress_parallelism;
   auto compress_p = FLAGS_compress_parallelism;
+
+  auto op = FLAGS_op;
 
   if (mode == "normal") {
     auto time_b = std::chrono::system_clock::now();
@@ -257,6 +261,47 @@ int main(int argc, char** argv) {
               std::chrono::duration<double>(time_e - time_m).count());
     LOGF_INFO("normal time used total {}",
               std::chrono::duration<double>(time_e - time_b).count());
+
+  } else if (mode == "linear_scan") {
+    auto time_begin = std::chrono::system_clock::now();
+    std::ifstream src_file(file_path, std::ios::binary);
+    src_file.seekg(0, std::ios::end);
+    size_t file_size = src_file.tellg();
+    src_file.seekg(0, std::ios::beg);
+    auto buffer = (char*)malloc(file_size);
+    src_file.read(buffer, file_size);
+    auto time_mid = std::chrono::system_clock::now();
+
+    auto buffer_new = (char*)malloc(file_size);
+
+    auto time_b2 = std::chrono::system_clock::now();
+    if (op == "xor") {
+      buffer_new[0] = buffer[0];
+      for (int i = 1; i < file_size; i++) {
+        buffer_new[i] = buffer[i - 1] ^ buffer[i];
+      }
+    } else {
+      auto size = file_size / 4;
+      uint32_t* src = (uint32_t*)buffer;
+      uint32_t* dst = (uint32_t*)buffer_new;
+      for (int i = 0; i < size; i++) {
+        auto a = src[i];
+        char b = a;
+        if (i + b < size) {
+          dst[i + b] = a;
+        } else {
+          dst[b] = a;
+        }
+      }
+    }
+
+    auto time_end = std::chrono::system_clock::now();
+    std::ofstream dst_file(file_path + ".linear_scan", std::ios::binary);
+    dst_file.write(buffer_new, file_size);
+    LOGF_INFO("normal time used for loading {}",
+              std::chrono::duration<double>(time_mid - time_begin).count());
+    LOGF_INFO("normal time used for linear scan: {}",
+              std::chrono::duration<double>(time_end - time_b2).count());
 
   } else {
     std::mutex mtx;
