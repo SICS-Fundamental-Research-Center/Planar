@@ -249,6 +249,8 @@ int main(int argc, char** argv) {
     }
     LOGF_INFO("cpu time for decompress {} s: {} ns",
               time_decompress / double(1000000000), time_decompress);
+    LOGF_INFO("cpu time for all: {} {}", time_decompress + time_load,
+              (time_decompress + time_load) / double(1000000000));
     auto time_e = std::chrono::system_clock::now();
     LOGF_INFO("normal time used for decompress: {}",
               std::chrono::duration<double>(time_e - time_m).count());
