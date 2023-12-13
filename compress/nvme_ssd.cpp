@@ -20,6 +20,8 @@ DEFINE_string(type, "normal", "normal read time mode");
 DEFINE_string(dir, "/Users/liuyang/sics/refactor/graph-systems/testfile/",
               "compress directory");
 DEFINE_uint32(compress_parallelism, 32, "compress parallelism");
+DEFINE_uint32(ssd_parallelism, 1, "ssd parallelism");
+DEFINE_uint32(decompress_parallelism, 32, "decompress parallelism");
 
 using namespace boost::chrono;
 
@@ -67,12 +69,32 @@ size_t read_block_with_lz4decompress(int i, char* buffer, size_t step,
   return duration.count();
 }
 
+size_t decompress_block(int i, char* buffer, char* dst, size_t offset,
+                        size_t compress_size, size_t decompress_size) {
+  thread_clock::time_point start = thread_clock::now();
+  auto ret =
+      LZ4_decompress_safe(buffer, dst + offset, compress_size, decompress_size);
+  LOGF_INFO("{} decompress success, before size {} M after size {} M -- {} ", i,
+            compress_size, ret, decompress_size);
+
+  thread_clock::time_point end = thread_clock::now();
+  boost::chrono::nanoseconds duration = end - start;
+  boost::chrono::milliseconds milli =
+      boost::chrono::duration_cast<boost::chrono::milliseconds>(duration);
+  LOGF_INFO("{} boost time used for nvme read: {} {}", i, milli.count(),
+            duration.count());
+  return duration.count();
+}
+
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   auto file_path = FLAGS_i;
   auto parallelism = FLAGS_p;
   auto mode = FLAGS_type;
   auto dir = FLAGS_dir;
+  auto ssd_p = FLAGS_ssd_parallelism;
+  auto decompress_p = FLAGS_decompress_parallelism;
+  auto compress_p = FLAGS_compress_parallelism;
 
   if (mode == "normal") {
     auto time_b = std::chrono::system_clock::now();
@@ -98,11 +120,11 @@ int main(int argc, char** argv) {
     auto buffer = (char*)malloc(file_size);
 
     auto time_b = std::chrono::system_clock::now();
-    size_t step = ceil((double)file_size / FLAGS_compress_parallelism);
-    std::vector<size_t> decompress_sizes(FLAGS_compress_parallelism);
-    for (int i = 0; i < FLAGS_compress_parallelism; i++) {
+    size_t step = ceil((double)file_size / compress_p);
+    std::vector<size_t> decompress_sizes(compress_p);
+    for (int i = 0; i < compress_p; i++) {
       decompress_sizes[i] = step;
-      if (i == FLAGS_compress_parallelism - 1) {
+      if (i == compress_p - 1) {
         decompress_sizes[i] = file_size - i * step;
       }
     }
@@ -112,9 +134,9 @@ int main(int argc, char** argv) {
 
     for (int i = 0; i < parallelism; i++) {
       auto decompress_size = decompress_sizes[i];
-      boost::packaged_task<size_t> pt(boost::bind(
-          read_block_with_lz4decompress, i, buffer, step, decompress_size,
-          dir, parallelism, FLAGS_compress_parallelism));
+      boost::packaged_task<size_t> pt(
+          boost::bind(read_block_with_lz4decompress, i, buffer, step,
+                      decompress_size, dir, parallelism, compress_p));
       auto fut = pt.get_future();
       futs.push_back(boost::move(fut));
       threads.push_back(
@@ -132,6 +154,105 @@ int main(int argc, char** argv) {
 
     auto time_e = std::chrono::system_clock::now();
     LOGF_INFO("time used for normal read: {}",
+              std::chrono::duration<double>(time_e - time_b).count());
+
+  } else if (mode == "lz42") {
+    auto time_b = std::chrono::system_clock::now();
+    size_t time_load = 0;
+    std::vector<char*> buffers(compress_p);
+    std::vector<size_t> compress_sizes(compress_p);
+    for (int i = 0; i < compress_p; i++) {
+      std::string file = dir + "compress/" + std::to_string(i) + ".lz4.bin";
+      std::ifstream src_file(file, std::ios::binary);
+      src_file.seekg(0, std::ios::end);
+      size_t file_size = src_file.tellg();
+      src_file.seekg(0, std::ios::beg);
+      buffers[i] = (char*)malloc(file_size);
+      compress_sizes[i] = file_size;
+
+      std::vector<size_t> offsets(ssd_p);
+      std::vector<size_t> sizes(ssd_p);
+      size_t step = ceil((double)file_size / ssd_p);
+      for (int k = 0; k < ssd_p; k++) {
+        offsets[k] = k * step;
+        sizes[k] = step;
+        if (k == ssd_p - 1) {
+          sizes[k] = file_size - k * step;
+        }
+      }
+
+      std::vector<boost::thread> threads;
+      std::vector<boost::unique_future<size_t>> futs;
+
+      for (int j = 0; j < ssd_p; j++) {
+        auto offset = offsets[j];
+        auto size = sizes[j];
+        boost::packaged_task<size_t> pt(
+            boost::bind(read_block, i, buffers[i], offset, size, file));
+        auto fut = pt.get_future();
+        futs.push_back(boost::move(fut));
+        threads.push_back(boost::thread(boost::move(pt)));
+      }
+      // join and count time
+      for (auto& t : threads) {
+        t.join();
+      }
+      for (auto& fut : futs) {
+        time_load += fut.get();
+      }
+    }
+    auto time_m = std::chrono::system_clock::now();
+    LOGF_INFO("cpu time for load {} s: {} ns", time_load / double(1000000000),
+              time_load);
+    LOGF_INFO("normal time used for load {} s",
+              std::chrono::duration<double>(time_m - time_b).count());
+
+    // for decompress
+    std::ifstream graph_file(file_path, std::ios::binary);
+    graph_file.seekg(0, std::ios::end);
+    size_t graph_size = graph_file.tellg();
+    graph_file.seekg(0, std::ios::beg);
+
+    auto graph = (char*)malloc(graph_size);
+
+    size_t step = ceil((double)graph_size / compress_p);
+    std::vector<size_t> graph_offsets(compress_p);
+    std::vector<size_t> graph_sizes(compress_p);
+    for (int i = 0; i < compress_p; i++) {
+      graph_offsets[i] = i * step;
+      graph_sizes[i] = step;
+      if (i == compress_p - 1) {
+        graph_sizes[i] = graph_size - i * step;
+      }
+    }
+
+    size_t time_decompress = 0;
+    std::vector<boost::thread> threads;
+    std::vector<boost::unique_future<size_t>> futs;
+    for (int i = 0; i < decompress_p; i++) {
+      auto buffer = buffers[i];
+      auto compress_size = compress_sizes[i];
+      auto decompress_offset = graph_offsets[i];
+      auto decompress_size = graph_sizes[i];
+      boost::packaged_task<size_t> pt(
+          boost::bind(decompress_block, i, buffer, graph, decompress_offset,
+                      compress_size, decompress_size));
+      auto fut = pt.get_future();
+      futs.push_back(boost::move(fut));
+      threads.push_back(boost::thread(boost::move(pt)));
+    }
+    for (auto& t : threads) {
+      t.join();
+    }
+    for (auto& fut : futs) {
+      time_decompress += fut.get();
+    }
+    LOGF_INFO("cpu time for decompress {} s: {} ns",
+              time_decompress / double(1000000000), time_decompress);
+    auto time_e = std::chrono::system_clock::now();
+    LOGF_INFO("normal time used for decompress: {}",
+              std::chrono::duration<double>(time_e - time_m).count());
+    LOGF_INFO("normal time used total {}",
               std::chrono::duration<double>(time_e - time_b).count());
 
   } else {
