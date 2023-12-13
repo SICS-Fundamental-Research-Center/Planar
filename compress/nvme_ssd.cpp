@@ -307,16 +307,45 @@ int main(int argc, char** argv) {
         }
       }
     } else {
-      auto size = file_size / 4;
-      uint32_t* src = (uint32_t*)buffer;
-      uint32_t* dst = (uint32_t*)buffer_new;
-      for (int i = 0; i < size; i++) {
-        auto a = src[i];
-        char b = a;
-        if (i + b < size) {
-          dst[i + b] = a;
-        } else {
-          dst[i] = a;
+      if (parallelism != 1) {
+        auto int_size = file_size / 4;
+        uint32_t* src = (uint32_t*)buffer;
+        uint32_t* dst = (uint32_t*)buffer_new;
+        std::vector<std::thread> threads;
+        size_t step = ceil((double)int_size / parallelism);
+        for (int i = 0; i < parallelism; i++) {
+          auto offset = i * step;
+          auto size = step;
+          if (i == parallelism - 1) {
+            size = file_size - i * step;
+          }
+          threads.push_back(std::thread([src, dst, offset, size, int_size]() {
+            for (int i = offset; i < offset + size; i++) {
+              auto a = src[i];
+              char b = a;
+              if (i + b < int_size) {
+                dst[i + b] = a;
+              } else {
+                dst[i] = a;
+              }
+            }
+          }));
+        }
+        for (auto& t : threads) {
+          t.join();
+        }
+      } else {
+        auto size = file_size / 4;
+        uint32_t* src = (uint32_t*)buffer;
+        uint32_t* dst = (uint32_t*)buffer_new;
+        for (int i = 0; i < size; i++) {
+          auto a = src[i];
+          char b = a;
+          if (i + b < size) {
+            dst[i + b] = a;
+          } else {
+            dst[i] = a;
+          }
         }
       }
     }
