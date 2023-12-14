@@ -1,4 +1,4 @@
-#include "miniclean/io/miniclean_graph_read.h"
+#include "miniclean/io/miniclean_graph_reader.h"
 
 namespace sics::graph::miniclean::io {
 
