@@ -5,6 +5,8 @@
 namespace sics::graph::miniclean::data_structures::graphs {
 
 using Serialized = sics::graph::core::data_structures::Serialized;
+using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
 
 std::unique_ptr<Serialized> MiniCleanGraph::Serialize(
     const TaskRunner& runner) {
@@ -85,9 +87,19 @@ void MiniCleanGraph::ParseBitmapNoOwnership(
 
 void MiniCleanGraph::ParseVertexAttribute(
     size_t vattr_id, const std::vector<OwnedBuffer>& buffer_list) {
-  vattr_id_to_base_ptr_vec_[vattr_id] = std::make_pair(
-      reinterpret_cast<uint8_t*>(buffer_list.front().Get()),
-      metadata_.vattr_id_to_vattr_type[vattr_id]);
+  vattr_id_to_base_ptr_vec_[vattr_id] =
+      std::make_pair(reinterpret_cast<uint8_t*>(buffer_list.front().Get()),
+                     metadata_.vattr_id_to_vattr_type[vattr_id]);
+}
+
+VertexLabel MiniCleanGraph::GetVertexLabel(VertexID vidl) const {
+  for (VertexLabel i = 0; i < metadata_.vlabel_id_to_vidl_range.size(); i++) {
+    if (vidl >= metadata_.vlabel_id_to_vidl_range[i].first &&
+        vidl <= metadata_.vlabel_id_to_vidl_range[i].second) {
+      return i;
+    }
+  }
+  LOG_FATAL("Vertex label not found.");
 }
 
 }  // namespace sics::graph::miniclean::data_structures::graphs

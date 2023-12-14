@@ -40,6 +40,26 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
   void Deserialize(const TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override;
 
+  VertexLabel GetVertexLabel(VertexID vidl) const;
+
+  template <typename T>
+  const T GetVertexAttribute(VertexID vidl, VertexAttributeID vattr_id) const {
+    uint8_t* base_ptr = vattr_id_to_base_ptr_vec_[vattr_id].first;
+    VertexAttributeType vattr_type = vattr_id_to_base_ptr_vec_[vattr_id].second;
+    VertexID relative_vid =
+        vid - metadata_.vlabel_id_to_vidl_range[GetVertexLabel(vidl)].first;
+    switch (vattr_type) {
+      case kString:
+        // `T` should be `char*`
+        auto max_string_length =
+            metadata_.vattr_id_to_max_string_length[vattr_id];
+        return reinterpret_cast<T>(base_ptr + relative_vid * max_string_length);
+      default:
+        // `T` should be `uint8_t`, `uint16_t`, `uint32_t`, or `uint64_t`
+        return reinterpret_cast<T*>(base_ptr)[relative_vid];
+    }
+  }
+
  private:
   void ParseSubgraphCSR(const std::vector<OwnedBuffer>& buffer_list);
   void ParseBitmapNoOwnership(const std::vector<OwnedBuffer>& buffer_list);
