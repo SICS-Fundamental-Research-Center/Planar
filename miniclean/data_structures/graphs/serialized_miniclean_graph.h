@@ -7,6 +7,8 @@
 #include "core/data_structures/buffer.h"
 #include "core/data_structures/serialized.h"
 
+namespace sics::graph::miniclean::data_structures::graphs {
+
 class SerializedMiniCleanGraph
     : public sics::graph::core::data_structures::Serialized {
  private:
@@ -43,5 +45,6 @@ class SerializedMiniCleanGraph
   //   - other items: vertex attributes
   std::list<std::vector<OwnedBuffer>> miniclean_graph_buffers_;
 };
+}
 
 #endif  // MINICLEAN_DATA_STRUCTURES_GRAPHS_SERIALIZED_MINICLEAN_GRAPH_H_
