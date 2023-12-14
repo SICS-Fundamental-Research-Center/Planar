@@ -1,0 +1,119 @@
+GraphMetadata:
+  count_border_vertices: 5
+  max_vid: 9
+  min_vid: 0
+  num_edges: 5
+  num_subgraphs: 2
+  num_vertices: 10
+  subgraphs:
+  - gid: 0
+    max_vid: 4
+    min_vid: 0
+    num_incoming_edges: 0
+    num_outgoing_edges: 5
+    num_vertices: 5
+    vattr_id_to_file_path:
+    - ../attributes/0/movie_vid.bin
+    - ../attributes/0/movie_rating.bin
+    - ../attributes/0/movie_year.bin
+    - ../attributes/0/movie_genre.bin
+    - ../attributes/0/movie_name.bin
+    - ../attributes/0/movie_title.bin
+    - ../attributes/0/movie_episode_name.bin
+    - ../attributes/0/movie_episode_id.bin
+    - ''
+    - ''
+    - ''
+    - ''
+    vattr_id_to_max_string_length:
+    - 0
+    - 0
+    - 0
+    - 11
+    - 52
+    - 24
+    - 27
+    - 4
+    - 0
+    - 0
+    - 0
+    - 0
+    vattr_id_to_type:
+    - uint32_t
+    - uint8_t
+    - uint16_t
+    - string
+    - string
+    - string
+    - string
+    - string
+    - uint32_t
+    - string
+    - uint32_t
+    - string
+    vlabel_id_to_vidl_range:
+    - - 0
+      - 4
+    - - -1
+      - -1
+    - - -1
+      - -1
+  - gid: 1
+    max_vid: 9
+    min_vid: 5
+    num_incoming_edges: 5
+    num_outgoing_edges: 0
+    num_vertices: 5
+    vattr_id_to_file_path:
+    - ''
+    - ''
+    - ''
+    - ''
+    - ''
+    - ''
+    - ''
+    - ''
+    - ../attributes/1/cast_vid.bin
+    - ../attributes/1/cast_name.bin
+    - ../attributes/1/director_vid.bin
+    - ../attributes/1/director_name.bin
+    vattr_id_to_max_string_length:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 19
+    - 0
+    - 17
+    vattr_id_to_type:
+    - uint32_t
+    - uint8_t
+    - uint16_t
+    - string
+    - string
+    - string
+    - string
+    - string
+    - uint32_t
+    - string
+    - uint32_t
+    - string
+    vlabel_id_to_vidl_range:
+    - - -1
+      - -1
+    - - 5
+      - 7
+    - - 8
+      - 9
+  vlabel_id_to_vidl_range:
+  - - 0
+    - 4
+  - - 5
+    - 7
+  - - 8
+    - 9
