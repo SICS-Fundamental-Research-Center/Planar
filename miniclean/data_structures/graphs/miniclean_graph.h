@@ -68,8 +68,8 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
   BitmapHandle is_in_graph_bitmap_;
 
   // Vertex attributes
-  std::vector<uint8_t*> vattr_id_to_base_pointers_;
-  std::vector<VertexAttributeType> vattr_id_to_types_;
+  std::vector<uint8_t*> vattr_base_pointers_;
+  std::vector<VertexAttributeType> vattr_types_;
 };
 }  // namespace sics::graph::miniclean::data_structures::graphs
 
