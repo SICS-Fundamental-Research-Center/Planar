@@ -46,7 +46,7 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
 
   const uint8_t* GetVertexAttributePtr(VertexID vidl,
                                        VertexAttributeID vattr_id) const {
-    if (vattr_id_to_base_ptr_vec_[vattr_id].first == nullptr) {
+    if (vattr_base_pointers_[vattr_id] == nullptr) {
       throw std::runtime_error("The vertex do not have the attribute: " +
                                std::to_string(vattr_id));
     }
@@ -56,8 +56,8 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
                                std::to_string(vattr_id));
     }
 
-    uint8_t* base_ptr = vattr_id_to_base_ptr_vec_[vattr_id].first;
-    VertexAttributeType vattr_type = vattr_id_to_base_ptr_vec_[vattr_id].second;
+    uint8_t* base_ptr = vattr_base_pointers_[vattr_id];
+    VertexAttributeType vattr_type = vattr_types_[vattr_id];
     VertexID relative_vid =
         vidl - metadata_.vlabel_id_to_vidl_range[GetVertexLabel(vidl)].first;
 

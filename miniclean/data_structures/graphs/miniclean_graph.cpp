@@ -38,6 +38,12 @@ void MiniCleanGraph::Deserialize(const TaskRunner& runner,
   vattr_base_pointers_.resize(metadata_.vattr_id_to_file_path.size());
   vattr_types_.resize(metadata_.vattr_id_to_file_path.size());
   for (size_t i = 0; i < metadata_.vattr_id_to_file_path.size(); i++) {
+    if ((*iter).empty()) {
+      vattr_base_pointers_[i] = nullptr;
+      vattr_types_[i] = metadata_.vattr_id_to_vattr_type[i];
+      iter++;
+      continue;
+    }
     ParseVertexAttribute(i, (*iter++).front());
   }
 }
@@ -83,13 +89,8 @@ void MiniCleanGraph::ParseBitmapHandle(const OwnedBuffer& buffer) {
                            reinterpret_cast<uint64_t*>(buffer.Get()));
 }
 
-void MiniCleanGraph::ParseVertexAttribute(
-    size_t vattr_id, const OwnedBuffer& buffer) {
-  if (buffer.empty()) {
-    vattr_base_pointers_[vattr_id] = nullptr;
-    vattr_types_[vattr_id] = metadata_.vattr_id_to_vattr_type[vattr_id];
-    return;
-  }
+void MiniCleanGraph::ParseVertexAttribute(size_t vattr_id,
+                                          const OwnedBuffer& buffer) {
   vattr_base_pointers_[vattr_id] = reinterpret_cast<uint8_t*>(buffer.Get());
   vattr_types_[vattr_id] = metadata_.vattr_id_to_vattr_type[vattr_id];
 }
