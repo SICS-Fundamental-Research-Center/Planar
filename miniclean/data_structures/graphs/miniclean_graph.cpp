@@ -33,7 +33,8 @@ void MiniCleanGraph::Deserialize(const TaskRunner& runner,
   if (metadata_.vattr_id_to_file_path.size() !=
       metadata_.vattr_id_to_vattr_type.size())
     LOG_FATAL("vattr_id_to_file_path.size() != vattr_id_to_vattr_type.size()");
-  vattr_id_to_base_ptr_vec_.resize(metadata_.vattr_id_to_file_path.size());
+  vattr_id_to_base_pointers_.resize(metadata_.vattr_id_to_file_path.size());
+  vattr_id_to_types_.resize(metadata_.vattr_id_to_file_path.size());
   for (size_t i = 0; i < metadata_.vattr_id_to_file_path.size(); i++) {
     ParseVertexAttribute(i, *iter++);
   }
@@ -85,9 +86,9 @@ void MiniCleanGraph::ParseBitmapNoOwnership(
 
 void MiniCleanGraph::ParseVertexAttribute(
     size_t vattr_id, const std::vector<OwnedBuffer>& buffer_list) {
-  vattr_id_to_base_ptr_vec_[vattr_id] = std::make_pair(
-      reinterpret_cast<uint8_t*>(buffer_list.front().Get()),
-      metadata_.vattr_id_to_vattr_type[vattr_id]);
+  vattr_id_to_base_pointers_[vattr_id] =
+      reinterpret_cast<uint8_t*>(buffer_list.front().Get());
+  vattr_id_to_types_[vattr_id] = metadata_.vattr_id_to_vattr_type[vattr_id];
 }
 
 }  // namespace sics::graph::miniclean::data_structures::graphs
