@@ -25,6 +25,7 @@ struct MiniCleanSubgraphMetadata {
   using GraphID = miniclean::common::GraphID;
   using VertexID = miniclean::common::VertexID;
   using EdgeIndex = miniclean::common::EdgeIndex;
+  using VertexLabel = miniclean::common::VertexLabel;
 
  public:
   GraphID gid;
@@ -37,6 +38,7 @@ struct MiniCleanSubgraphMetadata {
   std::vector<std::string> vattr_id_to_file_path;
   std::vector<VertexAttributeType> vattr_id_to_vattr_type;
   std::vector<uint16_t> vattr_id_to_max_string_length;
+  std::vector<VertexLabel> vattr_id_to_vlabel_id;
 };
 
 struct MiniCleanGraphMetadata {
@@ -69,8 +71,8 @@ struct convert<sics::graph::miniclean::data_structures::graphs::
     node["num_vertices"] = subgraph_metadata.num_vertices;
     node["num_incoming_edges"] = subgraph_metadata.num_incoming_edges;
     node["num_outgoing_edges"] = subgraph_metadata.num_outgoing_edges;
-    node["max_vid"] = subgraph_metadata.max_vidg;
-    node["min_vid"] = subgraph_metadata.min_vidg;
+    node["max_vidg"] = subgraph_metadata.max_vidg;
+    node["min_vidg"] = subgraph_metadata.min_vidg;
     for (const auto& pair : subgraph_metadata.vlabel_id_to_vidl_range) {
       node["vlabel_id_to_vidl_range"].push_back(pair);
     }
@@ -102,12 +104,15 @@ struct convert<sics::graph::miniclean::data_structures::graphs::
           LOG_FATAL("Unknown vertex attribute type.");
       }
     }
+    for (const auto& vlabel : subgraph_metadata.vattr_id_to_vlabel_id) {
+      node["vattr_id_to_vlabel_id"].push_back((uint32_t)vlabel);
+    }
     return node;
   }
   static bool decode(const Node& node,
                      sics::graph::miniclean::data_structures::graphs::
                          MiniCleanSubgraphMetadata& subgraph_metadata) {
-    if (node.size() != 10) return false;
+    if (node.size() != 11) return false;
     subgraph_metadata.gid =
         node["gid"].as<sics::graph::miniclean::common::GraphID>();
     subgraph_metadata.num_vertices =
@@ -119,15 +124,15 @@ struct convert<sics::graph::miniclean::data_structures::graphs::
         node["num_outgoing_edges"]
             .as<sics::graph::miniclean::common::EdgeIndex>();
     subgraph_metadata.max_vidg =
-        node["max_vid"].as<sics::graph::miniclean::common::VertexID>();
+        node["max_vidg"].as<sics::graph::miniclean::common::VertexID>();
     subgraph_metadata.min_vidg =
-        node["min_vid"].as<sics::graph::miniclean::common::VertexID>();
+        node["min_vidg"].as<sics::graph::miniclean::common::VertexID>();
     subgraph_metadata.vlabel_id_to_vidl_range.reserve(
         node["vlabel_id_to_vidl_range"].size());
     for (const auto& pair : node["vlabel_id_to_vidl_range"]) {
-      subgraph_metadata.vlabel_id_to_vidl_range.push_back(
-          pair.as<std::pair<sics::graph::miniclean::common::VertexID,
-                            sics::graph::miniclean::common::VertexID>>());
+      subgraph_metadata.vlabel_id_to_vidl_range.push_back(pair.as<std::pair<
+          sics::graph::miniclean::common::VertexID,
+          sics::graph::miniclean::common::VertexID>>());
     }
     subgraph_metadata.vattr_id_to_file_path.reserve(
         node["vattr_id_to_file_path"].size());
@@ -156,6 +161,12 @@ struct convert<sics::graph::miniclean::data_structures::graphs::
     for (const auto& type : node["vattr_id_to_vattr_type"]) {
       subgraph_metadata.vattr_id_to_vattr_type.push_back(
           str2type[type.as<std::string>()]);
+    }
+    subgraph_metadata.vattr_id_to_vlabel_id.reserve(
+        node["vattr_id_to_vlabel_id"].size());
+    for (const auto& vlabel : node["vattr_id_to_vlabel_id"]) {
+      subgraph_metadata.vattr_id_to_vlabel_id.push_back(
+          vlabel.as<sics::graph::miniclean::common::VertexLabel>());
     }
     return true;
   }

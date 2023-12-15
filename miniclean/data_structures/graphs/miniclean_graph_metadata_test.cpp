@@ -30,6 +30,7 @@ class MiniCleanGraphMetadataTest : public ::testing::Test {
                                                   "file/path-10"};
     subgraph_metadata_0_.vattr_id_to_vattr_type = {kUInt16, kString};
     subgraph_metadata_0_.vattr_id_to_max_string_length = {0, 20};
+    subgraph_metadata_0_.vattr_id_to_vlabel_id = {0, 1};
 
     subgraph_metadata_1_.gid = 1;
     subgraph_metadata_1_.num_vertices = 6;
@@ -42,6 +43,7 @@ class MiniCleanGraphMetadataTest : public ::testing::Test {
                                                   "file/path-11"};
     subgraph_metadata_1_.vattr_id_to_vattr_type = {kUInt64, kString};
     subgraph_metadata_1_.vattr_id_to_max_string_length = {0, 100};
+    subgraph_metadata_1_.vattr_id_to_vlabel_id = {1, 1};
 
     metadata_.subgraphs = {subgraph_metadata_0_, subgraph_metadata_1_};
   }
@@ -109,6 +111,11 @@ TEST_F(MiniCleanGraphMetadataTest, TestDecode) {
     }
     EXPECT_EQ(graph_metadata.subgraphs[i].vattr_id_to_vattr_type.size(),
               metadata_.subgraphs[i].vattr_id_to_vattr_type.size());
+    for (size_t j = 0;
+         j < graph_metadata.subgraphs[i].vattr_id_to_vattr_type.size(); j++) {
+      EXPECT_EQ(graph_metadata.subgraphs[i].vattr_id_to_vattr_type[j],
+                metadata_.subgraphs[i].vattr_id_to_vattr_type[j]);
+    }
   }
 }
 

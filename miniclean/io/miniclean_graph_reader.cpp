@@ -32,6 +32,12 @@ void MiniCleanGraphReader::Read(ReadMessage* message,
   std::filesystem::current_path(root_path_ + "partition_result/");
   for (const auto& attr_path :
        graph_metadata.subgraphs[gid].vattr_id_to_file_path) {
+    // Determine whether the attribute is empty.
+    if (attr_path.empty()) {
+      std::vector<OwnedBuffer> file_buffers;
+      serialized_object->ReceiveBuffers(std::move(file_buffers));
+      continue;
+    }
     std::string canonical_attr_path =
         std::filesystem::canonical(attr_path).string();
     LoadBinFileAsBuffer(canonical_attr_path, serialized_object);

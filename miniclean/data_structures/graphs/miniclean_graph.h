@@ -40,23 +40,43 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
   void Deserialize(const TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override;
 
+  VertexID GetNumVertices() const { return metadata_.num_vertices; }
+
   VertexLabel GetVertexLabel(VertexID vidl) const;
 
-  template <typename T>
-  const T GetVertexAttribute(VertexID vidl, VertexAttributeID vattr_id) const {
+  const uint8_t* GetVertexAttributePtr(VertexID vidl,
+                                       VertexAttributeID vattr_id) const {
+    if (vattr_id_to_base_ptr_vec_[vattr_id].first == nullptr) {
+      throw std::runtime_error("The vertex do not have the attribute: " +
+                               std::to_string(vattr_id));
+    }
+
+    if (metadata_.vattr_id_to_vlabel_id[vattr_id] != GetVertexLabel(vidl)) {
+      throw std::runtime_error("The vertex do not have the attribute: " +
+                               std::to_string(vattr_id));
+    }
+
     uint8_t* base_ptr = vattr_id_to_base_ptr_vec_[vattr_id].first;
     VertexAttributeType vattr_type = vattr_id_to_base_ptr_vec_[vattr_id].second;
     VertexID relative_vid =
-        vid - metadata_.vlabel_id_to_vidl_range[GetVertexLabel(vidl)].first;
+        vidl - metadata_.vlabel_id_to_vidl_range[GetVertexLabel(vidl)].first;
+
     switch (vattr_type) {
-      case kString:
-        // `T` should be `char*`
-        auto max_string_length =
+      case kString: {
+        uint16_t max_string_length =
             metadata_.vattr_id_to_max_string_length[vattr_id];
-        return reinterpret_cast<T>(base_ptr + relative_vid * max_string_length);
+        return base_ptr + relative_vid * max_string_length;
+      }
+      case kUInt8:
+        return base_ptr + relative_vid * sizeof(uint8_t);
+      case kUInt16:
+        return base_ptr + relative_vid * sizeof(uint16_t);
+      case kUInt32:
+        return base_ptr + relative_vid * sizeof(uint32_t);
+      case kUInt64:
+        return base_ptr + relative_vid * sizeof(uint64_t);
       default:
-        // `T` should be `uint8_t`, `uint16_t`, `uint32_t`, or `uint64_t`
-        return reinterpret_cast<T*>(base_ptr)[relative_vid];
+        LOG_FATAL("Unsupported vertex attribute type: ", vattr_type);
     }
   }
 

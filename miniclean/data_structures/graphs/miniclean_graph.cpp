@@ -87,6 +87,11 @@ void MiniCleanGraph::ParseBitmapNoOwnership(
 
 void MiniCleanGraph::ParseVertexAttribute(
     size_t vattr_id, const std::vector<OwnedBuffer>& buffer_list) {
+  if (buffer_list.empty()) {
+    vattr_id_to_base_ptr_vec_[vattr_id] =
+        std::make_pair(nullptr, metadata_.vattr_id_to_vattr_type[vattr_id]);
+    return;
+  }
   vattr_id_to_base_ptr_vec_[vattr_id] =
       std::make_pair(reinterpret_cast<uint8_t*>(buffer_list.front().Get()),
                      metadata_.vattr_id_to_vattr_type[vattr_id]);
