@@ -26,25 +26,25 @@ void MiniCleanGraph::Deserialize(const TaskRunner& runner,
   auto iter = miniclean_graph_buffers.begin();
 
   // Parse subgraph CSR
-  ParseSubgraphCSR(*iter++);
+  ParseSubgraphCSR((*iter++).front());
 
   // Parse is-in-graph bitmap
-  ParseBitmapNoOwnership(*iter++);
+  ParseBitmapHandle((*iter++).front());
 
   // Parse vertex attribute
   if (metadata_.vattr_id_to_file_path.size() !=
       metadata_.vattr_id_to_vattr_type.size())
     LOG_FATAL("vattr_id_to_file_path.size() != vattr_id_to_vattr_type.size()");
-  vattr_id_to_base_ptr_vec_.resize(metadata_.vattr_id_to_file_path.size());
+  vattr_base_pointers_.resize(metadata_.vattr_id_to_file_path.size());
+  vattr_types_.resize(metadata_.vattr_id_to_file_path.size());
   for (size_t i = 0; i < metadata_.vattr_id_to_file_path.size(); i++) {
-    ParseVertexAttribute(i, *iter++);
+    ParseVertexAttribute(i, (*iter++).front());
   }
 }
 
-void MiniCleanGraph::ParseSubgraphCSR(
-    const std::vector<OwnedBuffer>& buffer_list) {
+void MiniCleanGraph::ParseSubgraphCSR(const OwnedBuffer& buffer) {
   // Fetch the OwnedBuffer object.
-  graph_base_pointer_ = buffer_list.front().Get();
+  graph_base_pointer_ = buffer.Get();
 
   // Compute the size of each buffer.
   size_t vertices_buffer_size = sizeof(VertexID) * metadata_.num_vertices;
@@ -78,23 +78,20 @@ void MiniCleanGraph::ParseSubgraphCSR(
       reinterpret_cast<VertexID*>(graph_base_pointer_ + start_outgoing_vidl);
 }
 
-void MiniCleanGraph::ParseBitmapNoOwnership(
-    const std::vector<OwnedBuffer>& buffer_list) {
-  is_in_graph_bitmap_.Init(
-      metadata_.num_vertices,
-      reinterpret_cast<uint64_t*>(buffer_list.front().Get()));
+void MiniCleanGraph::ParseBitmapHandle(const OwnedBuffer& buffer) {
+  is_in_graph_bitmap_.Init(metadata_.num_vertices,
+                           reinterpret_cast<uint64_t*>(buffer.Get()));
 }
 
 void MiniCleanGraph::ParseVertexAttribute(
-    size_t vattr_id, const std::vector<OwnedBuffer>& buffer_list) {
-  if (buffer_list.empty()) {
-    vattr_id_to_base_ptr_vec_[vattr_id] =
-        std::make_pair(nullptr, metadata_.vattr_id_to_vattr_type[vattr_id]);
+    size_t vattr_id, const OwnedBuffer& buffer) {
+  if (buffer.empty()) {
+    vattr_base_pointers_[vattr_id] = nullptr;
+    vattr_types_[vattr_id] = metadata_.vattr_id_to_vattr_type[vattr_id];
     return;
   }
-  vattr_id_to_base_ptr_vec_[vattr_id] =
-      std::make_pair(reinterpret_cast<uint8_t*>(buffer_list.front().Get()),
-                     metadata_.vattr_id_to_vattr_type[vattr_id]);
+  vattr_base_pointers_[vattr_id] = reinterpret_cast<uint8_t*>(buffer.Get());
+  vattr_types_[vattr_id] = metadata_.vattr_id_to_vattr_type[vattr_id];
 }
 
 VertexLabel MiniCleanGraph::GetVertexLabel(VertexID vidl) const {
