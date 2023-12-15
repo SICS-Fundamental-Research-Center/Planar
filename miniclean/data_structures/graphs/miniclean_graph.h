@@ -41,10 +41,9 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
                    std::unique_ptr<Serialized>&& serialized) override;
 
  private:
-  void ParseSubgraphCSR(const std::vector<OwnedBuffer>& buffer_list);
-  void ParseBitmapNoOwnership(const std::vector<OwnedBuffer>& buffer_list);
-  void ParseVertexAttribute(size_t vattr_id,
-                            const std::vector<OwnedBuffer>& buffer_list);
+  void ParseSubgraphCSR(const OwnedBuffer& buffer);
+  void ParseBitmapHandle(const OwnedBuffer& buffer);
+  void ParseVertexAttribute(size_t vattr_id, const OwnedBuffer& buffer);
 
   // Graph metadata
   const MiniCleanSubgraphMetadata metadata_;
