@@ -31,8 +31,8 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
   using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
 
  public:
-  explicit MiniCleanGraph(const MiniCleanSubgraphMetadata metadata,
-                          const VertexID total_vertex_num)
+  MiniCleanGraph(const MiniCleanSubgraphMetadata& metadata,
+                 VertexID total_vertex_num)
       : metadata_(metadata), total_vertex_num_(total_vertex_num) {}
   ~MiniCleanGraph() = default;
 
@@ -63,7 +63,7 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
   const MiniCleanSubgraphMetadata metadata_;
 
   // Total number of vertices in the graph.
-  const VertexID total_vertex_num_;
+  VertexID total_vertex_num_;
 
   // Serialized graph for I/O.
   std::unique_ptr<SerializedMiniCleanGraph> serialized_graph_;
