@@ -5,6 +5,7 @@
 
 #include <cstring>
 #include <memory>
+#include <string>
 
 #include "core/common/multithreading/thread_pool.h"
 #include "core/scheduler/message.h"
@@ -100,45 +101,40 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph0Test) {
     EXPECT_EQ(*((uint16_t*)vptr), expected_movie_year[vidl]);
   }
   // attr. 3: movie_genre:string
-  char* expected_movie_genre[5] = {"Mixed", "Adult", "Adult", "Adult", "Adult"};
+  std::string expected_movie_genre[5] = {"Mixed", "Adult", "Adult", "Adult",
+                                         "Adult"};
   for (VertexID vidl = 0; vidl < miniclean_graph.GetNumVertices(); vidl++) {
-    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(vidl, 3);
-    auto cmp_result = std::strcmp((char*)vptr, expected_movie_genre[vidl]);
-    EXPECT_EQ(cmp_result, 0);
+    std::string str((char*)miniclean_graph.GetVertexAttributePtr(vidl, 3));
+    EXPECT_EQ(str, expected_movie_genre[vidl]);
   }
   // attr. 4: movie_name:string
-  char* expected_movie_name[5] = {
+  std::string expected_movie_name[5] = {
       "Duckman: Private Dick/Family Man (1994) {Role with It (#4.7)}",
       "Gorgeous Rodeo Girl (2012) (V)", "Spring Break Orgy (2015) (V)",
       "The Uncut Version (1992) (V)", "We Go Deep 2 (1999) (V)"};
   for (VertexID vidl = 0; vidl < miniclean_graph.GetNumVertices(); vidl++) {
-    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(vidl, 4);
-    auto cmp_result = std::strcmp((char*)vptr, expected_movie_name[vidl]);
-    EXPECT_EQ(cmp_result, 0);
+    std::string str((char*)miniclean_graph.GetVertexAttributePtr(vidl, 4));
+    EXPECT_EQ(str, expected_movie_name[vidl]);
   }
   // attr. 5: movie_title:string
-  char* expected_movie_title[5] = {"Duckman: Private Dick/Family Man",
-                                   "Gorgeous Rodeo Girl", "Spring Break Orgy",
-                                   "The Uncut Version", "We Go Deep 2"};
+  std::string expected_movie_title[5] = {
+      "Duckman: Private Dick/Family Man", "Gorgeous Rodeo Girl",
+      "Spring Break Orgy", "The Uncut Version", "We Go Deep 2"};
   for (VertexID vidl = 0; vidl < miniclean_graph.GetNumVertices(); vidl++) {
-    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(vidl, 5);
-    auto cmp_result = std::strcmp((char*)vptr, expected_movie_title[vidl]);
-    EXPECT_EQ(cmp_result, 0);
+    std::string str((char*)miniclean_graph.GetVertexAttributePtr(vidl, 5));
+    EXPECT_EQ(str, expected_movie_title[vidl]);
   }
   // attr. 6: movie_episode_name:string
-  char* expected_movie_episode_name[5] = {"Role with It", "", "", "", ""};
+  std::string expected_movie_episode_name[5] = {"Role with It", "", "", "", ""};
   for (VertexID vidl = 0; vidl < miniclean_graph.GetNumVertices(); vidl++) {
-    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(vidl, 6);
-    auto cmp_result =
-        std::strcmp((char*)vptr, expected_movie_episode_name[vidl]);
-    EXPECT_EQ(cmp_result, 0);
+    std::string str((char*)miniclean_graph.GetVertexAttributePtr(vidl, 6));
+    EXPECT_EQ(str, expected_movie_episode_name[vidl]);
   }
   // attr. 7: movie_episode_id:string
-  char* expected_movie_episode_id[5] = {"#4.7", "", "", "", ""};
+  std::string expected_movie_episode_id[5] = {"#4.7", "", "", "", ""};
   for (VertexID vidl = 0; vidl < miniclean_graph.GetNumVertices(); vidl++) {
-    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(vidl, 7);
-    auto cmp_result = std::strcmp((char*)vptr, expected_movie_episode_id[vidl]);
-    EXPECT_EQ(cmp_result, 0);
+    std::string str((char*) miniclean_graph.GetVertexAttributePtr(vidl, 7));
+    EXPECT_EQ(str, expected_movie_episode_id[vidl]);
   }
 
   // check unexist attributes.
@@ -204,12 +200,11 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph1Test) {
     EXPECT_EQ(*((uint32_t*)vptr), expected_cast_id[vidl]);
   }
   // attr. 9: cast_name:string
-  char* expected_cast_name[4] = {"Billy_Glide", "Brett (IV)_",
+  std::string expected_cast_name[4] = {"Billy_Glide", "Brett (IV)_",
                                  "Hitomi_Kitagawa", "Tony_Everready"};
   for (VertexID vidl = 0; vidl < 4; vidl++) {
-    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(vidl, 9);
-    auto cmp_result = std::strcmp((char*)vptr, expected_cast_name[vidl]);
-    EXPECT_EQ(cmp_result, 0);
+    std::string str((char*)miniclean_graph.GetVertexAttributePtr(vidl, 9));
+    EXPECT_EQ(str, expected_cast_name[vidl]);
   }
 
   // attr. 10: director_vid:uint32_t
@@ -217,10 +212,9 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph1Test) {
   const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(4, 10);
   EXPECT_EQ(*((uint32_t*)vptr), expected_director_id);
   // attr. 11: director_name:string
-  char* expected_director_name = "Anthony (I)_Bell";
-  vptr = miniclean_graph.GetVertexAttributePtr(4, 11);
-  auto cmp_result = std::strcmp((char*)vptr, expected_director_name);
-  EXPECT_EQ(cmp_result, 0);
+  std::string expected_director_name = "Anthony (I)_Bell";
+  std::string str((char*) miniclean_graph.GetVertexAttributePtr(4, 11));
+  EXPECT_EQ(str, expected_director_name);
 
   // check unexist attributes.
   for (size_t i = 0; i < 4; i++) {
