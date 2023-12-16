@@ -31,8 +31,9 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
   using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
 
  public:
-  explicit MiniCleanGraph(const MiniCleanSubgraphMetadata metadata)
-      : metadata_(metadata) {}
+  explicit MiniCleanGraph(const MiniCleanSubgraphMetadata metadata,
+                          const VertexID total_vertex_num)
+      : metadata_(metadata), total_vertex_num_(total_vertex_num) {}
   ~MiniCleanGraph() = default;
 
   std::unique_ptr<Serialized> Serialize(const TaskRunner& runner) override;
@@ -50,7 +51,7 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
 
   const uint8_t* GetVertexAttributePtr(VertexID vidl,
                                        VertexAttributeID vattr_id) const;
-  
+
   bool IsInGraph(VertexID id) const { return is_in_graph_bitmap_.GetBit(id); }
 
  private:
@@ -60,6 +61,9 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
 
   // Graph metadata
   const MiniCleanSubgraphMetadata metadata_;
+
+  // Total number of vertices in the graph.
+  const VertexID total_vertex_num_;
 
   // Serialized graph for I/O.
   std::unique_ptr<SerializedMiniCleanGraph> serialized_graph_;

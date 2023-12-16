@@ -85,7 +85,7 @@ void MiniCleanGraph::ParseSubgraphCSR(const OwnedBuffer& buffer) {
 }
 
 void MiniCleanGraph::ParseBitmapHandle(const OwnedBuffer& buffer) {
-  is_in_graph_bitmap_.Init(metadata_.num_vertices,
+  is_in_graph_bitmap_.Init(total_vertex_num_,
                            reinterpret_cast<uint64_t*>(buffer.Get()));
 }
 

@@ -40,9 +40,10 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph0Test) {
   MiniCleanGraphReader reader(graph_home);
 
   // Load metadata.
-  YAML::Node graph_metadata;
-  EXPECT_NO_THROW(graph_metadata = YAML::LoadFile(
-                      graph_home + "partition_result/meta.yaml"));
+  YAML::Node node;
+  EXPECT_NO_THROW(
+      node = YAML::LoadFile(graph_home + "partition_result/meta.yaml"));
+  MiniCleanGraphMetadata graph_metadata = node.as<MiniCleanGraphMetadata>();
 
   // Initialize a `Serialized` object.
   std::unique_ptr<SerializedMiniCleanGraph> serialized_graph_ =
@@ -57,8 +58,8 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph0Test) {
   reader.Read(&read_message, nullptr);
 
   // Initialize MiniCleanGraph object for subgraph 0.
-  MiniCleanGraph miniclean_graph(
-      graph_metadata.as<MiniCleanGraphMetadata>().subgraphs[0]);
+  MiniCleanGraph miniclean_graph(graph_metadata.subgraphs[0],
+                                 graph_metadata.num_vertices);
 
   // Deserializing.
   ThreadPool thread_pool(1);
@@ -149,15 +150,15 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph0Test) {
   }
 }
 
-
 TEST_F(MiniCleanGraphReaderTest, ReadSubgraph1Test) {
   // Create a Reader.
   MiniCleanGraphReader reader(graph_home);
 
   // Load metadata.
-  YAML::Node graph_metadata;
-  EXPECT_NO_THROW(graph_metadata = YAML::LoadFile(
-                      graph_home + "partition_result/meta.yaml"));
+  YAML::Node node;
+  EXPECT_NO_THROW(
+      node = YAML::LoadFile(graph_home + "partition_result/meta.yaml"));
+  MiniCleanGraphMetadata graph_metadata = node.as<MiniCleanGraphMetadata>();
 
   // Initialize a `Serialized` object.
   std::unique_ptr<SerializedMiniCleanGraph> serialized_graph_ =
@@ -172,8 +173,8 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph1Test) {
   reader.Read(&read_message, nullptr);
 
   // Initialize MiniCleanGraph object for subgraph 1.
-  MiniCleanGraph miniclean_graph(
-      graph_metadata.as<MiniCleanGraphMetadata>().subgraphs[1]);
+  MiniCleanGraph miniclean_graph(graph_metadata.subgraphs[1],
+                                 graph_metadata.num_vertices);
 
   // Deserializing.
   ThreadPool thread_pool(1);
@@ -203,11 +204,11 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph1Test) {
     EXPECT_EQ(*((uint32_t*)vptr), expected_cast_id[vidl]);
   }
   // attr. 9: cast_name:string
-  char* expected_cast_name[4] = {"Billy_Glide", "Brett (IV)_", "Hitomi_Kitagawa", "Tony_Everready"};
+  char* expected_cast_name[4] = {"Billy_Glide", "Brett (IV)_",
+                                 "Hitomi_Kitagawa", "Tony_Everready"};
   for (VertexID vidl = 0; vidl < 4; vidl++) {
     const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(vidl, 9);
-    auto cmp_result =
-        std::strcmp((char*)vptr, expected_cast_name[vidl]);
+    auto cmp_result = std::strcmp((char*)vptr, expected_cast_name[vidl]);
     EXPECT_EQ(cmp_result, 0);
   }
 
@@ -218,8 +219,7 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph1Test) {
   // attr. 11: director_name:string
   char* expected_director_name = "Anthony (I)_Bell";
   vptr = miniclean_graph.GetVertexAttributePtr(4, 11);
-  auto cmp_result =
-      std::strcmp((char*)vptr, expected_director_name);
+  auto cmp_result = std::strcmp((char*)vptr, expected_director_name);
   EXPECT_EQ(cmp_result, 0);
 
   // check unexist attributes.
