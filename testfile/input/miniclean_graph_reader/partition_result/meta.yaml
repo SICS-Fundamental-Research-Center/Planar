@@ -1,14 +1,14 @@
 GraphMetadata:
-  max_vidg: 9
-  min_vidg: 0
+  max_global_vid: 9
+  min_global_vid: 0
   num_border_vertices: 5
   num_edges: 5
   num_subgraphs: 2
   num_vertices: 10
   subgraphs:
   - gid: 0
-    max_vidg: 4
-    min_vidg: 0
+    max_global_vid: 4
+    min_global_vid: 0
     num_incoming_edges: 0
     num_outgoing_edges: 5
     num_vertices: 5
@@ -64,7 +64,7 @@ GraphMetadata:
     - 1
     - 2
     - 2
-    vlabel_id_to_vidl_range:
+    vlabel_id_to_local_vid_range:
     - - 0
       - 4
     - - 4294967295
@@ -72,8 +72,8 @@ GraphMetadata:
     - - 4294967295
       - 4294967295
   - gid: 1
-    max_vidg: 9
-    min_vidg: 5
+    max_global_vid: 9
+    min_global_vid: 5
     num_incoming_edges: 5
     num_outgoing_edges: 0
     num_vertices: 5
@@ -129,14 +129,14 @@ GraphMetadata:
     - 1
     - 2
     - 2
-    vlabel_id_to_vidl_range:
+    vlabel_id_to_local_vid_range:
     - - 4294967295
       - 4294967295
     - - 0
       - 3
     - - 4
       - 4
-  vlabel_id_to_vidl_range:
+  vlabel_id_to_local_vid_range:
   - - 0
     - 4
   - - 5

@@ -59,17 +59,18 @@ void MiniCleanGraph::ParseSubgraphCSR(const OwnedBuffer& buffer) {
       sizeof(VertexID) * metadata_.num_incoming_edges;
 
   // Compute the start position of each buffer.
-  size_t start_vidl_to_vidg = 0;
-  size_t start_indegree = start_vidl_to_vidg + vertices_buffer_size;
+  size_t start_local_vid_to_global_vid = 0;
+  size_t start_indegree = start_local_vid_to_global_vid + vertices_buffer_size;
   size_t start_outdegree = start_indegree + vertices_buffer_size;
   size_t start_in_offset = start_outdegree + vertices_buffer_size;
   size_t start_out_offset = start_in_offset + offset_buffer_size;
-  size_t start_incoming_vidl = start_out_offset + offset_buffer_size;
-  size_t start_outgoing_vidl = start_incoming_vidl + incoming_edges_buffer_size;
+  size_t start_incoming_local_vid = start_out_offset + offset_buffer_size;
+  size_t start_outgoing_local_vid =
+      start_incoming_local_vid + incoming_edges_buffer_size;
 
   // Initialize base pointers.
-  vidl_to_vidg_base_pointer_ =
-      reinterpret_cast<VertexID*>(graph_base_pointer_ + start_vidl_to_vidg);
+  local_vid_to_global_vid_base_pointer_ = reinterpret_cast<VertexID*>(
+      graph_base_pointer_ + start_local_vid_to_global_vid);
   indegree_base_pointer_ =
       reinterpret_cast<VertexID*>(graph_base_pointer_ + start_indegree);
   outdegree_base_pointer_ =
@@ -78,10 +79,10 @@ void MiniCleanGraph::ParseSubgraphCSR(const OwnedBuffer& buffer) {
       reinterpret_cast<EdgeIndex*>(graph_base_pointer_ + start_in_offset);
   out_offset_base_pointer_ =
       reinterpret_cast<EdgeIndex*>(graph_base_pointer_ + start_out_offset);
-  incoming_vidl_base_pointer_ =
-      reinterpret_cast<VertexID*>(graph_base_pointer_ + start_incoming_vidl);
-  outgoing_vidl_base_pointer_ =
-      reinterpret_cast<VertexID*>(graph_base_pointer_ + start_outgoing_vidl);
+  incoming_local_vid_base_pointer_ = reinterpret_cast<VertexID*>(
+      graph_base_pointer_ + start_incoming_local_vid);
+  outgoing_local_vid_base_pointer_ = reinterpret_cast<VertexID*>(
+      graph_base_pointer_ + start_outgoing_local_vid);
 }
 
 void MiniCleanGraph::ParseBitmapHandle(const OwnedBuffer& buffer) {
@@ -95,10 +96,11 @@ void MiniCleanGraph::ParseVertexAttribute(size_t vattr_id,
   vattr_types_[vattr_id] = metadata_.vattr_id_to_vattr_type[vattr_id];
 }
 
-VertexLabel MiniCleanGraph::GetVertexLabel(VertexID vidl) const {
-  for (VertexLabel i = 0; i < metadata_.vlabel_id_to_vidl_range.size(); i++) {
-    if (vidl >= metadata_.vlabel_id_to_vidl_range[i].first &&
-        vidl <= metadata_.vlabel_id_to_vidl_range[i].second) {
+VertexLabel MiniCleanGraph::GetVertexLabel(VertexID local_vid) const {
+  for (VertexLabel i = 0; i < metadata_.vlabel_id_to_local_vid_range.size();
+       i++) {
+    if (local_vid >= metadata_.vlabel_id_to_local_vid_range[i].first &&
+        local_vid <= metadata_.vlabel_id_to_local_vid_range[i].second) {
       return i;
     }
   }
@@ -106,13 +108,13 @@ VertexLabel MiniCleanGraph::GetVertexLabel(VertexID vidl) const {
 }
 
 const uint8_t* MiniCleanGraph::GetVertexAttributePtr(
-    VertexID vidl, VertexAttributeID vattr_id) const {
+    VertexID local_vid, VertexAttributeID vattr_id) const {
   if (vattr_base_pointers_[vattr_id] == nullptr) {
     throw std::runtime_error("The vertex do not have the attribute: " +
                              std::to_string(vattr_id));
   }
 
-  if (metadata_.vattr_id_to_vlabel_id[vattr_id] != GetVertexLabel(vidl)) {
+  if (metadata_.vattr_id_to_vlabel_id[vattr_id] != GetVertexLabel(local_vid)) {
     throw std::runtime_error("The vertex do not have the attribute: " +
                              std::to_string(vattr_id));
   }
@@ -120,7 +122,8 @@ const uint8_t* MiniCleanGraph::GetVertexAttributePtr(
   uint8_t* base_ptr = vattr_base_pointers_[vattr_id];
   VertexAttributeType vattr_type = vattr_types_[vattr_id];
   VertexID relative_vid =
-      vidl - metadata_.vlabel_id_to_vidl_range[GetVertexLabel(vidl)].first;
+      local_vid -
+      metadata_.vlabel_id_to_local_vid_range[GetVertexLabel(local_vid)].first;
 
   switch (vattr_type) {
     case kString: {

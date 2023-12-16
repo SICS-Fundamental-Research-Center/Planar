@@ -43,16 +43,18 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
 
   VertexID GetNumVertices() const { return metadata_.num_vertices; }
 
-  VertexLabel GetVertexLabel(VertexID vidl) const;
+  VertexLabel GetVertexLabel(VertexID local_vid) const;
 
-  VertexID GetVertexGlobalID(VertexID vidl) const {
-    return vidl_to_vidg_base_pointer_[vidl];
+  VertexID GetVertexGlobalID(VertexID local_vid) const {
+    return local_vid_to_global_vid_base_pointer_[local_vid];
   }
 
-  const uint8_t* GetVertexAttributePtr(VertexID vidl,
+  const uint8_t* GetVertexAttributePtr(VertexID local_vid,
                                        VertexAttributeID vattr_id) const;
 
-  bool IsInGraph(VertexID id) const { return is_in_graph_bitmap_.GetBit(id); }
+  bool IsInGraph(VertexID local_vid) const {
+    return is_in_graph_bitmap_.GetBit(local_vid);
+  }
 
  private:
   void ParseSubgraphCSR(const OwnedBuffer& buffer);
@@ -70,13 +72,13 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
 
   // CSR base pointer
   uint8_t* graph_base_pointer_;
-  VertexID* vidl_to_vidg_base_pointer_;
+  VertexID* local_vid_to_global_vid_base_pointer_;
   VertexID* indegree_base_pointer_;
   VertexID* outdegree_base_pointer_;
   EdgeIndex* in_offset_base_pointer_;
   EdgeIndex* out_offset_base_pointer_;
-  VertexID* incoming_vidl_base_pointer_;
-  VertexID* outgoing_vidl_base_pointer_;
+  VertexID* incoming_local_vid_base_pointer_;
+  VertexID* outgoing_local_vid_base_pointer_;
 
   // Bitmap `is_in_graph`
   // Note: the ownership of `is_in_graph` is not owned by the bitmap since the
