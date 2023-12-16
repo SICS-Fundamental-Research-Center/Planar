@@ -38,7 +38,7 @@ void MiniCleanGraph::Deserialize(const TaskRunner& runner,
   vattr_base_pointers_.resize(metadata_.vattr_id_to_file_path.size());
   vattr_types_.resize(metadata_.vattr_id_to_file_path.size());
   for (size_t i = 0; i < metadata_.vattr_id_to_file_path.size(); i++) {
-    if ((*iter).empty()) {
+    if (iter->empty()) {
       vattr_base_pointers_[i] = nullptr;
       vattr_types_[i] = metadata_.vattr_id_to_vattr_type[i];
       iter++;
