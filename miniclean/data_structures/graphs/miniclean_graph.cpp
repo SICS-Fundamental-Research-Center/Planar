@@ -110,13 +110,11 @@ VertexLabel MiniCleanGraph::GetVertexLabel(VertexID local_vid) const {
 const uint8_t* MiniCleanGraph::GetVertexAttributePtr(
     VertexID local_vid, VertexAttributeID vattr_id) const {
   if (vattr_base_pointers_[vattr_id] == nullptr) {
-    throw std::runtime_error("The vertex do not have the attribute: " +
-                             std::to_string(vattr_id));
+    LOGF_FATAL("The vertex do not have the attribute: {}", vattr_id);
   }
 
   if (metadata_.vattr_id_to_vlabel_id[vattr_id] != GetVertexLabel(local_vid)) {
-    throw std::runtime_error("The vertex do not have the attribute: " +
-                             std::to_string(vattr_id));
+    LOGF_FATAL("The vertex do not have the attribute: {}", vattr_id);
   }
 
   uint8_t* base_ptr = vattr_base_pointers_[vattr_id];
