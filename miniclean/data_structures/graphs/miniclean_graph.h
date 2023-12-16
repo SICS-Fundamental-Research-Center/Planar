@@ -44,8 +44,14 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
 
   VertexLabel GetVertexLabel(VertexID vidl) const;
 
+  VertexID GetVertexGlobalID(VertexID vidl) const {
+    return vidl_to_vidg_base_pointer_[vidl];
+  }
+
   const uint8_t* GetVertexAttributePtr(VertexID vidl,
                                        VertexAttributeID vattr_id) const;
+  
+  bool IsInGraph(VertexID id) const { return is_in_graph_bitmap_.GetBit(id); }
 
  private:
   void ParseSubgraphCSR(const OwnedBuffer& buffer);

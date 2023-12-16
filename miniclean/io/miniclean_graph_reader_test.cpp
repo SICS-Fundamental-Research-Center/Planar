@@ -70,6 +70,15 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph0Test) {
     EXPECT_EQ(miniclean_graph.GetVertexLabel(vidl), 0);
   }
 
+  // Check bitmap.
+  for (VertexID vidl = 0; vidl < miniclean_graph.GetNumVertices(); vidl++) {
+    VertexID vidg = miniclean_graph.GetVertexGlobalID(vidl);
+    EXPECT_TRUE(miniclean_graph.IsInGraph(vidg));
+  }
+  for (VertexID vidg = 5; vidg < 10; vidg++) {
+    EXPECT_FALSE(miniclean_graph.IsInGraph(vidg));
+  }
+
   // Check vertex attribute.
   // attr. 0: movie_vid:uint32_t
   uint32_t expected_movie_id[5] = {635340, 3507988, 4643261, 4853399, 5013154};
@@ -175,6 +184,15 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph1Test) {
   EXPECT_EQ(miniclean_graph.GetVertexLabel(4), 2);
   for (VertexID vidl = 0; vidl < 4; vidl++) {
     EXPECT_EQ(miniclean_graph.GetVertexLabel(vidl), 1);
+  }
+
+  // Check bitmap.
+  for (VertexID vidl = 0; vidl < miniclean_graph.GetNumVertices(); vidl++) {
+    VertexID vidg = miniclean_graph.GetVertexGlobalID(vidl);
+    EXPECT_TRUE(miniclean_graph.IsInGraph(vidg));
+  }
+  for (VertexID vidg = 0; vidg < 5; vidg++) {
+    EXPECT_FALSE(miniclean_graph.IsInGraph(vidg));
   }
 
   // Check vertex attribute.
