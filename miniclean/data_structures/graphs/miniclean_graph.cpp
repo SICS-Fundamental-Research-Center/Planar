@@ -24,10 +24,10 @@ void MiniCleanGraph::Deserialize(const TaskRunner& runner,
   auto iter = miniclean_graph_buffers.begin();
 
   // Parse subgraph CSR
-  ParseSubgraphCSR((*iter++).front());
+  ParseSubgraphCSR((iter++)->front());
 
   // Parse is-in-graph bitmap
-  ParseBitmapHandle((*iter++).front());
+  ParseBitmapHandle((iter++)->front());
 
   // Parse vertex attribute
   if (metadata_.vattr_id_to_file_path.size() !=
@@ -36,7 +36,7 @@ void MiniCleanGraph::Deserialize(const TaskRunner& runner,
   vattr_base_pointers_.resize(metadata_.vattr_id_to_file_path.size());
   vattr_types_.resize(metadata_.vattr_id_to_file_path.size());
   for (size_t i = 0; i < metadata_.vattr_id_to_file_path.size(); i++) {
-    ParseVertexAttribute(i, (*iter++).front());
+    ParseVertexAttribute(i, (iter++)->front());
   }
 }
 
