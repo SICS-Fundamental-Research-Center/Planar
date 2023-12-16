@@ -105,4 +105,40 @@ VertexLabel MiniCleanGraph::GetVertexLabel(VertexID vidl) const {
   LOG_FATAL("Vertex label not found.");
 }
 
+const uint8_t* MiniCleanGraph::GetVertexAttributePtr(
+    VertexID vidl, VertexAttributeID vattr_id) const {
+  if (vattr_base_pointers_[vattr_id] == nullptr) {
+    throw std::runtime_error("The vertex do not have the attribute: " +
+                             std::to_string(vattr_id));
+  }
+
+  if (metadata_.vattr_id_to_vlabel_id[vattr_id] != GetVertexLabel(vidl)) {
+    throw std::runtime_error("The vertex do not have the attribute: " +
+                             std::to_string(vattr_id));
+  }
+
+  uint8_t* base_ptr = vattr_base_pointers_[vattr_id];
+  VertexAttributeType vattr_type = vattr_types_[vattr_id];
+  VertexID relative_vid =
+      vidl - metadata_.vlabel_id_to_vidl_range[GetVertexLabel(vidl)].first;
+
+  switch (vattr_type) {
+    case kString: {
+      uint16_t max_string_length =
+          metadata_.vattr_id_to_max_string_length[vattr_id];
+      return base_ptr + relative_vid * max_string_length;
+    }
+    case kUInt8:
+      return base_ptr + relative_vid * sizeof(uint8_t);
+    case kUInt16:
+      return base_ptr + relative_vid * sizeof(uint16_t);
+    case kUInt32:
+      return base_ptr + relative_vid * sizeof(uint32_t);
+    case kUInt64:
+      return base_ptr + relative_vid * sizeof(uint64_t);
+    default:
+      LOG_FATAL("Unsupported vertex attribute type: ", vattr_type);
+  }
+}
+
 }  // namespace sics::graph::miniclean::data_structures::graphs
