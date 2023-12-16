@@ -29,9 +29,12 @@ GraphMetadata:
       vattr_id_to_file_path:
         - file/path-00
         - file/path-10
+      vattr_id_to_max_string_length:
+        - 0
+        - 20
       vattr_id_to_vattr_type:
-        - type-00
-        - type-10
+        - uint16_t
+        - string
     - gid: 1
       num_vertices: 6
       num_incoming_edges: 8
@@ -48,6 +51,9 @@ GraphMetadata:
       vattr_id_to_file_path:
         - file/path-01
         - file/path-11
+      vattr_id_to_max_string_length:
+        - 0
+        - 100
       vattr_id_to_vattr_type:
-        - type-01
-        - type-11
+        - uint64_t
+        - string

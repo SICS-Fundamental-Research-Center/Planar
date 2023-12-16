@@ -5,12 +5,15 @@
 #include <memory>
 #include <vector>
 
+#include "core/common/bitmap_no_ownership.h"
 #include "core/common/multithreading/task_runner.h"
 #include "core/data_structures/buffer.h"
 #include "core/data_structures/serializable.h"
 #include "core/data_structures/serialized.h"
+#include "core/util/logging.h"
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/graphs/miniclean_graph_metadata.h"
+#include "miniclean/data_structures/graphs/serialized_miniclean_graph.h"
 
 namespace sics::graph::miniclean::data_structures::graphs {
 
@@ -19,6 +22,7 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
   using Serialized = sics::graph::core::data_structures::Serialized;
   using TaskRunner = sics::graph::core::common::TaskRunner;
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
+  using BitmapHandle = sics::graph::core::common::BitmapNoOwnerShip;
   using GraphID = sics::graph::miniclean::common::GraphID;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
   using VertexID = sics::graph::miniclean::common::VertexID;
@@ -27,9 +31,8 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
   using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
 
  public:
-  explicit MiniCleanGraph(const MiniCleanGraphMetadata metadata,
-                          sics::graph::miniclean::common::GraphID gid)
-      : gid_(gid), metadata_(metadata) {}
+  explicit MiniCleanGraph(const MiniCleanSubgraphMetadata metadata)
+      : metadata_(metadata) {}
   ~MiniCleanGraph() = default;
 
   std::unique_ptr<Serialized> Serialize(const TaskRunner& runner) override;
@@ -38,12 +41,15 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
                    std::unique_ptr<Serialized>&& serialized) override;
 
  private:
-  void ParseSubgraphCSR(const std::vector<OwnedBuffer>& buffer_list);
-
-  GraphID gid_;
+  void ParseSubgraphCSR(const OwnedBuffer& buffer);
+  void ParseBitmapHandle(const OwnedBuffer& buffer);
+  void ParseVertexAttribute(size_t vattr_id, const OwnedBuffer& buffer);
 
   // Graph metadata
-  const MiniCleanGraphMetadata metadata_;
+  const MiniCleanSubgraphMetadata metadata_;
+
+  // Serialized graph for I/O.
+  std::unique_ptr<SerializedMiniCleanGraph> serialized_graph_;
 
   // CSR base pointer
   uint8_t* graph_base_pointer_;
@@ -55,8 +61,15 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
   VertexID* incoming_vidl_base_pointer_;
   VertexID* outgoing_vidl_base_pointer_;
 
-  // Graph attributes
-  std::vector<uint8_t*> vattr_id_to_base_ptr_vec_;
+  // Bitmap `is_in_graph`
+  // Note: the ownership of `is_in_graph` is not owned by the bitmap since the
+  // memory is not allocated by itself and it would not free the memory when
+  // destructing.
+  BitmapHandle is_in_graph_bitmap_;
+
+  // Vertex attributes
+  std::vector<uint8_t*> vattr_base_pointers_;
+  std::vector<VertexAttributeType> vattr_types_;
 };
 }  // namespace sics::graph::miniclean::data_structures::graphs
 

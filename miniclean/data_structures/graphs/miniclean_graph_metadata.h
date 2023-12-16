@@ -3,12 +3,22 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <map>
 #include <string>
 #include <vector>
 
+#include "core/util/logging.h"
 #include "miniclean/common/types.h"
 
 namespace sics::graph::miniclean::data_structures::graphs {
+
+typedef enum : uint8_t {
+  kUInt8 = 0,
+  kUInt16,
+  kUInt32,
+  kUInt64,
+  kString
+} VertexAttributeType;
 
 struct MiniCleanSubgraphMetadata {
  private:
@@ -25,7 +35,8 @@ struct MiniCleanSubgraphMetadata {
   VertexID min_vidg;
   std::vector<std::pair<VertexID, VertexID>> vlabel_id_to_vidl_range;
   std::vector<std::string> vattr_id_to_file_path;
-  std::vector<std::string> vattr_id_to_vattr_type;
+  std::vector<VertexAttributeType> vattr_id_to_vattr_type;
+  std::vector<uint16_t> vattr_id_to_max_string_length;
 };
 
 struct MiniCleanGraphMetadata {
@@ -66,15 +77,37 @@ struct convert<sics::graph::miniclean::data_structures::graphs::
     for (const auto& path : subgraph_metadata.vattr_id_to_file_path) {
       node["vattr_id_to_file_path"].push_back(path);
     }
+    for (const auto& max_string_length :
+         subgraph_metadata.vattr_id_to_max_string_length) {
+      node["vattr_id_to_max_string_length"].push_back(max_string_length);
+    }
     for (const auto& type : subgraph_metadata.vattr_id_to_vattr_type) {
-      node["vattr_id_to_vattr_type"].push_back(type);
+      switch (type) {
+        case sics::graph::miniclean::data_structures::graphs::kUInt8:
+          node["vattr_id_to_vattr_type"].push_back("uint8_t");
+          break;
+        case sics::graph::miniclean::data_structures::graphs::kUInt16:
+          node["vattr_id_to_vattr_type"].push_back("uint16_t");
+          break;
+        case sics::graph::miniclean::data_structures::graphs::kUInt32:
+          node["vattr_id_to_vattr_type"].push_back("uint32_t");
+          break;
+        case sics::graph::miniclean::data_structures::graphs::kUInt64:
+          node["vattr_id_to_vattr_type"].push_back("uint64_t");
+          break;
+        case sics::graph::miniclean::data_structures::graphs::kString:
+          node["vattr_id_to_vattr_type"].push_back("string");
+          break;
+        default:
+          LOG_FATAL("Unknown vertex attribute type.");
+      }
     }
     return node;
   }
   static bool decode(const Node& node,
                      sics::graph::miniclean::data_structures::graphs::
                          MiniCleanSubgraphMetadata& subgraph_metadata) {
-    if (node.size() != 9) return false;
+    if (node.size() != 10) return false;
     subgraph_metadata.gid =
         node["gid"].as<sics::graph::miniclean::common::GraphID>();
     subgraph_metadata.num_vertices =
@@ -101,11 +134,28 @@ struct convert<sics::graph::miniclean::data_structures::graphs::
     for (const auto& path : node["vattr_id_to_file_path"]) {
       subgraph_metadata.vattr_id_to_file_path.push_back(path.as<std::string>());
     }
+    for (const auto& max_string_length : node["vattr_id_to_max_string_length"]) {
+      subgraph_metadata.vattr_id_to_max_string_length.push_back(
+          max_string_length.as<uint16_t>());
+    }
     subgraph_metadata.vattr_id_to_vattr_type.reserve(
         node["vattr_id_to_vattr_type"].size());
+    std::map<
+        std::string,
+        sics::graph::miniclean::data_structures::graphs::VertexAttributeType>
+        str2type = {{"uint8_t",
+                     sics::graph::miniclean::data_structures::graphs::kUInt8},
+                    {"uint16_t",
+                     sics::graph::miniclean::data_structures::graphs::kUInt16},
+                    {"uint32_t",
+                     sics::graph::miniclean::data_structures::graphs::kUInt32},
+                    {"uint64_t",
+                     sics::graph::miniclean::data_structures::graphs::kUInt64},
+                    {"string",
+                     sics::graph::miniclean::data_structures::graphs::kString}};
     for (const auto& type : node["vattr_id_to_vattr_type"]) {
       subgraph_metadata.vattr_id_to_vattr_type.push_back(
-          type.as<std::string>());
+          str2type[type.as<std::string>()]);
     }
     return true;
   }
