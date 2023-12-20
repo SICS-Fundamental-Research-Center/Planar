@@ -1,133 +1,441 @@
 #include "miniclean/data_structures/gcr/gcr.h"
 
-#include <mutex>
+#include <map>
 
-#include "core/util/logging.h"
+#include "miniclean/common/types.h"
+#include "miniclean/data_structures/gcr/predicate.h"
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
-using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
-using VertexAttributeValue =
-    sics::graph::miniclean::common::VertexAttributeValue;
+using PathPattern = sics::graph::miniclean::common::PathPattern;
 using PathPatternID = sics::graph::miniclean::common::PathPatternID;
+using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+using VertexID = sics::graph::miniclean::common::VertexID;
 
-void GCR::Init(
-    MiniCleanCSRGraph* graph,
-    std::vector<std::vector<std::vector<VertexID>>>& path_instances) {
-  ThreadPool thread_pool(20);
-
-  size_t num_segments = 5;
-  TaskPackage task_package;
-  task_package.reserve(num_segments * num_segments);
-
-  for (size_t i = 0; i < num_segments * num_segments; i++) {
-    task_package.emplace_back(std::bind(&GCR::InitTask, this, graph,
-                                        &path_instances, num_segments, i));
-  }
-
-  thread_pool.SubmitSync(task_package);
-  task_package.clear();
+void GCR::Init() {
+  left_star_.InitializeStarRule();
+  right_star_.InitializeStarRule();
+  bucket_id_ = BucketID(MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID,
+                        MAX_VERTEX_LABEL, MAX_VERTEX_ATTRIBUTE_ID);
+  // First item is <vertical extension id, vertical extension num>.
+  // Their value is (0, 1) since we start with two isolated star centers (one
+  // vertical extension).
+  mining_progress_log_.reserve((Configurations::Get()->max_path_num_ + 1) * 2);
+  mining_progress_log_.emplace_back(0, 1);
 }
 
-void GCR::InitTask(
-    MiniCleanCSRGraph* graph,
-    std::vector<std::vector<std::vector<VertexID>>>* path_instances,
-    size_t num_segments, size_t task_id) {
-  // Retrieve path instances of left and right path pattern.
-  std::vector<std::vector<VertexID>>* left_path_instances =
-      &(*path_instances)[dual_pattern_.first.front()];
-  std::vector<std::vector<VertexID>>* right_path_instances =
-      &(*path_instances)[dual_pattern_.second.front()];
+void GCR::ExtendVertically(const GCRVerticalExtension& vertical_extension,
+                           const MiniCleanCSRGraph& graph,
+                           size_t vertical_extension_id,
+                           size_t vertical_extension_num) {
+  mining_progress_log_.emplace_back(vertical_extension_id,
+                                    vertical_extension_num);
+  if (vertical_extension.extend_to_left) {
+    AddPathRuleToLeftStar(vertical_extension.path_rule);
+    left_star_.UpdateValidVertexBucket(graph);
+  } else {
+    AddPathRuleToRigthStar(vertical_extension.path_rule);
+    right_star_.UpdateValidVertexBucket(graph);
+  }
+}
 
-  std::list<std::pair<std::list<PathInstanceID>, std::list<PathInstanceID>>>
-      local_gcr_instances;
-
-  size_t left_segment_size = left_path_instances->size() / num_segments + 1;
-  size_t right_segment_size = right_path_instances->size() / num_segments + 1;
-
-  // TODO: (bai-wenchao) A unique pair of center can at most contribute 1
-  // support. Fix this mistake when instance tree is built.
-  size_t local_support = 0;
-  size_t local_match = 0;
-
-  size_t left_segment_id = task_id / num_segments;
-  size_t right_segment_id = task_id % num_segments;
-
-  for (PathInstanceID i = left_segment_id * left_segment_size;
-       i < (left_segment_id + 1) * left_segment_size; i++) {
-    for (PathInstanceID j = right_segment_id * right_segment_size;
-         j < (right_segment_id + 1) * right_segment_size; j++) {
-      if (i >= left_path_instances->size() ||
-          j >= right_path_instances->size()) {
-        break;
-      }
-      bool is_precondition_satisfied = true;
-      bool is_consequence_satisfied = true;
-      // Check preconditions.
-      for (const auto& precondition : preconditions_) {
-        if (precondition->get_predicate_type() == kConstantPredicate) {
-          ConstantPredicate* constant_precondition =
-              dynamic_cast<ConstantPredicate*>(precondition);
-          if (constant_precondition->is_in_lhs_pattern()) {
-            is_precondition_satisfied = constant_precondition->ConstantCompare(
-                graph, (*left_path_instances)[i]);
-          } else {
-            is_precondition_satisfied = constant_precondition->ConstantCompare(
-                graph, (*right_path_instances)[j]);
-          }
-          if (!is_precondition_satisfied) {
-            break;
-          }
-        } else if (precondition->get_predicate_type() == kVariablePredicate) {
-          VariablePredicate* variable_precondition =
-              dynamic_cast<VariablePredicate*>(precondition);
-
-          is_precondition_satisfied = variable_precondition->VariableCompare(
-              graph, (*left_path_instances)[i], (*right_path_instances)[j]);
-
-          if (!is_precondition_satisfied) {
-            break;
-          }
-        } else {
-          LOG_FATAL("Unsupported predicate type.");
-        }
-      }
-      if (!is_precondition_satisfied) {
-        continue;
-      }
-      local_match++;
-      // Check consequences.
-      if (consequence_->get_predicate_type() == kConstantPredicate) {
-        ConstantPredicate* constant_consequence =
-            dynamic_cast<ConstantPredicate*>(consequence_);
-        if (constant_consequence->is_in_lhs_pattern()) {
-          is_consequence_satisfied = constant_consequence->ConstantCompare(
-              graph, (*left_path_instances)[i]);
-        } else {
-          is_consequence_satisfied = constant_consequence->ConstantCompare(
-              graph, (*right_path_instances)[j]);
-        }
-      } else if (consequence_->get_predicate_type() == kVariablePredicate) {
-        VariablePredicate* variable_consequence =
-            dynamic_cast<VariablePredicate*>(consequence_);
-        is_consequence_satisfied = variable_consequence->VariableCompare(
-            graph, (*left_path_instances)[i], (*right_path_instances)[j]);
+void GCR::ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
+                             const MiniCleanCSRGraph& graph,
+                             size_t horizontal_extension_id,
+                             size_t horizontal_extension_num) {
+  set_consequence(horizontal_extension.consequence);
+  for (const auto& c_variable_predicate :
+       horizontal_extension.variable_predicates) {
+    AddVariablePredicateToBack(c_variable_predicate);
+  }
+  mining_progress_log_.emplace_back(horizontal_extension_id,
+                                    horizontal_extension_num);
+  const auto& index_collection = left_star_.get_index_collection();
+  // Update vertex buckets.
+  // Check previous buckets.
+  size_t max_bucket_num = 0;
+  ConcreteVariablePredicate max_bucket_num_variable_predicate;
+  bool should_rebucket = false;
+  // Get current bucket num and store it in
+  if (bucket_id_.left_label != MAX_VERTEX_LABEL) {
+    max_bucket_num =
+        index_collection.GetAttributeBucketByVertexLabel(bucket_id_.left_label)
+            .at(bucket_id_.left_attribute_id)
+            .size();
+  }
+  for (const auto& c_variable_predicat :
+       horizontal_extension.variable_predicates) {
+    auto left_path_index = c_variable_predicat.get_left_path_index();
+    auto right_path_index = c_variable_predicat.get_right_path_index();
+    auto left_vertex_index = c_variable_predicat.get_left_vertex_index();
+    auto right_vertex_index = c_variable_predicat.get_right_vertex_index();
+    auto left_label = c_variable_predicat.get_left_label();
+    auto right_label = c_variable_predicat.get_right_label();
+    auto left_attr_id = c_variable_predicat.get_left_attribute_id();
+    auto right_attr_id = c_variable_predicat.get_right_attribute_id();
+    if (left_path_index != 0 || left_vertex_index != 0 ||
+        right_path_index != 0 || right_vertex_index != 0)
+      continue;
+    size_t bucket_size =
+        index_collection.GetAttributeBucketByVertexLabel(left_label)
+            .at(left_attr_id)
+            .size();
+    if (index_collection.GetAttributeBucketByVertexLabel(right_label)
+            .at(right_attr_id)
+            .size() != bucket_size)
+      LOG_FATAL("Unequal bucket size between left side and right side.");
+    if (bucket_size > max_bucket_num) {
+      max_bucket_num = bucket_size;
+      max_bucket_num_variable_predicate = c_variable_predicat;
+      if (bucket_id_.left_label == left_label &&
+          bucket_id_.left_attribute_id == left_attr_id &&
+          bucket_id_.right_label == right_label &&
+          bucket_id_.right_attribute_id == right_attr_id) {
+        should_rebucket = false;
       } else {
-        LOG_FATAL("Unsupported predicate type.");
+        should_rebucket = true;
       }
-
-      if (is_consequence_satisfied) {
-        local_support++;
-        local_gcr_instances.push_back(std::make_pair(
-            std::list<PathInstanceID>{i}, std::list<PathInstanceID>{j}));
-      }
-
-      std::lock_guard<std::mutex> lock(mutex_);
-      set_local_support(local_support);
-      set_local_match(local_match);
-      AddGCRInstancesToBack(local_gcr_instances);
     }
   }
+  if (should_rebucket) {
+    bucket_id_.left_label = max_bucket_num_variable_predicate.get_left_label();
+    bucket_id_.left_attribute_id =
+        max_bucket_num_variable_predicate.get_left_attribute_id();
+    bucket_id_.right_label =
+        max_bucket_num_variable_predicate.get_right_label();
+    bucket_id_.right_attribute_id =
+        max_bucket_num_variable_predicate.get_right_attribute_id();
+    InitializeBuckets(graph, max_bucket_num_variable_predicate);
+  }
+}
+
+std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
+    const MiniCleanCSRGraph& graph) const {
+  size_t support = 0;
+  size_t match = 0;
+
+  bool preconditions_match = true;
+  const auto& left_bucket = left_star_.get_valid_vertex_bucket();
+  const auto& right_bucket = right_star_.get_valid_vertex_bucket();
+
+  if (left_bucket.size() == 0 || right_bucket.size() == 0) {
+    LOGF_FATAL("Empty bucket, left bucket.size: {}, right bucket.size: {}",
+               left_bucket.size(), right_bucket.size());
+  }
+
+  if (left_bucket.size() == 1) {
+    if (right_bucket.size() != 1)
+      LOG_FATAL("Unequal bucket nums between left side and right side.");
+    // Bucketing for temporary usage.
+    auto left_path_index = consequence_.get_left_path_index();
+    auto right_path_index = consequence_.get_right_path_index();
+    auto left_vertex_index = consequence_.get_left_vertex_index();
+    auto right_vertex_index = consequence_.get_right_vertex_index();
+    auto left_label = consequence_.get_left_label();
+    auto right_label = consequence_.get_right_label();
+    auto left_attr_id = consequence_.get_left_attribute_id();
+    auto right_attr_id = consequence_.get_right_attribute_id();
+    if (left_attr_id == MAX_VERTEX_ATTRIBUTE_ID ||
+        right_attr_id == MAX_VERTEX_ATTRIBUTE_ID) {
+      // Compute the intersection of the two buckets.
+      for (const auto& vid : left_bucket[0]) {
+        if (right_bucket[0].count(vid) > 0) {
+          support++;
+        }
+      }
+      return std::make_pair(left_bucket[0].size() * right_bucket[0].size(),
+                            support);
+    }
+    if (left_path_index != 0 || left_vertex_index != 0 ||
+        right_path_index != 0 || right_vertex_index != 0)
+      LOG_FATAL("Invalid consequence: Not located in the center node.");
+    const auto& index_collection = left_star_.get_index_collection();
+    size_t bucket_size =
+        index_collection.GetAttributeBucketByVertexLabel(left_label)
+            .at(left_attr_id)
+            .size();
+    size_t right_bucket_size =
+        index_collection.GetAttributeBucketByVertexLabel(right_label)
+            .at(right_attr_id)
+            .size();
+    if (bucket_size != right_bucket_size)
+      LOG_FATAL("Unequal bucket size between left side and right side.");
+    std::vector<size_t> left_bucket_tmp(bucket_size, 0);
+    std::vector<size_t> right_bucket_tmp(bucket_size, 0);
+    // Scan the left bucket.
+    for (const auto& vid : left_bucket[0]) {
+      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
+      if (value == MAX_VERTEX_ATTRIBUTE_VALUE) {
+        LOG_FATAL("Invalid attribute value: MAX_VERTEX_ATTRIBUTE_VALUE.");
+      }
+      left_bucket_tmp[value]++;
+    }
+    // Scan the right bucket.
+    for (const auto& vid : right_bucket[0]) {
+      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
+      if (value == MAX_VERTEX_ATTRIBUTE_VALUE) {
+        LOG_FATAL("Invalid attribute value: MAX_VERTEX_ATTRIBUTE_VALUE.");
+      }
+      right_bucket_tmp[value]++;
+    }
+    // Compute support.
+    for (size_t i = 0; i < bucket_size; i++) {
+      support += left_bucket_tmp[i] * right_bucket_tmp[i];
+    }
+    return std::make_pair(bucket_size * bucket_size, support);
+  }
+
+  if (left_bucket.size() != right_bucket.size())
+    LOG_FATAL("Unequal bucket nums between left side and right side.");
+  for (size_t i = 0; i < left_bucket.size(); i++) {
+    for (auto iter_l = left_bucket[i].begin(); iter_l != left_bucket[i].end();
+         iter_l++) {
+      for (auto iter_r = right_bucket[i].begin();
+           iter_r != right_bucket[i].end(); iter_r++) {
+        // Test preconditions.
+        preconditions_match = true;
+        for (const auto& variable_predicate : variable_predicates_) {
+          if (!TestVariablePredicate(graph, variable_predicate, *iter_l,
+                                     *iter_r)) {
+            preconditions_match = false;
+            break;
+          }
+        }
+        if (preconditions_match) {
+          match++;
+          // Test consequence.
+          if (TestVariablePredicate(graph, consequence_, *iter_l, *iter_r)) {
+            support++;
+          }
+        }
+      }
+    }
+  }
+  return std::make_pair(match, support);
+}
+
+void GCR::InitializeBuckets(
+    const MiniCleanCSRGraph& graph,
+    const ConcreteVariablePredicate& c_variable_predicate) {
+  const auto& index_collection = left_star_.get_index_collection();
+  auto left_label = c_variable_predicate.get_left_label();
+  auto left_attr_id = c_variable_predicate.get_left_attribute_id();
+  const auto& left_label_buckets =
+      index_collection.GetAttributeBucketByVertexLabel(left_label);
+  auto right_label = c_variable_predicate.get_right_label();
+  auto right_attr_id = c_variable_predicate.get_right_attribute_id();
+  const auto& right_label_buckets =
+      index_collection.GetAttributeBucketByVertexLabel(right_label);
+  auto left_value_bucket_size = left_label_buckets.at(left_attr_id).size();
+  auto right_value_bucket_size = right_label_buckets.at(right_attr_id).size();
+
+  if (left_value_bucket_size != right_value_bucket_size) {
+    LOG_FATAL("The value bucket size of left and right are not equal.");
+  }
+
+  std::vector<std::unordered_set<VertexID>> new_left_valid_vertex_bucket;
+  std::vector<std::unordered_set<VertexID>> new_right_valid_vertex_bucket;
+
+  new_left_valid_vertex_bucket.resize(left_value_bucket_size);
+  new_right_valid_vertex_bucket.resize(right_value_bucket_size);
+
+  const auto& left_valid_vertex_bucket = left_star_.get_valid_vertex_bucket();
+  const auto& right_valid_vertex_bucket = right_star_.get_valid_vertex_bucket();
+  for (const auto& left_bucket : left_valid_vertex_bucket) {
+    for (const auto& vid : left_bucket) {
+      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[left_attr_id];
+      if (value == MAX_VERTEX_ATTRIBUTE_VALUE) continue;
+      new_left_valid_vertex_bucket.at(value).emplace(vid);
+    }
+  }
+  for (const auto& right_bucket : right_valid_vertex_bucket) {
+    for (const auto& vid : right_bucket) {
+      auto value = graph.GetVertexAttributeValuesByLocalID(vid)[right_attr_id];
+      if (value == MAX_VERTEX_ATTRIBUTE_VALUE) continue;
+      new_right_valid_vertex_bucket.at(value).emplace(vid);
+    }
+  }
+
+  left_star_.UpdateValidVertexBucket(std::move(new_left_valid_vertex_bucket));
+  right_star_.UpdateValidVertexBucket(std::move(new_right_valid_vertex_bucket));
+}
+
+bool GCR::TestVariablePredicate(
+    const MiniCleanCSRGraph& graph,
+    const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
+    VertexID right_vid) const {
+  const auto& index_collection = left_star_.get_index_collection();
+
+  auto left_path_id = variable_predicate.get_left_path_index();
+  auto right_path_id = variable_predicate.get_right_path_index();
+  auto left_vertex_id = variable_predicate.get_left_vertex_index();
+  auto right_vertex_id = variable_predicate.get_right_vertex_index();
+  auto left_label = variable_predicate.get_left_label();
+  auto right_label = variable_predicate.get_right_label();
+  auto left_attr_id = variable_predicate.get_left_attribute_id();
+  auto right_attr_id = variable_predicate.get_right_attribute_id();
+
+  if (left_label == bucket_id_.left_label &&
+      left_attr_id == bucket_id_.left_attribute_id &&
+      right_label == bucket_id_.right_label &&
+      right_attr_id == bucket_id_.right_attribute_id) {
+    return true;
+  }
+
+  PathPatternID left_pattern_id = 0;
+  PathInstanceBucket left_path_instances;
+  if (!left_star_.get_path_rules().empty()) {
+    left_pattern_id =
+        left_star_.get_path_rules()[left_path_id].get_path_pattern_id();
+    left_path_instances =
+        index_collection.GetPathInstanceBucket(left_vid, left_pattern_id);
+  } else {
+    left_path_instances = {{left_vid}};
+  }
+  PathPatternID right_pattern_id = 0;
+  PathInstanceBucket right_path_instances;
+  if (!right_star_.get_path_rules().empty()) {
+    right_pattern_id =
+        right_star_.get_path_rules()[right_path_id].get_path_pattern_id();
+    right_path_instances =
+        index_collection.GetPathInstanceBucket(right_vid, right_pattern_id);
+  } else {
+    right_path_instances = {{right_vid}};
+  }
+
+  for (const auto& left_instance : left_path_instances) {
+    for (const auto& right_instance : right_path_instances) {
+      VertexID lvid = left_instance[left_vertex_id];
+      VertexID rvid = right_instance[right_vertex_id];
+      if (left_attr_id == MAX_VERTEX_ATTRIBUTE_ID) {
+        if (right_attr_id != MAX_VERTEX_ATTRIBUTE_ID) {
+          LOG_FATAL(
+              "Left attribute id is MAX_VERTEX_ATTRIBUTE_ID, but right "
+              "attribute id is not.");
+        }
+        return lvid == rvid;
+      }
+      auto left_value =
+          graph.GetVertexAttributeValuesByLocalID(lvid)[left_attr_id];
+      auto right_value =
+          graph.GetVertexAttributeValuesByLocalID(rvid)[right_attr_id];
+      if (variable_predicate.Test(left_value, right_value)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+bool GCR::IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
+                           bool consider_consequence) const {
+  std::vector<ConcreteVariablePredicate> variable_predicates;
+  variable_predicates.reserve(1);
+  variable_predicates.emplace_back(variable_predicate);
+  bool compatibilty = ConcreteVariablePredicate::TestCompatibility(
+      variable_predicates, variable_predicates_);
+  if (consider_consequence) {
+    std::vector<ConcreteVariablePredicate> consequences;
+    consequences.reserve(1);
+    consequences.emplace_back(consequence_);
+    compatibilty = compatibilty && ConcreteVariablePredicate::TestCompatibility(
+                                       variable_predicates, consequences);
+  }
+  return compatibilty;
+}
+
+std::string GCR::GetInfoString(const std::vector<PathPattern>& path_patterns,
+                               size_t match, size_t support,
+                               float confidence) const {
+  std::stringstream ss;
+  if (mining_progress_log_.size() % 2 == 1) LOG_FATAL("Wrong mining progress.");
+
+  ss << "===GCR info===" << std::endl;
+  ss << "Thread ID: " << folly::getCurrentThreadID() << std::endl;
+  ss << "-------------Progress Info----------------" << std::endl;
+  float progress = 0;
+  float base = 1;
+  for (size_t i = 0; i < mining_progress_log_.size(); i += 2) {
+    size_t vertical_extension_id = mining_progress_log_[i].first;
+    size_t vertical_extension_num = mining_progress_log_[i].second;
+    size_t horizontal_extension_id = mining_progress_log_[i + 1].first;
+    size_t horizontal_extension_num = mining_progress_log_[i + 1].second;
+    ss << "Level: " << i / 2
+       << "; Vertical extension: " << vertical_extension_id << "/"
+       << vertical_extension_num
+       << "; Horizontal extension: " << horizontal_extension_id << "/"
+       << horizontal_extension_num << std::endl;
+    progress += base * vertical_extension_id / vertical_extension_num;
+    base /= vertical_extension_num;
+    progress += base * horizontal_extension_id / horizontal_extension_num;
+    base /= horizontal_extension_num;
+  }
+  progress *= 100;
+  ss << "Estimated mining progress: " << progress << "%" << std::endl;
+  ss << "-------------------------------------------" << std::endl;
+  ss << "Match: " << match << " Support: " << support
+     << " Confidence: " << confidence << std::endl;
+  ss << "Left star: " << (size_t) & (left_star_.get_valid_vertex_bucket())
+                                        << std::endl;
+  ss << left_star_.GetInfoString(path_patterns);
+  ss << "Right star: " << (size_t) & (right_star_.get_valid_vertex_bucket())
+                                         << std::endl;
+  ss << right_star_.GetInfoString(path_patterns);
+  ss << "Variable predicates: " << std::endl;
+  for (const auto& var_pred : variable_predicates_) {
+    uint8_t left_path_id = var_pred.get_left_path_index();
+    uint8_t left_vertex_id = var_pred.get_left_vertex_index();
+    uint8_t right_path_id = var_pred.get_right_path_index();
+    uint8_t right_vertex_id = var_pred.get_right_vertex_index();
+    VertexAttributeID left_attr_id = var_pred.get_left_attribute_id();
+    VertexAttributeID right_attr_id = var_pred.get_right_attribute_id();
+    VertexLabel left_label = var_pred.get_left_label();
+    VertexLabel right_label = var_pred.get_right_label();
+    OperatorType op_type = var_pred.get_operator_type();
+    ss << "Left path id: " << static_cast<int>(left_path_id)
+       << ", left vertex id: " << static_cast<int>(left_vertex_id)
+       << ", right path id: " << static_cast<int>(right_path_id)
+       << ", right vertex id: " << static_cast<int>(right_vertex_id)
+       << std::endl;
+    ss << static_cast<int>(left_label) << "[" << static_cast<int>(left_attr_id)
+       << "]";
+    if (op_type == OperatorType::kEq) {
+      ss << " = ";
+    } else if (op_type == OperatorType::kGt) {
+      ss << " > ";
+    }
+    ss << static_cast<int>(right_label) << "["
+       << static_cast<int>(right_attr_id) << "]" << std::endl;
+    ss << "---------------------" << std::endl;
+  }
+  ss << "Consequence: " << std::endl;
+  uint8_t left_path_id = consequence_.get_left_path_index();
+  uint8_t left_vertex_id = consequence_.get_left_vertex_index();
+  uint8_t right_path_id = consequence_.get_right_path_index();
+  uint8_t right_vertex_id = consequence_.get_right_vertex_index();
+  VertexAttributeID left_attr_id = consequence_.get_left_attribute_id();
+  VertexAttributeID right_attr_id = consequence_.get_right_attribute_id();
+  VertexLabel left_label = consequence_.get_left_label();
+  VertexLabel right_label = consequence_.get_right_label();
+  OperatorType op_type = consequence_.get_operator_type();
+  ss << "Left path id: " << static_cast<int>(left_path_id)
+     << ", left vertex id: " << static_cast<int>(left_vertex_id)
+     << ", right path id: " << static_cast<int>(right_path_id)
+     << ", right vertex id: " << static_cast<int>(right_vertex_id) << std::endl;
+  ss << static_cast<int>(left_label) << "[" << static_cast<int>(left_attr_id)
+     << "]";
+  if (op_type == OperatorType::kEq) {
+    ss << " = ";
+  } else if (op_type == OperatorType::kGt) {
+    ss << " > ";
+  }
+  ss << static_cast<int>(right_label) << "[" << static_cast<int>(right_attr_id)
+     << "]" << std::endl;
+  ss << "---------------------" << std::endl;
+  ss << "===End of this GCR===" << std::endl;
+
+  return ss.str();
 }
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

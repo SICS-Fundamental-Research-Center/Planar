@@ -21,7 +21,7 @@ using ThreadPool = sics::graph::core::common::ThreadPool;
 using VertexID = sics::graph::miniclean::common::VertexID;
 using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
-DEFINE_string(i, "", "input graph directory");
+DEFINE_string(workspace_path, "", "workspace directory");
 DEFINE_uint64(p, 1, "number of threads for path matching");
 DEFINE_uint64(t, 1, "number of tasks for path matching");
 
@@ -44,7 +44,8 @@ int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   // Load metadata.
-  YAML::Node metadata = YAML::LoadFile(FLAGS_i + "/meta.yaml");
+  YAML::Node metadata =
+      YAML::LoadFile(FLAGS_workspace_path + "/graph/meta.yaml");
   GraphMetadata graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
 
   // Initialize graph.
@@ -53,9 +54,8 @@ int main(int argc, char* argv[]) {
   // Initialize path matcher.
   PathMatcher path_matcher(&graph);
 
-  path_matcher.LoadGraph(FLAGS_i);
-  path_matcher.LoadPatterns(FLAGS_i + "/path_patterns.txt");
-  path_matcher.BuildCandidateSet();
+  path_matcher.LoadGraph(FLAGS_workspace_path);
+  path_matcher.LoadPatterns(FLAGS_workspace_path + "/path_patterns.yaml");
 
   auto start = std::chrono::system_clock::now();
   // the parallelism should greater than 0 and less than the hardware
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
     LOG_FATAL("The number of tasks should greater than 0.");
   }
   if (num_tasks < parallelism) {
-    LOGF_WARN(
+    LOG_WARN(
         "The number of tasks should equal or greater than parallelism. Set it "
         "to {} instead",
         parallelism);
@@ -89,7 +89,8 @@ int main(int argc, char* argv[]) {
 
   // Write matched patterns back to disk.
   LOG_INFO("Write matched patterns back to disk.");
-  path_matcher.WriteResultsToPath(FLAGS_i + "/matched_path_patterns");
+  path_matcher.WriteResultsToPath(FLAGS_workspace_path +
+                                  "/matched_path_patterns");
   LOG_INFO("Write matched patterns back to disk done.");
 
   gflags::ShutDownCommandLineFlags();

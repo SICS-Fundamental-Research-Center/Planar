@@ -15,6 +15,8 @@ class ThreadPool final : public TaskRunner {
   explicit ThreadPool(uint32_t num_threads);
   ~ThreadPool() = default;
 
+  size_t GetPendingTaskCount() const;
+
   // Submit a single task (resp. a package of tasks) for execution.
   // The call will return immediately.
   //

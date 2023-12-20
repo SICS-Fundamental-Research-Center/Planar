@@ -25,16 +25,24 @@ void MiniCleanCSRGraph::Deserialize(const TaskRunner& runner,
     ParseSubgraphCSR(*iter++);
   }
   if (iter != csr_buffer.end()) {
-    // Parse out edge label
-    ParseOutedgeLabel(*iter++);
-  }
-  if (iter != csr_buffer.end()) {
     // Parse vertex label
     ParseVertexLabel(*iter++);
   }
   if (iter != csr_buffer.end()) {
+    // Parse vertex label range
+    ParseVertexLabelRange(*iter++);
+  }
+  if (iter != csr_buffer.end()) {
+    // Parse out edge label
+    ParseOutedgeLabel(*iter++);
+  }
+  if (iter != csr_buffer.end()) {
     // Parse vertex attribute
     ParseVertexAttribute(*iter++);
+  }
+  if (iter != csr_buffer.end()) {
+    // Parse vertex attribute offset
+    ParseVertexAttributeOffset(*iter++);
   }
 }
 
@@ -85,27 +93,33 @@ void MiniCleanCSRGraph::ParseSubgraphCSR(
                                                      start_outgoing_edges));
 }
 
-void MiniCleanCSRGraph::ParseOutedgeLabel(
-    const std::vector<OwnedBuffer>& buffer_list) {
-  out_edge_label_base_pointer_ =
-      reinterpret_cast<EdgeLabel*>(buffer_list.front().Get());
-}
-
 void MiniCleanCSRGraph::ParseVertexLabel(
     const std::vector<OwnedBuffer>& buffer_list) {
   vertex_label_base_pointer_ =
       reinterpret_cast<VertexLabel*>(buffer_list.front().Get());
 }
 
+void MiniCleanCSRGraph::ParseVertexLabelRange(
+    const std::vector<OwnedBuffer>& buffer_list) {
+  vertex_label_range_base_pointer_ =
+      reinterpret_cast<VertexID*>(buffer_list.front().Get());
+}
+
+void MiniCleanCSRGraph::ParseOutedgeLabel(
+    const std::vector<OwnedBuffer>& buffer_list) {
+  out_edge_label_base_pointer_ =
+      reinterpret_cast<EdgeLabel*>(buffer_list.front().Get());
+}
+
 void MiniCleanCSRGraph::ParseVertexAttribute(
+    const std::vector<OwnedBuffer>& buffer_list) {
+  vertex_attribute_value_base_pointer_ =
+      reinterpret_cast<VertexAttributeValue*>(buffer_list.front().Get());
+}
+
+void MiniCleanCSRGraph::ParseVertexAttributeOffset(
     const std::vector<OwnedBuffer>& buffer_list) {
   vertex_attribute_offset_base_pointer_ =
       reinterpret_cast<VertexID*>(buffer_list.front().Get());
-
-  size_t offset_size = sizeof(VertexID) * num_vertices_;
-
-  vertex_attribute_value_base_pointer_ =
-      reinterpret_cast<VertexAttributeValue*>(buffer_list.front().Get() +
-                                              offset_size);
 }
 }  // namespace sics::graph::miniclean::data_structures::graphs

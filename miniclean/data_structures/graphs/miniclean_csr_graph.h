@@ -30,7 +30,7 @@ class MiniCleanCSRGraph
       sics::graph::miniclean::common::VertexAttributeValue;
   using VertexID = sics::graph::miniclean::common::VertexID;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
-  using EdgeIndex = sics::graph::core::common::EdgeIndex;
+  using EdgeIndex = sics::graph::miniclean::common::EdgeIndex;
 
  public:
   explicit MiniCleanCSRGraph(SubgraphMetadata metadata)
@@ -44,6 +44,12 @@ class MiniCleanCSRGraph
   VertexLabel* GetVertexLabelBasePointer() const {
     return vertex_label_base_pointer_;
   }
+
+  std::pair<VertexID, VertexID> GetVertexLabelRange(VertexLabel i) const {
+    return std::make_pair(vertex_label_range_base_pointer_[i * 2],
+                          vertex_label_range_base_pointer_[i * 2 + 1]);
+  }
+
   EdgeLabel* GetOutEdgeLabelBasePointer() const {
     return out_edge_label_base_pointer_;
   }
@@ -51,7 +57,7 @@ class MiniCleanCSRGraph
   SubgraphMetadata get_metadata() const { return metadata_; }
 
   VertexLabel GetVertexLabelByLocalID(VertexID i) const {
-    return vertex_label_base_pointer_[i * 2 + 1];
+    return vertex_label_base_pointer_[i];
   }
 
   EdgeLabel* GetOutgoingEdgeLabelsByLocalID(VertexID i) const {
@@ -65,13 +71,17 @@ class MiniCleanCSRGraph
 
  private:
   void ParseSubgraphCSR(const std::vector<OwnedBuffer>& buffer_list);
-  void ParseOutedgeLabel(const std::vector<OwnedBuffer>& buffer_list);
   void ParseVertexLabel(const std::vector<OwnedBuffer>& buffer_list);
+  void ParseVertexLabelRange(const std::vector<OwnedBuffer>& buffer_list);
+  void ParseOutedgeLabel(const std::vector<OwnedBuffer>& buffer_list);
   void ParseVertexAttribute(const std::vector<OwnedBuffer>& buffer_list);
+  void ParseVertexAttributeOffset(const std::vector<OwnedBuffer>& buffer_list);
 
  private:
   // Vertex labels
   VertexLabel* vertex_label_base_pointer_;
+  // Vertex label ranges
+  VertexID* vertex_label_range_base_pointer_;
   // Out edge labels
   EdgeLabel* out_edge_label_base_pointer_;
   // Vertex attribute offsets

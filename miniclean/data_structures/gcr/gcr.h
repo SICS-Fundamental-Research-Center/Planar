@@ -2,133 +2,181 @@
 #define MINICLEAN_DATA_STRUCTURES_GCR_GCR_H_
 
 #include <list>
-#include <memory>
-#include <unordered_map>
 #include <vector>
 
-#include "core/common/multithreading/task_runner.h"
-#include "core/common/multithreading/thread_pool.h"
-#include "miniclean/common/types.h"
+#include "miniclean/common/config.h"
+#include "miniclean/data_structures/gcr/path_rule.h"
 #include "miniclean/data_structures/gcr/predicate.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
+struct GCRHorizontalExtension {
+  GCRHorizontalExtension(
+      const ConcreteVariablePredicate& consequence,
+      const std::vector<ConcreteVariablePredicate>& variable_predicates)
+      : consequence(consequence), variable_predicates(variable_predicates) {}
+  std::string GetInfoString() const {
+    std::stringstream ss;
+    ss << "Consequence: " << std::endl;
+    ss << consequence.GetInfoString() << std::endl;
+    ss << "Variable predicates: " << std::endl;
+    for (const auto& variable_predicate : variable_predicates) {
+      ss << variable_predicate.GetInfoString() << std::endl;
+    }
+    return ss.str();
+  }
+  ConcreteVariablePredicate consequence;
+  std::vector<ConcreteVariablePredicate> variable_predicates;
+};
+
+struct GCRVerticalExtension {
+  GCRVerticalExtension(bool extend_to_left, const PathRule& path_rule)
+      : extend_to_left(extend_to_left), path_rule(path_rule) {}
+  std::string GetInfoString(
+      const std::vector<sics::graph::miniclean::common::PathPattern>&
+          path_patterns) const {
+    std::stringstream ss;
+    ss << "Extend to left: " << extend_to_left << std::endl;
+    ss << "Path rule: " << std::endl;
+    ss << path_rule.GetInfoString(path_patterns) << std::endl;
+    return ss.str();
+  }
+  bool extend_to_left;
+  PathRule path_rule;
+};
+
+struct BucketID {
+  BucketID() = default;
+  BucketID(sics::graph::miniclean::common::VertexLabel left_label,
+           sics::graph::miniclean::common::VertexAttributeID left_attribute_id,
+           sics::graph::miniclean::common::VertexLabel right_label,
+           sics::graph::miniclean::common::VertexAttributeID right_attribute_id)
+      : left_label(left_label),
+        left_attribute_id(left_attribute_id),
+        right_label(right_label),
+        right_attribute_id(right_attribute_id) {}
+  sics::graph::miniclean::common::VertexLabel left_label;
+  sics::graph::miniclean::common::VertexAttributeID left_attribute_id;
+  sics::graph::miniclean::common::VertexLabel right_label;
+  sics::graph::miniclean::common::VertexAttributeID right_attribute_id;
+};
+
 class GCR {
  private:
-  using DualPattern = sics::graph::miniclean::common::DualPattern;
-  using GCRPredicate =
-      sics::graph::miniclean::data_structures::gcr::GCRPredicate;
-  using GCRInstance = sics::graph::miniclean::common::GCRInstance;
-  using TaskRunner = sics::graph::core::common::TaskRunner;
   using VertexID = sics::graph::miniclean::common::VertexID;
-  using PathInstanceID = sics::graph::miniclean::common::PathInstanceID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
+  using StarRule = sics::graph::miniclean::data_structures::gcr::StarRule;
+  using VariablePredicate =
+      sics::graph::miniclean::data_structures::gcr::VariablePredicate;
+  using ConcreteVariablePredicate =
+      sics::graph::miniclean::data_structures::gcr::ConcreteVariablePredicate;
   using MiniCleanCSRGraph =
       sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-  using Task = sics::graph::core::common::Task;
-  using TaskPackage = sics::graph::core::common::TaskPackage;
-  using ThreadPool = sics::graph::core::common::ThreadPool;
+  using PathPattern = sics::graph::miniclean::common::PathPattern;
+  using PathInstance = std::vector<VertexID>;
+  using PathInstanceBucket = std::vector<PathInstance>;
+  using Configurations = sics::graph::miniclean::common::Configurations;
+  using IndexCollection =
+      sics::graph::miniclean::components::preprocessor::IndexCollection;
 
  public:
   GCR() = default;
-  GCR(const DualPattern& dual_pattern) : dual_pattern_(dual_pattern) {}
-  GCR(const GCR& other_gcr)
-      : dual_pattern_(other_gcr.get_dual_pattern()),
-        preconditions_(other_gcr.get_preconditions()),
-        consequence_(other_gcr.get_consequence()),
-        local_support(other_gcr.get_local_support()),
-        local_match(other_gcr.get_local_match()),
-        gcr_instances_(other_gcr.get_gcr_instances()) {}
+  GCR(const StarRule& left_star, const StarRule& right_star)
+      : left_star_(left_star), right_star_(right_star) {}
 
-  // Initialize the GCR by
-  //   (1) collecting all the instances that satisfy the dual pattern and
-  //   predicates; (2) computing the local support and match.
-  void Init(MiniCleanCSRGraph* graph,
-            std::vector<std::vector<std::vector<VertexID>>>& path_instances);
+  void Init();
 
-  void InitTask(MiniCleanCSRGraph* graph,
-                std::vector<std::vector<std::vector<VertexID>>>* path_instances,
-                size_t num_segments, size_t task_id);
-
-  // Two GCRs are joinable if
-  //   (1) Their labels of star centers are the same.
-  //   (2) The composed dual pattern would not carry more than `n` predicates.
-  //       (n is the maximum number of predicates allowed in a GCR.)
-  bool IsJoinableWith(const GCR& gcr) const;
-
-  // Compose two GCRs into a new GCR.
-  // To compose:
-  //    GCR1[x0, y0](X1 -> p1) and
-  //    GCR2[x0, y0](X2 -> p2)
-  // We first compose their dual patterns (only star centers are shared).
-  // Then we merge the preconditions of two GCR and get:
-  //    GCR3[x0, y0]({X1, X2} -> p1) and
-  //    GCR4[x0, y0]({X1, X2} -> p2)
-  GCR ComposeWith(const GCR& gcr) const;
-
-  // Determine whether this GCR should expand to next level by verifying its
-  // local support and local match. If the local support is lower than the
-  // threshold, the GCR is pruned.
-  // In this function:
-  //   (1) We first match instances that satisfy the dual pattern and
-  //       preconditions and update the local support. If the local support is
-  //       lower than the threshold, the GCR is pruned, and `false` is returned.
-  //   (2) Then we verify whether the instances satisfy the conquences and
-  //       update the local match. Finally `true` is returned.
-  bool ShouldExpandByVerification();
-
-  DualPattern get_dual_pattern() const { return dual_pattern_; }
-  std::list<GCRPredicate*> get_preconditions() const { return preconditions_; }
-  GCRPredicate* get_consequence() const { return consequence_; }
-
-  size_t get_local_support() const { return local_support; }
-  size_t get_local_match() const { return local_match; }
-
-  std::list<GCRInstance> get_gcr_instances() const { return gcr_instances_; }
-
-  void set_dual_pattern(const DualPattern& dual_pattern) {
-    dual_pattern_ = dual_pattern;
+  void AddVariablePredicateToBack(
+      const ConcreteVariablePredicate& variable_predicate) {
+    variable_predicates_.push_back(variable_predicate);
   }
 
-  void set_preconditions(const std::list<GCRPredicate*>& preconditions) {
-    preconditions_ = preconditions;
+  bool PopVariablePredicateFromBack() {
+    if (!variable_predicates_.empty()) {
+      variable_predicates_.pop_back();
+      return true;
+    }
+    return false;
   }
 
-  void set_consequence(GCRPredicate* consequence) {
+  void AddPathRuleToLeftStar(const PathRule& path_rule) {
+    left_star_.AddPathRule(path_rule);
+  }
+
+  void AddPathRuleToRigthStar(const PathRule& path_rule) {
+    right_star_.AddPathRule(path_rule);
+  }
+
+  void set_consequence(const ConcreteVariablePredicate& consequence) {
     consequence_ = consequence;
   }
 
-  void set_local_support(size_t local_support) {
-    local_support = local_support;
+  const StarRule& get_left_star() const { return left_star_; }
+  const StarRule& get_right_star() const { return right_star_; }
+
+  const std::vector<ConcreteVariablePredicate>& get_variable_predicates()
+      const {
+    return variable_predicates_;
   }
 
-  void set_local_match(size_t local_match) { local_match = local_match; }
-
-  void AddGCRInstanceToBack(GCRInstance gcr_instance) {
-    gcr_instances_.push_back(gcr_instance);
+  const ConcreteVariablePredicate& get_consequence() const {
+    return consequence_;
   }
 
-  void AddGCRInstancesToBack(std::list<GCRInstance> gcr_instances) {
-    gcr_instances_.splice(gcr_instances_.end(), gcr_instances);
+  size_t get_constant_predicate_count() const {
+    size_t left_count = left_star_.get_constant_predicate_count();
+    size_t right_count = right_star_.get_constant_predicate_count();
+    return left_count + right_count;
   }
 
-  void AddPreconditionToBack(GCRPredicate* precondition) {
-    preconditions_.push_back(precondition);
+  size_t get_variable_predicate_count() const {
+    return variable_predicates_.size();
   }
 
-  void RemoveLastPrecondition() { preconditions_.pop_back(); }
+  const std::vector<std::pair<size_t, size_t>>& get_mining_progress_log()
+      const {
+    return mining_progress_log_;
+  }
+
+  void ExtendVertically(const GCRVerticalExtension& vertical_extension,
+                        const MiniCleanCSRGraph& graph,
+                        size_t vertical_extension_id,
+                        size_t vertical_extension_num);
+  void ExtendHorizontally(const GCRHorizontalExtension& horizontal_extension,
+                          const MiniCleanCSRGraph& graph,
+                          size_t horizontal_extension_id,
+                          size_t horizontal_extension_num);
+  // TODO: this function should be more rigorous.
+  std::pair<size_t, size_t> ComputeMatchAndSupport(
+      const MiniCleanCSRGraph& graph) const;
+
+  bool IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
+                        bool consider_consequence) const;
+
+  std::string GetInfoString(const std::vector<PathPattern>& path_patterns,
+                            size_t match, size_t support,
+                            float confidence) const;
 
  private:
-  DualPattern dual_pattern_;
-  std::list<GCRPredicate*> preconditions_;
-  GCRPredicate* consequence_;
+  void InitializeBuckets(const MiniCleanCSRGraph& graph,
+                         const ConcreteVariablePredicate& c_variable_predicate);
+  bool TestVariablePredicate(
+      const MiniCleanCSRGraph& graph,
+      const ConcreteVariablePredicate& variable_predicate, VertexID left_vid,
+      VertexID right_vid) const;
 
-  size_t local_support;
-  size_t local_match;
+  StarRule left_star_;
+  StarRule right_star_;
 
-  std::list<GCRInstance> gcr_instances_;
+  std::vector<ConcreteVariablePredicate> variable_predicates_;
+  ConcreteVariablePredicate consequence_;
 
-  std::mutex mutex_;
+  std::vector<std::pair<size_t, size_t>> mining_progress_log_;
+
+  BucketID bucket_id_;
 };
 
 }  // namespace sics::graph::miniclean::data_structures::gcr

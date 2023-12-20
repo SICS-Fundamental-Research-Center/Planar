@@ -44,68 +44,24 @@ void PathMatcher::LoadGraph(const std::string& data_path) {
 }
 
 void PathMatcher::LoadPatterns(const std::string& pattern_path) {
-  std::ifstream pattern_file(pattern_path);
-  if (!pattern_file) {
-    LOG_FATAL("Error opening pattern file: ", pattern_path.c_str());
-  }
+  YAML::Node path_pattern_config = YAML::LoadFile(pattern_path);
+  YAML::Node path_pattern_node = path_pattern_config["PathPatterns"];
+  path_patterns_ = path_pattern_node.as<std::vector<PathPattern>>();
 
-  VertexLabel max_label_id = 1;
-
-  std::string line;
-  while (std::getline(pattern_file, line)) {
-    // if the line is empty or the first char is `#`, continue.
-    if (line.empty() || line[0] == '#') continue;
-
-    PathPattern pattern;
-    std::stringstream ss(line);
-    std::string label;
-
-    std::vector<uint8_t> label_vec;
-    while (std::getline(ss, label, ',')) {
-      uint8_t label_id = static_cast<uint8_t>(std::stoi(label));
-      label_vec.push_back(label_id);
+  // Compute the max vertex label.
+  VertexLabel max_vertex_label = 0;
+  for (const PathPattern& path_pattern : path_patterns_) {
+    for (const auto& edge : path_pattern) {
+      max_vertex_label = std::max(max_vertex_label, std::get<0>(edge));
     }
-
-    for (size_t i = 0; i < label_vec.size() - 1; i += 2) {
-      VertexLabel src_label = static_cast<VertexLabel>(label_vec[i]);
-      EdgeLabel edge_label = static_cast<EdgeLabel>(label_vec[i + 1]);
-      VertexLabel dst_label = static_cast<VertexLabel>(label_vec[i + 2]);
-
-      max_label_id = std::max(max_label_id, src_label);
-      max_label_id = std::max(max_label_id, dst_label);
-
-      pattern.emplace_back(src_label, edge_label, dst_label);
-    }
-
-    path_patterns_.push_back(pattern);
   }
 
-  pattern_file.close();
-
-  num_label_ = max_label_id;
-
-  // Initialize `vertex_label_to_pattern_id`.
-  vertex_label_to_pattern_id.resize(num_label_);
-  for (size_t i = 0; i < path_patterns_.size(); i++) {
-    VertexLabel start_label = std::get<0>(path_patterns_[i][0]);
-    vertex_label_to_pattern_id[start_label - 1].push_back(i);
-  }
-}
-
-void PathMatcher::BuildCandidateSet() {
-  // Reserve memory space for candidates_.
-  candidates_.reserve(num_label_);
-  // Initialize candidates_.
-  for (VertexLabel i = 0; i < num_label_; i++) {
-    candidates_.emplace_back();
-  }
-  VertexLabel* vertex_label = miniclean_csr_graph_->GetVertexLabelBasePointer();
-  for (VertexID i = 0; i < miniclean_csr_graph_->get_num_vertices() * 2;
-       i += 2) {
-    for (VertexLabel j = 0; j < num_label_; j++) {
-      if (vertex_label[i + 1] == j + 1)
-        candidates_[j].push_back(vertex_label[i]);
-    }
+  // Initialize vertex_label_to_pattern_id.
+  vertex_label_to_pattern_id_.resize(max_vertex_label + 1);
+  for (PathPatternID i = 0; i < path_patterns_.size(); i++) {
+    VertexLabel src_label = std::get<0>(path_patterns_[i][0]);
+    // TODO: reserve the space for each vector.
+    vertex_label_to_pattern_id_[src_label].push_back(i);
   }
 }
 
@@ -127,10 +83,10 @@ void PathMatcher::GroupTasks(
       for (VertexID j = task_size * i; j < task_size * (i + 1); j++) {
         if (j >= vertex_number) break;
         VertexLabel label = miniclean_csr_graph_->GetVertexLabelByLocalID(j);
-        std::vector<size_t> patterns = vertex_label_to_pattern_id[label - 1];
-        for (size_t k = 0; k < patterns.size(); k++) {
-          (*partial_result_pool)[i].reserve(path_patterns_[patterns[k]].size() +
-                                            1);
+        std::vector<PathPatternID> patterns =
+            vertex_label_to_pattern_id_[label];
+        for (PathPatternID k = 0; k < patterns.size(); k++) {
+          (*partial_result_pool)[i].reserve(path_patterns_[patterns[k]].size());
           std::vector<VertexID> init_candidate = {j};
           PathMatchRecur(path_patterns_[patterns[k]], 0, init_candidate,
                          &(*partial_result_pool)[i],
@@ -215,7 +171,7 @@ void PathMatcher::PathMatchRecur(const PathPattern& path_pattern,
                                  std::vector<VertexID>* partial_results,
                                  std::list<std::vector<VertexID>>* results) {
   // Return condition.
-  if (match_position == path_pattern.size()) {
+  if (match_position == path_pattern.size() - 1) {
     for (const VertexID& candidate : candidates) {
       partial_results->push_back(candidate);
       results->push_back(*partial_results);
@@ -247,7 +203,7 @@ void PathMatcher::PathMatchRecur(const PathPattern& path_pattern,
       }
       if (continue_flag) continue;
       // Check whether the label matches.
-      if (match_position < path_pattern.size() &&
+      if (match_position < path_pattern.size() - 1 &&
           out_edge_label == std::get<1>(path_pattern[match_position]) &&
           out_vertex_label == std::get<2>(path_pattern[match_position])) {
         next_candidates.push_back(out_vertex_id);
@@ -263,7 +219,8 @@ void PathMatcher::PathMatchRecur(const PathPattern& path_pattern,
 void PathMatcher::WriteResultsToPath(const std::string& result_path) {
   for (size_t i = 0; i < matched_results_.size(); i++) {
     // Open the result file.
-    std::string result_file_path = result_path + "/" + std::to_string(i) + ".bin";
+    std::string result_file_path =
+        result_path + "/" + std::to_string(i) + ".bin";
     std::ofstream result_file(result_file_path, std::ios::binary);
     if (!result_file) {
       LOG_FATAL("Error opening result file: ", result_file_path.c_str());
@@ -280,7 +237,8 @@ void PathMatcher::WriteResultsToPath(const std::string& result_path) {
 
     LOG_INFO("Size of pattern: ", i, ": ",
              (path_patterns_[i].size() + 1) * matched_results_[i].size() *
-                 sizeof(VertexID), " bytes.");
+                 sizeof(VertexID),
+             " bytes.");
 
     result_file.close();
   }
