@@ -1,6 +1,6 @@
 #include "thread_pool.h"
 
-namespace xyz::graph::core::common {
+namespace sics::graph::core::common {
 
 ThreadPool::ThreadPool(uint32_t num_threads)
     : internal_pool_((unsigned int)num_threads) {}
@@ -61,4 +61,4 @@ void ThreadPool::StopAndJoin() {
   internal_pool_.join();
 }
 
-}  // namespace xyz::graph::core::common
+}  // namespace sics::graph::core::common

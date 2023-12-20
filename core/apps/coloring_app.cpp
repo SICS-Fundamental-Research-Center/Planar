@@ -1,6 +1,6 @@
 #include "apps/coloring_app.h"
 
-namespace xyz::graph::core::apps {
+namespace sics::graph::core::apps {
 
 void ColoringApp::PEval() {
   auto init = [this](VertexID id) { this->Init(id); };
@@ -109,4 +109,4 @@ void ColoringApp::ColorVertex(VertexID id) {
 
 int ColoringApp::GetRandomNumber() { return (rand() % max_round_) + 1; }
 
-}  // namespace xyz::graph::core::apps
+}  // namespace sics::graph::core::apps

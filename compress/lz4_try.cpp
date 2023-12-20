@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
     std::unique_lock<std::mutex> lck(mtx);
     std::atomic<size_t> pending_packages(task_num);
 
-    auto thread_pool = xyz::graph::core::common::ThreadPool(task_num);
+    auto thread_pool = sics::graph::core::common::ThreadPool(task_num);
 
     auto time_b = std::chrono::system_clock::now();
     // read src data
@@ -142,7 +142,7 @@ int main(int argc, char** argv) {
     std::condition_variable finish_cv;
     std::unique_lock<std::mutex> lck(mtx);
     std::atomic<size_t> pending_packages(task_num);
-    auto thread_pool = xyz::graph::core::common::ThreadPool(task_num);
+    auto thread_pool = sics::graph::core::common::ThreadPool(task_num);
     auto time_begin = std::chrono::system_clock::now();
 
     std::vector<char*> output_datas(task_num);

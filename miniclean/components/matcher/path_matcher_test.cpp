@@ -12,16 +12,16 @@
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace xyz::graph::miniclean::components::matcher {
+namespace sics::graph::miniclean::components::matcher {
 
-using EdgeLabel = xyz::graph::miniclean::common::EdgeLabel;
-using GraphMetadata = xyz::graph::core::data_structures::GraphMetadata;
+using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
+using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph =
-    xyz::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-using PathMatcher = xyz::graph::miniclean::components::matcher::PathMatcher;
-using SubgraphMetadata = xyz::graph::core::data_structures::SubgraphMetadata;
-using VertexID = xyz::graph::miniclean::common::VertexID;
-using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
+    sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+using PathMatcher = sics::graph::miniclean::components::matcher::PathMatcher;
+using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
+using VertexID = sics::graph::miniclean::common::VertexID;
+using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
 class PathMatcherTest : public ::testing::Test {
  protected:
@@ -128,4 +128,4 @@ TEST_F(PathMatcherTest, CheckMatches) {
   }
 }
 
-}  // namespace xyz::graph::miniclean::components::matcher
+}  // namespace sics::graph::miniclean::components::matcher

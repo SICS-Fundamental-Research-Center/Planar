@@ -8,7 +8,7 @@
 
 #define SSSP_INFINITY 0xffffffff
 
-namespace xyz::graph::core::apps {
+namespace sics::graph::core::apps {
 
 using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 
@@ -59,6 +59,6 @@ class SsspApp : public apis::PlanarAppBase<CSRGraph> {
   bool flag = false;
 };
 
-}  // namespace xyz::graph::core::apps
+}  // namespace sics::graph::core::apps
 
 #endif  // GRAPH_SYSTEMS_CORE_APPS_SSSP_APP_H_

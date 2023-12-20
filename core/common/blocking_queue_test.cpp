@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-namespace xyz::graph::core::common {
+namespace sics::graph::core::common {
 
 // The fixture for testing class LogTest.
 class BlockingQueueTest : public ::testing::Test {
@@ -59,4 +59,4 @@ TEST_F(BlockingQueueTest, PopShouldReturnImmediatelyIfQueueIsNotEmptyAfterPush) 
   EXPECT_EQ(queue.PopOrWait(), 3);
 }
 
-}  // namespace xyz::graph::core::common
+}  // namespace sics::graph::core::common

@@ -19,7 +19,7 @@
 #include "core/io/reader_writer.h"
 #include "core/scheduler/message.h"
 
-namespace xyz::graph::miniclean::io {
+namespace sics::graph::miniclean::io {
 
 // @DESCRIPTION Class to read data from ssd to memory
 // @EXAMPLE
@@ -30,12 +30,12 @@ namespace xyz::graph::miniclean::io {
 // read_message->graph_id = 1;
 // read_message->response_serialized = serialized_immutable_csr;
 // reader.Read(read_message);
-class MiniCleanCSRReader : public xyz::graph::core::io::Reader {
+class MiniCleanCSRReader : public sics::graph::core::io::Reader {
  private:
-  using OwnedBuffer = xyz::graph::core::data_structures::OwnedBuffer;
-  using ReadMessage = xyz::graph::core::scheduler::ReadMessage;
-  using Serialized = xyz::graph::core::data_structures::Serialized;
-  using TaskRunner = xyz::graph::core::common::TaskRunner;
+  using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
+  using ReadMessage = sics::graph::core::scheduler::ReadMessage;
+  using Serialized = sics::graph::core::data_structures::Serialized;
+  using TaskRunner = sics::graph::core::common::TaskRunner;
 
  public:
   explicit MiniCleanCSRReader(const std::string& root_path)
@@ -72,6 +72,6 @@ class MiniCleanCSRReader : public xyz::graph::core::io::Reader {
   const std::string root_path_;
 };
 
-}  // namespace xyz::graph::miniclean::io
+}  // namespace sics::graph::miniclean::io
 
 #endif  // CORE_IO_LABELED_CSR_READER_H_

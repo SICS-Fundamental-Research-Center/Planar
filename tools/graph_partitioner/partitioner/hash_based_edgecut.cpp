@@ -13,27 +13,27 @@
 #include "tools/common/data_structures.h"
 #include "tools/common/io.h"
 
-namespace xyz::graph::tools::partitioner {
+namespace sics::graph::tools::partitioner {
 
 using folly::ConcurrentHashMap;
 using folly::hash::fnv64_append_byte;
-using xyz::graph::core::common::Bitmap;
-using xyz::graph::core::common::EdgeIndex;
-using xyz::graph::core::common::TaskPackage;
-using xyz::graph::core::common::VertexID;
-using xyz::graph::core::common::VertexLabel;
-using xyz::graph::core::data_structures::GraphMetadata;
-using xyz::graph::core::util::atomic::WriteAdd;
-using xyz::graph::core::util::atomic::WriteMax;
-using xyz::graph::core::util::atomic::WriteMin;
-using xyz::graph::tools::common::Edge;
-using xyz::graph::tools::common::EdgelistMetadata;
-using xyz::graph::tools::common::GraphFormatConverter;
-using xyz::graph::tools::common::kIncomingOnly;
-using xyz::graph::tools::common::kOutgoingOnly;
-using xyz::graph::tools::common::kUnconstrained;
-using xyz::graph::tools::common::StoreStrategy;
-using Vertex = xyz::graph::core::data_structures::graph::ImmutableCSRVertex;
+using sics::graph::core::common::Bitmap;
+using sics::graph::core::common::EdgeIndex;
+using sics::graph::core::common::TaskPackage;
+using sics::graph::core::common::VertexID;
+using sics::graph::core::common::VertexLabel;
+using sics::graph::core::data_structures::GraphMetadata;
+using sics::graph::core::util::atomic::WriteAdd;
+using sics::graph::core::util::atomic::WriteMax;
+using sics::graph::core::util::atomic::WriteMin;
+using sics::graph::tools::common::Edge;
+using sics::graph::tools::common::EdgelistMetadata;
+using sics::graph::tools::common::GraphFormatConverter;
+using sics::graph::tools::common::kIncomingOnly;
+using sics::graph::tools::common::kOutgoingOnly;
+using sics::graph::tools::common::kUnconstrained;
+using sics::graph::tools::common::StoreStrategy;
+using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
 using std::filesystem::create_directory;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
@@ -49,7 +49,7 @@ VertexID HashBasedEdgeCutPartitioner::GetBucketID(VertexID vid,
 
 void HashBasedEdgeCutPartitioner::RunPartitioner() {
   auto parallelism = std::thread::hardware_concurrency();
-  auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
+  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
   task_package.reserve(parallelism);
   std::mutex mtx;
@@ -196,4 +196,4 @@ void HashBasedEdgeCutPartitioner::RunPartitioner() {
   LOG_INFO("Finished writing the subgraphs to disk");
 }
 
-}  // namespace xyz::graph::tools::partitioner
+}  // namespace sics::graph::tools::partitioner

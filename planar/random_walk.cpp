@@ -13,7 +13,7 @@ DEFINE_uint32(limits, 0, "subgrah limits for pre read");
 DEFINE_bool(no_short_cut, false, "no short cut");
 DEFINE_uint32(walk, 5, "walk length of random walk");
 
-using namespace xyz::graph;
+using namespace sics::graph;
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);

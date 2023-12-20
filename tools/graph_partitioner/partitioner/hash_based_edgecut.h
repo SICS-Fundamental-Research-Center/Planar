@@ -1,10 +1,10 @@
-#ifndef xyz_GRAPH_SYSTEMS_TOOLS_EDGECUT_PARTITIONER_H_
-#define xyz_GRAPH_SYSTEMS_TOOLS_EDGECUT_PARTITIONER_H_
+#ifndef SICS_GRAPH_SYSTEMS_TOOLS_EDGECUT_PARTITIONER_H_
+#define SICS_GRAPH_SYSTEMS_TOOLS_EDGECUT_PARTITIONER_H_
 
 #include "core/common/types.h"
 #include "tools/graph_partitioner/partitioner/partitioner_base.h"
 
-namespace xyz::graph::tools::partitioner {
+namespace sics::graph::tools::partitioner {
 
 // @DESCRIPTION With edgecut partitioner, each vertex is assigned to a
 // fragment. In a fragment, inner vertices are those vertices assigned to it,
@@ -30,9 +30,9 @@ namespace xyz::graph::tools::partitioner {
 // design and implementation (OSDI 12). 2012.
 class HashBasedEdgeCutPartitioner : public PartitionerBase {
  private:
-  using StoreStrategy = xyz::graph::tools::common::StoreStrategy;
-  using VertexID = xyz::graph::core::common::VertexID;
-  using GraphID = xyz::graph::core::common::GraphID;
+  using StoreStrategy = sics::graph::tools::common::StoreStrategy;
+  using VertexID = sics::graph::core::common::VertexID;
+  using GraphID = sics::graph::core::common::GraphID;
 
 
  public:
@@ -52,6 +52,6 @@ class HashBasedEdgeCutPartitioner : public PartitionerBase {
                        size_t n_vertices) const;
 };
 
-}  // namespace xyz::graph::tools::partitioner
+}  // namespace sics::graph::tools::partitioner
 
-#endif  // xyz_GRAPH_SYSTEMS_TOOLS_EDGECUT_PARTITIONER_H_
+#endif  // SICS_GRAPH_SYSTEMS_TOOLS_EDGECUT_PARTITIONER_H_

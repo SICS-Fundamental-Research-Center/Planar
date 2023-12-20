@@ -1,6 +1,6 @@
 #include "io/csr_reader.h"
 
-namespace xyz::graph::core::io {
+namespace sics::graph::core::io {
 
 void CSRReader::Read(scheduler::ReadMessage* message,
                      common::TaskRunner* /* runner */) {
@@ -29,4 +29,4 @@ void CSRReader::Read(scheduler::ReadMessage* message,
   file.close();
 }
 
-}  // namespace xyz::graph::core::io
+}  // namespace sics::graph::core::io

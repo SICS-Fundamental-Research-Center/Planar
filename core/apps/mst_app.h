@@ -8,7 +8,7 @@
 
 #define MST_INVALID_VID 0xffffffff
 
-namespace xyz::graph::core::apps {
+namespace sics::graph::core::apps {
 
 using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 
@@ -78,6 +78,6 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
   bool fast_ = false;
 };
 
-}  // namespace xyz::graph::core::apps
+}  // namespace sics::graph::core::apps
 
 #endif  // GRAPH_SYSTEMS_CORE_APPS_MST_APP_H_

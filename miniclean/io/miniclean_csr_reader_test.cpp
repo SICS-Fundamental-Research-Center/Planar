@@ -13,16 +13,16 @@
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-using GraphID = xyz::graph::miniclean::common::GraphID;
-using GraphMetadata = xyz::graph::core::data_structures::GraphMetadata;
+using GraphID = sics::graph::miniclean::common::GraphID;
+using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
 using MiniCleanCSRGraph =
-    xyz::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-using ReadMessage = xyz::graph::core::scheduler::ReadMessage;
+    sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 using SerializedImmutableCSRGraph =
-    xyz::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
-using ThreadPool = xyz::graph::core::common::ThreadPool;
+    sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+using ThreadPool = sics::graph::core::common::ThreadPool;
 
-namespace xyz::graph::miniclean::io {
+namespace sics::graph::miniclean::io {
 
 // The fixture for testing class LogTest
 class MiniCleanCSRReaderTest : public ::testing::Test {
@@ -119,4 +119,4 @@ TEST_F(MiniCleanCSRReaderTest, ReadSubgraphTest) {
   EXPECT_EQ(incomeing_edges_57[0], 45);
 }
 
-}  // namespace xyz::graph::miniclean::io
+}  // namespace sics::graph::miniclean::io

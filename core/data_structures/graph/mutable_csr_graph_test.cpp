@@ -6,7 +6,7 @@
 #include "common/multithreading/thread_pool.h"
 #include "data_structures/graph_metadata.h"
 
-namespace xyz::graph::core::test {
+namespace sics::graph::core::test {
 class MutableCSRGraphTest : public ::testing::Test {
  public:
   using MutableCSRGraph = data_structures::graph::MutableCSRGraph<int, int>;
@@ -56,4 +56,4 @@ TEST_F(MutableCSRGraphTest, TestUpdateOutOffsetNewFunction) {
   delete[] graph.out_offset_base_new_;
 }
 
-}  // namespace xyz::graph::core::test
+}  // namespace sics::graph::core::test

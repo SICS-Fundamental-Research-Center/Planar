@@ -8,7 +8,7 @@
 
 #include "util/atomic.h"
 
-namespace xyz::graph::core::common {
+namespace sics::graph::core::common {
 
 // The fixture for testing class TheadPoolTest.
 class TheadPoolTest : public ::testing::Test {
@@ -28,7 +28,7 @@ TEST_F(TheadPoolTest, CountShouldEqualsToK) {
   int count = 0;
   for (int i = 0; i < k; i++) {
     auto task = std::bind([&count]() {
-      xyz::graph::core::util::atomic::WriteAdd(&count, 1);
+      sics::graph::core::util::atomic::WriteAdd(&count, 1);
       return;
     });
     task_package.push_back(task);
@@ -37,4 +37,4 @@ TEST_F(TheadPoolTest, CountShouldEqualsToK) {
   EXPECT_EQ(k, count);
 }
 
-}  // namespace xyz::graph::core::common
+}  // namespace sics::graph::core::common

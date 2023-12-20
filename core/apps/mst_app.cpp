@@ -1,6 +1,6 @@
 #include "apps/mst_app.h"
 
-namespace xyz::graph::core::apps {
+namespace sics::graph::core::apps {
 
 void MstApp::PEval() {
   auto init = [this](VertexID id) { Init(id); };
@@ -237,4 +237,4 @@ common::VertexID MstApp::ReadAuxiliary(VertexID id) {
   }
 }
 
-}  // namespace xyz::graph::core::apps
+}  // namespace sics::graph::core::apps

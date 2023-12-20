@@ -8,13 +8,13 @@
 #include "data_structures/graph/immutable_csr_graph.h"
 #include "util/logging.h"
 
-namespace xyz::graph::core::io {
+namespace sics::graph::core::io {
 
 using SerializedImmutableCSRGraph =
-    xyz::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
-using GraphMetadata = xyz::graph::core::data_structures::GraphMetadata;
-using ReadMessage = xyz::graph::core::scheduler::ReadMessage;
-using ThreadPool = xyz::graph::core::common::ThreadPool;
+    sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
+using ReadMessage = sics::graph::core::scheduler::ReadMessage;
+using ThreadPool = sics::graph::core::common::ThreadPool;
 
 // The fixture for testing class LogTest
 class CSRReaderTest : public ::testing::Test {
@@ -51,4 +51,4 @@ TEST_F(CSRReaderTest, ReadShouldNotHaveFatalFalure) {
   EXPECT_NO_FATAL_FAILURE(csr_reader.Read(&read_message_1, nullptr));
 }
 
-}  // namespace xyz::graph::core::io
+}  // namespace sics::graph::core::io

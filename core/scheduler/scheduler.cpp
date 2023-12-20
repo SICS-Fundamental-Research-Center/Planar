@@ -1,6 +1,6 @@
 #include "scheduler.h"
 
-namespace xyz::graph::core::scheduler {
+namespace sics::graph::core::scheduler {
 
 void Scheduler::Start() {
   thread_ = std::make_unique<std::thread>([this]() {
@@ -713,4 +713,4 @@ bool Scheduler::IsSystemStop() const {
   return IsCurrentRoundFinish() && !update_store_->IsActive();
 }
 
-}  // namespace xyz::graph::core::scheduler
+}  // namespace sics::graph::core::scheduler

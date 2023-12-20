@@ -3,7 +3,7 @@
 
 #include "common/bitmap.h"
 
-namespace xyz::graph::core::common {
+namespace sics::graph::core::common {
 
 class BitmapNoOwnerShip : public Bitmap {
  public:
@@ -23,6 +23,6 @@ class BitmapNoOwnerShip : public Bitmap {
   }
 };
 
-}  // namespace xyz::graph::core::common
+}  // namespace sics::graph::core::common
 
 #endif  // GRAPH_SYSTEMS_CORE_COMMON_BITMAP_NO_OWNERSHIP_H_

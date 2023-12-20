@@ -5,7 +5,7 @@
 #include <list>
 #include <vector>
 
-namespace xyz::graph::miniclean::common {
+namespace sics::graph::miniclean::common {
 
 typedef uint8_t GraphID;
 typedef uint32_t VertexID;
@@ -46,6 +46,6 @@ typedef std::pair<StarPattern, StarPattern> DualPattern;
 #define MAX_VERTEX_ATTRIBUTE_VALUE \
   std::numeric_limits<VertexAttributeValue>::max()
 
-}  // namespace xyz::graph::miniclean::common
+}  // namespace sics::graph::miniclean::common
 
 #endif  // MINICLEAN_COMMON_TYPES_H_

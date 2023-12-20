@@ -12,7 +12,7 @@ DEFINE_uint32(memory_size, 64, "memory size (GB)");
 
 // web-sk rand_max = 100
 
-using namespace xyz::graph;
+using namespace sics::graph;
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);

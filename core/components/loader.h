@@ -10,7 +10,7 @@
 #include "scheduler/message_hub.h"
 #include "util/logging.h"
 
-namespace xyz::graph::core::components {
+namespace sics::graph::core::components {
 
 // An adapter class that adapts a ReaderInterface to Loader that works
 // against a MessageHub.
@@ -64,6 +64,6 @@ class Loader : public Component {
   std::unique_ptr<std::thread> thread_;
 };
 
-}  // namespace xyz::graph::core::components
+}  // namespace sics::graph::core::components
 
 #endif  // GRAPH_SYSTEMS_LOADER_H

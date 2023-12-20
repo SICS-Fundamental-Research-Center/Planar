@@ -13,7 +13,7 @@
 #include "scheduler/message_hub.h"
 #include "util/logging.h"
 
-namespace xyz::graph::core::components {
+namespace sics::graph::core::components {
 
 class Executor : public Component {
  public:
@@ -53,6 +53,6 @@ class Executor : public Component {
   std::chrono::time_point<std::chrono::system_clock> end_time_;
 };
 
-}  // namespace xyz::graph::core::components
+}  // namespace sics::graph::core::components
 
 #endif  // GRAPH_SYSTEMS_EXECUTER_H

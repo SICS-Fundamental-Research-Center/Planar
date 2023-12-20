@@ -8,7 +8,7 @@
 
 #include <vector>
 
-namespace xyz::graph::core::util {
+namespace sics::graph::core::util {
 
 // Define some strings for logging.
 constexpr char fatal_message[] = "FATAL";
@@ -130,4 +130,4 @@ TEST_F(LogTest, DefaultConfigWithLogFile) {
   // `log_file` is closed on destruction.
 }
 
-}  // namespace xyz::graph::core::util
+}  // namespace sics::graph::core::util

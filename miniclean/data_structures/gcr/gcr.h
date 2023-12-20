@@ -12,22 +12,22 @@
 #include "miniclean/data_structures/gcr/predicate.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace xyz::graph::miniclean::data_structures::gcr {
+namespace sics::graph::miniclean::data_structures::gcr {
 
 class GCR {
  private:
-  using DualPattern = xyz::graph::miniclean::common::DualPattern;
+  using DualPattern = sics::graph::miniclean::common::DualPattern;
   using GCRPredicate =
-      xyz::graph::miniclean::data_structures::gcr::GCRPredicate;
-  using GCRInstance = xyz::graph::miniclean::common::GCRInstance;
-  using TaskRunner = xyz::graph::core::common::TaskRunner;
-  using VertexID = xyz::graph::miniclean::common::VertexID;
-  using PathInstanceID = xyz::graph::miniclean::common::PathInstanceID;
+      sics::graph::miniclean::data_structures::gcr::GCRPredicate;
+  using GCRInstance = sics::graph::miniclean::common::GCRInstance;
+  using TaskRunner = sics::graph::core::common::TaskRunner;
+  using VertexID = sics::graph::miniclean::common::VertexID;
+  using PathInstanceID = sics::graph::miniclean::common::PathInstanceID;
   using MiniCleanCSRGraph =
-      xyz::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-  using Task = xyz::graph::core::common::Task;
-  using TaskPackage = xyz::graph::core::common::TaskPackage;
-  using ThreadPool = xyz::graph::core::common::ThreadPool;
+      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+  using Task = sics::graph::core::common::Task;
+  using TaskPackage = sics::graph::core::common::TaskPackage;
+  using ThreadPool = sics::graph::core::common::ThreadPool;
 
  public:
   GCR() = default;
@@ -131,6 +131,6 @@ class GCR {
   std::mutex mutex_;
 };
 
-}  // namespace xyz::graph::miniclean::data_structures::gcr
+}  // namespace sics::graph::miniclean::data_structures::gcr
 
 #endif  // MINICLEAN_DATA_STRUCTURES_GCR_GCR_H_

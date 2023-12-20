@@ -4,7 +4,7 @@
 #include "task.h"
 
 
-namespace xyz::graph::core::common {
+namespace sics::graph::core::common {
 
 // An interface class, which features a series of `Submit` functions
 // that accept an array `Task`s and run them as a batch.
@@ -35,6 +35,6 @@ class TaskRunner {
   virtual size_t GetParallelism() const = 0;
 };
 
-}  // namespace xyz::graph::core::common
+}  // namespace sics::graph::core::common
 
 #endif  // CORE_COMMON_MULTITHREADING_TASKRUNNER_H_

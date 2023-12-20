@@ -10,7 +10,7 @@
 
 #include "util/logging.h"
 
-namespace xyz::graph::core::common {
+namespace sics::graph::core::common {
 
 // The fixture for testing class BitmapTest.
 class BitmapTest : public ::testing::Test {
@@ -92,4 +92,4 @@ TEST_F(BitmapTest, GetBit64Test) {
   EXPECT_EQ(bitmap.GetBit64(256), false);
 }
 
-}  // namespace xyz::graph::core::common
+}  // namespace sics::graph::core::common

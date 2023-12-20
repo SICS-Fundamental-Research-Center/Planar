@@ -4,7 +4,7 @@
 #include <bitset>
 #include <vector>
 
-namespace xyz::graph::miniclean::components::preprocessor {
+namespace sics::graph::miniclean::components::preprocessor {
 
 #define WORD_OFFSET(i) (i >> 6)
 #define BIT_OFFSET(i) (i & 0x3f)
@@ -64,6 +64,6 @@ class StarBitmap {
   size_t map_size_ = 0;
 };
 
-}  // namespace xyz::graph::miniclean::components::preprocessor
+}  // namespace sics::graph::miniclean::components::preprocessor
 
 #endif  // MINICLEAN_COMPONENTS_PREPROCESSOR_STAR_BITMAP_H_

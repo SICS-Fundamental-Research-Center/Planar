@@ -19,10 +19,10 @@ DEFINE_string(dir, "/Users/liuyang/sics/refactor/graph-systems/testfile/",
 DEFINE_string(file, "0.bin", "compress file name");
 DEFINE_uint32(p, 8, "thread pool size");
 
-using VertexID = xyz::graph::core::common::VertexID;
-using VertexIndex = xyz::graph::core::common::VertexIndex;
-using EdgeIndex = xyz::graph::core::common::EdgeIndex;
-using Bitmap = xyz::graph::core::common::Bitmap;
+using VertexID = sics::graph::core::common::VertexID;
+using VertexIndex = sics::graph::core::common::VertexIndex;
+using EdgeIndex = sics::graph::core::common::EdgeIndex;
+using Bitmap = sics::graph::core::common::Bitmap;
 
 EdgeIndex compressFirstEdge(char* base, EdgeIndex offset, VertexID first,
                             VertexID second) {
@@ -104,9 +104,9 @@ char* byte_encode(VertexIndex idx, VertexID src, const uint32_t* out_edges,
 void encode(std::string dir, int parallelism) {
   // read meta info
   YAML::Node metadata_node = YAML::LoadFile(dir + "metadata.yaml");
-  xyz::graph::core::data_structures::GraphMetadata metadata =
+  sics::graph::core::data_structures::GraphMetadata metadata =
       metadata_node["GraphMetadata"]
-          .as<xyz::graph::core::data_structures::GraphMetadata>();
+          .as<sics::graph::core::data_structures::GraphMetadata>();
   auto subgraph = metadata.GetSubgraphMetadata(0);
 
   auto graph_path = dir + "graphs/" + std::to_string(subgraph.gid) + ".bin";
@@ -126,7 +126,7 @@ void encode(std::string dir, int parallelism) {
   std::condition_variable finish_cv;
   std::unique_lock<std::mutex> lck(mtx);
   std::atomic<size_t> pending_packages(parallelism);
-  auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
+  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
 
   std::vector<char*> address(parallelism);
   std::vector<EdgeIndex> offsets(parallelism);

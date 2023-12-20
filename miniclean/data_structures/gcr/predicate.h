@@ -9,7 +9,7 @@
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace xyz::graph::miniclean::data_structures::gcr {
+namespace sics::graph::miniclean::data_structures::gcr {
 
 typedef enum {
   kVariablePredicate = 1,
@@ -30,15 +30,15 @@ typedef enum {
 
 class GCRPredicate {
  protected:
-  using PatternVertexID = xyz::graph::miniclean::common::PatternVertexID;
+  using PatternVertexID = sics::graph::miniclean::common::PatternVertexID;
   using MiniCleanCSRGraph =
-      xyz::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-  using VertexAttributeID = xyz::graph::miniclean::common::VertexAttributeID;
+      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
   using VertexAttributeValue =
-      xyz::graph::miniclean::common::VertexAttributeValue;
-  using VertexID = xyz::graph::miniclean::common::VertexID;
-  using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
-  using PathPatternID = xyz::graph::miniclean::common::PathPatternID;
+      sics::graph::miniclean::common::VertexAttributeValue;
+  using VertexID = sics::graph::miniclean::common::VertexID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+  using PathPatternID = sics::graph::miniclean::common::PathPatternID;
 
  public:
   GCRPredicate() = default;
@@ -196,13 +196,13 @@ class ConstantPredicate : public GCRPredicate {
   bool is_in_lhs_pattern_;
 };
 
-}  // namespace xyz::graph::miniclean::data_structures::gcr
+}  // namespace sics::graph::miniclean::data_structures::gcr
 
 namespace YAML {
 template <>
-struct convert<xyz::graph::miniclean::data_structures::gcr::VariablePredicate> {
+struct convert<sics::graph::miniclean::data_structures::gcr::VariablePredicate> {
   static Node encode(
-      const xyz::graph::miniclean::data_structures::gcr::VariablePredicate&
+      const sics::graph::miniclean::data_structures::gcr::VariablePredicate&
           variable_predicate) {
     Node node;
     node["operator_type"] =
@@ -216,31 +216,31 @@ struct convert<xyz::graph::miniclean::data_structures::gcr::VariablePredicate> {
 
   static bool decode(
       const Node& node,
-      xyz::graph::miniclean::data_structures::gcr::VariablePredicate&
+      sics::graph::miniclean::data_structures::gcr::VariablePredicate&
           variable_predicate) {
     if (node.size() != 5) {
       return false;
     }
 
     variable_predicate =
-        xyz::graph::miniclean::data_structures::gcr::VariablePredicate(
+        sics::graph::miniclean::data_structures::gcr::VariablePredicate(
             node["operator_type"].as<uint8_t>(),
             node["lhs_vlabel"]
-                .as<xyz::graph::miniclean::common::VertexLabel>(),
+                .as<sics::graph::miniclean::common::VertexLabel>(),
             node["lhs_aid"]
-                .as<xyz::graph::miniclean::common::VertexAttributeID>(),
+                .as<sics::graph::miniclean::common::VertexAttributeID>(),
             node["rhs_vlabel"]
-                .as<xyz::graph::miniclean::common::VertexLabel>(),
+                .as<sics::graph::miniclean::common::VertexLabel>(),
             node["rhs_aid"]
-                .as<xyz::graph::miniclean::common::VertexAttributeID>());
+                .as<sics::graph::miniclean::common::VertexAttributeID>());
     return true;
   }
 };
 
 template <>
-struct convert<xyz::graph::miniclean::data_structures::gcr::ConstantPredicate> {
+struct convert<sics::graph::miniclean::data_structures::gcr::ConstantPredicate> {
   static Node encode(
-      const xyz::graph::miniclean::data_structures::gcr::ConstantPredicate&
+      const sics::graph::miniclean::data_structures::gcr::ConstantPredicate&
           constant_predicate) {
     Node node;
     node["operator_type"] =
@@ -253,20 +253,20 @@ struct convert<xyz::graph::miniclean::data_structures::gcr::ConstantPredicate> {
 
   static bool decode(
       const Node& node,
-      xyz::graph::miniclean::data_structures::gcr::ConstantPredicate&
+      sics::graph::miniclean::data_structures::gcr::ConstantPredicate&
           constant_predicate) {
     if (node.size() != 4) {
       return false;
     }
     constant_predicate =
-        xyz::graph::miniclean::data_structures::gcr::ConstantPredicate(
+        sics::graph::miniclean::data_structures::gcr::ConstantPredicate(
             node["operator_type"].as<uint8_t>(),
             node["lhs_vlabel"]
-                .as<xyz::graph::miniclean::common::VertexLabel>(),
+                .as<sics::graph::miniclean::common::VertexLabel>(),
             node["lhs_aid"]
-                .as<xyz::graph::miniclean::common::VertexAttributeID>(),
+                .as<sics::graph::miniclean::common::VertexAttributeID>(),
             node["rhs_value"]
-                .as<xyz::graph::miniclean::common::VertexAttributeValue>());
+                .as<sics::graph::miniclean::common::VertexAttributeValue>());
     return true;
   }
 };

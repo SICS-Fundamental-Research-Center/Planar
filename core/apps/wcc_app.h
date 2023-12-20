@@ -6,7 +6,7 @@
 #include "apis/planar_app_base.h"
 #include "data_structures/graph/mutable_csr_graph.h"
 
-namespace xyz::graph::core::apps {
+namespace sics::graph::core::apps {
 
 using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 
@@ -51,6 +51,6 @@ class WCCApp : public apis::PlanarAppBase<CSRGraph> {
   std::mutex mtx_;
 };
 
-}  // namespace xyz::graph::core::apps
+}  // namespace sics::graph::core::apps
 
 #endif  // GRAPH_SYSTEMS_CORE_APPS_WCC_APP_H_

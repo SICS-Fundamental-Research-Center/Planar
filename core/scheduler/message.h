@@ -10,7 +10,7 @@
 #include "data_structures/serialized.h"
 #include "util/logging.h"
 
-namespace xyz::graph::core::scheduler {
+namespace sics::graph::core::scheduler {
 
 struct ReadMessage {
   ReadMessage() = default;
@@ -116,12 +116,12 @@ class Message {
   } message_;
 };
 
-}  // namespace xyz::graph::core::scheduler
+}  // namespace sics::graph::core::scheduler
 
 // The following snippet helps the logger to format the MessageType enum.
 template <>
-struct fmt::formatter<xyz::graph::core::scheduler::Message::Type> {
-  typedef xyz::graph::core::scheduler::Message::Type MessageType;
+struct fmt::formatter<sics::graph::core::scheduler::Message::Type> {
+  typedef sics::graph::core::scheduler::Message::Type MessageType;
 
   constexpr auto parse(::fmt::format_parse_context& ctx)
       -> ::fmt::format_parse_context::iterator {

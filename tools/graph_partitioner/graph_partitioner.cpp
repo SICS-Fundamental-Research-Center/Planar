@@ -1,4 +1,4 @@
-// This file belongs to the xyz graph-systems project, a C++ library for
+// This file belongs to the SICS graph-systems project, a C++ library for
 // exploiting parallelism graph computing. TODO: add description
 #include <gflags/gflags.h>
 
@@ -9,13 +9,13 @@
 #include "tools/graph_partitioner/partitioner/hash_based_edgecut.h"
 #include "tools/graph_partitioner/partitioner/hash_based_vertexcut.h"
 
-using xyz::graph::tools::common::StoreStrategy2Enum;
+using sics::graph::tools::common::StoreStrategy2Enum;
 using EdgeCutPartitioner =
-    xyz::graph::tools::partitioner::HashBasedEdgeCutPartitioner;
+    sics::graph::tools::partitioner::HashBasedEdgeCutPartitioner;
 using VertexCutPartitioner =
-    xyz::graph::tools::partitioner::HashBasedVertexCutPartitioner;
+    sics::graph::tools::partitioner::HashBasedVertexCutPartitioner;
 using PlanarVertexCutPartitioner =
-    xyz::graph::tools::partitioner::CSRBasedPlanarVertexCutPartitioner;
+    sics::graph::tools::partitioner::CSRBasedPlanarVertexCutPartitioner;
 
 enum Partitioner {
   kHashEdgeCut,  // default

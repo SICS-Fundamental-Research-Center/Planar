@@ -15,7 +15,7 @@
 #include "data_structures/serialized.h"
 #include "io/reader_writer.h"
 
-namespace xyz::graph::core::io {
+namespace sics::graph::core::io {
 
 // @DESCRIPTION Class to read data from ssd to memory
 // @EXAMPLE
@@ -26,8 +26,8 @@ namespace xyz::graph::core::io {
 //  csr_reader.Read(&read_message, nullptr);
 class MutableCSRReader : public Reader {
  private:
-  using OwnedBuffer = xyz::graph::core::data_structures::OwnedBuffer;
-  using Serialized = xyz::graph::core::data_structures::Serialized;
+  using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
+  using Serialized = sics::graph::core::data_structures::Serialized;
 
  public:
   MutableCSRReader(const std::string& root_path) : root_path_(root_path) {}
@@ -50,6 +50,6 @@ class MutableCSRReader : public Reader {
   size_t read_size_ = 0;  // use MB
 };
 
-}  // namespace xyz::graph::core::io
+}  // namespace sics::graph::core::io
 
 #endif  // GRAPH_SYSTEMS_CORE_IO_MUTABLE_CSR_READER_H_

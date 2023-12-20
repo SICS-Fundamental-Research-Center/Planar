@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
   std::unique_lock<std::mutex> lck(mtx);
   std::atomic<size_t> pending_packages(parallelism);
 
-  auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
+  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
 
   auto time_b = std::chrono::system_clock::now();
   // read src data

@@ -4,12 +4,12 @@
 
 #include "core/util/logging.h"
 
-namespace xyz::graph::miniclean::data_structures::gcr {
+namespace sics::graph::miniclean::data_structures::gcr {
 
-using VertexAttributeID = xyz::graph::miniclean::common::VertexAttributeID;
+using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
 using VertexAttributeValue =
-    xyz::graph::miniclean::common::VertexAttributeValue;
-using PathPatternID = xyz::graph::miniclean::common::PathPatternID;
+    sics::graph::miniclean::common::VertexAttributeValue;
+using PathPatternID = sics::graph::miniclean::common::PathPatternID;
 
 void GCR::Init(
     MiniCleanCSRGraph* graph,
@@ -130,4 +130,4 @@ void GCR::InitTask(
   }
 }
 
-}  // namespace xyz::graph::miniclean::data_structures::gcr
+}  // namespace sics::graph::miniclean::data_structures::gcr

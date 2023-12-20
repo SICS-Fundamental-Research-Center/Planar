@@ -9,7 +9,7 @@
 #include "core/common/multithreading/thread_pool.h"
 #include "util/logging.h"
 
-namespace xyz::graph::core::tests {
+namespace sics::graph::core::tests {
 
 class SampleTest : public ::testing::Test {
  protected:
@@ -237,4 +237,4 @@ TEST_F(SampleTest, XzLargeFileDecompress) {
             std::chrono::duration<double>(time_end - time_begin).count());
 }
 
-}  // namespace xyz::graph::core::tests
+}  // namespace sics::graph::core::tests

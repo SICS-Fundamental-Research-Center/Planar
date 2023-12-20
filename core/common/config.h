@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace xyz::graph::core::common {
+namespace sics::graph::core::common {
 
 enum VertexDataType {
   kVertexDataTypeUInt32 = 1,
@@ -76,6 +76,6 @@ class Configurations {
   Configurations() = default;
   inline static Configurations* instance_ = nullptr;
 };
-}  // namespace xyz::graph::core::common
+}  // namespace sics::graph::core::common
 
 #endif  // GRAPH_SYSTEMS_CORE_COMMON_CONFIG_H_

@@ -10,7 +10,7 @@
 #include "util/atomic.h"
 #include "util/logging.h"
 
-namespace xyz::graph::core::update_stores {
+namespace sics::graph::core::update_stores {
 
 template <typename VertexData, typename EdgeData>
 class BspUpdateStore : public UpdateStoreBase {
@@ -242,6 +242,6 @@ typedef BspUpdateStore<common::Uint16VertexDataType,
                        common::DefaultEdgeDataType>
     BspUpdateStoreUInt16;
 
-}  // namespace xyz::graph::core::update_stores
+}  // namespace sics::graph::core::update_stores
 
 #endif  // GRAPH_SYSTEMS_CORE_MESSAGE_STORES_BSP_UPDATE_STORE_H_

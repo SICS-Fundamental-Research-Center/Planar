@@ -1,6 +1,6 @@
 #include "data_structures/graph/immutable_csr_graph.h"
 
-namespace xyz::graph::core::data_structures::graph {
+namespace sics::graph::core::data_structures::graph {
 
 std::unique_ptr<Serialized> ImmutableCSRGraph::Serialize(
     const common::TaskRunner& runner) {
@@ -78,4 +78,4 @@ void ImmutableCSRGraph::ParseSubgraphCSR(
   min_vid_ = metadata_.min_vid;
 }
 
-}  // namespace xyz::graph::core::data_structures::graph
+}  // namespace sics::graph::core::data_structures::graph

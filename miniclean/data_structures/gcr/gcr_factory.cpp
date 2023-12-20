@@ -1,10 +1,10 @@
 #include "miniclean/data_structures/gcr/gcr_factory.h"
 
-namespace xyz::graph::miniclean::data_structures::gcr {
+namespace sics::graph::miniclean::data_structures::gcr {
 
-using GCR = xyz::graph::miniclean::data_structures::gcr::refactor::GCR;
-using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
-using VertexAttributeID = xyz::graph::miniclean::common::VertexAttributeID;
+using GCR = sics::graph::miniclean::data_structures::gcr::refactor::GCR;
+using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
 
 bool GCRFactory::InitializeGCRs(const GCR& gcr, bool added_to_left_star,
                                 std::vector<GCR>* complete_gcrs) {
@@ -129,4 +129,4 @@ void GCRFactory::ExtendVariablePredicates(
   }
 }
 
-}  // namespace xyz::graph::miniclean::data_structures::gcr
+}  // namespace sics::graph::miniclean::data_structures::gcr

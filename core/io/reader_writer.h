@@ -4,7 +4,7 @@
 #include "common/multithreading/task_runner.h"
 #include "scheduler/message.h"
 
-namespace xyz::graph::core::io {
+namespace sics::graph::core::io {
 
 class Reader {
  protected:
@@ -38,6 +38,6 @@ class Writer {
                      common::TaskRunner* runner = nullptr) = 0;
 };
 
-}  // namespace xyz::graph::core::io
+}  // namespace sics::graph::core::io
 
 #endif  // CORE_IO_RW_INTERFACE_H_

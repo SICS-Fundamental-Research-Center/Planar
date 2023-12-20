@@ -6,7 +6,7 @@
 
 #include "data_structures/serialized.h"
 
-namespace xyz::graph::core::data_structures::graph {
+namespace sics::graph::core::data_structures::graph {
 
 class SerializedMutableCSRGraph : public Serialized {
  public:
@@ -29,6 +29,6 @@ class SerializedMutableCSRGraph : public Serialized {
   }
 };
 
-}  // namespace xyz::graph::core::data_structures::graph
+}  // namespace sics::graph::core::data_structures::graph
 
 #endif  // CORE_DATA_STRUCTURES_GRAPH_SERIALIZED_MUTABLE_CSR_GRAPH_H_

@@ -11,26 +11,26 @@
 #include "core/util/logging.h"
 #include "miniclean/common/types.h"
 
-namespace xyz::graph::miniclean::data_structures::graphs {
+namespace sics::graph::miniclean::data_structures::graphs {
 // TODO: implement MiniCleanCSRVertex with label and attributes.
 class MiniCleanCSRGraph
-    : public xyz::graph::core::data_structures::graph::ImmutableCSRGraph {
+    : public sics::graph::core::data_structures::graph::ImmutableCSRGraph {
  private:
-  using EdgeLabel = xyz::graph::miniclean::common::EdgeLabel;
-  using GraphID = xyz::graph::miniclean::common::GraphID;
+  using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
+  using GraphID = sics::graph::miniclean::common::GraphID;
   using ImmutableCSRGraph =
-      xyz::graph::core::data_structures::graph::ImmutableCSRGraph;
-  using OwnedBuffer = xyz::graph::core::data_structures::OwnedBuffer;
-  using Serialized = xyz::graph::core::data_structures::Serialized;
+      sics::graph::core::data_structures::graph::ImmutableCSRGraph;
+  using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
+  using Serialized = sics::graph::core::data_structures::Serialized;
   using SerializedImmutableCSRGraph =
-      xyz::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
-  using TaskRunner = xyz::graph::core::common::TaskRunner;
-  using SubgraphMetadata = xyz::graph::core::data_structures::SubgraphMetadata;
+      sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+  using TaskRunner = sics::graph::core::common::TaskRunner;
+  using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
   using VertexAttributeValue =
-      xyz::graph::miniclean::common::VertexAttributeValue;
-  using VertexID = xyz::graph::miniclean::common::VertexID;
-  using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
-  using EdgeIndex = xyz::graph::core::common::EdgeIndex;
+      sics::graph::miniclean::common::VertexAttributeValue;
+  using VertexID = sics::graph::miniclean::common::VertexID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+  using EdgeIndex = sics::graph::core::common::EdgeIndex;
 
  public:
   explicit MiniCleanCSRGraph(SubgraphMetadata metadata)
@@ -86,6 +86,6 @@ class MiniCleanCSRGraph
   //   - value_ptr[offser_ptr[i]][2]: value of #1 attribute.
   VertexAttributeValue* vertex_attribute_value_base_pointer_;
 };
-}  // namespace xyz::graph::miniclean::data_structures::graphs
+}  // namespace sics::graph::miniclean::data_structures::graphs
 
 #endif  // MINICLEAN_GRAPHS_MINICLEAN_CSR_GRAPH_H_

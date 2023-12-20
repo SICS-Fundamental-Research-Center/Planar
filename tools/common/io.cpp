@@ -1,17 +1,17 @@
 #include "io.h"
 
-namespace xyz::graph::tools::common {
+namespace sics::graph::tools::common {
 
 using std::filesystem::create_directory;
 using std::filesystem::exists;
-using xyz::graph::core::common::GraphID;
-using xyz::graph::core::common::TaskPackage;
-using xyz::graph::core::common::VertexID;
-using xyz::graph::core::common::VertexLabel;
-using xyz::graph::core::common::EdgeIndex;
-using xyz::graph::core::util::atomic::WriteAdd;
-using xyz::graph::core::util::atomic::WriteMax;
-using xyz::graph::core::util::atomic::WriteMin;
+using sics::graph::core::common::GraphID;
+using sics::graph::core::common::TaskPackage;
+using sics::graph::core::common::VertexID;
+using sics::graph::core::common::VertexLabel;
+using sics::graph::core::common::EdgeIndex;
+using sics::graph::core::util::atomic::WriteAdd;
+using sics::graph::core::util::atomic::WriteMax;
+using sics::graph::core::util::atomic::WriteMin;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
 
@@ -19,7 +19,7 @@ void GraphFormatConverter::WriteSubgraph(
     const std::vector<std::vector<Vertex>>& vertex_buckets,
     const GraphMetadata& graph_metadata, StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
-  auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
+  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
   task_package.reserve(parallelism);
 
@@ -283,7 +283,7 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
                                          const GraphMetadata& graph_metadata,
                                          StoreStrategy store_strategy) {
   auto parallelism = std::thread::hardware_concurrency();
-  auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
+  auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
   task_package.reserve(parallelism);
 
@@ -494,4 +494,4 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
   out_meta_file.close();
 }
 
-}  // namespace xyz::graph::tools::common
+}  // namespace sics::graph::tools::common

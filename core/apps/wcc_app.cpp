@@ -1,6 +1,6 @@
 #include "apps/wcc_app.h"
 
-namespace xyz::graph::core::apps {
+namespace sics::graph::core::apps {
 
 // Note: check whether the app is registered.
 WCCApp::WCCApp(
@@ -171,4 +171,4 @@ void WCCApp::WriteMinAuxiliary(VertexID id, VertexData data) {
   }
 }
 
-}  // namespace xyz::graph::core::apps
+}  // namespace sics::graph::core::apps

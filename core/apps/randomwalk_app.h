@@ -7,7 +7,7 @@
 #include "common/types.h"
 #include "data_structures/graph/mutable_csr_graph.h"
 
-namespace xyz::graph::core::apps {
+namespace sics::graph::core::apps {
 
 using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 
@@ -66,6 +66,6 @@ class RandomWalkApp : public apis::PlanarAppBase<CSRGraph> {
   uint32_t num_vertices_ = 0;
 };
 
-}  // namespace xyz::graph::core::apps
+}  // namespace sics::graph::core::apps
 
 #endif  // GRAPH_SYSTEMS_CORE_APPS_RANDOMWALK_APP_H_

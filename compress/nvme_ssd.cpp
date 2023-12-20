@@ -365,7 +365,7 @@ int main(int argc, char** argv) {
     std::unique_lock<std::mutex> lck(mtx);
     std::atomic<size_t> pending_packages(parallelism);
 
-    auto thread_pool = xyz::graph::core::common::ThreadPool(parallelism);
+    auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
 
     // read src data size
     std::ifstream src_file(file_path, std::ios::binary);

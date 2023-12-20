@@ -2,7 +2,7 @@
 
 #include "apis/planar_app_factory.h"
 
-namespace xyz::graph::core::apps {
+namespace sics::graph::core::apps {
 
 // Note: all PIE apps must register the app factory with this line.
 bool SampleApp::registered_ = apis::PlanarAppFactory<DummyGraph>::Register(
@@ -40,4 +40,4 @@ void DummyGraph::Deserialize(
   status_ = "deserialized";
 }
 
-}  // namespace xyz::graph::core::apps
+}  // namespace sics::graph::core::apps

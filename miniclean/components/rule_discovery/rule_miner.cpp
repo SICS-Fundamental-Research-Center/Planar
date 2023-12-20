@@ -12,24 +12,24 @@
 #include "core/util/logging.h"
 #include "miniclean/io/miniclean_csr_reader.h"
 
-namespace xyz::graph::miniclean::components::rule_discovery {
+namespace sics::graph::miniclean::components::rule_discovery {
 
-using PathPattern = xyz::graph::miniclean::common::PathPattern;
-using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
-using VertexID = xyz::graph::miniclean::common::VertexID;
-using EdgeLabel = xyz::graph::miniclean::common::EdgeLabel;
-using OwnedBuffer = xyz::graph::core::data_structures::OwnedBuffer;
+using PathPattern = sics::graph::miniclean::common::PathPattern;
+using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+using VertexID = sics::graph::miniclean::common::VertexID;
+using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
+using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
 using VariablePredicate =
-    xyz::graph::miniclean::data_structures::gcr::VariablePredicate;
+    sics::graph::miniclean::data_structures::gcr::VariablePredicate;
 using ConstantPredicate =
-    xyz::graph::miniclean::data_structures::gcr::ConstantPredicate;
-using MiniCleanCSRReader = xyz::graph::miniclean::io::MiniCleanCSRReader;
+    sics::graph::miniclean::data_structures::gcr::ConstantPredicate;
+using MiniCleanCSRReader = sics::graph::miniclean::io::MiniCleanCSRReader;
 using SerializedImmutableCSRGraph =
-    xyz::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
-using ReadMessage = xyz::graph::core::scheduler::ReadMessage;
-using ThreadPool = xyz::graph::core::common::ThreadPool;
-using DualPattern = xyz::graph::miniclean::common::DualPattern;
-using StarPattern = xyz::graph::miniclean::common::StarPattern;
+    sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+using ReadMessage = sics::graph::core::scheduler::ReadMessage;
+using ThreadPool = sics::graph::core::common::ThreadPool;
+using DualPattern = sics::graph::miniclean::common::DualPattern;
+using StarPattern = sics::graph::miniclean::common::StarPattern;
 
 void RuleMiner::LoadGraph(const std::string& graph_path) {
   // Prepare reader.
@@ -329,4 +329,4 @@ void RuleMiner::InitGCRsRecur(GCR gcr, size_t depth,
     gcr.RemoveLastPrecondition();
   }
 }
-}  // namespace xyz::graph::miniclean::components::rule_discovery
+}  // namespace sics::graph::miniclean::components::rule_discovery

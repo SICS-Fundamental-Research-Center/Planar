@@ -7,15 +7,15 @@
 #include "miniclean/data_structures/gcr/refactor_gcr.h"
 #include "miniclean/data_structures/gcr/refactor_predicate.h"
 
-namespace xyz::graph::miniclean::data_structures::gcr {
+namespace sics::graph::miniclean::data_structures::gcr {
 
 class GCRFactory {
  private:
-  using PathRule = xyz::graph::miniclean::data_structures::gcr::PathRule;
-  using GCR = xyz::graph::miniclean::data_structures::gcr::refactor::GCR;
+  using PathRule = sics::graph::miniclean::data_structures::gcr::PathRule;
+  using GCR = sics::graph::miniclean::data_structures::gcr::refactor::GCR;
   using VariablePredicate =
-      xyz::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
-  using ConcreteVariablePredicate = xyz::graph::miniclean::data_structures::
+      sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate;
+  using ConcreteVariablePredicate = sics::graph::miniclean::data_structures::
       gcr::refactor::ConcreteVariablePredicate;
 
  public:
@@ -59,6 +59,6 @@ class GCRFactory {
   std::vector<VariablePredicate> variable_predicates_;
   size_t max_predicate_num_;
 };
-}  // namespace xyz::graph::miniclean::data_structures::gcr
+}  // namespace sics::graph::miniclean::data_structures::gcr
 
 #endif  // MINICLEAN_DATA_STRUCTURES_GCR_GCR_FACTORY_H_

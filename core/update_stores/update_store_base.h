@@ -1,7 +1,7 @@
 #ifndef GRAPH_SYSTEMS_MESSAGE_STORE_BASE_H
 #define GRAPH_SYSTEMS_MESSAGE_STORE_BASE_H
 
-namespace xyz::graph::core::update_stores {
+namespace sics::graph::core::update_stores {
 
 class UpdateStoreBase {
  public:
@@ -17,6 +17,6 @@ class UpdateStoreBase {
   virtual size_t GetMemorySize() const { return 0; }
 };
 
-}  // namespace xyz::graph::core::update_stores
+}  // namespace sics::graph::core::update_stores
 
 #endif  // GRAPH_SYSTEMS_MESSAGE_STORE_BASE_H

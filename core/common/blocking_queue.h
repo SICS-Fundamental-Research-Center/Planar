@@ -6,7 +6,7 @@
 #include <mutex>
 
 
-namespace xyz::graph::core::common {
+namespace sics::graph::core::common {
 
 // A simple queue type that will block `pop()` operation until some element is
 // pushed into it.
@@ -50,6 +50,6 @@ class BlockingQueue {
   std::condition_variable cv_;
 };
 
-}  // namespace xyz::graph::core::common
+}  // namespace sics::graph::core::common
 
 #endif  // CORE_COMMON_MESSAGE_QUEUE_H_

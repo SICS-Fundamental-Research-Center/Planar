@@ -1,6 +1,6 @@
 #include "apps/wcc_edgecut_app.h"
 
-namespace xyz::graph::core::apps {
+namespace sics::graph::core::apps {
 
 // Note: check whether the app is registered.
 WCCEdgeCutApp::WCCEdgeCutApp(
@@ -173,4 +173,4 @@ void WCCEdgeCutApp::WriteEdgeCutAllBorderOut(VertexID id, VertexData data) {
   }
 }
 
-}  // namespace xyz::graph::core::apps
+}  // namespace sics::graph::core::apps

@@ -7,7 +7,7 @@
 #include "components/executor.h"
 #include "components/loader.h"
 
-namespace xyz::graph::core::scheduler {
+namespace sics::graph::core::scheduler {
 
 class SchedulerTest : public ::testing::Test {
  protected:
@@ -26,4 +26,4 @@ class MockScheduler : public Scheduler {
 
 TEST_F(SchedulerTest, StartFuncTest) {}
 
-}  // namespace xyz::graph::core::scheduler
+}  // namespace sics::graph::core::scheduler

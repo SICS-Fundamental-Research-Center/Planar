@@ -6,7 +6,7 @@
 #include "core/util/logging.h"
 #include "miniclean/common/types.h"
 
-namespace xyz::graph::miniclean::data_structures::gcr::refactor {
+namespace sics::graph::miniclean::data_structures::gcr::refactor {
 
 typedef enum {
   kEq = 0,
@@ -16,8 +16,8 @@ typedef enum {
 // x.A [op] c
 class ConstantPredicate {
  private:
-  using VertexAttributeID = xyz::graph::miniclean::common::VertexAttributeID;
-  using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
+  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
   ConstantPredicate() = default;
@@ -58,8 +58,8 @@ class ConstantPredicate {
 
 class VariablePredicate {
  private:
-  using VertexAttributeID = xyz::graph::miniclean::common::VertexAttributeID;
-  using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
+  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
   VariablePredicate() = default;
@@ -118,8 +118,8 @@ class VariablePredicate {
 
 class ConcreteVariablePredicate {
  private:
-  using VertexAttributeID = xyz::graph::miniclean::common::VertexAttributeID;
-  using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
+  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
   ConcreteVariablePredicate() = default;
@@ -159,13 +159,13 @@ class ConcreteVariablePredicate {
   uint8_t right_path_index_;
   uint8_t right_vertex_index_;
 };
-}  // namespace xyz::graph::miniclean::data_structures::gcr::refactor
+}  // namespace sics::graph::miniclean::data_structures::gcr::refactor
 
 namespace YAML {
 template <>
 struct convert<
-    xyz::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate> {
-  static Node encode(const xyz::graph::miniclean::data_structures::gcr::
+    sics::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate> {
+  static Node encode(const sics::graph::miniclean::data_structures::gcr::
                          refactor::ConstantPredicate& constant_predicate) {
     Node node;
     node["vertex_label"] = constant_predicate.get_vertex_label();
@@ -178,18 +178,18 @@ struct convert<
 
   static bool decode(
       const Node& node,
-      xyz::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate&
+      sics::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate&
           constant_predicate) {
     if (node.size() != 4) {
       return false;
     }
 
-    constant_predicate = xyz::graph::miniclean::data_structures::gcr::
+    constant_predicate = sics::graph::miniclean::data_structures::gcr::
         refactor::ConstantPredicate(
             node["vertex_label"]
-                .as<xyz::graph::miniclean::common::VertexLabel>(),
+                .as<sics::graph::miniclean::common::VertexLabel>(),
             node["vertex_attribute_id"]
-                .as<xyz::graph::miniclean::common::VertexAttributeID>(),
+                .as<sics::graph::miniclean::common::VertexAttributeID>(),
             node["operator_type"].as<uint8_t>(),
             node["constant_value"].as<size_t>());
     return true;
@@ -198,8 +198,8 @@ struct convert<
 
 template <>
 struct convert<
-    xyz::graph::miniclean::data_structures::gcr::refactor::VariablePredicate> {
-  struct Node encode(const xyz::graph::miniclean::data_structures::gcr::
+    sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate> {
+  struct Node encode(const sics::graph::miniclean::data_structures::gcr::
                          refactor::VariablePredicate& variable_predicate) {
     Node node;
     node["lhs_label"] = variable_predicate.get_lhs_label();
@@ -215,20 +215,20 @@ struct convert<
 
   static bool decode(
       const Node& node,
-      xyz::graph::miniclean::data_structures::gcr::refactor::VariablePredicate&
+      sics::graph::miniclean::data_structures::gcr::refactor::VariablePredicate&
           variable_predicate) {
     if (node.size() != 7) {
       return false;
     }
 
-    variable_predicate = xyz::graph::miniclean::data_structures::gcr::
+    variable_predicate = sics::graph::miniclean::data_structures::gcr::
         refactor::VariablePredicate(
-            node["lhs_label"].as<xyz::graph::miniclean::common::VertexLabel>(),
-            node["rhs_label"].as<xyz::graph::miniclean::common::VertexLabel>(),
+            node["lhs_label"].as<sics::graph::miniclean::common::VertexLabel>(),
+            node["rhs_label"].as<sics::graph::miniclean::common::VertexLabel>(),
             node["lhs_attribute_id"]
-                .as<xyz::graph::miniclean::common::VertexAttributeID>(),
+                .as<sics::graph::miniclean::common::VertexAttributeID>(),
             node["rhs_attribute_id"]
-                .as<xyz::graph::miniclean::common::VertexAttributeID>(),
+                .as<sics::graph::miniclean::common::VertexAttributeID>(),
             node["operator_type"].as<uint8_t>(),
             node["left_attr_range"].as<std::pair<size_t, size_t>>(),
             node["right_attr_range"].as<std::pair<size_t, size_t>>());

@@ -7,7 +7,7 @@
 #include "apis/planar_app_group_base.h"
 #include "data_structures/graph/mutable_csr_graph.h"
 
-namespace xyz::graph::core::apps {
+namespace sics::graph::core::apps {
 
 using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 using CSRGroupGraph = data_structures::graph::MutableGroupCSRGraphUInt32;
@@ -54,6 +54,6 @@ class WCCGroupApp : public apis::PlanarAppGroupBase<CSRGroupGraph> {
   std::mutex mtx_;
 };
 
-}  // namespace xyz::graph::core::apps
+}  // namespace sics::graph::core::apps
 
 #endif  // GRAPH_SYSTEMS_CORE_APPS_WCC_GROUP_H_

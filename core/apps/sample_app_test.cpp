@@ -7,7 +7,7 @@
 #include "apis/planar_app_factory.h"
 #include "util/pointer_cast.h"
 
-namespace xyz::graph::core::apps {
+namespace sics::graph::core::apps {
 
 class SampleAppTest : public ::testing::Test {
  protected:
@@ -44,4 +44,4 @@ TEST_F(SampleAppTest, FactoryCreationShouldFailIfAppIsNotRegistered) {
   EXPECT_NE(app, nullptr);
 }
 
-}  // namespace xyz::graph::core::apps
+}  // namespace sics::graph::core::apps

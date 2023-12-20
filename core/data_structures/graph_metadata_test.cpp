@@ -6,7 +6,7 @@
 #include <fstream>
 #include <vector>
 
-namespace xyz::graph::core::data_structures {
+namespace sics::graph::core::data_structures {
 
 class GraphMetadataTest : public ::testing::Test {
  protected:
@@ -66,4 +66,4 @@ TEST_F(GraphMetadataTest, NodeStructureWrite) {
   fout << out << std::endl;
 }
 
-}  // namespace xyz::graph::core::data_structures
+}  // namespace sics::graph::core::data_structures

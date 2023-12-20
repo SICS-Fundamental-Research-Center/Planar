@@ -5,7 +5,7 @@
 
 #include "common/multithreading/thread_pool.h"
 
-namespace xyz::graph::core::apps {
+namespace sics::graph::core::apps {
 
 class WccAppTest : public ::testing::Test {
  protected:
@@ -27,4 +27,4 @@ TEST_F(WccAppTest, ParallelVertexOperatorTest) {
 //  EXPECT_EQ(graph.get_status(), "PEval");
 }
 
-}  // namespace xyz::graph::core::apps
+}  // namespace sics::graph::core::apps

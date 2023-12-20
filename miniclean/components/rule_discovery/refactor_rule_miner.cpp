@@ -10,17 +10,17 @@
 #include "core/util/logging.h"
 #include "miniclean/io/miniclean_csr_reader.h"
 
-namespace xyz::graph::miniclean::components::rule_discovery::refactor {
+namespace sics::graph::miniclean::components::rule_discovery::refactor {
 
-using EdgeLabel = xyz::graph::miniclean::common::EdgeLabel;
-using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
-using VertexAttributeID = xyz::graph::miniclean::common::VertexAttributeID;
-using MiniCleanCSRReader = xyz::graph::miniclean::io::MiniCleanCSRReader;
+using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
+using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+using MiniCleanCSRReader = sics::graph::miniclean::io::MiniCleanCSRReader;
 using SerializedImmutableCSRGraph =
-    xyz::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
-using ReadMessage = xyz::graph::core::scheduler::ReadMessage;
-using ThreadPool = xyz::graph::core::common::ThreadPool;
-using OwnedBuffer = xyz::graph::core::data_structures::OwnedBuffer;
+    sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+using ReadMessage = sics::graph::core::scheduler::ReadMessage;
+using ThreadPool = sics::graph::core::common::ThreadPool;
+using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
 
 void RuleMiner::LoadGraph(const std::string& graph_path) {
   // Prepare reader.
@@ -409,4 +409,4 @@ void RuleMiner::ExtendGCR(const GCR& gcr, size_t start_pattern_id,
   }
 }
 
-}  // namespace xyz::graph::miniclean::components::rule_discovery::refactor
+}  // namespace sics::graph::miniclean::components::rule_discovery::refactor

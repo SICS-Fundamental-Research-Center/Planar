@@ -4,12 +4,12 @@
 #include "miniclean/components/preprocessor/star_bitmap.h"
 #include "miniclean/data_structures/gcr/refactor_predicate.h"
 
-namespace xyz::graph::miniclean::data_structures::gcr::refactor {
+namespace sics::graph::miniclean::data_structures::gcr::refactor {
 
-using StarBitmap = xyz::graph::miniclean::components::preprocessor::StarBitmap;
-using PathPattern = xyz::graph::miniclean::common::PathPattern;
-using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
-using VertexID = xyz::graph::miniclean::common::VertexID;
+using StarBitmap = sics::graph::miniclean::components::preprocessor::StarBitmap;
+using PathPattern = sics::graph::miniclean::common::PathPattern;
+using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+using VertexID = sics::graph::miniclean::common::VertexID;
 
 std::pair<size_t, size_t> GCR::ComputeMatchAndSupport(
     MiniCleanCSRGraph* graph,
@@ -300,4 +300,4 @@ bool GCR::IsCompatibleWith(const ConcreteVariablePredicate& variable_predicate,
   return true;
 }
 
-}  // namespace xyz::graph::miniclean::data_structures::gcr::refactor
+}  // namespace sics::graph::miniclean::data_structures::gcr::refactor

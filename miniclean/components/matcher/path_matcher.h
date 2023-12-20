@@ -9,18 +9,18 @@
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace xyz::graph::miniclean::components::matcher {
+namespace sics::graph::miniclean::components::matcher {
 
 class PathMatcher {
  private:
-  using EdgeLabel = xyz::graph::miniclean::common::EdgeLabel;
-  using GraphID = xyz::graph::miniclean::common::GraphID;
+  using EdgeLabel = sics::graph::miniclean::common::EdgeLabel;
+  using GraphID = sics::graph::miniclean::common::GraphID;
   using MiniCleanCSRGraph =
-      xyz::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-  using PathPattern = xyz::graph::miniclean::common::PathPattern;
-  using TaskPackage = xyz::graph::core::common::TaskPackage;
-  using VertexID = xyz::graph::miniclean::common::VertexID;
-  using VertexLabel = xyz::graph::miniclean::common::VertexLabel;
+      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+  using PathPattern = sics::graph::miniclean::common::PathPattern;
+  using TaskPackage = sics::graph::core::common::TaskPackage;
+  using VertexID = sics::graph::miniclean::common::VertexID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
   PathMatcher(MiniCleanCSRGraph* miniclean_csr_graph)
@@ -70,6 +70,6 @@ class PathMatcher {
   std::mutex mtx_;
   std::mutex dur_mtx_;
 };
-}  // namespace xyz::graph::miniclean::components::matcher
+}  // namespace sics::graph::miniclean::components::matcher
 
 #endif  // MINICLEAN_COMPONENTS_PATH_MATCHER_H_

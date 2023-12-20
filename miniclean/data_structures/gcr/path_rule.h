@@ -8,7 +8,7 @@
 #include "miniclean/data_structures/gcr/refactor_predicate.h"
 #include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
-namespace xyz::graph::miniclean::data_structures::gcr {
+namespace sics::graph::miniclean::data_structures::gcr {
 
 // Path rule contains:
 //   - a path pattern
@@ -16,15 +16,15 @@ namespace xyz::graph::miniclean::data_structures::gcr {
 // It's used to compose with a GCR.
 class PathRule {
  private:
-  using PathPatternID = xyz::graph::miniclean::common::PathPatternID;
-  using PathPattern = xyz::graph::miniclean::common::PathPattern;
+  using PathPatternID = sics::graph::miniclean::common::PathPatternID;
+  using PathPattern = sics::graph::miniclean::common::PathPattern;
   using ConstantPredicate =
-      xyz::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate;
+      sics::graph::miniclean::data_structures::gcr::refactor::ConstantPredicate;
   using StarBitmap =
-      xyz::graph::miniclean::components::preprocessor::StarBitmap;
+      sics::graph::miniclean::components::preprocessor::StarBitmap;
   using MiniCleanCSRGraph =
-      xyz::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
-  using VertexID = xyz::graph::miniclean::common::VertexID;
+      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+  using VertexID = sics::graph::miniclean::common::VertexID;
 
  public:
   PathRule() = default;
@@ -83,6 +83,6 @@ class PathRule {
   StarBitmap star_bitmap_;
 };
 
-}  // namespace xyz::graph::miniclean::data_structures::gcr
+}  // namespace sics::graph::miniclean::data_structures::gcr
 
 #endif  // MINICLEAN_DATA_STRUCTURES_GCR_PATH_RULE_H_

@@ -4,7 +4,7 @@
 #include <cassert>
 #include <cstdlib>
 
-namespace xyz::graph::core::util {
+namespace sics::graph::core::util {
 namespace atomic {
 
 // @DESCRIPTION
@@ -58,6 +58,6 @@ inline void WriteAdd(ET* a, ET b) {
 }
 
 }  // namespace atomic
-}  // namespace xyz::graph::core::util
+}  // namespace sics::graph::core::util
 
 #endif  // CORE_UTIL_ATOMIC_H_
