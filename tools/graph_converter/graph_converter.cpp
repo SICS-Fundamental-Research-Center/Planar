@@ -7,13 +7,13 @@
 // USAGE: graph-convert --convert_mode=[options] -i <input file path> -o <output
 // file path> --sep=[separator]
 
+#include <gflags/gflags.h>
+#include <yaml-cpp/yaml.h>
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <type_traits>
-
-#include <gflags/gflags.h>
-#include <yaml-cpp/yaml.h>
 
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"
@@ -87,7 +87,7 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   delete[] buff;
 
   EdgeIndex index = 0;
-  VertexID max_vid = 0, compressed_vid = 0;
+  VertexID max_vid = 0;
   std::string line, vid_str;
   if (read_head) getline(ss, line, '\n');
   while (getline(ss, line, '\n')) {
@@ -102,50 +102,65 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   content.clear();
   in_file.close();
 
+  auto buffer_edges_compact = new VertexID[n_edges * 2]();
   auto aligned_max_vid = (((max_vid + 1) >> 6) << 6) + 64;
   auto vid_map = new VertexID[aligned_max_vid]();
   Bitmap bitmap(aligned_max_vid);
-
-  // Compute the mapping between origin vid to compressed vid.
-  for (EdgeIndex index = 0; index < n_edges * 2; index++) {
-    if (!bitmap.GetBit(buffer_edges[index])) {
-      bitmap.SetBit(buffer_edges[index]);
-      vid_map[buffer_edges[index]] = compressed_vid++;
-    }
-  }
-
-  auto compressed_buffer_edges = new VertexID[n_edges * 2]();
-
-  // Compress vid and buffer graph.
+  index = 0;
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
-      for (EdgeIndex j = i; j < n_edges * 2; j += parallelism)
-        if (FLAGS_not_reorder_vertices) {
-          compressed_buffer_edges[j] = buffer_edges[j];
-        }
-        else {
-          compressed_buffer_edges[j] = vid_map[buffer_edges[j]];
-        }
+      for (EdgeIndex j = i; j < n_edges; j += parallelism) {
+        if (buffer_edges[j * 2] == buffer_edges[j * 2 + 1]) continue;
+        auto local_index = __sync_fetch_and_add(&index, 1);
+        bitmap.SetBit(local_index);
+        buffer_edges_compact[local_index * 2] = buffer_edges[j * 2];
+        buffer_edges_compact[local_index * 2 + 1] = buffer_edges[j * 2 + 1];
+      }
     });
     task_package.push_back(task);
   }
   thread_pool.SubmitSync(task_package);
   task_package.clear();
-  delete[] buffer_edges;
-  delete[] vid_map;
+  auto compacted_n_edges = index;
+
+  bitmap.Clear();
+  VertexID compressed_vid = 0;
+  for (index = 0; index < n_edges * 2; index++) {
+    if (!bitmap.GetBit(buffer_edges_compact[index])) {
+      bitmap.SetBit(buffer_edges_compact[index]);
+      vid_map[buffer_edges_compact[index]] = compressed_vid++;
+    }
+  }
+
+  auto buffer_edges_minimized_max_vid = new VertexID[n_edges * 2]();
+  // Compress vid and buffer graph.
+  for (unsigned int i = 0; i < parallelism; i++) {
+    auto task = std::bind([&, i, parallelism]() {
+      for (EdgeIndex j = i; j < n_edges * 2; j += parallelism) {
+        buffer_edges_minimized_max_vid[j] = vid_map[buffer_edges_compact[j]];
+      }
+    });
+    task_package.push_back(task);
+  }
+  thread_pool.SubmitSync(task_package);
+  task_package.clear();
 
   // Write binary edgelist
-  out_data_file.write(reinterpret_cast<char*>(compressed_buffer_edges),
-                      sizeof(VertexID) * 2 * n_edges);
-  delete[] compressed_buffer_edges;
+  out_data_file.write(reinterpret_cast<char*>(buffer_edges_minimized_max_vid),
+                      sizeof(VertexID) * 2 * compacted_n_edges);
+  delete[] vid_map;
+  delete[] buffer_edges;
+  delete[] buffer_edges_minimized_max_vid;
+  delete[] buffer_edges_compact;
 
   // Write Meta date.
   YAML::Node node;
   node["EdgelistBin"]["num_vertices"] = bitmap.Count();
-  node["EdgelistBin"]["num_edges"] = n_edges;
+  node["EdgelistBin"]["num_edges"] = compacted_n_edges;
   node["EdgelistBin"]["max_vid"] = compressed_vid - 1;
   out_meta_file << node << std::endl;
 
+  // delete bitmap;
   out_data_file.close();
   out_meta_file.close();
 }
@@ -161,7 +176,7 @@ void BigGraphConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
                                             const std::string& sep,
                                             EdgeIndex n_edges, bool read_head) {
   if (n_edges == UINT64_MAX) LOG_FATAL("n_edges should be specified.");
-  LOG_INFO("Read ", n_edges, " edges.", n_edges * 2);
+  LOG_INFO("Read ", n_edges, " edges.");
 
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
@@ -175,7 +190,7 @@ void BigGraphConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   std::ofstream out_meta_file(output_path + "meta.yaml");
 
   // Read edgelist graph.
-  VertexID max_vid = 0, compressed_vid = 0;
+  VertexID max_vid = 0;
   std::string line, vid_str;
   auto buffer_edges = new VertexID[n_edges * 2]();
   EdgeIndex index = 0;
@@ -193,49 +208,65 @@ void BigGraphConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
 
   if (index < n_edges) n_edges = index;
 
+  auto buffer_edges_compact = new VertexID[n_edges * 2]();
   auto aligned_max_vid = (((max_vid + 1) >> 6) << 6) + 64;
   auto vid_map = new VertexID[aligned_max_vid]();
-  auto bitmap = new Bitmap(aligned_max_vid);
-
-  for (index = 0; index < n_edges * 2; index++) {
-    if (!bitmap->GetBit(buffer_edges[index])) {
-      bitmap->SetBit(buffer_edges[index]);
-      vid_map[buffer_edges[index]] = compressed_vid++;
-    }
-  }
-
-  auto compressed_buffer_edges = new VertexID[n_edges * 2]();
-  // Compress vid and buffer graph.
+  Bitmap bitmap(aligned_max_vid);
+  index = 0;
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i, parallelism]() {
-      for (EdgeIndex j = i; j < n_edges * 2; j += parallelism) {
-        if (FLAGS_not_reorder_vertices) {
-          compressed_buffer_edges[j] = buffer_edges[j];
-        } else {
-          compressed_buffer_edges[j] = vid_map[buffer_edges[j]];
-        }
+      for (EdgeIndex j = i; j < n_edges; j += parallelism) {
+        if (buffer_edges[j * 2] == buffer_edges[j * 2 + 1]) continue;
+        auto local_index = __sync_fetch_and_add(&index, 1);
+        bitmap.SetBit(local_index);
+        buffer_edges_compact[local_index * 2] = buffer_edges[j * 2];
+        buffer_edges_compact[local_index * 2 + 1] = buffer_edges[j * 2 + 1];
       }
     });
     task_package.push_back(task);
   }
   thread_pool.SubmitSync(task_package);
   task_package.clear();
-  delete[] buffer_edges;
-  delete[] vid_map;
+  auto compacted_n_edges = index;
+
+  bitmap.Clear();
+  VertexID compressed_vid = 0;
+  for (index = 0; index < n_edges * 2; index++) {
+    if (!bitmap.GetBit(buffer_edges_compact[index])) {
+      bitmap.SetBit(buffer_edges_compact[index]);
+      vid_map[buffer_edges_compact[index]] = compressed_vid++;
+    }
+  }
+
+  auto buffer_edges_minimized_max_vid = new VertexID[n_edges * 2]();
+  // Compress vid and buffer graph.
+  for (unsigned int i = 0; i < parallelism; i++) {
+    auto task = std::bind([&, i, parallelism]() {
+      for (EdgeIndex j = i; j < n_edges * 2; j += parallelism) {
+        buffer_edges_minimized_max_vid[j] = vid_map[buffer_edges_compact[j]];
+      }
+    });
+    task_package.push_back(task);
+  }
+  thread_pool.SubmitSync(task_package);
+  task_package.clear();
 
   // Write binary edgelist
-  out_data_file.write(reinterpret_cast<char*>(compressed_buffer_edges),
-                      sizeof(VertexID) * 2 * n_edges);
-  delete[] compressed_buffer_edges;
+  out_data_file.write(reinterpret_cast<char*>(buffer_edges_minimized_max_vid),
+                      sizeof(VertexID) * 2 * compacted_n_edges);
+  delete[] vid_map;
+  delete[] buffer_edges;
+  delete[] buffer_edges_minimized_max_vid;
+  delete[] buffer_edges_compact;
 
   // Write Meta date.
   YAML::Node node;
-  node["EdgelistBin"]["num_vertices"] = bitmap->Count();
-  node["EdgelistBin"]["num_edges"] = n_edges;
+  node["EdgelistBin"]["num_vertices"] = bitmap.Count();
+  node["EdgelistBin"]["num_edges"] = compacted_n_edges;
   node["EdgelistBin"]["max_vid"] = compressed_vid - 1;
   out_meta_file << node << std::endl;
 
-  delete bitmap;
+  // delete bitmap;
   out_data_file.close();
   out_meta_file.close();
 }

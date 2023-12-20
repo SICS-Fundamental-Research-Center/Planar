@@ -47,8 +47,6 @@ class GraphFormatConverter {
     if (!std::filesystem::exists(output_root_path + "/bitmap/is_in_graph"))
       std::filesystem::create_directory(output_root_path +
                                         "/bitmap/is_in_graph");
-    if (!std::filesystem::exists(output_root_path + "/index"))
-      std::filesystem::create_directory(output_root_path + "/index");
   }
 
   // @DESCRIPTION Write a set of vertices to disk. It first merges vertices to
