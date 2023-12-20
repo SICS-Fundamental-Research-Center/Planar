@@ -113,7 +113,8 @@ class MutableCSRGraph : public Serializable {
         metadata_->num_vertices,
         (uint64_t*)(graph_serialized_->GetCSRBuffer()->at(4).Get()));
     // If graph is mutable, malloc corresponding structure used in computing.
-    if (common::Configurations::Get()->edge_mutate) {
+    if (common::Configurations::Get()->edge_mutate &&
+        metadata_->num_outgoing_edges != 0) {
       out_degree_base_new_ = new VertexDegree[metadata_->num_vertices];
       memcpy(out_degree_base_new_, out_degree_base_,
              sizeof(VertexDegree) * metadata_->num_vertices);
@@ -121,23 +122,29 @@ class MutableCSRGraph : public Serializable {
       edge_delete_bitmap_.Init(metadata_->num_outgoing_edges);
       // Out_edges_base_new_ buffer is malloc when used. And release in the same
       // function.
+      out_edges_base_new_ = nullptr;
+    } else {
+      out_offset_base_new_ = nullptr;
+      out_degree_base_new_ = nullptr;
+      out_edges_base_new_ = nullptr;
     }
     // If partition type is vertex cut, get index_by_global_id_.
-    if (common::Configurations::Get()->partition_type ==
-        common::PartitionType::VertexCut) {
-      index_by_global_id_ =
-          (VertexIndex*)(graph_serialized_->GetCSRBuffer()->at(5).Get());
-    }
+    index_by_global_id_ =
+        (VertexIndex*)(graph_serialized_->GetCSRBuffer()->at(5).Get());
   }
 
+  common::GraphID GetGraphID() const override { return metadata_->gid; }
+
   // methods for sync data
-  void SyncVertexData() {
-    memcpy(vertex_data_read_base_, vertex_data_write_base_,
-           sizeof(VertexData) * metadata_->num_vertices);
+  void SyncVertexData(bool use_read_data_only = false) {
+    if (!use_read_data_only) {
+      memcpy(vertex_data_read_base_, vertex_data_write_base_,
+             sizeof(VertexData) * metadata_->num_vertices);
+    }
   }
 
   void UpdateOutOffsetBaseNew(common::TaskRunner* runner) {
-    LOG_INFO("out_offset_base_new update begin!");
+    //    LOG_INFO("out_offset_base_new update begin!");
     // TODO: change simple logic
     uint32_t step = ceil((double)metadata_->num_vertices / parallelism_);
     VertexIndex b1 = 0, e1 = 0;
@@ -196,17 +203,21 @@ class MutableCSRGraph : public Serializable {
       }
       runner->SubmitSync(fix_tasks);
     }
-    LOG_INFO("out_offset_base_new update finish!");
+    //    LOG_INFO("out_offset_base_new update finish!");
   }
 
   void MutateGraphEdge(common::TaskRunner* runner) {
     LOG_INFO("Mutate graph edge begin");
     // Check left edges in subgraph.
-    size_t num_outgoing_edges_new =
-        metadata_->num_outgoing_edges - edge_delete_bitmap_.Count();
+    auto del_edges = edge_delete_bitmap_.Count();
+    size_t num_outgoing_edges_new = metadata_->num_outgoing_edges - del_edges;
+    if (metadata_->num_outgoing_edges < del_edges) {
+      LOG_FATAL("delete edges number is more than left, stop!");
+    }
+
     // compute out_offset
     if (num_outgoing_edges_new != 0) {
-      LOG_INFO("init new data structure for graph");
+      //      LOG_INFO("init new data structure for graph");
       out_edges_base_new_ = new VertexID[num_outgoing_edges_new];
       UpdateOutOffsetBaseNew(runner);
       //      for (int i = 0; i < metadata_->num_vertices; i++) {
@@ -217,7 +228,7 @@ class MutableCSRGraph : public Serializable {
       size_t task_num = parallelism_ * task_package_factor_;
       uint32_t task_size = ceil((double)metadata_->num_vertices / task_num);
       task_size = task_size < 2 ? 2 : task_size;
-      LOGF_INFO("task size {}", task_size);
+      //      LOGF_INFO("task size {}", task_size);
       common::TaskPackage tasks;
       tasks.reserve(task_num);
       VertexIndex begin_index = 0, end_index = 0;
@@ -242,17 +253,19 @@ class MutableCSRGraph : public Serializable {
       }
       runner->SubmitSync(tasks);
       // tear down degree and offset buffer
-      LOG_INFO("tear down old data structure for graph");
+      //      LOG_INFO("tear down old data structure for graph");
       memcpy(out_degree_base_, out_degree_base_new_,
              sizeof(VertexDegree) * metadata_->num_vertices);
       memcpy(out_offset_base_, out_offset_base_new_,
              sizeof(EdgeIndex) * metadata_->num_vertices);
       // change out_edges_buffer to new one
       edge_delete_bitmap_.Clear();
+      edge_delete_bitmap_.Init(num_outgoing_edges_new);
       // replace edges buffer of subgraph
       graph_serialized_->GetCSRBuffer()->at(1) =
           OwnedBuffer(sizeof(VertexID) * num_outgoing_edges_new,
                       std::unique_ptr<uint8_t>((uint8_t*)out_edges_base_new_));
+      LOGF_INFO("Left edges: {}", num_outgoing_edges_new);
       out_edges_base_ = out_edges_base_new_;
       out_edges_base_new_ = nullptr;
     } else {
@@ -278,6 +291,10 @@ class MutableCSRGraph : public Serializable {
 
   VertexID GetVertexIDByIndex(VertexIndex index) const {
     return vertex_id_by_local_index_[index];
+  }
+
+  VertexIndex GetVertexIndexByID(VertexID id) const {
+    return index_by_global_id_[id];
   }
 
   VertexDegree GetOutDegreeByIndex(VertexIndex index) const {
@@ -329,6 +346,11 @@ class MutableCSRGraph : public Serializable {
     return util::atomic::WriteMax(&vertex_data_read_base_[index], data_new);
   }
 
+  void WriteReadDataByIDWithoutAtomic(VertexID id, VertexData data_new) {
+    auto index = index_by_global_id_[id];
+    vertex_data_read_base_[index] = data_new;
+  }
+
   // write the min value in local vertex data of vertex id
   // @return: true for global message update, or local message update only
   bool WriteMinVertexDataByID(VertexID id, VertexData data_new) {
@@ -343,6 +365,17 @@ class MutableCSRGraph : public Serializable {
     auto index = index_by_global_id_[id];
     vertex_data_write_base_[index] = data_new;
     return true;
+  }
+
+  // write new data into read and write buffer both
+  bool WriteMinBothByID(VertexID id, VertexData data_new) {
+    auto index = index_by_global_id_[id];
+    if (util::atomic::WriteMin(vertex_data_read_base_ + index, data_new)) {
+      vertex_data_write_base_[index] = data_new;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   // TOOD: maybe used later

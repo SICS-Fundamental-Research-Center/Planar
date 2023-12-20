@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_CORE_APPS_SSSP_APP_H_
-#define GRAPH_SYSTEMS_CORE_APPS_SSSP_APP_H_
+#ifndef GRAPH_SYSTEMS_CORE_APPS_SSSP_ASP_APP_H_
+#define GRAPH_SYSTEMS_CORE_APPS_SSSP_ASP_APP_H_
 
 #include "apis/planar_app_base.h"
 #include "common/bitmap.h"
@@ -14,14 +14,14 @@ using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 
 // Push info version.
 // Vertex push the shorter distance to all neighbors.
-class SsspApp : public apis::PlanarAppBase<CSRGraph> {
+class SsspAspApp : public apis::PlanarAppBase<CSRGraph> {
   using VertexID = common::VertexID;
 
  public:
   using VertexData = CSRGraph::VertexData;
   using EdgeData = CSRGraph::EdgeData;
-  SsspApp() = default;
-  explicit SsspApp(
+  SsspAspApp() = default;
+  explicit SsspAspApp(
       common::TaskRunner* runner,
       update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
       data_structures::Serializable* graph)
@@ -34,9 +34,11 @@ class SsspApp : public apis::PlanarAppBase<CSRGraph> {
     //    active_.Init(update_store->GetMessageCount());
     //    active_next_.Init(update_store->GetMessageCount());
     source_ = common::Configurations::Get()->source;
+    use_readdata_only_ = !common::Configurations::Get()->ASP;
+    LOGF_INFO("SSSP ASP mode, vertex data sync: {}", use_readdata_only_);
   }
 
-  ~SsspApp() override = default;
+  ~SsspAspApp() override = default;
 
   void PEval() final;
   void IncEval() final;
@@ -61,4 +63,4 @@ class SsspApp : public apis::PlanarAppBase<CSRGraph> {
 
 }  // namespace sics::graph::core::apps
 
-#endif  // GRAPH_SYSTEMS_CORE_APPS_SSSP_APP_H_
+#endif  // GRAPH_SYSTEMS_CORE_APPS_SSSP_ASP_APP_H_

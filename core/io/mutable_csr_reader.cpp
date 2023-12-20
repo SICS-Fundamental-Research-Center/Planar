@@ -14,14 +14,22 @@ void MutableCSRReader::Read(scheduler::ReadMessage* message,
       root_path_ + "label/" + std::to_string(message->graph_id) + ".bin";
   if (common::Configurations::Get()->edge_mutate && message->round != 0) {
     file_path += ".new";
+  }
+  if (message->round != 0) {
     label_path += ".new";
   }
   std::string in_graph_bitmap_path = root_path_ + "bitmap/is_in_graph/" +
                                      std::to_string(message->graph_id) + ".bin";
   std::string src_bitmap_path = root_path_ + "bitmap/src_map/" +
                                 std::to_string(message->graph_id) + ".bin";
-  std::string index_path =
-      root_path_ + "index/" + std::to_string(message->graph_id) + ".bin";
+  std::string index_path = "";
+  if (core::common::Configurations::Get()->partition_type ==
+      common::PartitionType::EdgeCut) {
+    index_path = root_path_ + "index/global_index.bin";
+  } else {
+    index_path =
+        root_path_ + "index/" + std::to_string(message->graph_id) + ".bin";
+  }
 
   Serialized* graph_serialized = message->response_serialized;
   std::vector<OwnedBuffer> buffers;
@@ -46,6 +54,8 @@ void MutableCSRReader::ReadMetaInfoFromBin(const std::string& path,
   file.seekg(0, std::ios::end);
   size_t file_size = file.tellg();
   file.seekg(0, std::ios::beg);
+  read_size_ += (file_size >> 20);
+
   size_t meta_size = num_vertices * sizeof(common::VertexID) * 2 +
                      num_vertices * sizeof(common::EdgeIndex);
   size_t edge_size = file_size - meta_size;
@@ -75,6 +85,8 @@ void MutableCSRReader::ReadSingleBufferFromBin(
   file.seekg(0, std::ios::end);
   size_t file_size = file.tellg();
   file.seekg(0, std::ios::beg);
+
+  read_size_ += (file_size >> 20);
 
   //  buffers->emplace_back(OwnedBuffer(file_size));
   buffers->emplace_back(file_size);

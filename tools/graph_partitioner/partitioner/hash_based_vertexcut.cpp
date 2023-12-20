@@ -101,7 +101,7 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
         }
         bitmap_vec.at(bid).SetBit(e.src);
         bitmap_vec.at(bid).SetBit(e.dst);
-        WriteAdd(size_per_bucket + bid, (EdgeIndex) 1);
+        WriteAdd(size_per_bucket + bid, (EdgeIndex)1);
         WriteMax(max_vid_per_bucket + bid, e.src);
         WriteMax(max_vid_per_bucket + bid, e.dst);
         WriteMax(&max_vid, e.src);
@@ -119,8 +119,9 @@ void HashBasedVertexCutPartitioner::RunPartitioner() {
   std::vector<Edges> edge_buckets;
 
   for (GraphID i = 0; i < n_partitions_; i++) {
-    EdgelistMetadata edgelist_metadata = {
-        bitmap_vec.at(i).Count(), size_per_bucket[i], max_vid_per_bucket[i]};
+    EdgelistMetadata edgelist_metadata = {(uint32_t)(bitmap_vec.at(i).Count()),
+                                          size_per_bucket[i],
+                                          max_vid_per_bucket[i]};
     edgelist_metadata_vec.push_back(edgelist_metadata);
     edge_buckets.emplace_back(Edges(edgelist_metadata));
   }

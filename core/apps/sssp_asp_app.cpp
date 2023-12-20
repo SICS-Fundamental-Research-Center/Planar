@@ -1,8 +1,8 @@
-#include "apps/sssp_app.h"
+#include "apps/sssp_asp_app.h"
 
 namespace sics::graph::core::apps {
 
-void SsspApp::PEval() {
+void SsspAspApp::PEval() {
   auto init = [this](VertexID id) { this->Init(id); };
   auto relax = [this](VertexID id) { this->Relax(id); };
 
@@ -30,17 +30,17 @@ void SsspApp::PEval() {
   }
 }
 
-void SsspApp::IncEval() {
+void SsspAspApp::IncEval() {
   auto message_passing = [this](VertexID id) { this->MessagePassing(id); };
   auto relax = [this](VertexID id) { this->Relax(id); };
   active_.Init(graph_->GetVertexNums());
   active_next_.Init(graph_->GetVertexNums());
-  active_.Clear();
+  active_.Fill();
   active_next_.Clear();
   //  update_store_->LogGlobalMessage();
   //  graph_->LogVertexData();
-  ParallelVertexDo(message_passing);
-  LOGF_INFO("message passing finished, active: {}", active_.Count());
+  //  ParallelVertexDo(message_passing);
+  //  LOGF_INFO("message passing finished, active: {}", active_.Count());
   //  graph_->LogVertexData();
   //  flag = false;
   while (active_.Count() != 0) {
@@ -58,46 +58,54 @@ void SsspApp::IncEval() {
   }
 }
 
-void SsspApp::Assemble() {}
+void SsspAspApp::Assemble() {}
 
-void SsspApp::Init(VertexID id) {
+void SsspAspApp::Init(VertexID id) {
   if (id == source_) {
-    graph_->WriteVertexDataByID(id, 0);
-    update_store_->WriteMinBorderVertex(id, 0);
+    //    graph_->WriteVertexDataByID(id, 0);
+    //    update_store_->WriteMinBorderVertex(id, 0);
+    update_store_->Write(id, 0);
     active_.SetBit(graph_->GetVertexIndexByID(id));
     LOGF_INFO("source of SSSP: {}", id);
   } else {
-    graph_->WriteVertexDataByID(id, SSSP_INFINITY);
+    //    graph_->WriteVertexDataByID(id, SSSP_INFINITY);
+    update_store_->Write(id, SSSP_INFINITY);
   }
 }
 
-void SsspApp::Relax(VertexID id) {
+void SsspAspApp::Relax(VertexID id) {
   // push to neighbors
+  //  if (update_store_->ReadWriteBuffer(id) <
+  //      graph_->ReadLocalVertexDataByID(id)) {
+  //    graph_->WriteMinBothByID(id, update_store_->ReadWriteBuffer(id));
+  //  }
+
   auto edges = graph_->GetOutEdgesByID(id);
   auto degree = graph_->GetOutDegreeByID(id);
-  auto current_distance = graph_->ReadLocalVertexDataByID(id) + 1;
   for (int i = 0; i < degree; i++) {
     auto dst_id = edges[i];
-    auto data = graph_->ReadLocalVertexDataByID(dst_id);
+    auto current_distance = update_store_->ReadWriteBuffer(id) + 1;
+    //    auto data = graph_->ReadLocalVertexDataByID(dst_id);
+    auto data = update_store_->ReadWriteBuffer(dst_id);
     if (current_distance < data) {
-      if (graph_->WriteMinVertexDataByID(dst_id, current_distance)) {
-        update_store_->WriteMinBorderVertex(dst_id, current_distance);
-        active_next_.SetBit(graph_->GetVertexIndexByID(dst_id));
-        //          if (flag)
-        //            LOGF_INFO(" === do this relax = {} -> {}, distance {},
-        //            dst {}", id,
-        //                      dst_id, current_distance, data);
-      }
+      //      if (graph_->WriteMinVertexDataByID(dst_id, current_distance)) {
+      update_store_->WriteMin(dst_id, current_distance);
+      active_next_.SetBit(graph_->GetVertexIndexByID(dst_id));
+      //          if (flag)
+      //            LOGF_INFO(" === do this relax = {} -> {}, distance {},
+      //            dst {}", id,
+      //                      dst_id, current_distance, data);
+      //      }
     }
   }
 }
 
-void SsspApp::MessagePassing(VertexID id) {
+void SsspAspApp::MessagePassing(VertexID id) {
   if (graph_->WriteMinVertexDataByID(id, update_store_->Read(id)))
     active_.SetBit(graph_->GetVertexIndexByID(id));
 }
 
-void SsspApp::LogActive() {
+void SsspAspApp::LogActive() {
   for (int i = 0; i < active_.size(); i++) {
     if (active_.GetBit(i)) {
       VertexData tmp = graph_->ReadLocalVertexDataByID(i);

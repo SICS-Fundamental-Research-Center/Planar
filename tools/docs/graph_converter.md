@@ -15,8 +15,9 @@ our binary format with graph_converter tool provided in tools.
 You can use graph_converter as follows:
 ``` Bash
 $ cd ${PROJECT_ROOT_DIR}
-$ ./bin/tools/graph_converter_exec -convert_mode [options] -i [input path] -o [output path] -sep [separator]
+$ ./bin/tools/graph_converter_exec -convert_mode [options] -i [input path] -o [output path] -sep [separator] (optiional commands -n_edges [numer of edges] -biggraph)
 ```
+We strongly recommend users to -n_edges and -biggraph commands if they know how many edges to read.
 
 General options of convert mode:
 * edgelistcsv2edgelistbin - Convert txt of edgelist to binary edge list

@@ -11,10 +11,10 @@ enum VertexDataType {
 };
 
 enum PartitionType {
-  VertexCut = 1,
+  PlanarVertexCut = 1,
+  HashVertexCut,
+  Vertex2DCut,
   EdgeCut,
-  HybridCut,
-  PlanarCut,
 };
 
 enum ApplicationType {
@@ -46,14 +46,29 @@ class Configurations {
   Configurations& operator=(const Configurations& rhs) = delete;
   uint32_t task_package_factor = 100;
   uint32_t parallelism = 1;
-  PartitionType partition_type = VertexCut;
+  PartitionType partition_type = PlanarVertexCut;
   std::string root_path = "/testfile";
   VertexDataType vertex_data_type = kVertexDataTypeUInt32;
   bool edge_mutate = false;
   bool in_memory = false;
+  int limits = 0;
+  bool short_cut = true;
   uint32_t vertex_data_size = 4;
   size_t memory_size = 64 * 1024;
   ApplicationType application = WCC;
+  // for coloring
+  uint32_t rand_max = 10000;
+  // for sssp
+  uint32_t source = 0;
+  bool ASP = false;
+  // for mst
+  bool fast = false;
+  // for wcc
+  bool wcc_ASP = false;
+
+  bool threefour_mode = false;
+
+  bool group = false;
 
  private:
   Configurations() = default;

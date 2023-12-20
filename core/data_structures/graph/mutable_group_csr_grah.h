@@ -24,21 +24,20 @@ class MutableGroupCSRGraph : public Serializable {
   ~MutableGroupCSRGraph() override = default;
 
   std::unique_ptr<Serialized> Serialize(
-      const common::TaskRunner& runner) override {
-    // TODO: serialized all sub-graph
-  }
+      const common::TaskRunner& runner) override {}
 
   void Deserialize(const common::TaskRunner& runner,
-                   std::unique_ptr<Serialized>&& serialized) override {
-    // TODO: deserialize all sub-graph
-  }
+                   std::unique_ptr<Serialized>&& serialized) override {}
 
   // TODO: add corresponding methods
 
   VertexData ReadLocalVertexDataByID(VertexID id) const {
     for (auto& subgraph : subgraphs_) {
-      return subgraph.ReadLocalVertexDataByID(id);
+      if (subgraph.IsInGraph(id)) {
+        return subgraph.ReadLocalVertexDataByID(id);
+      }
     }
+    return VertexData();
   }
 
   bool WriteMinVertexDataByID(VertexID id, VertexData data_new) {

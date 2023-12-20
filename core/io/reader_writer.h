@@ -19,6 +19,8 @@ class Reader {
   // caller thread; otherwise, it will be executed by the provided task runner.
   virtual void Read(ReadMessage* message,
                     common::TaskRunner* runner = nullptr) = 0;
+
+  virtual size_t SizeOfReadNow() { return 0; }
 };
 
 class Writer {
