@@ -28,41 +28,53 @@ void MstApp::IncEval() {
   auto update_min_edge = [this](VertexID src_id) { UpdateMinEdge(src_id); };
   auto point_jump_inc = [this](VertexID id) { PointJumpInc(id); };
 
-  if (graph_->GetOutEdgeNums() == 0) {
-    LOG_INFO("Second IncEval begin");
-    ParallelVertexDo(message_passing);
-    LOG_INFO("message passing finished");
-    graph_->LogVertexData();
-
-    // point jump inc
-    ParallelVertexDo(point_jump_inc);
-    LOG_INFO("point_jump_inc finished");
-
+  if (fast_) {
+    if (graph_->GetOutEdgeNums() == 0) {
+      ParallelVertexDo(message_passing);
+      LOG_INFO("message passing finished");
+      ParallelVertexDo(point_jump_inc);
+      LOG_INFO("point_jump_inc finished");
+    } else {
+      while (graph_->GetOutEdgeNums() != 0) {
+        ParallelVertexDo(prepare_min_out_edge_first);
+        LOG_INFO("prepare min_out_edge first finished");
+        ParallelVertexDo(graft);
+        LOG_INFO("graft finished");
+        ParallelVertexDo(point_jump);
+        LOG_INFO("point_jump finished");
+        ParallelEdgeMutateDo(contract);
+        LOG_INFO("contract finished");
+        ParallelVertexDo(update_min_edge);
+        LOGF_INFO("update_min_edge finished, left edges: {}",
+                  graph_->GetOutEdgeNums());
+      }
+    }
   } else {
-    LOG_INFO("first IncEval begin");
-    while (graph_->GetOutEdgeNums() != 0) {
+    if (graph_->GetOutEdgeNums() != 0) {
+      ParallelVertexDo(message_passing);
+      LOG_INFO("message passing finished");
       //      graph_->LogGraphInfo();
-      graph_->LogEdges();
-      LogMinOutEdgeId();
+      //      graph_->LogEdges();
+      //      LogMinOutEdgeId();
       ParallelVertexDo(prepare_min_out_edge_first);
       LOG_INFO("prepare min_out_edge first finished");
 
       ParallelVertexDo(graft);
       LOG_INFO("graft finished");
-      graph_->LogVertexData();
+      //      graph_->LogVertexData();
 
       ParallelVertexDo(point_jump);
       LOG_INFO("point_jump finished");
-      graph_->LogVertexData();
+      //      graph_->LogVertexData();
 
       ParallelEdgeMutateDo(contract);
       LOG_INFO("contract finished");
-      graph_->LogVertexData();
+      //      graph_->LogVertexData();
 
       ParallelVertexDo(update_min_edge);
       LOGF_INFO("update_min_edge finished, left edges: {}",
                 graph_->GetOutEdgeNums());
-      graph_->LogVertexData();
+      //      graph_->LogVertexData();
     }
   }
 }
@@ -79,6 +91,7 @@ void MstApp::FindMinEdge(VertexID id) {
     auto edges = graph_->GetOutEdgesByID(id);
     VertexID dst_id = edges[0];
     for (int i = 1; i < degree; i++) {
+      util::atomic::WriteMin(min_out_edge_id_ + edges[i], id);
       dst_id = edges[i] < dst_id ? edges[i] : dst_id;
     }
     min_out_edge_id_[id] = dst_id;  // No conflict, write directly.
@@ -120,64 +133,44 @@ void MstApp::Graft(VertexID src_id) {
   auto src_parent_id = graph_->ReadLocalVertexDataByID(src_id);
   auto dst_id = min_out_edge_id_[src_id];
   if (dst_id != MST_INVALID_VID) {
-    if (graph_->IsInGraph(dst_id)) {
-      auto dst_parent_id = graph_->ReadLocalVertexDataByID(dst_id);
-      auto src = src_parent_id < dst_parent_id ? src_parent_id : dst_parent_id;
-      auto dst = src_parent_id < dst_parent_id ? dst_parent_id : src_parent_id;
-      if (graph_->IsInGraph(dst)) {
-        if (graph_->WriteMinVertexDataByID(dst, src))
-          update_store_->WriteMinBorderVertex(dst, src);
+    auto dst_parent_id = graph_->ReadLocalVertexDataByID(dst_id);
+    if (src_parent_id < dst_parent_id) {
+      if (graph_->IsInGraph(dst_parent_id)) {
+        if (graph_->WriteMinVertexDataByID(dst_parent_id, src_parent_id))
+          update_store_->WriteMinBorderVertex(dst_parent_id, src_parent_id);
       } else {
-        if (graph_->WriteMinVertexDataByID(dst_id, src))
-          update_store_->WriteMinBorderVertex(dst_id, src);
+        if (graph_->WriteMinVertexDataByID(dst_id, src_parent_id))
+          update_store_->WriteMinBorderVertex(dst_id, src_parent_id);
       }
     } else {
-      if (dst_id < src_parent_id) {
-        if (graph_->IsInGraph(src_parent_id)) {
-          if (graph_->WriteMinVertexDataByID(src_parent_id, dst_id))
-            update_store_->WriteMinBorderVertex(src_parent_id, dst_id);
-        } else {
-          if (graph_->WriteMinVertexDataByID(src_id, dst_id)) {
-            update_store_->WriteMinBorderVertex(src_id, dst_id);
-          }
-        }
+      if (graph_->IsInGraph(src_parent_id)) {
+        if (graph_->WriteMinVertexDataByID(src_parent_id, dst_parent_id))
+          update_store_->WriteMinBorderVertex(src_parent_id, dst_parent_id);
+      } else {
+        if (graph_->WriteMinVertexDataByID(src_id, dst_parent_id))
+          update_store_->WriteMinBorderVertex(src_id, dst_parent_id);
       }
     }
     //  }
   }
 }
-//      if (graph_->IsInGraph(dst_id)) {
-//        if (src_id < dst_id) {
-//          if (graph_->WriteMinVertexDataByID(dst_id, src_id))
-//            update_store_->WriteMinBorderVertex(dst_id, src_id);
-//        } else {
-//          if (graph_->WriteMinVertexDataByID(src_id, dst_id))
-//            update_store_->WriteMinBorderVertex(src_id, dst_id);
-//        }
-//      } else {
-//        if (src_id < dst_id) {
-//          // dst_id is not in graph.
-//          WriteMinAuxiliary(dst_id, src_id);
-//        } else {
-//          if (graph_->WriteMinVertexDataByID(dst_id, src_id))
-//            update_store_->WriteMinBorderVertex(dst_id, src_id);
-//        }
-//      }
+
 void MstApp::PointJump(VertexID id) {
   VertexData parent_id = graph_->ReadLocalVertexDataByID(id);
-  while (true) {
-    VertexData tmp;
-    if (graph_->IsInGraph(parent_id)) {
-      tmp = graph_->ReadLocalVertexDataByID(parent_id);
-      if (tmp == parent_id) break;
-    } else {
-      tmp = ReadAuxiliary(parent_id);
-      if (parent_id == MAX_VERTEX_ID) break;
+  if (parent_id != id) {
+    while (true) {
+      VertexData tmp;
+      if (graph_->IsInGraph(parent_id)) {
+        tmp = graph_->ReadLocalVertexDataByID(parent_id);
+        if (tmp == parent_id) break;
+      } else {
+        break;
+      }
+      parent_id = tmp;
     }
-    parent_id = tmp;
-  }
-  if (graph_->WriteMinVertexDataByID(id, parent_id)) {
-    update_store_->WriteMinBorderVertex(id, parent_id);
+    if (graph_->WriteMinVertexDataByID(id, parent_id)) {
+      update_store_->WriteMinBorderVertex(id, parent_id);
+    }
   }
 }
 
@@ -194,6 +187,7 @@ void MstApp::UpdateMinEdge(VertexID id) {
     auto edges = graph_->GetOutEdgesByID(id);
     VertexID dst_id = edges[0];
     for (int i = 1; i < degree; i++) {
+      util::atomic::WriteMin(min_out_edge_id_ + edges[i], id);
       dst_id = edges[i] < dst_id ? edges[i] : dst_id;
     }
     //    auto parent_id = graph_->ReadLocalVertexDataByID(id);

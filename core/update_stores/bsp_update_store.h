@@ -57,6 +57,7 @@ class BspUpdateStore : public UpdateStoreBase {
     }
 
     ReadBorderVertexBitmap(root_path);
+    InitMemorySize();
   }
 
   ~BspUpdateStore() {
@@ -70,6 +71,13 @@ class BspUpdateStore : public UpdateStoreBase {
       LOG_FATAL("Read out of bound");
     }
     return read_data_[vid];
+  }
+
+  VertexData ReadWriteBuffer(VertexID vid) {
+    if (vid >= message_count_) {
+      LOG_FATAL("Read out of bound");
+    }
+    return write_data_[vid];
   }
 
   bool Write(VertexID vid, VertexData vdata_new) {
@@ -120,6 +128,17 @@ class BspUpdateStore : public UpdateStoreBase {
     return false;
   }
 
+  bool WriteMinEdgeCutVertex(VertexID id, VertexData new_data) {
+    if (id >= message_count_) {
+      return false;
+    }
+    if (util::atomic::WriteMin(write_data_ + id, new_data)) {
+      active_count_++;
+      return true;
+    }
+    return false;
+  }
+
   bool IsActive() override { return active_count_ != 0; }
   void SetActive() { active_count_ = 1; }
 
@@ -155,7 +174,17 @@ class BspUpdateStore : public UpdateStoreBase {
     }
   }
 
+  void LogAllMessage() {
+    LOG_INFO("All Global message info:");
+    for (size_t i = 0; i < message_count_; i++) {
+      LOGF_INFO("global message: id({}) -> read: {} write: {}", i,
+                read_data_[i], write_data_[i]);
+    }
+  }
+
   size_t GetActiveCount() const override { return active_count_; }
+
+  size_t GetMemorySize() const override { return memory_size_; }
 
  private:
   void ReadBorderVertexBitmap(const std::string& root_path) {
@@ -177,7 +206,12 @@ class BspUpdateStore : public UpdateStoreBase {
     file.close();
   }
 
-  void InitMemorySize() {}
+  void InitMemorySize() {
+    auto global_messgeage_size =
+        (sizeof(VertexData) * message_count_ * 2) >> 20;
+    auto border_vertex_bitmap_size = message_count_ >> 23;
+    memory_size_ = global_messgeage_size + border_vertex_bitmap_size + 1;
+  }
 
  private:
   VertexData* read_data_;
@@ -188,7 +222,7 @@ class BspUpdateStore : public UpdateStoreBase {
 
   size_t active_count_ = 0;
 
-  size_t memory_size = 0;
+  size_t memory_size_ = 0;
 
   // configs
   common::ApplicationType application_type_;

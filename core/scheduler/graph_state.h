@@ -67,6 +67,11 @@ struct GraphState {
     subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
   }
 
+  void SetComputedSerializedToReadSerialized(common::GraphID gid) {
+    subgraph_storage_state_.at(gid) = Serialized;
+    subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
+  }
+
   void UpdateSubgraphState2(common::GraphID gid, StorageStateType type) {
     subgraph_storage_state_.at(gid) = type;
     subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;

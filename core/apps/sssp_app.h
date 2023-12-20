@@ -31,8 +31,8 @@ class SsspApp : public apis::PlanarAppBase<CSRGraph> {
                update_stores::BspUpdateStore<VertexData, EdgeData>*
                    update_store) override {
     apis::PlanarAppBase<CSRGraph>::AppInit(runner, update_store);
-    active_.Init(update_store->GetMessageCount());
-    active_next_round_.Init(update_store->GetMessageCount());
+    //    active_.Init(update_store->GetMessageCount());
+    //    active_next_.Init(update_store->GetMessageCount());
     source_ = common::Configurations::Get()->source;
   }
 
@@ -49,13 +49,14 @@ class SsspApp : public apis::PlanarAppBase<CSRGraph> {
 
   void MessagePassing(VertexID id);
 
-  void SyncActive();
+  void LogActive();
 
  private:
   // TODO: move this bitmap into API to reduce function call stack cost
-  common::Bitmap active_;
-  common::Bitmap active_next_round_;
+  //  common::Bitmap active_;
+  //  common::Bitmap active_next_round_;
   VertexID source_ = 0;
+  bool flag = false;
 };
 
 }  // namespace sics::graph::core::apps

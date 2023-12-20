@@ -13,6 +13,8 @@
 namespace sics::graph::core::scheduler {
 
 struct ReadMessage {
+  ReadMessage() = default;
+  ReadMessage(const ReadMessage& message) = default;
   // Request fields.
   common::GraphID graph_id;
   common::VertexCount num_vertices;
@@ -33,6 +35,7 @@ typedef enum {
 } ExecuteType;
 
 struct ExecuteMessage {
+  ExecuteMessage() = default;
   // Request fields.
   common::GraphID graph_id;
   data_structures::Serialized* serialized;
@@ -49,6 +52,7 @@ struct ExecuteMessage {
 };
 
 struct WriteMessage {
+  WriteMessage() = default;
   // Request fields.
   common::GraphID graph_id;
   data_structures::Serializable* serializable;
@@ -102,10 +106,13 @@ class Message {
  private:
   Type type_;
 
-  union {
+  union Messages {
     ReadMessage read_message;
     ExecuteMessage execute_message;
     WriteMessage write_message;
+    Messages(const ReadMessage& message) { read_message = message; };
+    Messages(const ExecuteMessage& message) { execute_message = message; };
+    Messages(const WriteMessage& message) { write_message = message; };
   } message_;
 };
 

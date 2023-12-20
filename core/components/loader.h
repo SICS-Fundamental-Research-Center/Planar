@@ -33,6 +33,7 @@ class Loader : public Component {
       while (true) {
         scheduler::ReadMessage message = reader_q_->PopOrWait();
         if (message.terminated) {
+          LOGF_INFO("Read size all: {}", reader_.SizeOfReadNow());
           LOG_INFO("*** Loader is signaled termination ***");
           break;
         }
@@ -51,6 +52,8 @@ class Loader : public Component {
     reader_q_->Push(message);
     thread_->join();
   }
+
+  ReaderType* GetReader() { return &reader_; }
 
  private:
   ReaderType reader_;

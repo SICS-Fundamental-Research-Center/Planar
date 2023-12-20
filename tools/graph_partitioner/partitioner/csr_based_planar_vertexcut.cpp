@@ -1,11 +1,11 @@
 #include "tools/graph_partitioner/partitioner/csr_based_planar_vertexcut.h"
 
+#include <folly/concurrency/ConcurrentHashMap.h>
+#include <folly/hash/Hash.h>
+
 #include <algorithm>
 #include <filesystem>
 #include <string>
-
-#include <folly/concurrency/ConcurrentHashMap.h>
-#include <folly/hash/Hash.h>
 
 #include "core/common/multithreading/thread_pool.h"
 #include "core/common/types.h"

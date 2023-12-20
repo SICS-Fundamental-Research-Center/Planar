@@ -13,6 +13,8 @@ class UpdateStoreBase {
   virtual void Sync(){};
 
   virtual size_t GetActiveCount() const { return 0; };
+
+  virtual size_t GetMemorySize() const { return 0; }
 };
 
 }  // namespace sics::graph::core::update_stores

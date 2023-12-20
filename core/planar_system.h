@@ -39,7 +39,8 @@ class Planar {
         std::make_unique<components::Executor>(scheduler_->GetMessageHub());
 
     // set scheduler info
-    scheduler_->Init(update_store_.get(), executer_->GetTaskRunner(), &app_);
+    scheduler_->Init(update_store_.get(), executer_->GetTaskRunner(), &app_,
+                     loader_->GetReader());
 
     app_.AppInit(executer_->GetTaskRunner(), update_store_.get());
   }
@@ -58,7 +59,7 @@ class Planar {
     Stop();
     end_time_ = std::chrono::system_clock::now();
     LOGF_INFO(" =========== Hole Runtime: {} s ===========",
-             std::chrono::duration<double>(end_time_ - start_time_).count());
+              std::chrono::duration<double>(end_time_ - start_time_).count());
   }
 
   void Stop() {

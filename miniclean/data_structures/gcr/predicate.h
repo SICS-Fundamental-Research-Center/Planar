@@ -3,253 +3,192 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <memory>
-
 #include "core/util/logging.h"
 #include "miniclean/common/types.h"
-#include "miniclean/data_structures/graphs/miniclean_csr_graph.h"
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
-typedef enum {
-  kVariablePredicate = 1,
-  kConstantPredicate,
-  kEdgePredicate,
-  kTemporalPredicate,
-  kMLPredicate,
-} PredicateType;
-
-typedef enum {
-  kEqual = 1,
-  kNotEqual,
-  kLessThan,
-  kLessThanOrEqual,
-  kGreaterThan,
-  kGreaterThanOrEqual,
+typedef enum : uint8_t {
+  kEq = 0,
+  kGt,
 } OperatorType;
 
-class GCRPredicate {
- protected:
-  using PatternVertexID = sics::graph::miniclean::common::PatternVertexID;
-  using MiniCleanCSRGraph =
-      sics::graph::miniclean::data_structures::graphs::MiniCleanCSRGraph;
+// x.A [op] c
+class ConstantPredicate {
+ private:
   using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
   using VertexAttributeValue =
       sics::graph::miniclean::common::VertexAttributeValue;
-  using VertexID = sics::graph::miniclean::common::VertexID;
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
-  using PathPatternID = sics::graph::miniclean::common::PathPatternID;
 
  public:
-  GCRPredicate() = default;
-  GCRPredicate(uint8_t predicate_type, uint8_t operator_type)
-      : predicate_type_(static_cast<PredicateType>(predicate_type)),
-        operator_type_(static_cast<OperatorType>(operator_type)) {}
-  GCRPredicate(const GCRPredicate& other_gcr_predicate)
-      : predicate_type_(other_gcr_predicate.get_predicate_type()),
-        operator_type_(other_gcr_predicate.get_operator_type()) {}
+  ConstantPredicate() = default;
+  ConstantPredicate(VertexLabel vertex_label,
+                    VertexAttributeID vertex_attribute_id,
+                    OperatorType operator_type)
+      : vertex_label_(vertex_label),
+        vertex_attribute_id_(vertex_attribute_id),
+        operator_type_(operator_type) {}
+
+  VertexLabel get_vertex_label() const { return vertex_label_; }
+  VertexAttributeID get_vertex_attribute_id() const {
+    return vertex_attribute_id_;
+  }
+  OperatorType get_operator_type() const { return operator_type_; }
+  size_t get_constant_value() const { return constant_value_; }
+
+  void set_vertex_label(VertexLabel vertex_label) {
+    vertex_label_ = vertex_label;
+  }
+  void set_vertex_attribute_id(VertexAttributeID vertex_attribute_id) {
+    vertex_attribute_id_ = vertex_attribute_id;
+  }
+  void set_operator_type(OperatorType operator_type) {
+    operator_type_ = operator_type;
+  }
+  void set_constant_value(VertexAttributeValue constant_value) {
+    constant_value_ = constant_value;
+  }
+
+ private:
+  VertexLabel vertex_label_;
+  VertexAttributeID vertex_attribute_id_;
+  OperatorType operator_type_;
+  VertexAttributeValue constant_value_;
+};
+
+class VariablePredicate {
+ private:
+  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using VertexAttributeValue =
+      sics::graph::miniclean::common::VertexAttributeValue;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
-  // Compare attributes.
-  virtual bool Compare(const VertexAttributeValue& lhs,
-                       const VertexAttributeValue& rhs) {
+  VariablePredicate() = default;
+  VariablePredicate(VertexLabel lhs_label, VertexLabel rhs_label,
+                    VertexAttributeID lhs_attribute_id,
+                    VertexAttributeID rhs_attribute_id,
+                    OperatorType operator_type)
+      : lhs_label_(lhs_label),
+        rhs_label_(rhs_label),
+        lhs_attribute_id_(lhs_attribute_id),
+        rhs_attribute_id_(rhs_attribute_id),
+        operator_type_(operator_type) {}
+
+  VertexLabel get_lhs_label() const { return lhs_label_; }
+  VertexLabel get_rhs_label() const { return rhs_label_; }
+  VertexAttributeID get_lhs_attribute_id() const { return lhs_attribute_id_; }
+  VertexAttributeID get_rhs_attribute_id() const { return rhs_attribute_id_; }
+  OperatorType get_operator_type() const { return operator_type_; }
+
+  void set_lhs_label(VertexLabel lhs_label) { lhs_label_ = lhs_label; }
+  void set_rhs_label(VertexLabel rhs_label) { rhs_label_ = rhs_label; }
+  void set_lhs_attribute_id(VertexAttributeID lhs_attribute_id) {
+    lhs_attribute_id_ = lhs_attribute_id;
+  }
+  void set_rhs_attribute_id(VertexAttributeID rhs_attribute_id) {
+    rhs_attribute_id_ = rhs_attribute_id;
+  }
+  void set_operator_type(OperatorType operator_type) {
+    operator_type_ = operator_type;
+  }
+  bool Test(VertexAttributeValue rhs, VertexAttributeValue lhs) const {
     switch (operator_type_) {
-      case kEqual:
-        return lhs == rhs;
-      case kNotEqual:
-        return lhs != rhs;
-      case kLessThan:
-        return lhs < rhs;
-      case kLessThanOrEqual:
-        return lhs <= rhs;
-      case kGreaterThan:
-        return lhs > rhs;
-      case kGreaterThanOrEqual:
-        return lhs >= rhs;
+      case kEq:
+        return rhs == lhs;
+      case kGt:
+        return rhs > lhs;
+      default:
+        LOG_FATAL("Error: Unknown operator type: ", operator_type_);
     }
   }
 
-  PredicateType get_predicate_type() const { return predicate_type_; }
-  OperatorType get_operator_type() const { return operator_type_; }
+  std::string GetInfoString() const;
 
- protected:
-  PredicateType predicate_type_;
+ private:
+  VertexLabel lhs_label_;
+  VertexLabel rhs_label_;
+  VertexAttributeID lhs_attribute_id_;
+  VertexAttributeID rhs_attribute_id_;
   OperatorType operator_type_;
 };
 
-/* Variable predicate: x.A [op] y.B */
-class VariablePredicate : public GCRPredicate {
+class ConcreteVariablePredicate {
+ private:
+  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using VertexAttributeValue =
+      sics::graph::miniclean::common::VertexAttributeValue;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
+
  public:
-  VariablePredicate() = default;
-  VariablePredicate(uint8_t operator_type, VertexLabel lhs_vlabel,
-                    VertexAttributeID lhs_aid, VertexLabel rhs_vlabel,
-                    VertexAttributeID rhs_aid)
-      : GCRPredicate(1, operator_type),
-        lhs_aid_(lhs_aid),
-        rhs_aid_(rhs_aid),
-        lhs_vlabel_(lhs_vlabel),
-        rhs_vlabel_(rhs_vlabel) {}
-  VariablePredicate(const VariablePredicate& other_variable_predicate)
-      : GCRPredicate(other_variable_predicate.get_predicate_type(),
-                     other_variable_predicate.get_operator_type()),
-        lhs_aid_(other_variable_predicate.get_lhs_aid()),
-        rhs_aid_(other_variable_predicate.get_rhs_aid()),
-        lhs_vlabel_(other_variable_predicate.get_lhs_vlabel()),
-        rhs_vlabel_(other_variable_predicate.get_rhs_vlabel()) {}
+  ConcreteVariablePredicate() = default;
+  ConcreteVariablePredicate(VariablePredicate variable_predicate,
+                            uint8_t left_path_index, uint8_t left_vertex_index,
+                            uint8_t right_path_index,
+                            uint8_t right_vertex_index)
+      : variable_predicate_(variable_predicate),
+        left_path_index_(left_path_index),
+        left_vertex_index_(left_vertex_index),
+        right_path_index_(right_path_index),
+        right_vertex_index_(right_vertex_index) {}
 
-  VertexLabel get_lhs_vlabel() const { return lhs_vlabel_; }
-  VertexLabel get_rhs_vlabel() const { return rhs_vlabel_; }
-
-  VertexAttributeID get_lhs_aid() const { return lhs_aid_; }
-  VertexAttributeID get_rhs_aid() const { return rhs_aid_; }
-
-  PathPatternID get_lhs_ppid() const { return lhs_ppid_; }
-  PathPatternID get_rhs_ppid() const { return rhs_ppid_; }
-
-  size_t get_lhs_vertex_id() const { return lhs_vertex_id_; }
-  size_t get_rhs_vertex_id() const { return rhs_vertex_id_; }
-
-  void set_lhs_ppid(PathPatternID lhs_ppid) { lhs_ppid_ = lhs_ppid; }
-  void set_rhs_ppid(PathPatternID rhs_ppid) { rhs_ppid_ = rhs_ppid; }
-
-  void set_lhs_vertex_id(size_t lhs_vertex_id) {
-    lhs_vertex_id_ = lhs_vertex_id;
+  VariablePredicate get_variable_predicate() const {
+    return variable_predicate_;
   }
-  void set_rhs_vertex_id(size_t rhs_vertex_id) {
-    rhs_vertex_id_ = rhs_vertex_id;
+  uint8_t get_left_path_index() const { return left_path_index_; }
+  uint8_t get_left_vertex_index() const { return left_vertex_index_; }
+  uint8_t get_right_path_index() const { return right_path_index_; }
+  uint8_t get_right_vertex_index() const { return right_vertex_index_; }
+
+  VertexAttributeID get_left_attribute_id() const {
+    return variable_predicate_.get_lhs_attribute_id();
+  }
+  VertexAttributeID get_right_attribute_id() const {
+    return variable_predicate_.get_rhs_attribute_id();
   }
 
-  bool VariableCompare(MiniCleanCSRGraph* graph,
-                       const std::vector<VertexID>& left_path,
-                       const std::vector<VertexID>& right_path) {
-    VertexAttributeValue lhs_value = graph->GetVertexAttributeValuesByLocalID(
-        left_path[lhs_vertex_id_])[lhs_aid_];
-    VertexAttributeValue rhs_value = graph->GetVertexAttributeValuesByLocalID(
-        right_path[rhs_vertex_id_])[rhs_aid_];
-    return Compare(lhs_value, rhs_value);
+  VertexLabel get_left_label() const {
+    return variable_predicate_.get_lhs_label();
   }
+  VertexLabel get_right_label() const {
+    return variable_predicate_.get_rhs_label();
+  }
+
+  OperatorType get_operator_type() const {
+    return variable_predicate_.get_operator_type();
+  }
+
+  // TODO: Prefer free (inline) functions over static functions.
+  //       Reference: core/util/pointer_cast.h.
+  static bool TestCompatibility(
+      const std::vector<ConcreteVariablePredicate>& lhs_predicates,
+      const std::vector<ConcreteVariablePredicate>& rhs_predicates);
+
+  bool Test(VertexAttributeValue rhs, VertexAttributeValue lhs) const {
+    return variable_predicate_.Test(rhs, lhs);
+  }
+
+  std::string GetInfoString() const;
 
  private:
-  VertexAttributeID lhs_aid_;
-  VertexAttributeID rhs_aid_;
-  VertexLabel lhs_vlabel_;
-  VertexLabel rhs_vlabel_;
-
-  PathPatternID lhs_ppid_;
-  PathPatternID rhs_ppid_;
-  size_t lhs_vertex_id_;
-  size_t rhs_vertex_id_;
+  VariablePredicate variable_predicate_;
+  uint8_t left_path_index_;
+  uint8_t left_vertex_index_;
+  uint8_t right_path_index_;
+  uint8_t right_vertex_index_;
 };
-
-/* Constant predicate: x.A [op] c */
-class ConstantPredicate : public GCRPredicate {
- public:
-  ConstantPredicate() = default;
-  ConstantPredicate(uint8_t operator_type, VertexLabel lhs_vlabel,
-                    VertexAttributeID lhs_aid, VertexAttributeValue c)
-      : GCRPredicate(2, operator_type),
-        lhs_vlabel_(lhs_vlabel),
-        lhs_aid_(lhs_aid),
-        c_(c) {}
-  ConstantPredicate(const ConstantPredicate& other_constant_predicate)
-      : GCRPredicate(other_constant_predicate.get_predicate_type(),
-                     other_constant_predicate.get_operator_type()),
-        lhs_vlabel_(other_constant_predicate.get_lhs_vlabel()),
-        lhs_aid_(other_constant_predicate.get_lhs_aid()),
-        c_(other_constant_predicate.get_rhs_value()) {}
-
-  VertexAttributeID get_lhs_vlabel() const { return lhs_vlabel_; }
-  VertexAttributeID get_lhs_aid() const { return lhs_aid_; }
-
-  VertexAttributeID get_rhs_value() const { return c_; }
-
-  PathPatternID get_lhs_ppid() const { return lhs_ppid_; }
-
-  size_t get_lhs_vertex_id() const { return lhs_vertex_id_; }
-
-  bool is_in_lhs_pattern() const { return is_in_lhs_pattern_; }
-
-  void set_lhs_ppid(PathPatternID lhs_ppid) { lhs_ppid_ = lhs_ppid; }
-
-  void set_lhs_vertex_id(size_t lhs_vertex_id) {
-    lhs_vertex_id_ = lhs_vertex_id;
-  }
-
-  void set_is_in_lhs_pattern(bool is_in_lhs_pattern) {
-    is_in_lhs_pattern_ = is_in_lhs_pattern;
-  }
-
-  bool ConstantCompare(MiniCleanCSRGraph* graph,
-                       const std::vector<VertexID>& path) {
-    VertexAttributeValue lhs_value = graph->GetVertexAttributeValuesByLocalID(
-        path[lhs_vertex_id_])[lhs_aid_];
-    return Compare(lhs_value, c_);
-  }
-
- private:
-  VertexLabel lhs_vlabel_;
-  VertexAttributeID lhs_aid_;
-  VertexAttributeValue c_;
-
-  PathPatternID lhs_ppid_;
-  size_t lhs_vertex_id_;
-  bool is_in_lhs_pattern_;
-};
-
 }  // namespace sics::graph::miniclean::data_structures::gcr
 
 namespace YAML {
-template <>
-struct convert<
-    sics::graph::miniclean::data_structures::gcr::VariablePredicate> {
-  static Node encode(
-      const sics::graph::miniclean::data_structures::gcr::VariablePredicate&
-          variable_predicate) {
-    Node node;
-    node["operator_type"] =
-        static_cast<uint8_t>(variable_predicate.get_operator_type());
-    node["lhs_vlabel"] = variable_predicate.get_lhs_vlabel();
-    node["rhs_vlabel"] = variable_predicate.get_rhs_vlabel();
-    node["lhs_aid"] = variable_predicate.get_lhs_aid();
-    node["rhs_aid"] = variable_predicate.get_rhs_aid();
-    return node;
-  }
-
-  static bool decode(
-      const Node& node,
-      sics::graph::miniclean::data_structures::gcr::VariablePredicate&
-          variable_predicate) {
-    if (node.size() != 5) {
-      return false;
-    }
-
-    variable_predicate =
-        sics::graph::miniclean::data_structures::gcr::VariablePredicate(
-            node["operator_type"].as<uint8_t>(),
-            node["lhs_vlabel"]
-                .as<sics::graph::miniclean::common::VertexLabel>(),
-            node["lhs_aid"]
-                .as<sics::graph::miniclean::common::VertexAttributeID>(),
-            node["rhs_vlabel"]
-                .as<sics::graph::miniclean::common::VertexLabel>(),
-            node["rhs_aid"]
-                .as<sics::graph::miniclean::common::VertexAttributeID>());
-    return true;
-  }
-};
-
 template <>
 struct convert<
     sics::graph::miniclean::data_structures::gcr::ConstantPredicate> {
   static Node encode(
       const sics::graph::miniclean::data_structures::gcr::ConstantPredicate&
           constant_predicate) {
+    // TODO: Implement it.
     Node node;
-    node["operator_type"] =
-        static_cast<uint8_t>(constant_predicate.get_operator_type());
-    node["lhs_vlabel"] = constant_predicate.get_lhs_vlabel();
-    node["lhs_aid"] = constant_predicate.get_lhs_aid();
-    node["rhs"] = constant_predicate.get_rhs_value();
     return node;
   }
 
@@ -257,22 +196,78 @@ struct convert<
       const Node& node,
       sics::graph::miniclean::data_structures::gcr::ConstantPredicate&
           constant_predicate) {
-    if (node.size() != 4) {
-      return false;
+    uint8_t operator_type_uint8 = node[2].as<uint8_t>();
+    sics::graph::miniclean::data_structures::gcr::OperatorType operator_type;
+    switch (operator_type_uint8) {
+      case 0:
+        operator_type =
+            sics::graph::miniclean::data_structures::gcr::OperatorType::kEq;
+        break;
+      case 1:
+        operator_type =
+            sics::graph::miniclean::data_structures::gcr::OperatorType::kGt;
+        break;
+      default:
+        return false;
     }
     constant_predicate =
         sics::graph::miniclean::data_structures::gcr::ConstantPredicate(
-            node["operator_type"].as<uint8_t>(),
-            node["lhs_vlabel"]
-                .as<sics::graph::miniclean::common::VertexLabel>(),
-            node["lhs_aid"]
-                .as<sics::graph::miniclean::common::VertexAttributeID>(),
-            node["rhs_value"]
-                .as<sics::graph::miniclean::common::VertexAttributeValue>());
+            node[0].as<sics::graph::miniclean::common::VertexLabel>(),
+            node[1].as<sics::graph::miniclean::common::VertexAttributeID>(),
+            operator_type);
     return true;
   }
 };
 
+template <>
+struct convert<
+    sics::graph::miniclean::data_structures::gcr::VariablePredicate> {
+  struct Node encode(
+      const sics::graph::miniclean::data_structures::gcr::VariablePredicate&
+          variable_predicate) {
+    // TODO: Implement it.
+    Node node;
+    return node;
+  }
+
+  static bool decode(
+      const Node& node,
+      sics::graph::miniclean::data_structures::gcr::VariablePredicate&
+          variable_predicate) {
+    int lhs_vattr_id = node[1].as<int>();
+    int rhs_vattr_id = node[3].as<int>();
+    if (lhs_vattr_id == -1) {
+      lhs_vattr_id = MAX_VERTEX_ATTRIBUTE_ID;
+    }
+    if (rhs_vattr_id == -1) {
+      rhs_vattr_id = MAX_VERTEX_ATTRIBUTE_ID;
+    }
+    uint8_t operator_type_uint8 = node[4].as<uint8_t>();
+    sics::graph::miniclean::data_structures::gcr::OperatorType operator_type;
+    switch (operator_type_uint8) {
+      case 0:
+        operator_type =
+            sics::graph::miniclean::data_structures::gcr::OperatorType::kEq;
+        break;
+      case 1:
+        operator_type =
+            sics::graph::miniclean::data_structures::gcr::OperatorType::kGt;
+        break;
+      default:
+        return false;
+    }
+    variable_predicate =
+        sics::graph::miniclean::data_structures::gcr::VariablePredicate(
+            node[0].as<sics::graph::miniclean::common::VertexLabel>(),
+            node[2].as<sics::graph::miniclean::common::VertexLabel>(),
+            static_cast<sics::graph::miniclean::common::VertexAttributeID>(
+                lhs_vattr_id),
+            static_cast<sics::graph::miniclean::common::VertexAttributeID>(
+                rhs_vattr_id),
+            operator_type);
+    return true;
+  }
+};
 }  // namespace YAML
 
 #endif  // MINICLEAN_DATA_STRUCTURES_GCR_PREDICATE_H_
