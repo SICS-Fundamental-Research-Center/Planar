@@ -550,8 +550,8 @@ std::vector<Edges> CSRBasedPlanarVertexCutPartitioner::ConvertListofEdge2Edges(
   std::vector<Edges> vec_edges;
   vec_edges.reserve(list_of_branches.size());
   for (size_t i = 0; i < list_of_branches.size(); i++) {
-    auto edges = new Edges(
-        {visited[i].Count(), n_edges_per_edgelist[i], max_vid_per_edgelist[i]});
+    auto edges = new Edges({(uint32_t) visited[i].Count(),
+                            n_edges_per_edgelist[i], max_vid_per_edgelist[i]});
     vec_edges.push_back(*edges);
   }
 

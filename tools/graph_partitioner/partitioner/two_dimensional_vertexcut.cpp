@@ -113,7 +113,7 @@ void TwoDimensionalVertexCutPartitioner::RunPartitioner() {
 
   for (GraphID i = 0; i < n_partitions_ * n_partitions_; i++) {
     EdgelistMetadata edgelist_metadata = {
-        bitmap_vec.at(i).Count(), size_per_bucket[i], max_vid_per_bucket[i]};
+        (uint32_t) bitmap_vec.at(i).Count(), size_per_bucket[i], max_vid_per_bucket[i]};
     edgelist_metadata_vec.push_back(edgelist_metadata);
     edge_buckets.emplace_back(Edges(edgelist_metadata));
   }
