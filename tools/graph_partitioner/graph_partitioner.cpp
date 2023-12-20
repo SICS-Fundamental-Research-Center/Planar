@@ -8,6 +8,7 @@
 #include "tools/graph_partitioner/partitioner/csr_based_planar_vertexcut.h"
 #include "tools/graph_partitioner/partitioner/hash_based_edgecut.h"
 #include "tools/graph_partitioner/partitioner/hash_based_vertexcut.h"
+#include "tools/graph_partitioner/partitioner/two_dimensional_vertexcut.h"
 
 using sics::graph::tools::common::StoreStrategy2Enum;
 using EdgeCutPartitioner =
@@ -16,12 +17,15 @@ using VertexCutPartitioner =
     sics::graph::tools::partitioner::HashBasedVertexCutPartitioner;
 using PlanarVertexCutPartitioner =
     sics::graph::tools::partitioner::CSRBasedPlanarVertexCutPartitioner;
+using TwoDimensionalVertexCutPartitioner =
+    sics::graph::tools::partitioner::TwoDimensionalVertexCutPartitioner;
 
 enum Partitioner {
   kHashEdgeCut,  // default
   kHashVertexCut,
   kHybridCut,
   kPlanarVertexCut,
+  k2DVertexCut,
   kUndefinedPartitioner
 };
 
@@ -34,6 +38,8 @@ Partitioner Partitioner2Enum(const std::string& s) {
     return kHybridCut;
   else if (s == "planarvertexcut")
     return kPlanarVertexCut;
+  else if (s == "2dvertexcut")
+    return k2DVertexCut;
   else
     LOG_FATAL("Unknown partitioner type: ", s.c_str());
   return kUndefinedPartitioner;
@@ -57,6 +63,11 @@ int main(int argc, char** argv) {
       "\t hashedgecut: - Using hash-based edge cut partitioner "
       "\n"
       "\t hashvertexcut: - Using hash-based vertex cut partitioner"
+      "\n"
+      "\t planarvertexcut: - Using planar default vertex cut partitioner"
+      "\n"
+      "\t 2d_vertexcut: - Using planar two dimensional hash based vertex cut "
+      "partitioner"
       "\n"
       "\t hybridcut:   - Using hybrid cut partitioner "
       "\n");
@@ -85,6 +96,13 @@ int main(int argc, char** argv) {
           FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
           FLAGS_n_partitions);
       planar_vertexcut_partitioner.RunPartitioner(FLAGS_biggraph);
+      break;
+    }
+    case k2DVertexCut: {
+      TwoDimensionalVertexCutPartitioner vertexcut_partitioner(
+          FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
+          FLAGS_n_partitions);
+      vertexcut_partitioner.RunPartitioner();
       break;
     }
     case kHybridCut:

@@ -212,7 +212,7 @@ void MstApp::PointJumpInc(VertexID id) {
   }
 }
 
-void MstApp::LogMinOutEdgeId() {
+void MstApp::LogMinOutEdgeId() const {
   for (int i = 0; i < update_store_->GetMessageCount(); i++) {
     LOGF_INFO("e(v) id: {} -> {}", i, min_out_edge_id_[i]);
   }

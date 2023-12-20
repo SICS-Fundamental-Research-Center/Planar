@@ -79,17 +79,18 @@ void CSRBasedPlanarVertexCutPartitioner::RunPartitioner(bool biggraph) {
   std::list<std::list<Edge>> out;
   if (biggraph) {
     out = BigGraphSortBFSBranch(
-        ceil((double)serializable_csr.get_num_outgoing_edges() / 64),
+        ceil((double)serializable_csr.get_num_outgoing_edges() / 1024),
         serializable_csr);
   } else {
     out = SortBFSBranch(
-        ceil((double)serializable_csr.get_num_outgoing_edges() / 64),
+        ceil((double)serializable_csr.get_num_outgoing_edges() / 128),
         serializable_csr);
   }
   Redistributing(n_partitions_, &out);
+
   auto&& edge_buckets = ConvertListofEdge2Edges(out);
 
-  // Set metadata of partitioned graph.
+  //  Set metadata of partitioned graph.
   GraphFormatConverter graph_format_converter(output_path_);
   GraphMetadata new_graph_metadata;
   new_graph_metadata.set_num_vertices(graph_metadata.get_num_vertices());
@@ -160,6 +161,8 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
                 u.outgoing_edges[j]);
           }
           Edge e = {u.vid, u.outgoing_edges[j]};
+          if (e.src == e.dst)
+            LOG_INFO("e.src: ", e.src, " e.dst: ", e.dst, " index", j);
           new_branches[j].emplace_back(e);
         }
       });
@@ -179,6 +182,7 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
             auto active_vertex_id = active_vertices_for_each_branch[j].front();
             active_vertices_for_each_branch[j].pop_front();
             auto v = graph.GetVertexByLocalID(active_vertex_id);
+
             for (VertexID k = 0; k < v.outdegree; k++) {
               {
                 std::lock_guard<std::mutex> lock(mtx);
@@ -189,6 +193,16 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
                 }
               }
               Edge e = {v.vid, v.outgoing_edges[k]};
+              if (e.src == e.dst) {
+                LOG_INFO("src: ", e.src, " e.dst: ", e.dst, " index: ", j,
+                         " degree", v.outdegree);
+                // for (size_t kk = 0; kk < v.outdegree; kk++) {
+                //   LOG_INFO("src: ", e.src, " e.dst: ", e.dst, " index: ", j,
+                //   " degree", v.outdegree); LOG_INFO(" src: ", e.src, " e.dst:
+                //   ", e.dst,
+                //            " v.outgoing_edges[kk]: ", v.outgoing_edges[kk]);
+                // }
+              }
               new_branches[j].emplace_back(e);
             }
           }
@@ -218,8 +232,6 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
 
   std::list<Edge> res_branch;
   std::mutex mtx;
-  LOG_INFO("num_vertices: ", graph.get_num_vertices(),
-           ", COUNT: ", visited.Count());
   for (unsigned int i = 0; i < parallelism; i++) {
     auto task = std::bind([&, i]() {
       for (VertexID j = i; j < graph.get_num_vertices(); j += parallelism) {
@@ -228,6 +240,7 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
         auto res_u = graph.GetVertexByLocalID(j);
         for (size_t k = 0; k < res_u.outdegree; k++) {
           Edge e = {res_u.vid, res_u.outgoing_edges[k]};
+          if (e.src == e.dst) LOG_INFO(j);
           {
             std::lock_guard<std::mutex> lock(mtx);
             res_branch.emplace_back(e);
@@ -245,7 +258,7 @@ std::list<std::list<Edge>> CSRBasedPlanarVertexCutPartitioner::SortBFSBranch(
 
   LOG_INFO("total edges: ", count);
   LOG_INFO("origin branches: ", out.size());
-  LOG_INFO("visited Count: ", visited.Count());
+  LOG_INFO("visited vertices: ", visited.Count());
 
   // Sort the branches by the number of edges.
   out.sort([](const auto& l, const auto& r) { return l.size() < r.size(); });
@@ -266,15 +279,27 @@ CSRBasedPlanarVertexCutPartitioner::BigGraphSortBFSBranch(
   VertexID n_branches =
       parallelism > n_partitions_ * 2 ? parallelism : n_partitions_ * 2;
 
-  auto branch_id_for_each_edge = new VertexID[graph.get_num_outgoing_edges()]();
   Bitmap edge_visited(graph.get_num_outgoing_edges());
   Bitmap vertex_visited(graph.get_num_vertices());
 
   std::list<std::list<Edge>> out;
   size_t count = 0;
 
-  // Vertex visited_times_of_vertex[graph.get_num_vertices()]();
-  Bitmap no_empty_branch(n_branches);
+  // Bitmap no_empty_branch(n_branches);
+
+  auto branch_id_for_each_edge = new VertexID[graph.get_num_outgoing_edges()]();
+  for (unsigned int i = 0; i < parallelism; i++) {
+    auto task = std::bind([&, i]() {
+      for (EdgeIndex j = i; j < graph.get_num_outgoing_edges();
+           j += parallelism) {
+        branch_id_for_each_edge[j] = fnv64_append_byte(i, 3) % n_branches;
+      }
+    });
+    task_package.push_back(task);
+  }
+  thread_pool.SubmitSync(task_package);
+  task_package.clear();
+
   // Loop until the rest of edges less than the given upper bound.
   while (edge_visited.Count() != graph.get_num_outgoing_edges()) {
     VertexID max_degree = 0, root = MAX_VERTEX_ID;
@@ -289,7 +314,10 @@ CSRBasedPlanarVertexCutPartitioner::BigGraphSortBFSBranch(
         for (VertexID j = i; j < graph.get_num_vertices(); j += parallelism) {
           if (vertex_visited.GetBit(j)) continue;
           auto u = graph.GetVertexByLocalID(j);
-          if (WriteMax(&max_degree, graph.GetOutDegreeByLocalID(j))) root = j;
+          VertexID outdegree = 0;
+          for (VertexID k = 0; k < u.outdegree; k++)
+            if (!vertex_visited.GetBit(u.outgoing_edges[k])) outdegree++;
+          if (WriteMax(&max_degree, outdegree)) root = j;
         }
       });
       task_package.push_back(task);
@@ -320,7 +348,8 @@ CSRBasedPlanarVertexCutPartitioner::BigGraphSortBFSBranch(
           }
           auto e_offset = graph.GetOutOffsetByLocalID(u.vid) + j;
           edge_visited.SetBit(e_offset);
-          branch_id_for_each_edge[e_offset] = j % n_branches;
+          branch_id_for_each_edge[e_offset] =
+              fnv64_append_byte(i, 3) % n_branches;
         }
       });
       task_package.push_back(task);
@@ -342,7 +371,8 @@ CSRBasedPlanarVertexCutPartitioner::BigGraphSortBFSBranch(
                 vertex_visited.SetBit(v.outgoing_edges[k]);
               }
               auto e_offset = graph.GetOutOffsetByLocalID(v.vid) + k;
-              branch_id_for_each_edge[e_offset] = j % n_branches;
+              branch_id_for_each_edge[e_offset] =
+                  fnv64_append_byte(i, 3) % n_branches;
               edge_visited.SetBit(e_offset);
             }
           }
@@ -360,9 +390,9 @@ CSRBasedPlanarVertexCutPartitioner::BigGraphSortBFSBranch(
         minimum_n_edges_of_a_branch)
       break;
     LOG_INFO("New visited edges: ", edge_visited.Count() - visited_edge_count,
-             " / ", graph.get_num_outgoing_edges() * 0.001);
+             " / ", graph.get_num_outgoing_edges());
     if (edge_visited.Count() - visited_edge_count <
-        (graph.get_num_outgoing_edges() * 0.001))
+        (graph.get_num_outgoing_edges() * 0.0001))
       break;
   }
 
@@ -378,7 +408,6 @@ CSRBasedPlanarVertexCutPartitioner::BigGraphSortBFSBranch(
         for (VertexID k = 0; k < u.outdegree; k += parallelism) {
           if (edge_visited.GetBit(u_offset + k)) continue;
           auto branch_id = fnv64_append_byte(u.vid * 133221, 3) % n_branches;
-          if (branch_id == 0) branch_id = u.outgoing_edges[k] % n_branches;
           branch_id_for_each_edge[u_offset + k] = branch_id;
           edge_visited.SetBit(u_offset + k);
         }
@@ -430,10 +459,12 @@ void CSRBasedPlanarVertexCutPartitioner::Redistributing(
     std::list<std::list<Edge>>* sorted_list_of_branches) {
   LOG_INFO("Redistribution.");
   VertexID n_new_branches = MAX_VERTEX_ID;
-  while (n_new_branches >= expected_n_of_branches * 2) {
+  while (n_new_branches > expected_n_of_branches * 2) {
     n_new_branches = ceil(sorted_list_of_branches->size() / 2.0);
     LOG_INFO("Existing number of branches: ", n_new_branches,
              " expected number of branches: ", expected_n_of_branches);
+    if (n_new_branches == expected_n_of_branches * 2) break;
+
     auto iter_begin = sorted_list_of_branches->begin();
     auto iter_end = sorted_list_of_branches->end();
     iter_end--;
@@ -458,19 +489,20 @@ void CSRBasedPlanarVertexCutPartitioner::Redistributing(
       }
     }
   }
-  sorted_list_of_branches->sort(
-      [](const auto& l, const auto& r) { return l.size() < r.size(); });
+  // sorted_list_of_branches->sort(
+  //     [](const auto& l, const auto& r) { return l.size() < r.size(); });
 
-  while (sorted_list_of_branches->size() > expected_n_of_branches) {
-    auto branch = sorted_list_of_branches->back();
-    sorted_list_of_branches->pop_back();
-    auto iter_rbegin = sorted_list_of_branches->rbegin();
-    iter_rbegin->splice(iter_rbegin->end(), branch);
-  }
+  // while (sorted_list_of_branches->size() > expected_n_of_branches) {
+  //   auto branch = sorted_list_of_branches->back();
+  //   sorted_list_of_branches->pop_back();
+  //   auto iter_rbegin = sorted_list_of_branches->rbegin();
+  //   iter_rbegin->splice(iter_rbegin->end(), branch);
+  // }
 }
 
 std::vector<Edges> CSRBasedPlanarVertexCutPartitioner::ConvertListofEdge2Edges(
     const std::list<std::list<Edge>>& list_of_branches) {
+  LOG_INFO("ConvertListofEdge2Edges - num branches: ", list_of_branches.size());
   auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(parallelism);
   auto task_package = TaskPackage();
@@ -514,14 +546,15 @@ std::vector<Edges> CSRBasedPlanarVertexCutPartitioner::ConvertListofEdge2Edges(
     br_i++;
   }
 
-  // Construct edgelist.
+  //  // Construct edgelist.
   std::vector<Edges> vec_edges;
   vec_edges.reserve(list_of_branches.size());
   for (size_t i = 0; i < list_of_branches.size(); i++) {
-    Edges edges({(uint32_t)(visited[i].Count()), n_edges_per_edgelist[i],
-                 max_vid_per_edgelist[i]});
-    vec_edges.emplace_back(std::move(edges));
+    auto edges = new Edges({(uint32_t) visited[i].Count(),
+                            n_edges_per_edgelist[i], max_vid_per_edgelist[i]});
+    vec_edges.push_back(*edges);
   }
+
   delete[] max_vid_per_edgelist;
   delete[] n_edges_per_edgelist;
   br_i = 0;
@@ -532,13 +565,13 @@ std::vector<Edges> CSRBasedPlanarVertexCutPartitioner::ConvertListofEdge2Edges(
     std::for_each(std::execution::par, branch.begin(), branch.end(),
                   [&index, &buffer_edges, &br_i](auto& e) {
                     auto local_index = __sync_fetch_and_add(&index, 1);
-                    buffer_edges[index] = e;
+                    buffer_edges[local_index] = e;
                   });
 #else
     std::for_each(branch.begin(), branch.end(),
                   [&index, &buffer_edges, &br_i](auto& e) {
                     auto local_index = __sync_fetch_and_add(&index, 1);
-                    buffer_edges[index] = e;
+                    buffer_edges[local_index] = e;
                   });
 #endif
     br_i++;

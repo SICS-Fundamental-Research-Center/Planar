@@ -43,7 +43,7 @@ TEST_F(MiniCleanCSRReaderTest, ReadSubgraphTest) {
   // Load metadata.
   YAML::Node metadata;
   try {
-    metadata = YAML::LoadFile(subgraph_path_ + "/meta.yaml");
+    metadata = YAML::LoadFile(subgraph_path_ + "/graph/meta.yaml");
   } catch (YAML::BadFile& e) {
     GTEST_LOG_(ERROR) << e.msg;
   }

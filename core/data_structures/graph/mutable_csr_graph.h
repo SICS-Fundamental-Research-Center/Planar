@@ -271,6 +271,7 @@ class MutableCSRGraph : public Serializable {
       graph_serialized_->GetCSRBuffer()->at(1) =
           OwnedBuffer(sizeof(VertexID) * num_outgoing_edges_new,
                       std::unique_ptr<uint8_t>((uint8_t*)out_edges_base_new_));
+      LOGF_INFO("Left edges: {}", num_outgoing_edges_new);
       out_edges_base_ = out_edges_base_new_;
       out_edges_base_new_ = nullptr;
     } else {
@@ -286,7 +287,7 @@ class MutableCSRGraph : public Serializable {
       // TODO: whether release bitmap now or in deconstructor
     }
     metadata_->num_outgoing_edges = num_outgoing_edges_new;
-    //    LOG_INFO("Mutate graph edge done");
+    LOG_INFO("Mutate graph edge done");
   }
 
   // methods for vertex info
