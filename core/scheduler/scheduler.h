@@ -95,7 +95,7 @@ class Scheduler {
 
   void InitGroupSerializableGraph();
 
-  common::GraphID GetNextReadGraphInCurrentRound();
+  common::GraphID GetNextReadGraphInCurrentRound() const;
 
   common::GraphID GetNextExecuteGraph() const;
 

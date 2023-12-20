@@ -625,7 +625,7 @@ void Scheduler::SetAppRound(int round) {
 }
 
 // TODO: Add logic to decide which graph is read first.
-common::GraphID Scheduler::GetNextReadGraphInCurrentRound() {
+common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
   //  if (test == 0) {
   //    if (graph_state_.current_round_pending_.at(4) &&
   //        graph_state_.subgraph_storage_state_.at(4) == GraphState::OnDisk) {
