@@ -57,7 +57,7 @@ class ColoringApp : public apis::PlanarAppBase<CSRGraph> {
 
   void ColorVertex(VertexID id);
 
-  int GetRandomNumber();
+  int GetRandomNumber() const;
 
  private:
   int active_ = 0;

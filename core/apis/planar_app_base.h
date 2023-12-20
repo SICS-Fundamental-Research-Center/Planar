@@ -175,8 +175,8 @@ class PlanarAppBase : public PIE {
 
   // Parallel execute vertex_func in task_size chunks.
   void ParallelVertexDoStep(const std::function<void(VertexID)>& vertex_func) {
-    LOG_DEBUG("ParallelVertexDoStep is begin");
-    uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
+    LOG_DEBUG("ParallelVertexDoStep begins");
+    auto task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
     tasks.reserve(parallelism_ * task_package_factor_);
     VertexIndex end = graph_->GetVertexNums();
@@ -196,13 +196,13 @@ class PlanarAppBase : public PIE {
     runner_->SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
     graph_->SyncVertexData(use_readdata_only_);
-    LOG_DEBUG("ParallelVertexDoStep is done");
+    LOG_DEBUG("ParallelVertexDoStep done");
   }
 
   // Parallel execute edge_func in task_size chunks.
   void ParallelEdgeDo(
       const std::function<void(VertexID, VertexID)>& edge_func) {
-    LOG_DEBUG("ParallelEdgeDo is begin");
+    LOG_DEBUG("ParallelEdgeDo begins");
     uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
     tasks.reserve(parallelism_ * task_package_factor_);
@@ -274,9 +274,9 @@ class PlanarAppBase : public PIE {
     LOG_DEBUG("ParallelEdgedelDo is done");
   }
 
-  uint32_t GetTaskSize(VertexID max_vid) const {
+  size_t GetTaskSize(VertexID max_vid) const {
     auto task_num = parallelism_ * task_package_factor_;
-    uint32_t task_size = ceil((double)max_vid / task_num);
+    size_t task_size = ceil((double) max_vid / task_num);
     return task_size < 2 ? 2 : task_size;
   }
 

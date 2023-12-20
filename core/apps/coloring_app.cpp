@@ -107,6 +107,6 @@ void ColoringApp::ColorVertex(VertexID id) {
   }
 }
 
-int ColoringApp::GetRandomNumber() { return (rand() % max_round_) + 1; }
+int ColoringApp::GetRandomNumber() const { return (rand() % max_round_) + 1; }
 
 }  // namespace sics::graph::core::apps
