@@ -62,7 +62,7 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
 
   void PointJumpInc(VertexID id);
 
-  void LogMinOutEdgeId();
+  void LogMinOutEdgeId() const;
 
   void WriteMinAuxiliary(VertexID id, VertexData data);
 
