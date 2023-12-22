@@ -25,13 +25,11 @@
 #include "tools/common/io.h"
 #include "tools/common/yaml_config.h"
 
-using std::filesystem::create_directory;
-using std::filesystem::exists;
+using sics::graph::core::common::Bitmap;
+using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::common::VertexLabel;
-using sics::graph::core::common::EdgeIndex;
-using sics::graph::core::common::Bitmap;
 using sics::graph::core::data_structures::GraphMetadata;
 using sics::graph::core::data_structures::SubgraphMetadata;
 using sics::graph::core::util::atomic::WriteAdd;

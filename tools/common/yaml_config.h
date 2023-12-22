@@ -10,8 +10,9 @@
 
 namespace YAML {
 
-using sics::graph::core::common::EdgeIndex;
+using sics::graph::core::common::GraphID;
 using sics::graph::core::common::VertexID;
+using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::data_structures::SubgraphMetadata;
 using sics::graph::tools::common::EdgelistMetadata;
 

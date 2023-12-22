@@ -2,13 +2,12 @@
 
 namespace sics::graph::tools::common {
 
-using std::filesystem::create_directory;
-using std::filesystem::exists;
+using sics::graph::core::common::Bitmap;
+using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::common::VertexLabel;
-using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::util::atomic::WriteAdd;
 using sics::graph::core::util::atomic::WriteMax;
 using sics::graph::core::util::atomic::WriteMin;

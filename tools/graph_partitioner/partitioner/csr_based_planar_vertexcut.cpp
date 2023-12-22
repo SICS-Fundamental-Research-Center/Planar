@@ -25,8 +25,8 @@ namespace sics::graph::tools::partitioner {
 
 using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
 using folly::hash::fnv64_append_byte;
-using std::filesystem::create_directory;
-using std::filesystem::exists;
+using sics::graph::core::common::Bitmap;
+using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::common::ThreadPool;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::data_structures::GraphMetadata;
