@@ -21,6 +21,7 @@ GraphMetadata:
     - ../attributes/0/movie_title.bin
     - ../attributes/0/movie_episode_name.bin
     - ../attributes/0/movie_episode_id.bin
+    - ../attributes/0/movie_series_id.bin
     - ''
     - ''
     - ''
@@ -38,6 +39,7 @@ GraphMetadata:
     - 0
     - 0
     - 0
+    - 0
     vattr_id_to_vattr_type:
     - uint32_t
     - uint8_t
@@ -48,10 +50,12 @@ GraphMetadata:
     - string
     - string
     - uint32_t
+    - uint32_t
     - string
     - uint32_t
     - string
     vattr_id_to_vlabel_id:
+    - 0
     - 0
     - 0
     - 0
@@ -86,11 +90,13 @@ GraphMetadata:
     - ''
     - ''
     - ''
+    - ''
     - ../attributes/1/cast_vid.bin
     - ../attributes/1/cast_name.bin
     - ../attributes/1/director_vid.bin
     - ../attributes/1/director_name.bin
     vattr_id_to_max_string_length:
+    - 0
     - 0
     - 0
     - 0
@@ -113,10 +119,12 @@ GraphMetadata:
     - string
     - string
     - uint32_t
+    - uint32_t
     - string
     - uint32_t
     - string
     vattr_id_to_vlabel_id:
+    - 0
     - 0
     - 0
     - 0

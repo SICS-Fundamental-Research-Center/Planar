@@ -146,6 +146,15 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph0Test) {
     std::string str((char*)miniclean_graph.GetVertexAttributePtr(local_vid, 7));
     EXPECT_EQ(str, expected_movie_episode_id[local_vid]);
   }
+
+  // attr. 8: movie_series_id:
+  uint32_t expected_movie_series_id[5] = {188404, 553480, 1079129, 2144310,
+                                          2197958};
+  for (VertexID local_vid = 0; local_vid < miniclean_graph.GetNumVertices();
+       local_vid++) {
+    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(local_vid, 8);
+    EXPECT_EQ(*((uint32_t*)vptr), expected_movie_series_id[local_vid]);
+  }
 }
 
 TEST_F(MiniCleanGraphReaderTest, ReadSubgraph1Test) {
@@ -197,32 +206,32 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph1Test) {
   }
 
   // Check vertex attribute.
-  // attr. 8: cast_vid:uint32_t
+  // attr. 9: cast_vid:uint32_t
   uint32_t expected_cast_id[3] = {3796340, 4008929, 5077778};
   for (VertexID local_vid = 0; local_vid < 3; local_vid++) {
-    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(local_vid, 8);
+    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(local_vid, 9);
     EXPECT_EQ(*((uint32_t*)vptr), expected_cast_id[local_vid]);
   }
-  // attr. 9: cast_name:string
+  // attr. 10: cast_name:string
   std::string expected_cast_name[3] = {"Jutta_Yûki", "M._Nawaz",
                                        "Yûkei_Hasegawa"};
   for (VertexID local_vid = 0; local_vid < 3; local_vid++) {
-    std::string str((char*)miniclean_graph.GetVertexAttributePtr(local_vid, 9));
+    std::string str((char*)miniclean_graph.GetVertexAttributePtr(local_vid, 10));
     EXPECT_EQ(str, expected_cast_name[local_vid]);
   }
 
-  // attr. 10: director_vid:uint32_t
+  // attr. 11: director_vid:uint32_t
   uint32_t expected_director_id[2] = {3341147, 3722583};
   for (VertexID local_vid = 3; local_vid < 5; local_vid++) {
-    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(local_vid, 10);
-    EXPECT_EQ(*((uint32_t*)vptr), expected_director_id[local_vid-3]);
+    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(local_vid, 11);
+    EXPECT_EQ(*((uint32_t*)vptr), expected_director_id[local_vid - 3]);
   }
-  // attr. 11: director_name:string
+  // attr. 12: director_name:string
   std::string expected_director_name[2] = {"Elliot_Kew", "Jesse (I)_Dillon"};
   for (VertexID local_vid = 3; local_vid < 5; local_vid++) {
     std::string str(
-        (char*)miniclean_graph.GetVertexAttributePtr(local_vid, 11));
-    EXPECT_EQ(str, expected_director_name[local_vid-3]);
+        (char*)miniclean_graph.GetVertexAttributePtr(local_vid, 12));
+    EXPECT_EQ(str, expected_director_name[local_vid - 3]);
   }
 }
 }  // namespace sics::graph::miniclean::io
