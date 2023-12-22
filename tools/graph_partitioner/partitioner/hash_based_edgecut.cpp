@@ -34,7 +34,7 @@ using sics::graph::tools::common::kOutgoingOnly;
 using sics::graph::tools::common::kUnconstrained;
 using sics::graph::tools::common::StoreStrategy;
 using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
-using sics::graph::tools::common::StoreStrategy2Enum;
+using std::filesystem::create_directory;
 using std::filesystem::create_directory;
 using std::filesystem::exists;
 

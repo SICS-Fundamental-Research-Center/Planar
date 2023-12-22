@@ -1,5 +1,5 @@
 // This file belongs to the SICS graph-systems project, a C++ library for
-// exploiting parallelism graph computing. TODO (hsiaoko): add description
+// exploiting parallelism graph computing. TODO: add description
 #include <gflags/gflags.h>
 
 #include "core/common/multithreading/thread_pool.h"

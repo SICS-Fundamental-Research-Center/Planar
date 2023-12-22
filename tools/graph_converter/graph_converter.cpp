@@ -25,11 +25,13 @@
 #include "tools/common/io.h"
 #include "tools/common/yaml_config.h"
 
-using sics::graph::core::common::Bitmap;
-using sics::graph::core::common::EdgeIndex;
+using std::filesystem::create_directory;
+using std::filesystem::exists;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::common::VertexLabel;
+using sics::graph::core::common::EdgeIndex;
+using sics::graph::core::common::Bitmap;
 using sics::graph::core::data_structures::GraphMetadata;
 using sics::graph::core::data_structures::SubgraphMetadata;
 using sics::graph::core::util::atomic::WriteAdd;
@@ -345,7 +347,7 @@ int main(int argc, char** argv) {
                                        FLAGS_read_head);
       break;
     case kEdgelistCSV2CSRBin:
-      // TODO(hsiaoko): to add edgelist csv 2 csr bin function.
+      // TODO: to add edgelist csv 2 csr bin function.
       break;
     case kEdgelistBin2CSRBin:
       ConvertEdgelistBin2CSRBin(FLAGS_i, FLAGS_o,

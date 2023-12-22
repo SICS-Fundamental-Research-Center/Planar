@@ -63,12 +63,14 @@ class Configurations {
   bool ASP = false;
   // for mst
   bool fast = false;
-  // for wcc
-  bool wcc_ASP = false;
+  // for random walk
+  uint32_t walk = 5;
+  bool no_data_need = false;
 
   bool threefour_mode = false;
 
   bool group = false;
+  int group_num = 2;
 
  private:
   Configurations() = default;

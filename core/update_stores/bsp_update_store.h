@@ -24,35 +24,38 @@ class BspUpdateStore : public UpdateStoreBase {
                           common::VertexCount vertex_num)
       : message_count_(vertex_num) {
     application_type_ = common::Configurations::Get()->application;
-    read_data_ = new VertexData[message_count_];
-    write_data_ = new VertexData[message_count_];
+    no_data_need_ = common::Configurations::Get()->no_data_need;
 
-    switch (application_type_) {
-      case common::ApplicationType::WCC:
-      case common::ApplicationType::MST: {
-        for (uint32_t i = 0; i < vertex_num; i++) {
-          read_data_[i] = i;
-          write_data_[i] = i;
+    if (!no_data_need_) {
+      read_data_ = new VertexData[message_count_];
+      write_data_ = new VertexData[message_count_];
+      switch (application_type_) {
+        case common::ApplicationType::WCC:
+        case common::ApplicationType::MST: {
+          for (uint32_t i = 0; i < vertex_num; i++) {
+            read_data_[i] = i;
+            write_data_[i] = i;
+          }
+          break;
         }
-        break;
-      }
-      case common::ApplicationType::Coloring: {
-        for (uint32_t i = 0; i < vertex_num; i++) {
-          read_data_[i] = 0;
-          write_data_[i] = 0;
+        case common::ApplicationType::Coloring: {
+          for (uint32_t i = 0; i < vertex_num; i++) {
+            read_data_[i] = 0;
+            write_data_[i] = 0;
+          }
+          break;
         }
-        break;
-      }
-      case common::ApplicationType::Sssp: {
-        for (uint32_t i = 0; i < vertex_num; i++) {
-          read_data_[i] = std::numeric_limits<VertexData>::max();
-          write_data_[i] = std::numeric_limits<VertexData>::max();
+        case common::ApplicationType::Sssp: {
+          for (uint32_t i = 0; i < vertex_num; i++) {
+            read_data_[i] = std::numeric_limits<VertexData>::max();
+            write_data_[i] = std::numeric_limits<VertexData>::max();
+          }
+          break;
         }
-        break;
-      }
-      default: {
-        LOG_FATAL("Application type not supported");
-        break;
+        default: {
+          LOG_FATAL("Application type not supported");
+          break;
+        }
       }
     }
 
@@ -141,10 +144,13 @@ class BspUpdateStore : public UpdateStoreBase {
 
   bool IsActive() override { return active_count_ != 0; }
   void SetActive() { active_count_ = 1; }
+  void UnsetActive() { active_count_ = 0; }
 
   void Sync() override {
-    memcpy(read_data_, write_data_, message_count_ * sizeof(VertexData));
-    active_count_ = 0;
+    if (!no_data_need_) {
+      memcpy(read_data_, write_data_, message_count_ * sizeof(VertexData));
+      active_count_ = 0;
+    }
   }
 
   bool IsBorderVertex(VertexID vid) {
@@ -226,6 +232,7 @@ class BspUpdateStore : public UpdateStoreBase {
 
   // configs
   common::ApplicationType application_type_;
+  bool no_data_need_;
 };
 
 typedef BspUpdateStore<common::Uint32VertexDataType,

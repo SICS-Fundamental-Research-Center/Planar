@@ -71,7 +71,7 @@ TEST_F(MiniCleanCSRReaderTest, ReadSubgraphTest) {
   graph.ShowGraph(100);
 
   /* Test vertex id, degree, related edges, labels, and attributes */
-  // TODO (bai-wenchao): Add tests for labels and attributes.
+  // TODO: Add tests for labels and attributes.
 
   // Test vertex 0.
   auto vertex_0 = graph.GetVertexByLocalID(0);

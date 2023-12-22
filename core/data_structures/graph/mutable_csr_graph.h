@@ -207,11 +207,15 @@ class MutableCSRGraph : public Serializable {
   }
 
   void MutateGraphEdge(common::TaskRunner* runner) {
-    LOG_INFO("Mutate graph edge begin");
+    if (metadata_->num_outgoing_edges == 0) {
+      return;
+    }
+    //    LOG_INFO("Mutate graph edge begin");
     // Check left edges in subgraph.
     auto del_edges = edge_delete_bitmap_.Count();
     size_t num_outgoing_edges_new = metadata_->num_outgoing_edges - del_edges;
     if (metadata_->num_outgoing_edges < del_edges) {
+      //      num_outgoing_edges_new = 0;
       LOG_FATAL("delete edges number is more than left, stop!");
     }
 
@@ -261,6 +265,8 @@ class MutableCSRGraph : public Serializable {
       // change out_edges_buffer to new one
       edge_delete_bitmap_.Clear();
       edge_delete_bitmap_.Init(num_outgoing_edges_new);
+      LOGF_INFO("left edges: {}, new del num:{}", num_outgoing_edges_new,
+                edge_delete_bitmap_.Count());
       // replace edges buffer of subgraph
       graph_serialized_->GetCSRBuffer()->at(1) =
           OwnedBuffer(sizeof(VertexID) * num_outgoing_edges_new,
@@ -341,6 +347,10 @@ class MutableCSRGraph : public Serializable {
     return vertex_data_read_base_[index];
   }
 
+  VertexData ReadLocalVertexDataByIndex(VertexIndex index) const {
+    return vertex_data_read_base_[index];
+  }
+
   bool WriteMaxReadDataByID(VertexID id, VertexData data_new) {
     auto index = index_by_global_id_[id];
     return util::atomic::WriteMax(&vertex_data_read_base_[index], data_new);
@@ -385,6 +395,7 @@ class MutableCSRGraph : public Serializable {
   }
 
   void DeleteEdge(VertexID id, EdgeIndex edge_index) {
+    //    std::lock_guard<std::mutex> lock(mtx);
     edge_delete_bitmap_.SetBit(edge_index);
     auto index = index_by_global_id_[id];
     util::atomic::WriteMin(&out_degree_base_new_[index],
@@ -394,6 +405,7 @@ class MutableCSRGraph : public Serializable {
   void set_status(const std::string& new_status) { status_ = new_status; }
 
   void LogVertexData() {
+    LOGF_INFO("Graph {} Vertex Data Info: ", metadata_->gid);
     for (int i = 0; i < metadata_->num_vertices; i++) {
       LOGF_INFO("{} -> Vertex id: {}, read_data: {} write_data: {}", i,
                 vertex_id_by_local_index_[i], vertex_data_read_base_[i],
@@ -402,6 +414,7 @@ class MutableCSRGraph : public Serializable {
   }
 
   void LogEdges() {
+    LOGF_INFO("Graph {} Edges Info: ", metadata_->gid);
     for (int i = 0; i < metadata_->num_vertices; i++) {
       std::string edges = "";
       for (int j = 0; j < out_degree_base_[i]; j++) {
@@ -413,8 +426,9 @@ class MutableCSRGraph : public Serializable {
   }
 
   void LogGraphInfo() {
-    LOGF_INFO("Graph info: num_vertices: {}, num_outgoing_edges: {}",
-              metadata_->num_vertices, metadata_->num_outgoing_edges);
+    LOGF_INFO("Graph {} Info: num_vertices: {}, num_outgoing_edges: {}",
+              metadata_->gid, metadata_->num_vertices,
+              metadata_->num_outgoing_edges);
     for (int i = 0; i < metadata_->num_vertices; i++) {
       LOGF_INFO(
           "index: {} ---> Vertex id: {}, degree: {}, offset: {}, is_src: {}", i,
@@ -438,6 +452,7 @@ class MutableCSRGraph : public Serializable {
   }
 
   void LogIndexInfo() {
+    LOGF_INFO("Graph {} Index Info:", metadata_->gid);
     for (int i = 0; i < num_all_vertices_; i++) {
       LOGF_INFO("Vertex id: {}, index: {}", i, index_by_global_id_[i]);
     }
@@ -498,6 +513,8 @@ class MutableCSRGraph : public Serializable {
   size_t num_all_vertices_;
   uint32_t parallelism_;  // use change variable for test
   const uint32_t task_package_factor_;
+
+  std::mutex mtx;
 };
 
 typedef MutableCSRGraph<common::Uint32VertexDataType,

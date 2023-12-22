@@ -12,7 +12,7 @@
 #include "miniclean/common/types.h"
 
 namespace sics::graph::miniclean::data_structures::graphs {
-// TODO (bai-wenchao): implement MiniCleanCSRVertex with label and attributes.
+// TODO: implement MiniCleanCSRVertex with label and attributes.
 class MiniCleanCSRGraph
     : public sics::graph::core::data_structures::graph::ImmutableCSRGraph {
  private:

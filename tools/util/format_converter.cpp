@@ -3,12 +3,13 @@
 namespace sics::graph::tools::util {
 namespace format_converter {
 
-using sics::graph::core::common::Bitmap;
-using sics::graph::core::common::EdgeIndex;
+using std::filesystem::create_directory;
+using std::filesystem::exists;
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::TaskPackage;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::common::VertexLabel;
+using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::data_structures::GraphMetadata;
 using sics::graph::core::data_structures::SubgraphMetadata;
 using sics::graph::core::util::atomic::WriteAdd;
@@ -32,7 +33,7 @@ void Edgelist2CSR(const Edges& edges, StoreStrategy store_strategy,
   task_package.reserve(parallelism);
 
   auto aligned_max_vid = (((edges.get_metadata().max_vid + 1) >> 6) << 6) + 64;
-  auto visited = Bitmap(aligned_max_vid);
+  auto visited = graph::core::common::Bitmap(aligned_max_vid);
   auto num_inedges_by_vid = new VertexID[aligned_max_vid]();
   auto num_outedges_by_vid = new VertexID[aligned_max_vid]();
   VertexID min_vid = MAX_VERTEX_ID;
