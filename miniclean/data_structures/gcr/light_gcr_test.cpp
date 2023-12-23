@@ -148,6 +148,6 @@ TEST_F(LightGCRTest, TestDecoding) {
   // Test attribute convert.
   std::string attr_value =
       gcr_set_decoded[0].get_left_star_pattern()[0][0].attribute_values[1];
-  EXPECT_EQ(std::stoi(attr_value), 2000);
+  EXPECT_EQ(attr_value, "2000");
 }
 }  // namespace sics::graph::miniclean::data_structures::gcr
