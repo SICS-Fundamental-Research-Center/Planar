@@ -85,29 +85,29 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph0Test) {
 
   // Check vertex attribute.
   // attr. 0: movie_vid:uint32_t
-  uint32_t expected_movie_id[5] = {635340, 3507988, 4643261, 4853399, 5013154};
+  uint32_t expected_movie_id[5] = {457056, 1285646, 2524904, 4925489, 5025257};
   for (VertexID local_vid = 0; local_vid < miniclean_graph.GetNumVertices();
        local_vid++) {
     const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(local_vid, 0);
     EXPECT_EQ(*((uint32_t*)vptr), expected_movie_id[local_vid]);
   }
   // attr. 1: movie_rating:uint8_t
-  uint8_t expected_movie_rating[5] = {79, 255, 255, 255, 255};
+  uint8_t expected_movie_rating[5] = {255, 88, 255, 59, 255};
   for (VertexID local_vid = 0; local_vid < miniclean_graph.GetNumVertices();
        local_vid++) {
     const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(local_vid, 1);
     EXPECT_EQ(*((uint8_t*)vptr), expected_movie_rating[local_vid]);
   }
   // attr. 2: movie_year:uint16_t
-  uint16_t expected_movie_year[5] = {1994, 2012, 2015, 1992, 1999};
+  uint16_t expected_movie_year[5] = {2004, 2007, 2009, 1996, 2011};
   for (VertexID local_vid = 0; local_vid < miniclean_graph.GetNumVertices();
        local_vid++) {
     const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(local_vid, 2);
     EXPECT_EQ(*((uint16_t*)vptr), expected_movie_year[local_vid]);
   }
   // attr. 3: movie_genre:string
-  std::string expected_movie_genre[5] = {"Mixed", "Adult", "Adult", "Adult",
-                                         "Adult"};
+  std::string expected_movie_genre[5] = {"Mixed", "Mixed", "Drama", "Mixed",
+                                         "Thriller"};
   for (VertexID local_vid = 0; local_vid < miniclean_graph.GetNumVertices();
        local_vid++) {
     std::string str((char*)miniclean_graph.GetVertexAttributePtr(local_vid, 3));
@@ -115,36 +115,45 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph0Test) {
   }
   // attr. 4: movie_name:string
   std::string expected_movie_name[5] = {
-      "Duckman: Private Dick/Family Man (1994) {Role with It (#4.7)}",
-      "Gorgeous Rodeo Girl (2012) (V)", "Spring Break Orgy (2015) (V)",
-      "The Uncut Version (1992) (V)", "We Go Deep 2 (1999) (V)"};
+      "Cosmetic Surgery Live (2004) {(#2.3)}", "Liar Game (2007) {(#2.4)}",
+      "Unbounded Love Aka Ishq Ki Inteha (2009)", "Tsuki to kyabetsu (1996)",
+      "Where Socks Go (2011)"};
   for (VertexID local_vid = 0; local_vid < miniclean_graph.GetNumVertices();
        local_vid++) {
     std::string str((char*)miniclean_graph.GetVertexAttributePtr(local_vid, 4));
     EXPECT_EQ(str, expected_movie_name[local_vid]);
   }
   // attr. 5: movie_title:string
-  std::string expected_movie_title[5] = {
-      "Duckman: Private Dick/Family Man", "Gorgeous Rodeo Girl",
-      "Spring Break Orgy", "The Uncut Version", "We Go Deep 2"};
+  std::string expected_movie_title[5] = {"Cosmetic Surgery Live", "Liar Game",
+                                         "Unbounded Love Aka Ishq Ki Inteha",
+                                         "Tsuki to kyabetsu", "Where Socks Go"};
   for (VertexID local_vid = 0; local_vid < miniclean_graph.GetNumVertices();
        local_vid++) {
     std::string str((char*)miniclean_graph.GetVertexAttributePtr(local_vid, 5));
     EXPECT_EQ(str, expected_movie_title[local_vid]);
   }
   // attr. 6: movie_episode_name:string
-  std::string expected_movie_episode_name[5] = {"Role with It", "", "", "", ""};
+  std::string expected_movie_episode_name[5] = {"", "", "", "", ""};
   for (VertexID local_vid = 0; local_vid < miniclean_graph.GetNumVertices();
        local_vid++) {
     std::string str((char*)miniclean_graph.GetVertexAttributePtr(local_vid, 6));
     EXPECT_EQ(str, expected_movie_episode_name[local_vid]);
   }
   // attr. 7: movie_episode_id:string
-  std::string expected_movie_episode_id[5] = {"#4.7", "", "", "", ""};
+  std::string expected_movie_episode_id[5] = {"#2.3", "#2.4", "", "", ""};
   for (VertexID local_vid = 0; local_vid < miniclean_graph.GetNumVertices();
        local_vid++) {
     std::string str((char*)miniclean_graph.GetVertexAttributePtr(local_vid, 7));
     EXPECT_EQ(str, expected_movie_episode_id[local_vid]);
+  }
+
+  // attr. 8: movie_series_id:
+  uint32_t expected_movie_series_id[5] = {188404, 553480, 1079129, 2144310,
+                                          2197958};
+  for (VertexID local_vid = 0; local_vid < miniclean_graph.GetNumVertices();
+       local_vid++) {
+    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(local_vid, 8);
+    EXPECT_EQ(*((uint32_t*)vptr), expected_movie_series_id[local_vid]);
   }
 }
 
@@ -180,8 +189,9 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph1Test) {
 
   // Check vertex label.
   EXPECT_EQ(miniclean_graph.GetNumVertices(), 5);
+  EXPECT_EQ(miniclean_graph.GetVertexLabel(3), 2);
   EXPECT_EQ(miniclean_graph.GetVertexLabel(4), 2);
-  for (VertexID local_vid = 0; local_vid < 4; local_vid++) {
+  for (VertexID local_vid = 0; local_vid < 3; local_vid++) {
     EXPECT_EQ(miniclean_graph.GetVertexLabel(local_vid), 1);
   }
 
@@ -196,27 +206,32 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph1Test) {
   }
 
   // Check vertex attribute.
-  // attr. 8: cast_vid:uint32_t
-  uint32_t expected_cast_id[4] = {2985507, 3021966, 3583720, 4904266};
-  for (VertexID local_vid = 0; local_vid < 4; local_vid++) {
-    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(local_vid, 8);
+  // attr. 9: cast_vid:uint32_t
+  uint32_t expected_cast_id[3] = {3796340, 4008929, 5077778};
+  for (VertexID local_vid = 0; local_vid < 3; local_vid++) {
+    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(local_vid, 9);
     EXPECT_EQ(*((uint32_t*)vptr), expected_cast_id[local_vid]);
   }
-  // attr. 9: cast_name:string
-  std::string expected_cast_name[4] = {"Billy_Glide", "Brett (IV)_",
-                                       "Hitomi_Kitagawa", "Tony_Everready"};
-  for (VertexID local_vid = 0; local_vid < 4; local_vid++) {
-    std::string str((char*)miniclean_graph.GetVertexAttributePtr(local_vid, 9));
+  // attr. 10: cast_name:string
+  std::string expected_cast_name[3] = {"Jutta_Yûki", "M._Nawaz",
+                                       "Yûkei_Hasegawa"};
+  for (VertexID local_vid = 0; local_vid < 3; local_vid++) {
+    std::string str((char*)miniclean_graph.GetVertexAttributePtr(local_vid, 10));
     EXPECT_EQ(str, expected_cast_name[local_vid]);
   }
 
-  // attr. 10: director_vid:uint32_t
-  uint32_t expected_director_id = 2884075;
-  const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(4, 10);
-  EXPECT_EQ(*((uint32_t*)vptr), expected_director_id);
-  // attr. 11: director_name:string
-  std::string expected_director_name = "Anthony (I)_Bell";
-  std::string str((char*)miniclean_graph.GetVertexAttributePtr(4, 11));
-  EXPECT_EQ(str, expected_director_name);
+  // attr. 11: director_vid:uint32_t
+  uint32_t expected_director_id[2] = {3341147, 3722583};
+  for (VertexID local_vid = 3; local_vid < 5; local_vid++) {
+    const uint8_t* vptr = miniclean_graph.GetVertexAttributePtr(local_vid, 11);
+    EXPECT_EQ(*((uint32_t*)vptr), expected_director_id[local_vid - 3]);
+  }
+  // attr. 12: director_name:string
+  std::string expected_director_name[2] = {"Elliot_Kew", "Jesse (I)_Dillon"};
+  for (VertexID local_vid = 3; local_vid < 5; local_vid++) {
+    std::string str(
+        (char*)miniclean_graph.GetVertexAttributePtr(local_vid, 12));
+    EXPECT_EQ(str, expected_director_name[local_vid - 3]);
+  }
 }
 }  // namespace sics::graph::miniclean::io

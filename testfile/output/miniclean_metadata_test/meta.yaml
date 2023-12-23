@@ -63,3 +63,9 @@ GraphMetadata:
       vattr_id_to_vlabel_id:
         - 1
         - 1
+  label_id_to_label_name:
+    0: label-0
+    1: label-1
+  attr_id_to_attr_name:
+    0: attr-0
+    1: attr-1
