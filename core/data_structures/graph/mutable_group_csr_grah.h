@@ -23,28 +23,63 @@ class MutableGroupCSRGraph : public Serializable {
   MutableGroupCSRGraph() = default;
   ~MutableGroupCSRGraph() override = default;
 
+  void AddSubgraph(MutableCSRGraph<TV, TE>* subgraph) {
+    subgraphs_.emplace_back(subgraph);
+  }
+
   std::unique_ptr<Serialized> Serialize(
       const common::TaskRunner& runner) override {
-    // TODO: serialized all sub-graph
+    LOG_INFO("should not be called!");
   }
 
   void Deserialize(const common::TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override {
-    // TODO: deserialize all sub-graph
+    LOG_INFO("should not be called!");
   }
 
   // TODO: add corresponding methods
 
+  common::VertexCount GetVertexNums() const {
+    common::VertexCount num_vertices = 0;
+    for (auto& subgraph : subgraphs_) {
+      num_vertices += subgraph->GetVertexNums();
+    }
+    return num_vertices;
+  }
+
+  bool IsInGraph(VertexID id) const {
+    bool res = false;
+    for (auto& subgraph : subgraphs_) {
+      res = subgraph->IsInGraph(id);
+    }
+    return res;
+  }
+
+  int GetGroupNums() const { return subgraphs_.size(); }
+
+  size_t GetOutEdgeNums() const {
+    size_t num_edges = 0;
+    for (auto& subgraph : subgraphs_) {
+      num_edges += subgraph->GetOutEdgeNums();
+    }
+    return num_edges;
+  }
+
   VertexData ReadLocalVertexDataByID(VertexID id) const {
     for (auto& subgraph : subgraphs_) {
-      return subgraph.ReadLocalVertexDataByID(id);
+      if (subgraph->IsInGraph(id)) {
+        return subgraph->ReadLocalVertexDataByID(id);
+      }
     }
+    return VertexData();
   }
 
   bool WriteMinVertexDataByID(VertexID id, VertexData data_new) {
     bool flag = false;
     for (auto& subgraph : subgraphs_) {
-      flag = subgraph.WriteMinVertexDataByID(id, data_new);
+      if (subgraph->IsInGraph(id)) {
+        flag = subgraph->WriteMinVertexDataByID(id, data_new);
+      }
     }
     return flag;
   }
@@ -52,38 +87,105 @@ class MutableGroupCSRGraph : public Serializable {
   bool WriteVertexDataByID(VertexID id, VertexData data_new) {
     bool flag = false;
     for (auto& subgraph : subgraphs_) {
-      flag = subgraph.WriteVertexDataByID(id, data_new);
+      if (subgraph->IsInGraph(id)) {
+        flag = subgraph->WriteVertexDataByID(id, data_new);
+      }
     }
     return flag;
   }
 
+  void SyncVertexData(bool use_readdata_only = false) {
+    for (auto& subgraph : subgraphs_) {
+      subgraph->SyncVertexData(use_readdata_only);
+    }
+  }
+
   int GetNumSubgraphs() const { return subgraphs_.size(); }
+
+  void MutateGraphEdge(common::TaskRunner* runner) {
+    for (auto& subgraph : subgraphs_) {
+      subgraph->MutateGraphEdge(runner);
+    }
+  }
+
+  void DeleteEdge(GraphID gid, VertexID id, EdgeIndex index) {
+    subgraphs_.at(gid)->DeleteEdge(id, index);
+  }
+
+  void SyncAllSubgraphData(common::TaskRunner* runner) {
+    if (subgraphs_.size() == 1) {
+      return;
+    }
+
+    for (int i = 0; i < subgraphs_.size(); i++) {
+      common::TaskPackage tasks;
+      auto subgraph = subgraphs_[i];
+      size_t task_num = parallelism_ * task_package_factor_;
+      uint32_t task_size = ceil(
+          (double)(subgraph->metadata_->num_vertices->num_vertices) / task_num);
+      task_size = task_size < 2 ? 2 : task_size;
+      VertexIndex begin_index = 0, end_index = 0;
+      for (; begin_index < subgraph->metadata_->num_vertices;) {
+        end_index += task_size;
+        if (end_index > subgraph->metadata_->num_vertices) {
+          end_index = subgraph->metadata_->num_vertices;
+        }
+        auto task = [subgraph]() {
+          for (int j = 0; j < subgraph->GetVertexNums(); j++) {
+            //            auto id = subgraph->GetVertexIDByIndex(i);
+            //            auto data = subgraph->ReadLocalVertexDataByID(id);
+          }
+        };
+        tasks.push_back(task);
+        begin_index = end_index;
+      }
+      runner->SubmitSync(tasks);
+    }
+  }
 
   // log methods
   void LogVertexData() const {
     for (auto& subgraph : subgraphs_) {
-      subgraph.LogVertexData();
+      subgraph->LogVertexData();
     }
   }
 
   void LogEdges() const {
     for (auto& subgraph : subgraphs_) {
-      subgraph.LogEdges();
+      subgraph->LogEdges();
     }
   }
 
-  void LogGraphInfo(VertexID id) const {
+  void LogGraphInfo() const {
     for (auto& subgraph : subgraphs_) {
-      subgraph.LogGraphInfo(id);
+      subgraph->LogGraphInfo();
     }
   }
 
- private:
-  SubgraphMetadata group_metadata_;
-  std::vector<MutableCSRGraph<VertexData, EdgeData>> subgraphs_;
+  void LogIndexInfo() {
+    for (auto subgraph : subgraphs_) {
+      subgraph->LogIndexInfo();
+    }
+  }
+
+  MutableCSRGraph<VertexData, EdgeData>* GetSubgraph(common::GraphID id) {
+    return subgraphs_[id];
+  }
+
+ public:
+  std::vector<MutableCSRGraph<VertexData, EdgeData>*> subgraphs_;
+
+  // configs
+  uint32_t parallelism_ = 1;
+  uint32_t task_package_factor_ = 50;
 };
 
-// TODO: typedef for uint32 and uint16
+typedef MutableGroupCSRGraph<common::Uint32VertexDataType,
+                             common::DefaultEdgeDataType>
+    MutableGroupCSRGraphUInt32;
+typedef MutableGroupCSRGraph<common::Uint16VertexDataType,
+                             common::DefaultEdgeDataType>
+    MutableGroupCSRGraphUInt16;
 
 }  // namespace sics::graph::core::data_structures::graph
 

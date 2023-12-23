@@ -35,6 +35,8 @@ class MutableCSRReader : public Reader {
   void Read(ReadMessage* message,
             common::TaskRunner* runner = nullptr) override;
 
+  size_t SizeOfReadNow() override { return read_size_; }
+
  private:
   void ReadMetaInfoFromBin(const std::string& path,
                            common::VertexCount num_vertices,
@@ -45,6 +47,7 @@ class MutableCSRReader : public Reader {
 
  private:
   const std::string root_path_;
+  size_t read_size_ = 0;  // use MB
 };
 
 }  // namespace sics::graph::core::io

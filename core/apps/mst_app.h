@@ -6,6 +6,8 @@
 #include "data_structures/graph/mutable_csr_graph.h"
 #include "util/atomic.h"
 
+#define MST_INVALID_VID 0xffffffff
+
 namespace sics::graph::core::apps {
 
 using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
@@ -22,11 +24,20 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
       common::TaskRunner* runner,
       update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
       data_structures::Serializable* graph)
-      : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {
-    min_out_edge_id_ = new VertexData[update_store_->GetMessageCount()];
-    // TODO: Init all min_out_edges_id_ = max vid.
-  }
+      : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {}
   ~MstApp() override { delete[] min_out_edge_id_; };
+
+  void AppInit(common::TaskRunner* runner,
+               update_stores::BspUpdateStore<VertexData, EdgeData>*
+                   update_store) override {
+    apis::PlanarAppBase<CSRGraph>::AppInit(runner, update_store);
+    min_out_edge_id_ = new VertexData[update_store->GetMessageCount()];
+    for (int i = 0; i < update_store->GetMessageCount(); i++) {
+      min_out_edge_id_[i] = MST_INVALID_VID;
+    }
+    find_min_edge_bitmap_.Init(update_store->GetMessageCount());
+    fast_ = common::Configurations::Get()->fast;
+  }
 
   void PEval() final;
   void IncEval() final;
@@ -39,6 +50,8 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
 
   void Graft(VertexID src_id);
 
+  void PrepareMinOutEdgeFirst(VertexID id);
+
   void MessagePassing(VertexID id);
 
   void PointJump(VertexID id);
@@ -47,8 +60,22 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
 
   void UpdateMinEdge(VertexID id);
 
+  void PointJumpInc(VertexID id);
+
+  void LogMinOutEdgeId() const;
+
+  void WriteMinAuxiliary(VertexID id, VertexData data);
+
+  VertexID ReadAuxiliary(VertexID id);
+
  private:
   VertexData* min_out_edge_id_;
+  std::unordered_map<VertexID, VertexID> id_to_p_;
+  std::mutex mtx_;
+  common::Bitmap find_min_edge_bitmap_;
+
+  // configs
+  bool fast_ = false;
 };
 
 }  // namespace sics::graph::core::apps

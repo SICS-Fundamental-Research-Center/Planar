@@ -336,7 +336,7 @@ void GraphFormatConverter::WriteSubgraph(const std::vector<Edges>& edge_buckets,
     index_file.close();
 
     Bitmap src_map(csr_graph.get_num_vertices());
-    is_in_graph_vec.at(gid).Init(csr_graph.get_num_vertices());
+    is_in_graph_vec.at(gid).Init(aligned_max_vid);
     for (unsigned int i = 0; i < parallelism; i++) {
       auto task = std::bind([gid, i, parallelism, &csr_graph, &src_map,
                              &is_in_graph_vec, &frequency_of_vertices]() {

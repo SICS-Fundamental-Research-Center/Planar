@@ -5,18 +5,15 @@ namespace sics::graph::core::io {
 void MutableCSRWriter::Write(WriteMessage* message,
                              common::TaskRunner* /* runner */) {
   std::string file_path =
-      root_path_ + "graphs/" + std::to_string(message->graph_id) + ".bin";
+      root_path_ + "graphs/" + std::to_string(message->graph_id) + ".bin.new";
   std::string label_path =
-      root_path_ + "label/" + std::to_string(message->graph_id) + ".bin";
-
-  if (common::Configurations::GetMutable()->edge_mutate) {
-    file_path += ".new";
-    label_path += ".new";
-  }
+      root_path_ + "label/" + std::to_string(message->graph_id) + ".bin.new";
 
   if (message->serialized->HasNext()) {
     auto a = message->serialized->PopNext();
-    WriteMetaInfoToBin(file_path, a);
+    if (common::Configurations::GetMutable()->edge_mutate) {
+      WriteMetaInfoToBin(file_path, a);
+    }
     WriteLabelInfoToBin(label_path, a);
   }
 }

@@ -84,7 +84,7 @@ class Bitmap {
 
   void Clear() {
     size_t bm_size = WORD_OFFSET(size_);
-    for (size_t i = 0; i <= bm_size; i++) data_[i] = 0;
+    for (size_t i = 0; i <= bm_size; i++) data_[i] &= 0;
   }
 
   bool IsEmpty() const {
@@ -114,8 +114,13 @@ class Bitmap {
   }
 
   bool GetBit(size_t i) const {
-    if (i > size_) return 0;
+    if (i > size_) return false;
     return data_[WORD_OFFSET(i)] & (1ul << BIT_OFFSET(i));
+  }
+
+  bool GetBit64(size_t i) {
+    if (i > size_) return false;
+    return data_[WORD_OFFSET(i)];
   }
 
   void SetBit(size_t i) {

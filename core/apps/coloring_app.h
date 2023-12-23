@@ -1,6 +1,9 @@
 #ifndef GRAPH_SYSTEMS_CORE_APPS_COLORING_APP_H_
 #define GRAPH_SYSTEMS_CORE_APPS_COLORING_APP_H_
 
+#include <cstdlib>
+#include <random>
+
 #include "apis/planar_app_base.h"
 #include "common/bitmap.h"
 #include "common/types.h"
@@ -24,7 +27,16 @@ class ColoringApp : public apis::PlanarAppBase<CSRGraph> {
       update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
       data_structures::Serializable* graph)
       : apis::PlanarAppBase<CSRGraph>(runner, update_store, graph) {}
-  ~ColoringApp() override =default;
+  ~ColoringApp() override = default;
+
+  void AppInit(common::TaskRunner* runner,
+               update_stores::BspUpdateStore<VertexData, EdgeData>*
+                   update_store) override {
+    apis::PlanarAppBase<CSRGraph>::AppInit(runner, update_store);
+    //    bitmap_.Init(update_store->GetMessageCount());
+    srand(0);
+    max_round_ = common::Configurations::Get()->rand_max;
+  }
 
   void PEval() final;
   void IncEval() final;
@@ -41,10 +53,18 @@ class ColoringApp : public apis::PlanarAppBase<CSRGraph> {
 
   void MessagePassing(VertexID id);
 
-  void ColorNew(VertexID src_id, VertexID dst_id);
+  void ColorEdge(VertexID src_id, VertexID dst_id);
+
+  void ColorVertex(VertexID id);
+
+  int GetRandomNumber() const;
 
  private:
-  bool active_ = false;
+  int active_ = 0;
+  //  common::Bitmap bitmap_;
+  int round_ = 0;
+  // configs
+  uint32_t max_round_ = 10000;
 };
 
 }  // namespace sics::graph::core::apps
