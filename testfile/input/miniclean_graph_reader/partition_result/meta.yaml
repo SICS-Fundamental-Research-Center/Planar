@@ -1,4 +1,22 @@
 GraphMetadata:
+  attr_id_to_attr_name:
+    0: movie_vid
+    1: movie_rating
+    2: movie_year
+    3: movie_genre
+    4: movie_name
+    5: movie_title
+    6: movie_episode_name
+    7: movie_episode_id
+    8: movie_series_id
+    9: cast_vid
+    10: cast_name
+    11: director_vid
+    12: director_name
+  label_id_to_label_name:
+    0: Movie
+    1: Cast
+    2: Director
   max_global_vid: 9
   min_global_vid: 0
   num_border_vertices: 10

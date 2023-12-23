@@ -7,15 +7,26 @@
 #include <vector>
 
 #include "miniclean/common/error_detection_config.h"
+#include "miniclean/data_structures/graphs/miniclean_graph_metadata.h"
 
 namespace sics::graph::miniclean::data_structures::gcr {
 
 using ErrorDetectionConfig =
     sics::graph::miniclean::common::ErrorDetectionConfig;
+using MiniCleanGraphMetadata =
+    sics::graph::miniclean::data_structures::graphs::MiniCleanGraphMetadata;
 
 class LightGCRTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    YAML::Node graph_metadata;
+    EXPECT_NO_THROW(
+        graph_metadata = YAML::LoadFile(
+            data_dir_ +
+            "/input/miniclean_graph_reader/partition_result/meta.yaml"));
+    graph_metadata_ = graph_metadata.as<MiniCleanGraphMetadata>();
+    ErrorDetectionConfig::Init(graph_metadata_);
+
     // 1. Left star pattern.
     //    path 0: Movie [genre=Comedy, year>2000] -> Cast
     //    path 1: Movie [genre=Comedy, year>2000] -> Cast
@@ -87,6 +98,7 @@ class LightGCRTest : public ::testing::Test {
   }
 
   // Shared data structures for test cases.
+  MiniCleanGraphMetadata graph_metadata_;
   LightGCR gcr_0_;
   LightGCR gcr_1_;
   std::string data_dir_ = TEST_DATA_DIR;

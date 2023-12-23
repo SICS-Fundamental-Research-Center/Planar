@@ -6,10 +6,15 @@
 
 #include "core/util/logging.h"
 #include "miniclean/common/types.h"
+#include "miniclean/data_structures/graphs/miniclean_graph_metadata.h"
 
 namespace sics::graph::miniclean::common {
 
 class ErrorDetectionConfig {
+ private:
+  using MiniCleanGraphMetadata = sics::graph::miniclean::data_structures::graphs::
+      MiniCleanGraphMetadata;
+      
  public:
   ErrorDetectionConfig(const ErrorDetectionConfig&) = delete;
   ErrorDetectionConfig& operator=(const ErrorDetectionConfig&) = delete;
@@ -21,16 +26,26 @@ class ErrorDetectionConfig {
     }
   }
 
-  static const ErrorDetectionConfig* Get() {
+  static void Init(const MiniCleanGraphMetadata& metadata) {
     if (instance_ == nullptr) {
       instance_ = new ErrorDetectionConfig();
+    }
+    label_id_to_label_name_ = metadata.label_id_to_label_name;
+    label_name_to_label_id_ = metadata.label_name_to_label_id;
+    attr_id_to_attr_name_ = metadata.attr_id_to_attr_name;
+    attr_name_to_attr_id_ = metadata.attr_name_to_attr_id;
+  }
+
+  static const ErrorDetectionConfig* Get() {
+    if (instance_ == nullptr) {
+      LOG_FATAL("ErrorDetectionConfig not initialized.");
     }
     return instance_;
   }
 
   static ErrorDetectionConfig* GetMutable() {
     if (instance_ == nullptr) {
-      instance_ = new ErrorDetectionConfig();
+      LOG_FATAL("ErrorDetectionConfig not initialized.");
     }
     return instance_;
   }
@@ -69,28 +84,10 @@ class ErrorDetectionConfig {
  private:
   ErrorDetectionConfig() = default;
   inline static ErrorDetectionConfig* instance_ = nullptr;
-
-  std::vector<std::string> label_id_to_label_name_ = {"Movie", "Cast",
-                                                      "Director"};
-
-  std::map<std::string, VertexLabel> label_name_to_label_id_ = {
-      {"Movie", 0}, {"Cast", 1}, {"Director", 2}};
-
-  std::vector<std::string> attr_id_to_attr_name_ = {
-      "movie_vid",          "movie_rating",     "movie_year",
-      "movie_genre",        "movie_name",       "movie_title",
-      "movie_episode_name", "movie_episode_id", "movie_series_id",
-      "cast_vid",           "cast_name",        "director_vid",
-      "director_name"};
-
-  std::map<std::string, VertexAttributeID> attr_name_to_attr_id_ = {
-      {"movie_vid", 0},          {"movie_rating", 1},
-      {"movie_year", 2},         {"movie_genre", 3},
-      {"movie_name", 4},         {"movie_title", 5},
-      {"movie_episode_name", 6}, {"movie_episode_id", 7},
-      {"movie_series_id", 8},    {"cast_vid", 9},
-      {"cast_name", 10},         {"director_vid", 11},
-      {"director_name", 12}};
+  inline static std::vector<std::string> label_id_to_label_name_;
+  inline static std::map<std::string, VertexLabel> label_name_to_label_id_;
+  inline static std::vector<std::string> attr_id_to_attr_name_;
+  inline static std::map<std::string, VertexAttributeID> attr_name_to_attr_id_;
 };
 
 }  // namespace sics::graph::miniclean::common
