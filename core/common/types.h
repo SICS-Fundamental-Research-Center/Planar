@@ -16,6 +16,7 @@ typedef uint32_t VertexLabel;
 typedef uint32_t VertexDegree;
 typedef uint32_t VertexCount;
 typedef uint64_t EdgeIndex;
+typedef uint32_t BlockID;
 
 typedef uint8_t DefaultEdgeDataType;  // used for position
 typedef uint32_t Uint32VertexDataType;
