@@ -17,6 +17,18 @@
 
 namespace sics::graph::miniclean::data_structures::graphs {
 
+struct MiniCleanVertex {
+ private:
+  using VertexID = sics::graph::miniclean::common::VertexID;
+
+ public:
+  VertexID global_vid;
+  VertexID indegree = 0;
+  VertexID outdegree = 0;
+  VertexID* incoming_edges;
+  VertexID* outgoing_edges;
+};
+
 class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
  private:
   using Serialized = sics::graph::core::data_structures::Serialized;
@@ -54,6 +66,26 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
 
   bool IsInGraph(VertexID local_vid) const {
     return is_in_graph_bitmap_.GetBit(local_vid);
+  }
+
+  MiniCleanVertex GetVertexByLocalID(VertexID local_vid) const {
+    MiniCleanVertex v;
+    v.global_vid = GetVertexGlobalID(local_vid);
+    v.indegree = GetInDegreeByLocalID(local_vid);
+    v.outdegree = GetOutDegreeByLocalID(local_vid);
+    v.incoming_edges =
+        incoming_local_vid_base_pointer_ + in_offset_base_pointer_[local_vid];
+    v.outgoing_edges =
+        outgoing_local_vid_base_pointer_ + out_offset_base_pointer_[local_vid];
+    return v;
+  }
+
+  VertexID GetInDegreeByLocalID(VertexID local_vid) const {
+    return indegree_base_pointer_[local_vid];
+  }
+
+  VertexID GetOutDegreeByLocalID(VertexID local_vid) const {
+    return outdegree_base_pointer_[local_vid];
   }
 
  private:
