@@ -54,7 +54,7 @@ typedef std::pair<StarPattern, StarPattern> DualPattern;
 #define MAX_VERTEX_LABEL \
   std::numeric_limits<sics::graph::miniclean::common::VertexLabel>::max()
 
-#define MAX_VERTEX_ID \
+#define MAX_MINICLEAN_VERTEX_ID \
   std::numeric_limits<sics::graph::miniclean::common::VertexID>::max()
 
 #define MAX_EDGE_LABEL \
