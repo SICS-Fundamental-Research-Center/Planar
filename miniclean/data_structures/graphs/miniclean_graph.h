@@ -53,7 +53,13 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
   void Deserialize(const TaskRunner& runner,
                    std::unique_ptr<Serialized>&& serialized) override;
 
+  const MiniCleanSubgraphMetadata& GetMetadata() const { return metadata_; }
+
   VertexID GetNumVertices() const { return metadata_.num_vertices; }
+
+  EdgeIndex GetNumEdges() const {
+    return metadata_.num_incoming_edges + metadata_.num_outgoing_edges;
+  }
 
   VertexLabel GetVertexLabel(VertexID local_vid) const;
 

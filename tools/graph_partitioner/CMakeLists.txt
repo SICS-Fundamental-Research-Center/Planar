@@ -18,7 +18,6 @@ foreach (appfile ${appfiles})
     add_executable("${app}_exec" ${appfile} ${TOOLS_SOURCES} ${PARTITION_SOURCES})
     target_link_libraries("${app}_exec"
             graph_systems_core
-            graph_systems_miniclean
             yaml-cpp
             gflags
             ${FOLLY_LIBRARIES}
