@@ -10,10 +10,6 @@
 #include "core/common/multithreading/thread_pool.h"
 #include "core/common/types.h"
 #include "core/data_structures/graph/immutable_csr_graph.h"
-#include "core/data_structures/graph/serialized_immutable_csr_graph.h"
-#include "core/data_structures/graph_metadata.h"
-#include "core/io/csr_reader.h"
-#include "core/scheduler/message.h"
 #include "tools/graph_partitioner/partitioner/partitioner_base.h"
 
 namespace sics::graph::tools::partitioner {

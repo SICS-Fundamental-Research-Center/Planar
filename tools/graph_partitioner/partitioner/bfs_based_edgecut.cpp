@@ -4,6 +4,10 @@
 #include <iostream>
 #include <string>
 
+#include "core/data_structures/graph/serialized_immutable_csr_graph.h"
+#include "core/data_structures/graph_metadata.h"
+#include "core/io/csr_reader.h"
+#include "core/scheduler/message.h"
 #include "core/util/atomic.h"
 #include "core/util/logging.h"
 #include "tools/common/data_structures.h"
@@ -22,12 +26,13 @@ using Vertex = sics::graph::core::data_structures::graph::ImmutableCSRVertex;
 using VertexID = sics::graph::core::common::VertexID;
 using CSRReader = sics::graph::core::io::CSRReader;
 using GraphMetadata = sics::graph::core::data_structures::GraphMetadata;
-using sics::graph::core::data_structures::GraphMetadata;
-using sics::graph::core::data_structures::SubgraphMetadata;
-using sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
+using SubgraphMetadata = sics::graph::core::data_structures::SubgraphMetadata;
+using SerializedImmutableCSRGraph =
+    sics::graph::core::data_structures::graph::SerializedImmutableCSRGraph;
 using ReadMessage = sics::graph::core::scheduler::ReadMessage;
 using GraphFormatConverter = sics::graph::tools::common::GraphFormatConverter;
-using sics::graph::core::data_structures::graph::ImmutableCSRGraph;
+using ImmutableCSRGraph =
+    sics::graph::core::data_structures::graph::ImmutableCSRGraph;
 
 using sics::graph::core::util::atomic::WriteAdd;
 using sics::graph::core::util::atomic::WriteMax;
@@ -64,57 +69,30 @@ void BFSBasedEdgeCutPartitioner::BFSBasedVertexBucketing(
   auto task_package = TaskPackage();
   task_package.reserve(parallelism);
 
-  // Print the Graph
-  LOG_INFO("-----------Printing the graph------------");
-  for (VertexID i = 0; i < graph.get_num_vertices(); i++) {
-    auto u = graph.GetVertexByLocalID(i);
-    std::stringstream ss;
-    ss << "  ===vid: " << u.vid << ", indegree: " << u.indegree
-       << ", outdegree: " << u.outdegree << "===" << std::endl;
-    if (u.indegree != 0) {
-      ss << "    Incoming edges: ";
-      for (VertexID i = 0; i < u.indegree; i++) ss << u.incoming_edges[i] << ",";
-      ss << std::endl << std::endl;
-    }
-    if (u.outdegree != 0) {
-      ss << "    Outgoing edges: ";
-      for (VertexID i = 0; i < u.outdegree; i++)
-        ss << u.outgoing_edges[i] << ",";
-      ss << std::endl << std::endl;
-    }
-    LOG_INFO(ss.str());
-  }
-
-  // Vertex bucketing.
   Bitmap visited_vertex_bitmap(graph.get_num_vertices());
   std::list<std::list<Vertex>> vertex_bucket_list;
-  //  1. Collect vertices from a BFS tree rooted at a vertex with maximum
-  //  degree.
   LOG_INFO("Collecting vertices from BFS trees");
   while (graph.get_num_vertices() - visited_vertex_bitmap.Count() >
          minimum_n_vertices_to_partition) {
-    // Find the vertex with the maximum degree.
+    // 1. Collect vertices rooted from vertices with the maximum degree.
+    //   1.1 Find the vertex with the maximum degree.
     VertexID root_vid = GetUnvisitedVertexWithMaxDegree(
         graph, task_package, thread_pool, parallelism, &visited_vertex_bitmap);
-    LOGF_INFO("ROOT VID: {}", root_vid);
     if (MAX_VERTEX_ID == root_vid) break;
 
-    // Collect children rooted at root_vid.
+    //   1.2 Collect children rooted at root_vid.
     CollectVerticesFromBFSTree(graph, task_package, thread_pool, parallelism,
                                root_vid, &vertex_bucket_list,
                                &visited_vertex_bitmap);
-    for (const auto& v : vertex_bucket_list.back()) {
-      std::cout << v.vid << " ";
-    }
-    std::cout << std::endl;
   }
-  //  2. Collect the remaining vertices.
-  LOGF_INFO("BUCKET NUM BEFORE RE-COLLECT: {}", vertex_bucket_list.size());
+  // 2. Collect the remaining vertices.
   CollectRemainingVertices(graph, task_package, thread_pool, parallelism,
                            &vertex_bucket_list, &visited_vertex_bitmap);
-  LOGF_INFO("BUCKET NUM AFTER RE-COLLECT: {}", vertex_bucket_list.size());
-
-  // Write vertex buckets to disk.
+  // 3. Redistribute the vertices.
+  std::vector<std::vector<Vertex>> vertex_buckets =
+      Redistributing(vertex_bucket_list);
+  // 4. Write vertex buckets to disk.
+  LOG_INFO("Writing the subgraphs to disk");
   GraphFormatConverter graph_format_converter(output_path_);
   GraphMetadata graph_metadata;
   if (visited_vertex_bitmap.Count() != graph.get_num_vertices())
@@ -126,29 +104,6 @@ void BFSBasedEdgeCutPartitioner::BFSBasedVertexBucketing(
   graph_metadata.set_num_subgraphs(n_partitions_);
   graph_metadata.set_max_vid(graph.get_max_vid());
   graph_metadata.set_min_vid(graph.get_min_vid());
-
-  // Print
-  for (const auto& bucket : vertex_bucket_list) {
-    for (const auto& v : bucket) {
-      std::cout << v.vid << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "----------" << bucket.size() << "-----------" << std::endl;
-  }
-
-  LOG_INFO("Writing the subgraphs to disk");
-  std::vector<std::vector<Vertex>> vertex_buckets =
-      Redistributing(vertex_bucket_list);
-
-  // Print the graph
-  LOG_INFO("Printing the graph");
-  for (const auto& bucket : vertex_buckets) {
-    for (const auto& v : bucket) {
-      std::cout << v.vid << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "----------" << bucket.size() << "-----------" << std::endl;
-  }
 
   graph_format_converter.WriteSubgraph(vertex_buckets, graph_metadata,
                                        store_strategy_);
@@ -188,12 +143,6 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
     Bitmap* visited_vertex_bitmap_ptr) {
   std::list<VertexID> bfs_queue = {root_vid};
   std::list<Vertex> vertex_bucket;
-  LOG_INFO("---Collecting vertices from: ---");
-  for (const auto& v : bfs_queue) {
-    std::cout << v << " ";
-  }
-  std::cout << std::endl;
-  LOG_INFO("----------");
   while (!bfs_queue.empty()) {
     std::vector<VertexID> active_vertices;
     active_vertices.reserve(bfs_queue.size());
@@ -215,7 +164,6 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
             if (!visited_vertex_bitmap_ptr->GetBit(src)) {
               visited_vertex_bitmap_ptr->SetBit(src);
               bfs_queue.push_back(src);
-              LOGF_INFO("ROOT VID: {}, INCOMING VID: {}", vid, src);
             }
           }
           for (VertexID k = 0; k < vertex.outdegree; k++) {
@@ -225,7 +173,6 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
             if (!visited_vertex_bitmap_ptr->GetBit(dst)) {
               visited_vertex_bitmap_ptr->SetBit(dst);
               bfs_queue.push_back(dst);
-              LOGF_INFO("ROOT VID: {}, OUTGOING VID: {}", vid, dst);
             }
           }
         }
