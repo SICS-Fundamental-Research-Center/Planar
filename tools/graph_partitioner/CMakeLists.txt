@@ -7,6 +7,14 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/tools/)
 file(GLOB PARTITION_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/partitioner/*.cpp
         )
+list(FILTER PARTITION_SOURCES EXCLUDE REGEX ".*_test\\.cpp$")
+
+#######################
+# Tests
+#######################
+if (TEST)
+    add_subdirectory(tests)
+endif ()
 
 #######################
 # Artifacts
