@@ -209,8 +209,6 @@ void BFSBasedEdgeCutPartitioner::CollectRemainingVertices(
     vertex_bucket_list_ptr->emplace_back(bucket_for_remaining_vertices);
 }
 
-void BFSBasedEdgeCutPartitioner::WritePartitionedGraph() const {}
-
 std::vector<std::vector<Vertex>> BFSBasedEdgeCutPartitioner::Redistributing(
     std::list<std::list<Vertex>>& list_of_list) {
   list_of_list.sort(

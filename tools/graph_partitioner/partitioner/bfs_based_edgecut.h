@@ -60,8 +60,6 @@ class BFSBasedEdgeCutPartitioner : public PartitionerBase {
   std::vector<std::vector<Vertex>> Redistributing(
       std::list<std::list<Vertex>>& list_of_list);
 
-  void WritePartitionedGraph() const;
-
   const GraphID n_partitions_;
   std::mutex mtx_;
 };
