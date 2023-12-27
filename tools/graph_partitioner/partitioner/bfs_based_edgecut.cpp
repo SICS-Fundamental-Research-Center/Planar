@@ -55,8 +55,12 @@ void BFSBasedEdgeCutPartitioner::RunPartitioner() {
   graph.Deserialize(thread_pool, std::move(serialized_graph));
   LOG_INFO("Finished graph deserializing.");
 
-   // Initialize member variables
+  // Initialize member variables
   graph_ptr_ = &graph;
+  parallelism_ = std::thread::hardware_concurrency();
+  ThreadPool pool = ThreadPool(parallelism_);
+  thread_pool_ptr_ = &pool;
+  task_package_.reserve(parallelism_);
 
   // BFS-based vertex bucketing.
   LOG_INFO("-----BFS-based vertex bucketing-----");
@@ -78,18 +82,15 @@ void BFSBasedEdgeCutPartitioner::BFSBasedVertexBucketing(
          minimum_n_vertices_to_partition) {
     // 1. Collect vertices rooted from vertices with the maximum degree.
     //   1.1 Find the vertex with the maximum degree.
-    VertexID root_vid = GetUnvisitedVertexWithMaxDegree(
-        task_package, thread_pool, parallelism, &visited_vertex_bitmap);
+    VertexID root_vid = GetUnvisitedVertexWithMaxDegree(&visited_vertex_bitmap);
     if (MAX_VERTEX_ID == root_vid) break;
 
     //   1.2 Collect children rooted at root_vid.
-    CollectVerticesFromBFSTree(task_package, thread_pool, parallelism,
-                               root_vid, &vertex_bucket_list,
+    CollectVerticesFromBFSTree(root_vid, &vertex_bucket_list,
                                &visited_vertex_bitmap);
   }
   // 2. Collect the remaining vertices.
-  CollectRemainingVertices(task_package, thread_pool, parallelism,
-                           &vertex_bucket_list, &visited_vertex_bitmap);
+  CollectRemainingVertices(&vertex_bucket_list, &visited_vertex_bitmap);
   // 3. Redistribute the vertices.
   std::vector<std::vector<Vertex>> vertex_buckets =
       RedistributeToNBuckets(vertex_bucket_list);
@@ -114,34 +115,31 @@ void BFSBasedEdgeCutPartitioner::BFSBasedVertexBucketing(
 }
 
 VertexID BFSBasedEdgeCutPartitioner::GetUnvisitedVertexWithMaxDegree(
-    TaskPackage& task_package,
-    ThreadPool& thread_pool, unsigned int parallelism,
     Bitmap* visited_vertex_bitmap_ptr) {
   // Find the vertex with the maximum degree.
   VertexID max_degree = 0;
   VertexID root_vid = MAX_VERTEX_ID;
-  for (size_t i = 0; i < parallelism; i++) {
-    auto task = std::bind([this, i, parallelism, visited_vertex_bitmap_ptr,
-                           &max_degree, &root_vid]() {
-      for (VertexID j = i; j < graph_ptr_->get_num_vertices(); j += parallelism) {
-        if (visited_vertex_bitmap_ptr->GetBit(j)) continue;
-        VertexID degree =
-            graph_ptr_->GetInDegreeByLocalID(j) + graph_ptr_->GetOutDegreeByLocalID(j);
-        if (WriteMax(&max_degree, degree)) root_vid = j;
-      }
-    });
-    task_package.push_back(task);
+  for (size_t i = 0; i < parallelism_; i++) {
+    auto task = std::bind(
+        [this, i, visited_vertex_bitmap_ptr, &max_degree, &root_vid]() {
+          for (VertexID j = i; j < graph_ptr_->get_num_vertices();
+               j += parallelism_) {
+            if (visited_vertex_bitmap_ptr->GetBit(j)) continue;
+            VertexID degree = graph_ptr_->GetInDegreeByLocalID(j) +
+                              graph_ptr_->GetOutDegreeByLocalID(j);
+            if (WriteMax(&max_degree, degree)) root_vid = j;
+          }
+        });
+    task_package_.push_back(task);
   }
-  thread_pool.SubmitSync(task_package);
-  task_package.clear();
+  thread_pool_ptr_->SubmitSync(task_package_);
+  task_package_.clear();
   if (MAX_VERTEX_ID != root_vid) visited_vertex_bitmap_ptr->SetBit(root_vid);
   return root_vid;
 }
 
 void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
-    TaskPackage& task_package,
-    ThreadPool& thread_pool, unsigned int parallelism, VertexID root_vid,
-    std::list<std::list<Vertex>>* vertex_bucket_list_ptr,
+    VertexID root_vid, std::list<std::list<Vertex>>* vertex_bucket_list_ptr,
     Bitmap* visited_vertex_bitmap_ptr) {
   std::list<VertexID> bfs_queue = {root_vid};
   std::list<Vertex> vertex_bucket;
@@ -153,10 +151,10 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
       vertex_bucket.push_back(graph_ptr_->GetVertexByLocalID(vid));
     }
     bfs_queue.clear();
-    for (size_t i = 0; i < parallelism; i++) {
-      auto task = std::bind([this, i, parallelism, visited_vertex_bitmap_ptr,
+    for (size_t i = 0; i < parallelism_; i++) {
+      auto task = std::bind([this, i, visited_vertex_bitmap_ptr,
                              &active_vertices, &bfs_queue]() {
-        for (VertexID j = i; j < active_vertices.size(); j += parallelism) {
+        for (VertexID j = i; j < active_vertices.size(); j += parallelism_) {
           auto vid = active_vertices.at(j);
           auto vertex = graph_ptr_->GetVertexByLocalID(vid);
           for (VertexID k = 0; k < vertex.indegree; k++) {
@@ -179,35 +177,35 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
           }
         }
       });
-      task_package.push_back(task);
+      task_package_.push_back(task);
     }
-    thread_pool.SubmitSync(task_package);
-    task_package.clear();
+    thread_pool_ptr_->SubmitSync(task_package_);
+    task_package_.clear();
   }
   vertex_bucket_list_ptr->emplace_back(vertex_bucket);
 }
 
 void BFSBasedEdgeCutPartitioner::CollectRemainingVertices(
-    TaskPackage& task_package,
-    ThreadPool& thread_pool, unsigned int parallelism,
     std::list<std::list<Vertex>>* vertex_bucket_list_ptr,
     Bitmap* visited_vertex_bitmap_ptr) {
   LOG_INFO("Collecting the remaining vertices");
   std::list<Vertex> bucket_for_remaining_vertices;
-  for (size_t i = 0; i < parallelism; i++) {
-    auto task = std::bind([this, i, parallelism, visited_vertex_bitmap_ptr,
-                           &bucket_for_remaining_vertices]() {
-      for (VertexID j = i; j < graph_ptr_->get_num_vertices(); j += parallelism) {
-        if (visited_vertex_bitmap_ptr->GetBit(j)) continue;
-        std::lock_guard<std::mutex> lock(bfs_mtx_);
-        visited_vertex_bitmap_ptr->SetBit(j);
-        bucket_for_remaining_vertices.emplace_back(graph_ptr_->GetVertexByLocalID(j));
-      }
-    });
-    task_package.push_back(task);
+  for (size_t i = 0; i < parallelism_; i++) {
+    auto task = std::bind(
+        [this, i, visited_vertex_bitmap_ptr, &bucket_for_remaining_vertices]() {
+          for (VertexID j = i; j < graph_ptr_->get_num_vertices();
+               j += parallelism_) {
+            if (visited_vertex_bitmap_ptr->GetBit(j)) continue;
+            std::lock_guard<std::mutex> lock(bfs_mtx_);
+            visited_vertex_bitmap_ptr->SetBit(j);
+            bucket_for_remaining_vertices.emplace_back(
+                graph_ptr_->GetVertexByLocalID(j));
+          }
+        });
+    task_package_.push_back(task);
   }
-  thread_pool.SubmitSync(task_package);
-  task_package.clear();
+  thread_pool_ptr_->SubmitSync(task_package_);
+  task_package_.clear();
   if (!bucket_for_remaining_vertices.empty())
     vertex_bucket_list_ptr->emplace_back(bucket_for_remaining_vertices);
 }

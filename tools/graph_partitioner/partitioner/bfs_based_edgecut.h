@@ -38,20 +38,13 @@ class BFSBasedEdgeCutPartitioner : public PartitionerBase {
  private:
   void BFSBasedVertexBucketing(size_t minimum_n_vertices_to_partition);
 
-  VertexID GetUnvisitedVertexWithMaxDegree(TaskPackage& task_package,
-                                           ThreadPool& thread_pool,
-                                           unsigned int parallelism,
-                                           Bitmap* visited_vertex_bitmap_ptr);
+  VertexID GetUnvisitedVertexWithMaxDegree(Bitmap* visited_vertex_bitmap_ptr);
 
   void CollectVerticesFromBFSTree(
-      TaskPackage& task_package,
-      ThreadPool& thread_pool, unsigned int parallelism, VertexID root_vid,
-      std::list<std::list<Vertex>>* vertex_bucket_list_ptr,
+      VertexID root_vid, std::list<std::list<Vertex>>* vertex_bucket_list_ptr,
       Bitmap* visited_vertex_bitmap_ptr);
 
   void CollectRemainingVertices(
-      TaskPackage& task_package,
-      ThreadPool& thread_pool, unsigned int parallelism,
       std::list<std::list<Vertex>>* vertex_bucket_list_ptr,
       Bitmap* visited_vertex_bitmap_ptr);
 
@@ -60,6 +53,9 @@ class BFSBasedEdgeCutPartitioner : public PartitionerBase {
 
   const GraphID n_partitions_;
   ImmutableCSRGraph* graph_ptr_;
+  ThreadPool* thread_pool_ptr_;
+  TaskPackage task_package_;
+  unsigned int parallelism_;
   std::mutex bfs_mtx_;
 };
 
