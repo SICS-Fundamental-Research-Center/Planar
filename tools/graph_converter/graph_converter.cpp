@@ -146,8 +146,12 @@ void ConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   task_package.clear();
 
   // Write binary edgelist
-  out_data_file.write(reinterpret_cast<char*>(buffer_edges_minimized_max_vid),
-                      sizeof(VertexID) * 2 * compacted_n_edges);
+  if (FLAGS_not_reorder_vertices)
+    out_data_file.write(reinterpret_cast<char*>(buffer_edges),
+                        sizeof(VertexID) * 2 * compacted_n_edges);
+  else
+    out_data_file.write(reinterpret_cast<char*>(buffer_edges_minimized_max_vid),
+                        sizeof(VertexID) * 2 * compacted_n_edges);
   delete[] vid_map;
   delete[] buffer_edges;
   delete[] buffer_edges_minimized_max_vid;
@@ -252,8 +256,12 @@ void BigGraphConvertEdgelistCSV2EdgelistBin(const std::string& input_path,
   task_package.clear();
 
   // Write binary edgelist
-  out_data_file.write(reinterpret_cast<char*>(buffer_edges_minimized_max_vid),
-                      sizeof(VertexID) * 2 * compacted_n_edges);
+  if (FLAGS_not_reorder_vertices)
+    out_data_file.write(reinterpret_cast<char*>(buffer_edges),
+                        sizeof(VertexID) * 2 * compacted_n_edges);
+  else
+    out_data_file.write(reinterpret_cast<char*>(buffer_edges_minimized_max_vid),
+                        sizeof(VertexID) * 2 * compacted_n_edges);
   delete[] vid_map;
   delete[] buffer_edges;
   delete[] buffer_edges_minimized_max_vid;
