@@ -45,6 +45,8 @@ struct MiniCleanGraphMetadata {
  private:
   using GraphID = miniclean::common::GraphID;
   using VertexID = miniclean::common::VertexID;
+  using VertexLabel = miniclean::common::VertexLabel;
+  using VertexAttributeID = miniclean::common::VertexAttributeID;
   using EdgeIndex = miniclean::common::EdgeIndex;
 
  public:
@@ -55,6 +57,10 @@ struct MiniCleanGraphMetadata {
   VertexID num_border_vertices;
   GraphID num_subgraphs;
   std::vector<std::pair<VertexID, VertexID>> vlabel_id_to_local_vid_range;
+  std::vector<std::string> label_id_to_label_name;
+  std::vector<std::string> attr_id_to_attr_name;
+  std::map<std::string, VertexLabel> label_name_to_label_id;
+  std::map<std::string, VertexAttributeID> attr_name_to_attr_id;
   std::vector<MiniCleanSubgraphMetadata> subgraphs;
 };
 }  // namespace sics::graph::miniclean::data_structures::graphs
@@ -192,6 +198,18 @@ struct convert<
     for (const auto& subgraph_metadata : graph_metadata.subgraphs) {
       node["subgraphs"].push_back(subgraph_metadata);
     }
+    std::map<uint16_t, std::string> label_id_to_label_name;
+    for (size_t i = 0; i < graph_metadata.label_id_to_label_name.size(); i++) {
+      label_id_to_label_name.emplace(
+          i, graph_metadata.label_id_to_label_name.at(i));
+    }
+    node["label_id_to_label_name"] = label_id_to_label_name;
+    std::map<uint16_t, std::string> attr_id_to_attr_name;
+    for (size_t i = 0; i < graph_metadata.attr_id_to_attr_name.size(); i++) {
+      attr_id_to_attr_name.emplace(i,
+                                   graph_metadata.attr_id_to_attr_name.at(i));
+    }
+    node["attr_id_to_attr_name"] = attr_id_to_attr_name;
     metadata["GraphMetadata"] = node;
     return metadata;
   }
@@ -200,7 +218,7 @@ struct convert<
       sics::graph::miniclean::data_structures::graphs::MiniCleanGraphMetadata&
           graph_metadata) {
     Node metadata = node["GraphMetadata"];
-    if (metadata.size() != 8) return false;
+    if (metadata.size() != 10) return false;
     graph_metadata.num_vertices =
         metadata["num_vertices"].as<sics::graph::miniclean::common::VertexID>();
     graph_metadata.num_edges =
@@ -222,6 +240,22 @@ struct convert<
       graph_metadata.vlabel_id_to_local_vid_range.push_back(
           pair.as<std::pair<sics::graph::miniclean::common::VertexID,
                             sics::graph::miniclean::common::VertexID>>());
+    }
+    graph_metadata.label_id_to_label_name.reserve(
+        metadata["label_id_to_label_name"].size());
+    for (const auto& pair : metadata["label_id_to_label_name"]) {
+      graph_metadata.label_id_to_label_name.push_back(
+          pair.second.as<std::string>());
+      graph_metadata.label_name_to_label_id[pair.second.as<std::string>()] =
+          pair.first.as<sics::graph::miniclean::common::VertexLabel>();
+    }
+    graph_metadata.attr_id_to_attr_name.reserve(
+        metadata["attr_id_to_attr_name"].size());
+    for (const auto& pair : metadata["attr_id_to_attr_name"]) {
+      graph_metadata.attr_id_to_attr_name.push_back(
+          pair.second.as<std::string>());
+      graph_metadata.attr_name_to_attr_id[pair.second.as<std::string>()] =
+          pair.first.as<sics::graph::miniclean::common::VertexAttributeID>();
     }
     graph_metadata.subgraphs.reserve(metadata["subgraphs"].size());
     for (const auto& subgraph_metadata : metadata["subgraphs"]) {

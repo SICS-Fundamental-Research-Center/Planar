@@ -5,10 +5,12 @@
 #include "core/common/multithreading/thread_pool.h"
 #include "core/util/logging.h"
 #include "tools/common/yaml_config.h"
+#include "tools/graph_partitioner/partitioner/bfs_based_edgecut.h"
 #include "tools/graph_partitioner/partitioner/csr_based_planar_vertexcut.h"
 #include "tools/graph_partitioner/partitioner/hash_based_edgecut.h"
 #include "tools/graph_partitioner/partitioner/hash_based_vertexcut.h"
 #include "tools/graph_partitioner/partitioner/two_dimensional_vertexcut.h"
+
 
 using sics::graph::tools::common::StoreStrategy2Enum;
 using EdgeCutPartitioner =
@@ -19,6 +21,8 @@ using PlanarVertexCutPartitioner =
     sics::graph::tools::partitioner::CSRBasedPlanarVertexCutPartitioner;
 using TwoDimensionalVertexCutPartitioner =
     sics::graph::tools::partitioner::TwoDimensionalVertexCutPartitioner;
+using BFSBasedEdgeCutPartitioner =
+    sics::graph::tools::partitioner::BFSBasedEdgeCutPartitioner;
 
 enum Partitioner {
   kHashEdgeCut,  // default
@@ -26,7 +30,8 @@ enum Partitioner {
   kHybridCut,
   kPlanarVertexCut,
   k2DVertexCut,
-  kUndefinedPartitioner
+  kBFSEdgeCut,
+  kUndefinedPartitioner,
 };
 
 Partitioner Partitioner2Enum(const std::string& s) {
@@ -40,6 +45,8 @@ Partitioner Partitioner2Enum(const std::string& s) {
     return kPlanarVertexCut;
   else if (s == "2dvertexcut")
     return k2DVertexCut;
+  else if (s == "bfsedgecut")
+    return kBFSEdgeCut;
   else
     LOG_FATAL("Unknown partitioner type: ", s.c_str());
   return kUndefinedPartitioner;
@@ -70,6 +77,8 @@ int main(int argc, char** argv) {
       "partitioner"
       "\n"
       "\t hybridcut:   - Using hybrid cut partitioner "
+      "\n"
+      "\t bfsedgecut: - Using BFS-based edge cut partitioner "
       "\n");
 
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -108,6 +117,13 @@ int main(int argc, char** argv) {
     case kHybridCut:
       // TODO (hsaioko): Add HyrbidCut partitioner.
       break;
+    case kBFSEdgeCut: {
+      BFSBasedEdgeCutPartitioner bfs_edgecut_partitioner(
+          FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
+          FLAGS_n_partitions);
+      bfs_edgecut_partitioner.RunPartitioner();
+      break;
+    }
     default:
       LOG_FATAL("Error graph partitioner.");
   }
