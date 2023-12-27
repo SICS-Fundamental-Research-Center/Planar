@@ -11,7 +11,6 @@
 #include "tools/graph_partitioner/partitioner/hash_based_vertexcut.h"
 #include "tools/graph_partitioner/partitioner/two_dimensional_vertexcut.h"
 
-
 using sics::graph::tools::common::StoreStrategy2Enum;
 using EdgeCutPartitioner =
     sics::graph::tools::partitioner::HashBasedEdgeCutPartitioner;
@@ -56,6 +55,8 @@ DEFINE_string(partitioner, "", "partitioner type.");
 DEFINE_string(i, "", "input path.");
 DEFINE_string(o, "", "output path.");
 DEFINE_uint64(n_partitions, 1, "the number of partitions");
+DEFINE_uint64(max_vertex_num_per_partition, 0,
+              "max vertex number per partition");
 DEFINE_string(store_strategy, "unconstrained",
               "graph-systems adopted three strategies to store edges: "
               "kUnconstrained, incoming, and outgoing.");
@@ -117,10 +118,13 @@ int main(int argc, char** argv) {
     case kHybridCut:
       // TODO (hsaioko): Add HyrbidCut partitioner.
       break;
+    // TODO (bai-wenchao): BFSBasedEdgeCutPartitioner should able to deside the
+    // number of partitions by itself (i.e., the only input is the memory
+    // constraint).
     case kBFSEdgeCut: {
       BFSBasedEdgeCutPartitioner bfs_edgecut_partitioner(
           FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
-          FLAGS_n_partitions);
+          FLAGS_n_partitions, FLAGS_max_vertex_num_per_partition);
       bfs_edgecut_partitioner.RunPartitioner();
       break;
     }

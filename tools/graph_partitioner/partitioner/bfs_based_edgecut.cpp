@@ -103,7 +103,7 @@ void BFSBasedEdgeCutPartitioner::BFSBasedVertexBucketing(
         "of vertices in the vertex buckets.");
   graph_metadata.set_num_vertices(graph_ptr_->get_num_vertices());
   graph_metadata.set_num_edges(graph_ptr_->get_num_outgoing_edges());
-  graph_metadata.set_num_subgraphs(n_partitions_);
+  graph_metadata.set_num_subgraphs(vertex_buckets.size());
   graph_metadata.set_max_vid(graph_ptr_->get_max_vid());
   graph_metadata.set_min_vid(graph_ptr_->get_min_vid());
 
@@ -133,7 +133,6 @@ VertexID BFSBasedEdgeCutPartitioner::GetUnvisitedVertexWithMaxDegree(
   }
   thread_pool_ptr_->SubmitSync(task_package_);
   task_package_.clear();
-  if (MAX_VERTEX_ID != root_vid) visited_vertex_bitmap_ptr->SetBit(root_vid);
   return root_vid;
 }
 
@@ -148,6 +147,15 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
     for (const auto& vid : bfs_queue) {
       active_vertices.push_back(vid);
       vertex_bucket.push_back(graph_ptr_->GetVertexByLocalID(vid));
+      visited_vertex_bitmap_ptr->SetBit(vid);
+      // TODO (bai-wenchao): For simplicity, we have not considered the border
+      // vertices caching. It would not be a problem if we only want to complete
+      // the error-detection task. Fix this issue when optimizing the
+      // partitioner.
+      if (vertex_bucket.size() == max_vertex_num_per_partition_) {
+        vertex_bucket_list_ptr->emplace_back(vertex_bucket);
+        return;
+      }
     }
     bfs_queue.clear();
     for (size_t i = 0; i < parallelism_; i++) {
@@ -161,7 +169,6 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
             if (src == vid) LOG_FATAL("Self-loop detected.");
             std::lock_guard<std::mutex> lock(bfs_mtx_);
             if (!visited_vertex_bitmap_ptr->GetBit(src)) {
-              visited_vertex_bitmap_ptr->SetBit(src);
               bfs_queue.push_back(src);
             }
           }
@@ -170,7 +177,6 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
             if (dst == vid) LOG_FATAL("Self-loop detected.");
             std::lock_guard<std::mutex> lock(bfs_mtx_);
             if (!visited_vertex_bitmap_ptr->GetBit(dst)) {
-              visited_vertex_bitmap_ptr->SetBit(dst);
               bfs_queue.push_back(dst);
             }
           }
