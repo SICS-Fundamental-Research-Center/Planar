@@ -61,7 +61,7 @@ class BFSBasedEdgeCutPartitioner : public PartitionerBase {
       std::list<std::list<Vertex>>& list_of_list);
 
   const GraphID n_partitions_;
-  std::mutex mtx_;
+  std::mutex bfs_mtx_;
 };
 
 }  // namespace sics::graph::tools::partitioner

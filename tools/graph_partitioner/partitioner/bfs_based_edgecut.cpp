@@ -159,7 +159,7 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
           for (VertexID k = 0; k < vertex.indegree; k++) {
             auto src = vertex.incoming_edges[k];
             if (src == vid) LOG_FATAL("Self-loop detected.");
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::lock_guard<std::mutex> lock(bfs_mtx_);
             if (!visited_vertex_bitmap_ptr->GetBit(src)) {
               visited_vertex_bitmap_ptr->SetBit(src);
               bfs_queue.push_back(src);
@@ -168,7 +168,7 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
           for (VertexID k = 0; k < vertex.outdegree; k++) {
             auto dst = vertex.outgoing_edges[k];
             if (dst == vid) LOG_FATAL("Self-loop detected.");
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::lock_guard<std::mutex> lock(bfs_mtx_);
             if (!visited_vertex_bitmap_ptr->GetBit(dst)) {
               visited_vertex_bitmap_ptr->SetBit(dst);
               bfs_queue.push_back(dst);
@@ -196,7 +196,7 @@ void BFSBasedEdgeCutPartitioner::CollectRemainingVertices(
                            &graph, &bucket_for_remaining_vertices]() {
       for (VertexID j = i; j < graph.get_num_vertices(); j += parallelism) {
         if (visited_vertex_bitmap_ptr->GetBit(j)) continue;
-        std::lock_guard<std::mutex> lock(mtx_);
+        std::lock_guard<std::mutex> lock(bfs_mtx_);
         visited_vertex_bitmap_ptr->SetBit(j);
         bucket_for_remaining_vertices.emplace_back(graph.GetVertexByLocalID(j));
       }
