@@ -32,10 +32,8 @@ int main(int argc, char** argv) {
   // create directory of out_dir + "/blocks"
   fs::path dir = FLAGS_out;
   if (!fs::exists(dir)) {
-    if (fs::create_directory(dir)) {
-      LOG_INFO("文件夹创建成功");
-    } else {
-      LOG_INFO("文件夹创建失败");
+    if (!fs::create_directory(dir)) {
+      LOGF_FATAL("Failed creating directory: {}", dir);
     }
   }
 
