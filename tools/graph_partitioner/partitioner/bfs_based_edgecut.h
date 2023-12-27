@@ -53,7 +53,7 @@ class BFSBasedEdgeCutPartitioner : public PartitionerBase {
 
   const GraphID n_partitions_;
   ImmutableCSRGraph* graph_ptr_;
-  ThreadPool* thread_pool_ptr_;
+  std::unique_ptr<ThreadPool> thread_pool_ptr_;
   TaskPackage task_package_;
   unsigned int parallelism_;
   std::mutex bfs_mtx_;

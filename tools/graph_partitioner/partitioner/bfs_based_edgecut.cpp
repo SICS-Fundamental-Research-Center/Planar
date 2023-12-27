@@ -58,8 +58,7 @@ void BFSBasedEdgeCutPartitioner::RunPartitioner() {
   // Initialize member variables
   graph_ptr_ = &graph;
   parallelism_ = std::thread::hardware_concurrency();
-  ThreadPool pool = ThreadPool(parallelism_);
-  thread_pool_ptr_ = &pool;
+  thread_pool_ptr_ = std::make_unique<ThreadPool>(parallelism_);
   task_package_.reserve(parallelism_);
 
   // BFS-based vertex bucketing.
