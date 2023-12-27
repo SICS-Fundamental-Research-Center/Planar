@@ -1,6 +1,6 @@
 GraphMetadata:
   num_vertices: 8
-  num_edges: 24
+  num_edges: 26
   max_vid: 7
   min_vid: 0
   count_border_vertices: 0
@@ -8,7 +8,7 @@ GraphMetadata:
   subgraphs:
     - gid: 0
       num_vertices: 8
-      num_incoming_edges: 24
-      num_outgoing_edges: 24
+      num_incoming_edges: 26
+      num_outgoing_edges: 26
       max_vid: 7
       min_vid: 0

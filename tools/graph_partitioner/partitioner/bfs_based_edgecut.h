@@ -29,9 +29,11 @@ class BFSBasedEdgeCutPartitioner : public PartitionerBase {
  public:
   BFSBasedEdgeCutPartitioner(const std::string& input_path,
                              const std::string& output_path,
-                             StoreStrategy store_strategy, GraphID n_partitions)
+                             StoreStrategy store_strategy, GraphID n_partitions,
+                             uint64_t max_vertex_num_per_partition)
       : PartitionerBase(input_path, output_path, store_strategy),
-        n_partitions_(n_partitions) {}
+        n_partitions_(n_partitions),
+        max_vertex_num_per_partition_(max_vertex_num_per_partition) {}
 
   void RunPartitioner() override;
 
@@ -52,6 +54,7 @@ class BFSBasedEdgeCutPartitioner : public PartitionerBase {
       std::list<std::list<Vertex>>& list_of_list);
 
   const GraphID n_partitions_;
+  const uint64_t max_vertex_num_per_partition_;
   ImmutableCSRGraph* graph_ptr_;
   std::unique_ptr<ThreadPool> thread_pool_ptr_;
   TaskPackage task_package_;
