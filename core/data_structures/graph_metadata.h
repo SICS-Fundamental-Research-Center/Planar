@@ -135,7 +135,7 @@ class GraphMetadata {
       const std::vector<BlockMetadata>& block_metadata_vec) {
     block_metadata_vec_ = block_metadata_vec;
   }
-  BlockMetadata GetBlockMetadata(BlockID bid) const {
+  const BlockMetadata& GetBlockMetadata(BlockID bid) const {
     return block_metadata_vec_.at(bid);
   }
 
