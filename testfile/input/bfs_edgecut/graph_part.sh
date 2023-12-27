@@ -1,3 +1,5 @@
+#!/bin/bash
+
 edgelistcsv_path="./edgelist.csv"
 edgelistbin_dir="./edgelist_bin/"
 tempcsr_path="./temp/"
