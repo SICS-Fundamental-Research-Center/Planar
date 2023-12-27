@@ -1,7 +1,6 @@
 #include "tools/graph_partitioner/partitioner/bfs_based_edgecut.h"
 
 #include <fstream>
-#include <iostream>
 #include <string>
 
 #include "core/data_structures/graph/serialized_immutable_csr_graph.h"
