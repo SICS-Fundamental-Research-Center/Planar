@@ -2,7 +2,6 @@
 
 namespace sics::graph::core::data_structures {
 
-
 GraphMetadata::GraphMetadata(const std::string& graph_metadata_path)
     : data_root_path_(graph_metadata_path) {
   YAML::Node metadata_node;
@@ -13,7 +12,9 @@ GraphMetadata::GraphMetadata(const std::string& graph_metadata_path)
     LOG_ERROR("meta.yaml file read failed! ", e.msg);
   }
   vertex_data_size_ = common::Configurations::Get()->vertex_data_size;
-  InitSubgraphSize();
+  if (this->type_ != "block") {
+    InitSubgraphSize();
+  }
 }
 
 }  // namespace sics::graph::core::data_structures

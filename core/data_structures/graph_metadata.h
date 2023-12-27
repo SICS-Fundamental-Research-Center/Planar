@@ -13,6 +13,18 @@
 
 namespace sics::graph::core::data_structures {
 
+struct BlockMetadata {
+  using VertexID = common::VertexID;
+  using EdgeIndex = common::EdgeIndex;
+  using BlockID = common::BlockID;
+  // Block Metadata
+  BlockID bid;
+  VertexID begin_id;  // included
+  VertexID end_id;    // excluded
+  VertexID num_vertices;
+  EdgeIndex num_outgoing_edges;
+};
+
 struct SubgraphMetadata {
   using GraphID = common::GraphID;
   using VertexID = common::VertexID;
@@ -29,6 +41,7 @@ struct SubgraphMetadata {
 // TODO: change class to struct
 class GraphMetadata {
   using GraphID = common::GraphID;
+  using BlockID = common::BlockID;
   using VertexID = common::VertexID;
   using VertexDegree = common::VertexDegree;
   using VertexIndex = common::VertexIndex;
@@ -113,6 +126,19 @@ class GraphMetadata {
     subgraph_size_.at(gid) = size_total + 1;
   }
 
+  // type: "subgraph" or "block"
+  void set_type(const std::string& type) { type_ = type; }
+  const std::string& get_type() const { return type_; }
+  void set_num_blocks(BlockID num_blocks) { num_blocks_ = num_blocks; }
+  BlockID get_num_blocks() const { return num_blocks_; }
+  void set_block_metadata_vec(
+      const std::vector<BlockMetadata>& block_metadata_vec) {
+    block_metadata_vec_ = block_metadata_vec;
+  }
+  const BlockMetadata& GetBlockMetadata(BlockID bid) const {
+    return block_metadata_vec_.at(bid);
+  }
+
  private:
   void InitSubgraphSize() {
     for (int gid = 0; gid < num_subgraphs_; ++gid) {
@@ -164,6 +190,10 @@ class GraphMetadata {
   // size of subgraph in MB
   std::vector<size_t> subgraph_size_;
 
+  // type: subgraph or block
+  std::string type_ = "subgraph";
+  std::vector<BlockMetadata> block_metadata_vec_;
+  BlockID num_blocks_;
   // configs
   uint32_t vertex_data_size_ = 4;
 };
@@ -174,7 +204,39 @@ class GraphMetadata {
 namespace YAML {
 
 using GraphID = sics::graph::core::common::GraphID;
+using BlockID = sics::graph::core::common::BlockID;
 using VertexID = sics::graph::core::common::VertexID;
+using EdgeIndex = sics::graph::core::common::EdgeIndex;
+
+// template is needed for this function
+template <>
+struct convert<sics::graph::core::data_structures::BlockMetadata> {
+  static Node encode(
+      const sics::graph::core::data_structures::BlockMetadata& block_metadata) {
+    Node node;
+    node["bid"] = block_metadata.bid;
+    node["begin_id"] = block_metadata.begin_id;
+    node["end_id"] = block_metadata.end_id;
+    node["num_vertices"] = block_metadata.num_vertices;
+    node["num_outgoing_edges"] = block_metadata.num_outgoing_edges;
+    return node;
+  }
+  static bool decode(
+      const Node& node,
+      sics::graph::core::data_structures::BlockMetadata& block_metadata) {
+    if (node.size() != 5) {
+      return false;
+    }
+    block_metadata.bid = node["bid"].as<BlockID>();
+    block_metadata.begin_id = node["begin_id"].as<VertexID>();
+    block_metadata.end_id = node["end_id"].as<VertexID>();
+    block_metadata.num_vertices = node["num_vertices"].as<VertexID>();
+    block_metadata.num_outgoing_edges =
+        node["num_outgoing_edges"].as<EdgeIndex>();
+    return true;
+  }
+};
+
 // template is needed for this function
 template <>
 struct convert<sics::graph::core::data_structures::SubgraphMetadata> {
@@ -214,39 +276,68 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
   static Node encode(
       const sics::graph::core::data_structures::GraphMetadata& metadata) {
     Node node;
-    node["num_vertices"] = metadata.get_num_vertices();
-    node["num_edges"] = metadata.get_num_edges();
-    node["max_vid"] = metadata.get_max_vid();
-    node["min_vid"] = metadata.get_min_vid();
-    node["count_border_vertices"] = metadata.get_count_border_vertices();
-    node["num_subgraphs"] = metadata.get_num_subgraphs();
-    std::vector<sics::graph::core::data_structures::SubgraphMetadata> tmp;
-    for (size_t i = 0; i < metadata.get_num_subgraphs(); i++) {
-      tmp.push_back(metadata.GetSubgraphMetadata(0));
-    }
-    node["subgraphs"] = tmp;
+    if (metadata.get_type() == "subgraph") {
+      node["num_vertices"] = metadata.get_num_vertices();
+      node["num_edges"] = metadata.get_num_edges();
+      node["max_vid"] = metadata.get_max_vid();
+      node["min_vid"] = metadata.get_min_vid();
+      node["count_border_vertices"] = metadata.get_count_border_vertices();
+      node["num_subgraphs"] = metadata.get_num_subgraphs();
+      std::vector<sics::graph::core::data_structures::SubgraphMetadata> tmp;
+      for (size_t i = 0; i < metadata.get_num_subgraphs(); i++) {
+        tmp.push_back(metadata.GetSubgraphMetadata(i));
+      }
+      node["subgraphs"] = tmp;
+    } else {
+      node["type"] = metadata.get_type();
+      node["num_vertices"] = metadata.get_num_vertices();
+      node["num_edges"] = metadata.get_num_edges();
+      node["max_vid"] = metadata.get_max_vid();
+      node["min_vid"] = metadata.get_min_vid();
+      node["num_blocks"] = metadata.get_num_blocks();
+      std::vector<sics::graph::core::data_structures::BlockMetadata> tmp;
+      for (size_t i = 0; i < metadata.get_num_blocks(); i++) {
+        tmp.push_back(metadata.GetBlockMetadata(i));
+      }
+      node["blocks"] = tmp;
+    };
     return node;
   }
 
   static bool decode(
       const Node& node,
       sics::graph::core::data_structures::GraphMetadata& metadata) {
-    if (node.size() != 7) return false;
-
-    metadata.set_num_vertices(node["num_vertices"].as<size_t>());
-    metadata.set_num_edges(node["num_edges"].as<size_t>());
-    metadata.set_max_vid(node["max_vid"].as<VertexID>());
-    metadata.set_min_vid(node["min_vid"].as<VertexID>());
-    metadata.set_count_border_vertices(
-        node["count_border_vertices"].as<VertexID>());
-    metadata.set_count_border_vertices(
-        node["count_border_vertices"].as<VertexID>());
-    metadata.set_num_subgraphs(node["num_subgraphs"].as<size_t>());
-    auto subgraph_metadata_vec =
-        node["subgraphs"]
-            .as<std::vector<
-                sics::graph::core::data_structures::SubgraphMetadata>>();
-    metadata.set_subgraph_metadata_vec(subgraph_metadata_vec);
+    auto type = node["type"];
+    auto aa = node["22"];
+    if (node["type"]) {
+      metadata.set_type(node["type"].as<std::string>());
+      metadata.set_num_vertices(node["num_vertices"].as<size_t>());
+      metadata.set_num_edges(node["num_edges"].as<size_t>());
+      metadata.set_max_vid(node["max_vid"].as<VertexID>());
+      metadata.set_min_vid(node["min_vid"].as<VertexID>());
+      metadata.set_num_blocks(node["num_blocks"].as<size_t>());
+      auto block_metadata_vec =
+          node["blocks"]
+              .as<std::vector<
+                  sics::graph::core::data_structures::BlockMetadata>>();
+      metadata.set_block_metadata_vec(block_metadata_vec);
+    } else {
+      if (node.size() != 7) return false;
+      metadata.set_num_vertices(node["num_vertices"].as<size_t>());
+      metadata.set_num_edges(node["num_edges"].as<size_t>());
+      metadata.set_max_vid(node["max_vid"].as<VertexID>());
+      metadata.set_min_vid(node["min_vid"].as<VertexID>());
+      metadata.set_count_border_vertices(
+          node["count_border_vertices"].as<VertexID>());
+      metadata.set_count_border_vertices(
+          node["count_border_vertices"].as<VertexID>());
+      metadata.set_num_subgraphs(node["num_subgraphs"].as<size_t>());
+      auto subgraph_metadata_vec =
+          node["subgraphs"]
+              .as<std::vector<
+                  sics::graph::core::data_structures::SubgraphMetadata>>();
+      metadata.set_subgraph_metadata_vec(subgraph_metadata_vec);
+    }
     return true;
   }
 };
