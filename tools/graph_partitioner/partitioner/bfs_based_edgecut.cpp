@@ -89,7 +89,7 @@ void BFSBasedEdgeCutPartitioner::BFSBasedVertexBucketing(
                            &vertex_bucket_list, &visited_vertex_bitmap);
   // 3. Redistribute the vertices.
   std::vector<std::vector<Vertex>> vertex_buckets =
-      Redistributing(vertex_bucket_list);
+      RedistributeToNBuckets(vertex_bucket_list);
   // 4. Write vertex buckets to disk.
   LOG_INFO("Writing the subgraphs to disk");
   GraphFormatConverter graph_format_converter(output_path_);
@@ -209,7 +209,8 @@ void BFSBasedEdgeCutPartitioner::CollectRemainingVertices(
     vertex_bucket_list_ptr->emplace_back(bucket_for_remaining_vertices);
 }
 
-std::vector<std::vector<Vertex>> BFSBasedEdgeCutPartitioner::Redistributing(
+std::vector<std::vector<Vertex>>
+BFSBasedEdgeCutPartitioner::RedistributeToNBuckets(
     std::list<std::list<Vertex>>& list_of_list) {
   list_of_list.sort(
       [](const auto& l, const auto& r) { return l.size() < r.size(); });

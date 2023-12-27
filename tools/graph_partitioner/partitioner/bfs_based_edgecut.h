@@ -57,7 +57,7 @@ class BFSBasedEdgeCutPartitioner : public PartitionerBase {
       std::list<std::list<Vertex>>* vertex_bucket_list_ptr,
       Bitmap* visited_vertex_bitmap_ptr);
 
-  std::vector<std::vector<Vertex>> Redistributing(
+  std::vector<std::vector<Vertex>> RedistributeToNBuckets(
       std::list<std::list<Vertex>>& list_of_list);
 
   const GraphID n_partitions_;
