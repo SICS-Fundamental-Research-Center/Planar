@@ -128,7 +128,7 @@ class GraphMetadata {
 
   // type: "subgraph" or "block"
   void set_type(const std::string& type) { type_ = type; }
-  std::string get_type() const { return type_; }
+  const std::string& get_type() const { return type_; }
   void set_num_blocks(BlockID num_blocks) { num_blocks_ = num_blocks; }
   BlockID get_num_blocks() const { return num_blocks_; }
   void set_block_metadata_vec(
