@@ -51,6 +51,7 @@ class OwnedBuffer {
 
   uint8_t* Get(size_t offset = 0) const { return p_ + offset; }
 
+  // return bytes of buffer data
   size_t GetSize() const { return s_; }
 
   // used to release the ownership of the pointer
