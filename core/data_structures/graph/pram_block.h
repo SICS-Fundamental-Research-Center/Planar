@@ -100,7 +100,7 @@ class PramBlock : public Serializable {
   // TODO: add block methods like sub-graph
 
   // log functions for lookup block info
-  void LogBlockVertices() {
+  void LogBlockVertices() const {
     LOGF_INFO("block {} begin {} end {}: ==== ", block_metadata_->bid,
               block_metadata_->begin_id, block_metadata_->end_id);
     for (size_t i = block_metadata_->begin_id; i < block_metadata_->end_id;
