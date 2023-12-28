@@ -92,7 +92,7 @@ void BFSBasedEdgeCutPartitioner::BFSBasedVertexBucketing(
   CollectRemainingVertices(&vertex_bucket_list, &visited_vertex_bitmap);
   // 3. Redistribute the vertices.
   std::vector<std::vector<Vertex>> vertex_buckets =
-      Redistributing(vertex_bucket_list);
+      RedistributeToNBuckets(vertex_bucket_list);
   // 4. Write vertex buckets to disk.
   LOG_INFO("Writing the subgraphs to disk");
   GraphFormatConverter graph_format_converter(output_path_);
@@ -181,18 +181,16 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
           for (VertexID k = 0; k < vertex.indegree; k++) {
             auto src = vertex.incoming_edges[k];
             if (src == vid) LOG_FATAL("Self-loop detected.");
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::lock_guard<std::mutex> lock(bfs_mtx_);
             if (!visited_vertex_bitmap_ptr->GetBit(src)) {
-              visited_vertex_bitmap_ptr->SetBit(src);
               bfs_queue.push_back(src);
             }
           }
           for (VertexID k = 0; k < vertex.outdegree; k++) {
             auto dst = vertex.outgoing_edges[k];
             if (dst == vid) LOG_FATAL("Self-loop detected.");
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::lock_guard<std::mutex> lock(bfs_mtx_);
             if (!visited_vertex_bitmap_ptr->GetBit(dst)) {
-              visited_vertex_bitmap_ptr->SetBit(dst);
               bfs_queue.push_back(dst);
             }
           }
@@ -217,7 +215,7 @@ void BFSBasedEdgeCutPartitioner::CollectRemainingVertices(
           for (VertexID j = i; j < graph_ptr_->get_num_vertices();
                j += parallelism_) {
             if (visited_vertex_bitmap_ptr->GetBit(j)) continue;
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::lock_guard<std::mutex> lock(bfs_mtx_);
             visited_vertex_bitmap_ptr->SetBit(j);
             bucket_for_remaining_vertices.emplace_back(
                 graph_ptr_->GetVertexByLocalID(j));
@@ -231,7 +229,8 @@ void BFSBasedEdgeCutPartitioner::CollectRemainingVertices(
     vertex_bucket_list_ptr->emplace_back(bucket_for_remaining_vertices);
 }
 
-std::vector<std::vector<Vertex>> BFSBasedEdgeCutPartitioner::Redistributing(
+std::vector<std::vector<Vertex>>
+BFSBasedEdgeCutPartitioner::RedistributeToNBuckets(
     std::list<std::list<Vertex>>& list_of_list) {
   list_of_list.sort(
       [](const auto& l, const auto& r) { return l.size() < r.size(); });

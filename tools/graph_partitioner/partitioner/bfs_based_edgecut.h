@@ -50,16 +50,16 @@ class BFSBasedEdgeCutPartitioner : public PartitionerBase {
       std::list<std::list<Vertex>>* vertex_bucket_list_ptr,
       Bitmap* visited_vertex_bitmap_ptr);
 
-  std::vector<std::vector<Vertex>> Redistributing(
+  std::vector<std::vector<Vertex>> RedistributeToNBuckets(
       std::list<std::list<Vertex>>& list_of_list);
 
   const GraphID n_partitions_;
   const uint64_t max_vertex_num_per_partition_;
   ImmutableCSRGraph* graph_ptr_;
   std::unique_ptr<ThreadPool> thread_pool_ptr_;
-  TaskPackage task_package_;
   unsigned int parallelism_;
-  std::mutex mtx_;
+  TaskPackage task_package_;
+  std::mutex bfs_mtx_;
 };
 
 }  // namespace sics::graph::tools::partitioner
