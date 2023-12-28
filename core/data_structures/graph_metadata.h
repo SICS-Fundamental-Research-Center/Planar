@@ -127,15 +127,15 @@ class GraphMetadata {
   }
 
   // type: "subgraph" or "block"
-  void set_type(std::string type) { type_ = type; }
-  std::string get_type() const { return type_; }
+  void set_type(const std::string& type) { type_ = type; }
+  const std::string& get_type() const { return type_; }
   void set_num_blocks(BlockID num_blocks) { num_blocks_ = num_blocks; }
   BlockID get_num_blocks() const { return num_blocks_; }
   void set_block_metadata_vec(
       const std::vector<BlockMetadata>& block_metadata_vec) {
     block_metadata_vec_ = block_metadata_vec;
   }
-  BlockMetadata GetBlockMetadata(BlockID bid) const {
+  const BlockMetadata& GetBlockMetadata(BlockID bid) const {
     return block_metadata_vec_.at(bid);
   }
 
