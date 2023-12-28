@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
   fs::path dir = FLAGS_out;
   if (!fs::exists(dir)) {
     if (!fs::create_directory(dir)) {
-      LOGF_FATAL("Failed creating directory: {}", dir);
+      LOGF_FATAL("Failed creating directory: {}", dir.c_str());
     }
   }
 
