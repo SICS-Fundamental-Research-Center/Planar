@@ -111,7 +111,7 @@ class PramBlock : public Serializable {
     }
   }
 
-  void LogBlockEdges() {
+  void LogBlockEdges() const {
     LOG_INFO("block edges info: ");
     for (size_t i = block_metadata_->begin_id; i < block_metadata_->end_id;
          ++i) {
