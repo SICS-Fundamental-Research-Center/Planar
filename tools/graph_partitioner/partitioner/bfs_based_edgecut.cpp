@@ -184,6 +184,7 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
             std::lock_guard<std::mutex> lock(bfs_mtx_);
             if (!visited_vertex_bitmap_ptr->GetBit(src)) {
               bfs_queue.push_back(src);
+              visited_vertex_bitmap_ptr->SetBit(src);
             }
           }
           for (VertexID k = 0; k < vertex.outdegree; k++) {
@@ -192,6 +193,7 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
             std::lock_guard<std::mutex> lock(bfs_mtx_);
             if (!visited_vertex_bitmap_ptr->GetBit(dst)) {
               bfs_queue.push_back(dst);
+              visited_vertex_bitmap_ptr->SetBit(dst);
             }
           }
         }
