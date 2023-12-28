@@ -57,8 +57,13 @@ TEST_F(PartitionerTest, SubgraphTest) {
   EXPECT_EQ(graph_0.get_num_vertices(), 4);
   for (VertexID vid = 0; vid < graph_0.get_num_vertices(); vid++) {
     auto u = graph_0.GetVertexByLocalID(vid);
-    EXPECT_EQ(u.outdegree, 3);
-    EXPECT_EQ(u.indegree, 3);
+    if (u.vid == 2) {
+      EXPECT_EQ(u.outdegree, 4);
+      EXPECT_EQ(u.indegree, 4);
+    } else {
+      EXPECT_EQ(u.outdegree, 3);
+      EXPECT_EQ(u.indegree, 3);
+    }
   }
 
   // Test subgraph 1
@@ -71,12 +76,17 @@ TEST_F(PartitionerTest, SubgraphTest) {
 
   ImmutableCSRGraph graph_1(metadata_.GetSubgraphMetadata(1));
   graph_1.Deserialize(thread_pool, std::move(serialized_graph_1));
+
   EXPECT_EQ(graph_1.get_num_vertices(), 4);
   for (VertexID vid = 0; vid < graph_1.get_num_vertices(); vid++) {
     auto u = graph_1.GetVertexByLocalID(vid);
-    EXPECT_EQ(u.outdegree, 3);
-    EXPECT_EQ(u.indegree, 3);
+    if (u.vid == 7) {
+      EXPECT_EQ(u.outdegree, 4);
+      EXPECT_EQ(u.indegree, 4);
+    } else {
+      EXPECT_EQ(u.outdegree, 3);
+      EXPECT_EQ(u.indegree, 3);
+    }
   }
-
-}  // namespace sics::graph::tools::graph_partitioner
+} 
 }  // namespace sics::graph::tools::graph_partitioner

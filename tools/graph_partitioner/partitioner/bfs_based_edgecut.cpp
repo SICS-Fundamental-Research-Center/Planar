@@ -103,7 +103,7 @@ void BFSBasedEdgeCutPartitioner::BFSBasedVertexBucketing(
         "of vertices in the vertex buckets.");
   graph_metadata.set_num_vertices(graph_ptr_->get_num_vertices());
   graph_metadata.set_num_edges(graph_ptr_->get_num_outgoing_edges());
-  graph_metadata.set_num_subgraphs(n_partitions_);
+  graph_metadata.set_num_subgraphs(vertex_buckets.size());
   graph_metadata.set_max_vid(graph_ptr_->get_max_vid());
   graph_metadata.set_min_vid(graph_ptr_->get_min_vid());
 
@@ -133,7 +133,6 @@ VertexID BFSBasedEdgeCutPartitioner::GetUnvisitedVertexWithMaxDegree(
   }
   thread_pool_ptr_->SubmitSync(task_package_);
   task_package_.clear();
-  if (MAX_VERTEX_ID != root_vid) visited_vertex_bitmap_ptr->SetBit(root_vid);
   return root_vid;
 }
 
@@ -141,15 +140,38 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
     VertexID root_vid, std::list<std::list<Vertex>>* vertex_bucket_list_ptr,
     Bitmap* visited_vertex_bitmap_ptr) {
   std::list<VertexID> bfs_queue = {root_vid};
+  visited_vertex_bitmap_ptr->SetBit(root_vid);
   std::list<Vertex> vertex_bucket;
   while (!bfs_queue.empty()) {
     std::vector<VertexID> active_vertices;
     active_vertices.reserve(bfs_queue.size());
-    for (const auto& vid : bfs_queue) {
+    bool hit_vertex_num_limit = false;
+    for (auto iter = bfs_queue.begin(); iter != bfs_queue.end();) {
+      auto vid = *iter;
       active_vertices.push_back(vid);
       vertex_bucket.push_back(graph_ptr_->GetVertexByLocalID(vid));
+      iter++;
+      bfs_queue.pop_front();
+      // TODO (bai-wenchao): For simplicity, we have not considered the border
+      // vertices caching. It would not be a problem if we only want to complete
+      // the error-detection task. Fix this issue when optimizing the
+      // partitioner.
+      if (vertex_bucket.size() >= max_vertex_num_per_partition_) {
+        hit_vertex_num_limit = true;
+        break;
+      }
     }
-    bfs_queue.clear();
+    if (hit_vertex_num_limit) {
+      // Clear bits for remaining vertices.
+      for (const auto& vid : bfs_queue) {
+        visited_vertex_bitmap_ptr->ClearBit(vid);
+      }
+      vertex_bucket_list_ptr->emplace_back(vertex_bucket);
+      return;
+    }
+    if (!bfs_queue.empty()) {
+      LOG_FATAL("The BFS queue is not empty!");
+    }
     for (size_t i = 0; i < parallelism_; i++) {
       auto task = std::bind([this, i, visited_vertex_bitmap_ptr,
                              &active_vertices, &bfs_queue]() {
