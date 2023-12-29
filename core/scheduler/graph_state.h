@@ -6,6 +6,7 @@
 
 #include "common/types.h"
 #include "data_structures/graph/serialized_mutable_csr_graph.h"
+#include "data_structures/graph/serialized_pram_block_csr.h"
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
 
@@ -31,6 +32,7 @@ struct GraphState {
     graphs_.resize(num_subgraphs);
     current_round_pending_.resize(num_subgraphs, true);
     next_round_pending_.resize(num_subgraphs, false);
+    is_block_mode_ = common::Configurations::Get()->is_block_mode;
   }
 
   StorageStateType GetSubgraphState(common::GraphID gid) const {
@@ -105,11 +107,17 @@ struct GraphState {
     return graphs_.at(gid).get();
   }
 
-  data_structures::Serialized* NewSerializedMutableCSRGraph(
-      common::GraphID gid) {
-    serialized_.at(gid) =
-        std::make_unique<data_structures::graph::SerializedMutableCSRGraph>();
-    return serialized_.at(gid).get();
+  // allocate new Serialized graph for reader. This function will create
+  // corresponding type Serialized graph.
+  data_structures::Serialized* NewSerializedGraph(common::GraphID gid) {
+    if (is_block_mode_) {
+      serialized_.at(gid) = std::make_unique<
+          data_structures::graph::SerializedPramBlockCSRGraph>();
+    } else {
+      serialized_.at(gid) =
+          std::make_unique<data_structures::graph::SerializedMutableCSRGraph>();
+      return serialized_.at(gid).get();
+    }
   }
 
   void SetSubgraphSerialized(
@@ -122,11 +130,11 @@ struct GraphState {
                    std::unique_ptr<data_structures::Serializable> subgraph) {
     graphs_.at(gid).swap(subgraph);
   }
-
+  // release unique_ptr of serialized graph
   void ReleaseSubgraphSerialized(common::GraphID gid) {
     serialized_.at(gid).reset();
   }
-
+  // release unique_ptr of serializable graph
   void ReleaseSubgraph(common::GraphID gid) { graphs_.at(gid).reset(); }
 
  public:
@@ -144,6 +152,7 @@ struct GraphState {
   std::vector<size_t> subgraph_size_;
   const size_t memory_size_;
   size_t subgraph_limits_ = 1;
+  bool is_block_mode_ = false;
 
  private:
   std::vector<std::unique_ptr<data_structures::Serialized>> serialized_;

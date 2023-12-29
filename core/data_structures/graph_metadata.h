@@ -137,6 +137,10 @@ class GraphMetadata {
     return block_metadata_vec_.at(bid);
   }
 
+  BlockMetadata* GetBlockMetadataPtr(BlockID bid) {
+    return &block_metadata_vec_.at(bid);
+  }
+
  private:
   void InitSubgraphSize() {
     for (int gid = 0; gid < num_subgraphs_; ++gid) {

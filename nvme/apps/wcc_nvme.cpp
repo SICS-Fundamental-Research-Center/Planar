@@ -22,7 +22,8 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->in_memory = FLAGS_in_memory;
   core::common::Configurations::GetMutable()->task_package_factor =
       FLAGS_task_package_factor;
-  
+  // wcc nvme specific configurations
+  core::common::Configurations::GetMutable()->is_block_mode = true;
 
   LOG_INFO("System begin");
   core::planar_system::Planar<core::apps::WCCNvmeApp> system(

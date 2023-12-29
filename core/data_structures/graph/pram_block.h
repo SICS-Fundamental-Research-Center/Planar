@@ -32,7 +32,14 @@ class PramBlock : public Serializable {
   using EdgeData = TE;
   PramBlock() = default;
   explicit PramBlock(BlockMetadata* blockmetadata)
-      : block_metadata_(blockmetadata) {}
+      : block_metadata_(blockmetadata),
+        block_buf_base_(nullptr),
+        out_degree_base_(nullptr),
+        out_offset_base_(nullptr),
+        out_edges_base_(nullptr),
+        out_degree_base_new_(nullptr),
+        out_offset_base_new_(nullptr),
+        out_edges_base_new_(nullptr) {}
 
   ~PramBlock() override {
     if (block_buf_base_ != nullptr) {
