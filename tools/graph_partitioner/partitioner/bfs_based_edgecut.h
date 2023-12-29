@@ -57,8 +57,8 @@ class BFSBasedEdgeCutPartitioner : public PartitionerBase {
   const uint64_t max_vertex_num_per_partition_;
   ImmutableCSRGraph* graph_ptr_;
   std::unique_ptr<ThreadPool> thread_pool_ptr_;
-  TaskPackage task_package_;
   unsigned int parallelism_;
+  TaskPackage task_package_;
   std::mutex bfs_mtx_;
 };
 
