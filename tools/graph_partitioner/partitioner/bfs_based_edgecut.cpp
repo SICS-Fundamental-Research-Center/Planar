@@ -163,14 +163,11 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
     }
     if (hit_vertex_num_limit) {
       // Clear bits for remaining vertices.
-      for (const auto& vid : bfs_queue) {
+      for (const auto vid : bfs_queue) {
         visited_vertex_bitmap_ptr->ClearBit(vid);
       }
       vertex_bucket_list_ptr->emplace_back(vertex_bucket);
       return;
-    }
-    if (!bfs_queue.empty()) {
-      LOG_FATAL("The BFS queue is not empty!");
     }
     for (size_t i = 0; i < parallelism_; i++) {
       auto task = std::bind([this, i, visited_vertex_bitmap_ptr,
