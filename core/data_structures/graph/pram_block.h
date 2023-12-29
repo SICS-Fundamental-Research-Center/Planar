@@ -116,12 +116,12 @@ class PramBlock : public Serializable {
     for (size_t i = block_metadata_->begin_id; i < block_metadata_->end_id;
          ++i) {
       auto index = GetIndex(i);
-      std::string edges;
+      std::stringstream edges;
       for (EdgeIndex j = out_offset_base_[index];
            j < out_offset_base_[index] + out_degree_base_[index]; ++j) {
-        edges += std::to_string(out_edges_base_[j]) + " ";
+        edges << std::to_string(out_edges_base_[j]) + " ";
       }
-      LOGF_INFO("edge: {} ", edges);
+      LOGF_INFO("edge: {} ", edges.str());
     }
   }
 
