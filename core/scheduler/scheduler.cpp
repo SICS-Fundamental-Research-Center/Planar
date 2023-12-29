@@ -640,7 +640,7 @@ common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
   //    }
   //  }
   if (is_block_mode_) {
-    for (int bid = 0; bid < graph_metadata_info_.get_num_blocks(); bid++) {
+    for (int bid = 0; bid < graph_metadata_info_.get_num_subgraphs(); bid++) {
       if (graph_state_.current_round_pending_.at(bid) &&
           graph_state_.subgraph_storage_state_.at(bid) ==
               GraphState::StorageStateType::Serialized &&
