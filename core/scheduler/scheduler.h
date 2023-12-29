@@ -34,6 +34,7 @@ class Scheduler {
       : graph_metadata_info_(root_path),
         current_round_(0),
         graph_state_(graph_metadata_info_.get_num_subgraphs()) {
+    is_block_mode_ = graph_metadata_info_.get_type() == "block";
     memory_left_size_ = common::Configurations::Get()->memory_size;
     limits_ = common::Configurations::Get()->limits;
     use_limits_ = limits_ != 0;
@@ -119,6 +120,7 @@ class Scheduler {
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
   data_structures::GraphMetadata graph_metadata_info_;
+  bool is_block_mode_ = false;
   GraphState graph_state_;
 
   int current_round_ = 0;

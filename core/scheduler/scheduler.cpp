@@ -639,6 +639,17 @@ common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
   //      return 5;
   //    }
   //  }
+  if (is_block_mode_) {
+    for (int bid = 0; bid < graph_metadata_info_.get_num_blocks(); bid++) {
+      if (graph_state_.current_round_pending_.at(bid) &&
+          graph_state_.subgraph_storage_state_.at(bid) ==
+              GraphState::StorageStateType::Serialized &&
+          graph_state_.subgraph_round_.at(bid) == current_round_) {
+        return bid;
+      }
+    }
+    return INVALID_GRAPH_ID;
+  }
   for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) == GraphState::OnDisk) {

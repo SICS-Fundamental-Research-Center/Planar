@@ -146,6 +146,13 @@ class PramBlock : public Serializable {
   VertexID* out_edges_base_new_;
   common::Bitmap edge_delete_bitmap_;
 };
+
+typedef PramBlock<common::Uint32VertexDataType, common::DefaultEdgeDataType>
+    BlockCSRGraphUInt32;
+
+typedef PramBlock<common::Uint16VertexDataType, common::DefaultEdgeDataType>
+    BlockCSRGraphUInt16;
+
 }  // namespace sics::graph::core::data_structures::graph
 
 #endif  // GRAPH_SYSTEMS_CORE_DATA_STRUCTURES_GRAPH_PRAM_BLOCK_H_
