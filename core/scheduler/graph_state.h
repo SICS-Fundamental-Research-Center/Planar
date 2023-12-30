@@ -109,7 +109,7 @@ struct GraphState {
 
   // allocate new Serialized graph for reader. This function will create
   // corresponding type Serialized graph.
-  data_structures::Serialized* NewSerializedGraph(common::GraphID gid) {
+  data_structures::Serialized* NewSerializedMutableCSRGraph(common::GraphID gid) {
     if (is_block_mode_) {
       serialized_.at(gid) = std::make_unique<
           data_structures::graph::SerializedPramBlockCSRGraph>();
@@ -118,6 +118,13 @@ struct GraphState {
           std::make_unique<data_structures::graph::SerializedMutableCSRGraph>();
       return serialized_.at(gid).get();
     }
+  }
+
+  // allocate new Serialized block_nvme graph for reader.
+  data_structures::Serialized* NewSerializedBlockGraph(common::GraphID gid) {
+    serialized_.at(gid) =
+        std::make_unique<data_structures::graph::SerializedPramBlockCSRGraph>();
+    return serialized_.at(gid).get();
   }
 
   void SetSubgraphSerialized(

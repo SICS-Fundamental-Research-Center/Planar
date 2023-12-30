@@ -12,7 +12,6 @@
 #include "common/types.h"
 #include "data_structures/graph/mutable_csr_graph.h"
 #include "data_structures/graph/mutable_group_csr_grah.h"
-#include "data_structures/graph/pram_block.h"
 #include "data_structures/graph_metadata.h"
 #include "data_structures/serializable.h"
 #include "io/mutable_csr_reader.h"
@@ -29,15 +28,13 @@ class Scheduler {
       data_structures::graph::MutableGroupCSRGraphUInt32;
   using MutableGroupCSRGraphUInt16 =
       data_structures::graph::MutableGroupCSRGraphUInt16;
-  using BlockCSRGraphUInt32 = data_structures::graph::BlockCSRGraphUInt32;
-  using BlockCSRGraphUInt16 = data_structures::graph::BlockCSRGraphUInt16;
 
  public:
   Scheduler(const std::string& root_path)
       : graph_metadata_info_(root_path),
         current_round_(0),
         graph_state_(graph_metadata_info_.get_num_subgraphs()) {
-    is_block_mode_ = common::Configurations::Get()->is_block_mode;
+    is_block_mode_ = graph_metadata_info_.get_type() == "block";
     memory_left_size_ = common::Configurations::Get()->memory_size;
     limits_ = common::Configurations::Get()->limits;
     use_limits_ = limits_ != 0;

@@ -25,7 +25,6 @@ class BspUpdateStore : public UpdateStoreBase {
       : message_count_(vertex_num) {
     application_type_ = common::Configurations::Get()->application;
     no_data_need_ = common::Configurations::Get()->no_data_need;
-    is_block_mode_ = common::Configurations::Get()->is_block_mode;
 
     if (!no_data_need_) {
       read_data_ = new VertexData[message_count_];
@@ -60,12 +59,8 @@ class BspUpdateStore : public UpdateStoreBase {
       }
     }
 
-    if (is_block_mode_) {
-      InitMemorySizeOfBlock();
-    } else {
-      ReadBorderVertexBitmap(root_path);
-      InitMemorySize();
-    }
+    ReadBorderVertexBitmap(root_path);
+    InitMemorySize();
   }
 
   ~BspUpdateStore() {
@@ -224,12 +219,6 @@ class BspUpdateStore : public UpdateStoreBase {
     memory_size_ = global_messgeage_size + border_vertex_bitmap_size + 1;
   }
 
-  void InitMemorySizeOfBlock() {
-    auto global_messgeage_size =
-        (sizeof(VertexData) * message_count_ * 2) >> 20;
-    memory_size_ = global_messgeage_size + 1;
-  }
-
  private:
   VertexData* read_data_;
   VertexData* write_data_;
@@ -244,7 +233,6 @@ class BspUpdateStore : public UpdateStoreBase {
   // configs
   common::ApplicationType application_type_;
   bool no_data_need_;
-  bool is_block_mode_;
 };
 
 typedef BspUpdateStore<common::Uint32VertexDataType,
