@@ -1,10 +1,10 @@
-#ifndef GRAPH_SYSTEMS_CORE_APPS_WCC_NVME_APP_H_
-#define GRAPH_SYSTEMS_CORE_APPS_WCC_NVME_APP_H_
+#ifndef GRAPH_SYSTEMS_NVME_APPS_WCC_NVME_APP_H_
+#define GRAPH_SYSTEMS_NVME_APPS_WCC_NVME_APP_H_
 
-#include "apis/planar_app_base.h"
-#include "data_structures/graph/pram_block.h"
+#include "core/apis/planar_app_base.h"
+#include "core/data_structures/graph/pram_block.h"
 
-namespace sics::graph::core::apps {
+namespace sics::graph::nvme::apps {
 
 using BlockGraph = core::data_structures::graph::BlockCSRGraphUInt32;
 
@@ -30,5 +30,5 @@ class WCCNvmeApp : public core::apis::PlanarAppBase<BlockGraph> {
  private:
 };
 
-}  // namespace sics::graph::core::apps
-#endif  // GRAPH_SYSTEMS_CORE_APPS_WCC_NVME_APP_H_
+}  // namespace sics::graph::nvme::apps
+#endif  // GRAPH_SYSTEMS_NVME_APPS_WCC_NVME_APP_H_

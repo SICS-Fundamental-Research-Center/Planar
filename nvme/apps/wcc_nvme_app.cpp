@@ -1,6 +1,6 @@
-#include "apps/wcc_nvme_app.h"
+#include "nvme/apps/wcc_nvme_app.h"
 
-namespace sics::graph::core::apps {
+namespace sics::graph::nvme::apps {
 
 WCCNvmeApp::WCCNvmeApp(
     core::common::TaskRunner* runner,
@@ -14,4 +14,4 @@ void WCCNvmeApp::IncEval() {}
 
 void WCCNvmeApp::Assemble() {}
 
-}  // namespace sics::graph::core::apps
+}  // namespace sics::graph::nvme::apps
