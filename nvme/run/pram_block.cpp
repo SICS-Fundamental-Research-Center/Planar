@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
   // write meta file
   YAML::Node meta;
   graph_metadata.set_type("block");
-  graph_metadata.set_num_blocks(file_id + 1);
+  graph_metadata.set_num_subgraphs(file_id + 1);
   std::vector<sics::graph::core::data_structures::BlockMetadata> tmp;
   for (size_t i = 0; i < block_ids.size(); i++) {
     sics::graph::core::data_structures::BlockMetadata block_metadata;

@@ -32,7 +32,14 @@ class PramBlock : public Serializable {
   using EdgeData = TE;
   PramBlock() = default;
   explicit PramBlock(BlockMetadata* blockmetadata)
-      : block_metadata_(blockmetadata) {}
+      : block_metadata_(blockmetadata),
+        block_buf_base_(nullptr),
+        out_degree_base_(nullptr),
+        out_offset_base_(nullptr),
+        out_edges_base_(nullptr),
+        out_degree_base_new_(nullptr),
+        out_offset_base_new_(nullptr),
+        out_edges_base_new_(nullptr) {}
 
   ~PramBlock() override {
     if (block_buf_base_ != nullptr) {
@@ -116,12 +123,12 @@ class PramBlock : public Serializable {
     for (size_t i = block_metadata_->begin_id; i < block_metadata_->end_id;
          ++i) {
       auto index = GetIndex(i);
-      std::string edges;
+      std::stringstream edges;
       for (EdgeIndex j = out_offset_base_[index];
            j < out_offset_base_[index] + out_degree_base_[index]; ++j) {
-        edges += std::to_string(out_edges_base_[j]) + " ";
+        edges << std::to_string(out_edges_base_[j]) + " ";
       }
-      LOGF_INFO("edge: {} ", edges);
+      LOGF_INFO("edge: {} ", edges.str());
     }
   }
 
@@ -146,6 +153,13 @@ class PramBlock : public Serializable {
   VertexID* out_edges_base_new_;
   common::Bitmap edge_delete_bitmap_;
 };
+
+typedef PramBlock<common::Uint32VertexDataType, common::DefaultEdgeDataType>
+    BlockCSRGraphUInt32;
+
+typedef PramBlock<common::Uint16VertexDataType, common::DefaultEdgeDataType>
+    BlockCSRGraphUInt16;
+
 }  // namespace sics::graph::core::data_structures::graph
 
 #endif  // GRAPH_SYSTEMS_CORE_DATA_STRUCTURES_GRAPH_PRAM_BLOCK_H_

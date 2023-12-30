@@ -72,6 +72,8 @@ class Configurations {
   bool group = false;
   int group_num = 2;
 
+  bool is_block_mode = false;
+
  private:
   Configurations() = default;
   inline static Configurations* instance_ = nullptr;

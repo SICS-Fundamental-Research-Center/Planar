@@ -129,14 +129,16 @@ class GraphMetadata {
   // type: "subgraph" or "block"
   void set_type(const std::string& type) { type_ = type; }
   const std::string& get_type() const { return type_; }
-  void set_num_blocks(BlockID num_blocks) { num_blocks_ = num_blocks; }
-  BlockID get_num_blocks() const { return num_blocks_; }
   void set_block_metadata_vec(
       const std::vector<BlockMetadata>& block_metadata_vec) {
     block_metadata_vec_ = block_metadata_vec;
   }
   const BlockMetadata& GetBlockMetadata(BlockID bid) const {
     return block_metadata_vec_.at(bid);
+  }
+
+  BlockMetadata* GetBlockMetadataPtr(BlockID bid) {
+    return &block_metadata_vec_.at(bid);
   }
 
  private:
@@ -193,7 +195,6 @@ class GraphMetadata {
   // type: subgraph or block
   std::string type_ = "subgraph";
   std::vector<BlockMetadata> block_metadata_vec_;
-  BlockID num_blocks_;
   // configs
   uint32_t vertex_data_size_ = 4;
 };
@@ -294,9 +295,9 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
       node["num_edges"] = metadata.get_num_edges();
       node["max_vid"] = metadata.get_max_vid();
       node["min_vid"] = metadata.get_min_vid();
-      node["num_blocks"] = metadata.get_num_blocks();
+      node["num_blocks"] = metadata.get_num_subgraphs();
       std::vector<sics::graph::core::data_structures::BlockMetadata> tmp;
-      for (size_t i = 0; i < metadata.get_num_blocks(); i++) {
+      for (size_t i = 0; i < metadata.get_num_subgraphs(); i++) {
         tmp.push_back(metadata.GetBlockMetadata(i));
       }
       node["blocks"] = tmp;
@@ -315,7 +316,7 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
       metadata.set_num_edges(node["num_edges"].as<size_t>());
       metadata.set_max_vid(node["max_vid"].as<VertexID>());
       metadata.set_min_vid(node["min_vid"].as<VertexID>());
-      metadata.set_num_blocks(node["num_blocks"].as<size_t>());
+      metadata.set_num_subgraphs(node["num_blocks"].as<size_t>());
       auto block_metadata_vec =
           node["blocks"]
               .as<std::vector<

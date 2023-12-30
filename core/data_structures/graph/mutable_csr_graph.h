@@ -416,12 +416,12 @@ class MutableCSRGraph : public Serializable {
   void LogEdges() {
     LOGF_INFO("Graph {} Edges Info: ", metadata_->gid);
     for (int i = 0; i < metadata_->num_vertices; i++) {
-      std::string edges = "";
+      std::stringstream edges;
       for (int j = 0; j < out_degree_base_[i]; j++) {
-        edges += std::to_string(out_edges_base_[out_offset_base_[i] + j]) + " ";
+        edges << std::to_string(out_edges_base_[out_offset_base_[i] + j]) + " ";
       }
       LOGF_INFO("{} -> Vertex id: {}, out_edge: {}", i,
-                vertex_id_by_local_index_[i], edges);
+                vertex_id_by_local_index_[i], edges.str());
     }
   }
 
