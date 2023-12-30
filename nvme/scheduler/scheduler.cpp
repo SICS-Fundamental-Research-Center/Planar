@@ -489,7 +489,7 @@ void PramScheduler::CreateSerializableGraph(common::GraphID graph_id) {
 
 data_structures::Serialized* PramScheduler::CreateSerialized(
     common::GraphID graph_id) {
-  return graph_state_.NewSerializedGraph(graph_id);
+  return graph_state_.NewSerializedBlockGraph(graph_id);
 }
 
 void PramScheduler::CreateGroupSerializableGraph() {
