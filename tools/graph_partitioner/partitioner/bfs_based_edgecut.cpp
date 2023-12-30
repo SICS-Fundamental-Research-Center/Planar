@@ -140,24 +140,35 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
     VertexID root_vid, std::list<std::list<Vertex>>* vertex_bucket_list_ptr,
     Bitmap* visited_vertex_bitmap_ptr) {
   std::list<VertexID> bfs_queue = {root_vid};
+  visited_vertex_bitmap_ptr->SetBit(root_vid);
   std::list<Vertex> vertex_bucket;
   while (!bfs_queue.empty()) {
     std::vector<VertexID> active_vertices;
     active_vertices.reserve(bfs_queue.size());
-    for (const auto& vid : bfs_queue) {
+    bool hit_vertex_num_limit = false;
+    for (auto iter = bfs_queue.begin(); iter != bfs_queue.end();) {
+      auto vid = *iter;
       active_vertices.push_back(vid);
       vertex_bucket.push_back(graph_ptr_->GetVertexByLocalID(vid));
-      visited_vertex_bitmap_ptr->SetBit(vid);
+      iter++;
+      bfs_queue.pop_front();
       // TODO (bai-wenchao): For simplicity, we have not considered the border
       // vertices caching. It would not be a problem if we only want to complete
       // the error-detection task. Fix this issue when optimizing the
       // partitioner.
-      if (vertex_bucket.size() == max_vertex_num_per_partition_) {
-        vertex_bucket_list_ptr->emplace_back(vertex_bucket);
-        return;
+      if (vertex_bucket.size() >= max_vertex_num_per_partition_) {
+        hit_vertex_num_limit = true;
+        break;
       }
     }
-    bfs_queue.clear();
+    if (hit_vertex_num_limit) {
+      // Clear bits for remaining vertices.
+      for (const auto vid : bfs_queue) {
+        visited_vertex_bitmap_ptr->ClearBit(vid);
+      }
+      vertex_bucket_list_ptr->emplace_back(vertex_bucket);
+      return;
+    }
     for (size_t i = 0; i < parallelism_; i++) {
       auto task = std::bind([this, i, visited_vertex_bitmap_ptr,
                              &active_vertices, &bfs_queue]() {
@@ -170,6 +181,7 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
             std::lock_guard<std::mutex> lock(bfs_mtx_);
             if (!visited_vertex_bitmap_ptr->GetBit(src)) {
               bfs_queue.push_back(src);
+              visited_vertex_bitmap_ptr->SetBit(src);
             }
           }
           for (VertexID k = 0; k < vertex.outdegree; k++) {
@@ -178,6 +190,7 @@ void BFSBasedEdgeCutPartitioner::CollectVerticesFromBFSTree(
             std::lock_guard<std::mutex> lock(bfs_mtx_);
             if (!visited_vertex_bitmap_ptr->GetBit(dst)) {
               bfs_queue.push_back(dst);
+              visited_vertex_bitmap_ptr->SetBit(dst);
             }
           }
         }

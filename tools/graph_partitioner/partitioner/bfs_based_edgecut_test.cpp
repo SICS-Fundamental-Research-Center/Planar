@@ -53,6 +53,7 @@ TEST_F(PartitionerTest, SubgraphTest) {
   ImmutableCSRGraph graph_0(metadata_.GetSubgraphMetadata(0));
   ThreadPool thread_pool(1);
   graph_0.Deserialize(thread_pool, std::move(serialized_graph_0));
+
   EXPECT_EQ(graph_0.get_num_vertices(), 4);
   for (VertexID vid = 0; vid < graph_0.get_num_vertices(); vid++) {
     auto u = graph_0.GetVertexByLocalID(vid);
@@ -87,6 +88,5 @@ TEST_F(PartitionerTest, SubgraphTest) {
       EXPECT_EQ(u.indegree, 3);
     }
   }
-
-}  // namespace sics::graph::tools::graph_partitioner
+} 
 }  // namespace sics::graph::tools::graph_partitioner
