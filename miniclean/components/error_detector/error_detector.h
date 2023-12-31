@@ -49,7 +49,8 @@ class ErrorDetector {
   using VertexID = sics::graph::miniclean::common::VertexID;
 
  public:
-  ErrorDetector(const std::string& data_path) : data_path_(data_path) {}
+  explicit ErrorDetector(const std::string& data_path)
+      : data_path_(data_path) {}
 
   // Load GCR set decompose it to path patterns.
   //
