@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 
   if (all_bids) {
     // output all block info
-    size_t num_blocks = graph_metadata.get_num_blocks();
+    size_t num_blocks = graph_metadata.get_num_subgraphs();
     for (auto i = 0; i < num_blocks; i++) {
       auto subgraph = graph_metadata.GetBlockMetadata(i);
       auto bid = subgraph.bid;
