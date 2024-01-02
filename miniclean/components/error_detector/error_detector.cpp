@@ -41,7 +41,7 @@ size_t ErrorDetector::GetAttributedPathID(
     has_matched = true;
     // Check the path length.
     if (attributed_paths_[i].size() != attributed_path.size()) continue;
-    for (size_t j = 0; i < attributed_paths_[i].size(); j++) {
+    for (size_t j = 0; j < attributed_paths_[i].size(); j++) {
       // Check the label ID.
       if (attributed_paths_[i][j].label_id != attributed_path[j].label_id) {
         has_matched = false;
