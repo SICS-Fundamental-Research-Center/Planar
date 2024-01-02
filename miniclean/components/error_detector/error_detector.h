@@ -10,9 +10,9 @@
 
 namespace sics::graph::miniclean::components::error_detector {
 
-struct GCRPatternID {
-  size_t left_star_pattern_id;
-  size_t right_star_pattern_id;
+struct GCRIndex {
+  std::vector<size_t> left_path_ids;
+  std::vector<size_t> right_path_ids;
 };
 
 // Partial match.
@@ -96,17 +96,13 @@ class ErrorDetector {
   // Decompose GCR to star patterns.
   //
   // This function will be called by `InitGCRSet`.
-  // It first assigns a unique id to each star pattern, and then build
-  // `gcr_id_to_star_ids_` and `star_id_to_path_id_` to record the mapping
-  // between gcr id and star pattern id, and the mapping between star pattern id
-  // and path id.
+  // It will build `gcr_index` to record the mapping from gcr ID to path IDs.
   void DecomposeGCR();
 
   std::string data_path_;
   std::vector<GCR> gcrs_;
   std::vector<std::vector<AttributedVertex>> attributed_paths_;
-  std::vector<GCRPatternID> gcr_id_to_star_ids_;
-  std::vector<std::vector<size_t>> star_id_to_path_ids_;
+  std::vector<GCRIndex> gcr_index_;
 
   Graph* graph_;
   std::vector<std::vector<size_t>> vid_to_path_id_;
