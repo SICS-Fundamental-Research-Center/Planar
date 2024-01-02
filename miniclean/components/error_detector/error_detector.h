@@ -58,7 +58,7 @@ class ErrorDetector {
   // created). It will analyse the input GCR set and decompose it to distinct
   // path patterns which are the minimum units for the pattern matching.
   // The decomposed components will be indexed and the mapping relation will be
-  // stored in `gcr_id_to_star_ids_` and `star_id_to_path_id_`.
+  // stored in `gcr_index_`.
   void InitGCRSet();
 
   // Load basic components: subgraph, active vertices, and the index for
@@ -93,11 +93,8 @@ class ErrorDetector {
   std::vector<ConstrainedStarInstance> MatchConstrainedStarPattern();
 
  private:
-  // Decompose GCR to star patterns.
-  //
-  // This function will be called by `InitGCRSet`.
-  // It will build `gcr_index` to record the mapping from gcr ID to path IDs.
-  void DecomposeGCR();
+  // Determine whether a path has existed in `attributed_paths_`.
+  bool IsInAttributedPaths(std::vector<AttributedVertex>);
 
   std::string data_path_;
   std::vector<GCR> gcrs_;
