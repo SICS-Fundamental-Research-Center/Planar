@@ -92,6 +92,17 @@ class ErrorDetector {
   // matching results will be returned as the partial results.
   std::vector<ConstrainedStarInstance> MatchConstrainedStarPattern();
 
+  const std::vector<GCR>& get_gcrs() const { return gcrs_; }
+  const std::vector<std::vector<AttributedVertex>>& get_attributed_paths()
+      const {
+    return attributed_paths_;
+  }
+  const std::vector<GCRIndex>& get_gcr_index() const { return gcr_index_; }
+  const std::vector<std::vector<size_t>>& get_vid_to_path_id() const {
+    return vid_to_path_id_;
+  }
+  const std::vector<VertexID>& get_active_vids() const { return active_vids_; }
+
  private:
   // Determine whether a path has existed in `attributed_paths_`.
   size_t GetAttributedPathID(std::vector<AttributedVertex> attributed_path);
