@@ -94,7 +94,7 @@ class ErrorDetector {
 
  private:
   // Determine whether a path has existed in `attributed_paths_`.
-  bool IsInAttributedPaths(std::vector<AttributedVertex>);
+  size_t GetAttributedPathID(std::vector<AttributedVertex> attributed_path);
 
   std::string data_path_;
   std::vector<GCR> gcrs_;
