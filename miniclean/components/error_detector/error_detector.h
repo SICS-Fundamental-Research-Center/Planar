@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "miniclean/common/types.h"
+#include "miniclean/components/error_detector/io_manager.h"
 #include "miniclean/data_structures/gcr/light_gcr.h"
 #include "miniclean/data_structures/graphs/miniclean_graph.h"
-#include "miniclean/components/error_detector/io_manager.h"
 
 namespace sics::graph::miniclean::components::error_detector {
 
@@ -51,8 +51,7 @@ class ErrorDetector {
 
  public:
   ErrorDetector() = default;
-  explicit ErrorDetector(IOManager* io_manager)
-      : io_manager_(io_manager) {}
+  explicit ErrorDetector(IOManager* io_manager) : io_manager_(io_manager) {}
 
   // Load GCR set decompose it to path patterns.
   //
@@ -68,7 +67,7 @@ class ErrorDetector {
   //
   // For the first round of error detection, the active vertices and index have
   // not been created yet, so they will be skipped.
-  void LoadBasicComponents(GraphID graph_id);
+  void LoadBasicComponents(const GraphID graph_id);
 
   // Build path level index for every vertices in the subgraph.
   //
@@ -94,20 +93,20 @@ class ErrorDetector {
   // matching results will be returned as the partial results.
   std::vector<ConstrainedStarInstance> MatchConstrainedStarPattern();
 
-  const std::vector<std::vector<AttributedVertex>>& get_attributed_paths()
-      const {
+  Graph* GetGraph() { return graph_; }
+  const std::vector<std::vector<AttributedVertex>>& GetAttributedPaths() const {
     return attributed_paths_;
   }
-  const std::vector<GCRIndex>& get_gcr_index() const { return gcr_index_; }
-  const std::vector<std::vector<size_t>>& get_vid_to_path_id() const {
+  const std::vector<GCRIndex>& GetGcrIndex() const { return gcr_index_; }
+  const std::vector<std::vector<size_t>>& GetVidToPathId() const {
     return vid_to_path_id_;
   }
-  const std::vector<VertexID>& get_active_vids() const { return active_vids_; }
+  const std::vector<VertexID>& GetActiveVids() const { return active_vids_; }
 
  private:
   // Determine whether a path has existed in `attributed_paths_`.
   size_t GetAttributedPathID(std::vector<AttributedVertex> attributed_path);
-  
+
   IOManager* io_manager_;
   Graph* graph_;
 
