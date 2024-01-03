@@ -6,6 +6,7 @@
 #include <string>
 
 #include "miniclean/common/error_detection_config.h"
+#include "miniclean/components/error_detector/io_manager.h"
 #include "miniclean/data_structures/graphs/miniclean_graph_metadata.h"
 
 namespace sics::graph::miniclean::components::error_detector {
@@ -26,21 +27,24 @@ class ErrorDetectorTest : public ::testing::Test {
             "/input/error_detector/graph/partition_result/meta.yaml"));
     graph_metadata_ = node.as<GraphMetadata>();
     ErrorDetectionConfig::Init(graph_metadata_);
+    io_manager_ = IOManager(data_dir + "/input/error_detector/",
+                           data_dir + "/input/error_detector/graph/");
+    error_detector_ = ErrorDetector(&io_manager_);
   }
   std::string data_dir = TEST_DATA_DIR;
-  ErrorDetector error_detector =
-      ErrorDetector(data_dir + "/input/error_detector/");
+  IOManager io_manager_;
+  ErrorDetector error_detector_;
   GraphMetadata graph_metadata_;
 };
 
-TEST_F(ErrorDetectorTest, InitGCRSet) { 
-  error_detector.InitGCRSet();
-  EXPECT_EQ(error_detector.get_gcrs().size(), 2);
-  EXPECT_EQ(error_detector.get_attributed_paths().size(), 3);
+TEST_F(ErrorDetectorTest, InitGCRSet) {
+  error_detector_.InitGCRSet();
+  EXPECT_EQ(io_manager_.GetGCRs().size(), 2);
+  EXPECT_EQ(error_detector_.get_attributed_paths().size(), 3);
 
-  auto paths = error_detector.get_attributed_paths();
+  auto paths = error_detector_.get_attributed_paths();
 
-  auto path0 = error_detector.get_attributed_paths()[0];
+  auto path0 = error_detector_.get_attributed_paths()[0];
   EXPECT_EQ(path0.size(), 2);
   EXPECT_EQ(path0[0].label_id, 0);
   EXPECT_EQ(path0[0].attribute_ids.size(), 2);
@@ -53,7 +57,7 @@ TEST_F(ErrorDetectorTest, InitGCRSet) {
   EXPECT_EQ(path0[1].label_id, 1);
   EXPECT_EQ(path0[1].attribute_ids.size(), 0);
 
-  auto path1 = error_detector.get_attributed_paths()[1];
+  auto path1 = error_detector_.get_attributed_paths()[1];
   EXPECT_EQ(path1.size(), 2);
   EXPECT_EQ(path1[0].label_id, 0);
   EXPECT_EQ(path1[0].attribute_ids.size(), 1);
@@ -66,7 +70,7 @@ TEST_F(ErrorDetectorTest, InitGCRSet) {
   EXPECT_EQ(path1[1].attribute_values[0], "James Cameron");
   EXPECT_EQ(path1[1].op_types[0], OpType::kEq);
 
-  auto path2 = error_detector.get_attributed_paths()[2];
+  auto path2 = error_detector_.get_attributed_paths()[2];
   EXPECT_EQ(path2.size(), 2);
   EXPECT_EQ(path2[0].label_id, 0);
   EXPECT_EQ(path2[0].attribute_ids.size(), 1);
