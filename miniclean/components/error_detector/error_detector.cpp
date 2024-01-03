@@ -33,6 +33,18 @@ void ErrorDetector::InitGCRSet() {
   }
 }
 
+void ErrorDetector::LoadBasicComponents(const GraphID gid) {
+  // TODO (bai-wenchao): load the avtive vertices and vertex index when they are
+  // available.
+  graph_ = io_manager_->NewSubgraph(gid);
+}
+
+void ErrorDetector::DischargePartialResults(
+    const std::vector<ConstrainedStarInstance>& partial_results) {
+  // TODO (bai-wenchao): discharge the partial results when they are available.
+  io_manager_->ReleaseSubgraph(graph_->GetMetadata().gid);
+}
+
 size_t ErrorDetector::GetAttributedPathID(
     std::vector<AttributedVertex> attributed_path) {
   bool has_matched = false;
