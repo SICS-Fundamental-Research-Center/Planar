@@ -7,7 +7,12 @@
 namespace sics::graph::miniclean::components::error_detector {
 
 void ErrorDetector::InitGCRSet() {
-  YAML::Node gcr_set = YAML::LoadFile(data_path_ + "gcrs.yaml");
+  YAML::Node gcr_set;
+  try {
+    gcr_set = YAML::LoadFile(data_path_ + "gcrs.yaml");
+  } catch (YAML::BadFile& e) {
+    LOG_FATAL("gcrs.yaml file read failed! ", e.msg);
+  }
   gcrs_ = gcr_set["GCRs"].as<std::vector<GCR>>();
   gcr_index_.resize(gcrs_.size());
   for (size_t i = 0; i < gcrs_.size(); i++) {

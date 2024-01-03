@@ -150,12 +150,12 @@ class LightGCR {
     return left_star_constraints_;
   }
 
-  const std::vector<std::vector<AttributedVertex>>
+  const std::vector<std::vector<AttributedVertex>>&
   get_left_pattern_constraints() const {
     return left_star_constraints_.pattern_constraints;
   }
 
-  const std::vector<BinaryPredicate> get_left_relation_constraints() const {
+  const std::vector<BinaryPredicate>& get_left_relation_constraints() const {
     return left_star_constraints_.relation_constraints;
   }
 
@@ -163,12 +163,12 @@ class LightGCR {
     return right_star_constraints_;
   }
 
-  const std::vector<std::vector<AttributedVertex>>
+  const std::vector<std::vector<AttributedVertex>>&
   get_right_pattern_constraints() const {
     return right_star_constraints_.pattern_constraints;
   }
 
-  const std::vector<BinaryPredicate> get_right_relation_constraints() const {
+  const std::vector<BinaryPredicate>& get_right_relation_constraints() const {
     return right_star_constraints_.relation_constraints;
   }
 
