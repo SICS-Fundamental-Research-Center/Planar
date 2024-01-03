@@ -7,6 +7,7 @@
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/gcr/light_gcr.h"
 #include "miniclean/data_structures/graphs/miniclean_graph.h"
+#include "miniclean/components/error_detector/io_manager.h"
 
 namespace sics::graph::miniclean::components::error_detector {
 
@@ -49,8 +50,8 @@ class ErrorDetector {
   using VertexID = sics::graph::miniclean::common::VertexID;
 
  public:
-  explicit ErrorDetector(const std::string& data_path)
-      : data_path_(data_path) {}
+  explicit ErrorDetector(IOManager* io_manager)
+      : io_manager_(io_manager) {}
 
   // Load GCR set decompose it to path patterns.
   //
@@ -107,12 +108,12 @@ class ErrorDetector {
   // Determine whether a path has existed in `attributed_paths_`.
   size_t GetAttributedPathID(std::vector<AttributedVertex> attributed_path);
 
-  std::string data_path_;
   std::vector<GCR> gcrs_;
   std::vector<std::vector<AttributedVertex>> attributed_paths_;
   std::vector<GCRIndex> gcr_index_;
 
   Graph* graph_;
+  IOManager* io_manager_;
   std::vector<std::vector<size_t>> vid_to_path_id_;
   std::vector<VertexID> active_vids_;
 };
