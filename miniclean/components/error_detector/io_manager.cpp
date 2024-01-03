@@ -44,6 +44,12 @@ void IOManager::ReleaseSubgraph(const GraphID gid) {
 
 void IOManager::LoadGCRs() {
   YAML::Node gcrs_node;
+  try {
+    gcrs_node = YAML::LoadFile(data_home_ + "gcrs.yaml");
+  } catch (YAML::BadFile& e) {
+    LOG_FATAL("gcrs.yaml file read failed! ", e.msg);
+  }
+  gcrs_ = gcrs_node["GCRs"].as<std::vector<GCR>>();
 }
 
 }  // namespace sics::graph::miniclean::components::error_detector
