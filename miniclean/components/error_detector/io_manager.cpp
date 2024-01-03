@@ -42,4 +42,8 @@ void IOManager::ReleaseSubgraph(const GraphID gid) {
   subgraph_state_.at(gid) = kOnDisk;
 }
 
+void IOManager::LoadGCRs() {
+  YAML::Node gcrs_node;
+}
+
 }  // namespace sics::graph::miniclean::components::error_detector

@@ -14,6 +14,7 @@
 #include "miniclean/data_structures/graphs/miniclean_graph_metadata.h"
 #include "miniclean/data_structures/graphs/serialized_miniclean_graph.h"
 #include "miniclean/io/miniclean_graph_reader.h"
+#include "miniclean/data_structures/gcr/light_gcr.h"
 
 namespace sics::graph::miniclean::components::error_detector {
 
@@ -33,6 +34,7 @@ class IOManager {
   using Reader = sics::graph::miniclean::io::MiniCleanGraphReader;
   using ReadMessage = sics::graph::core::scheduler::ReadMessage;
   using ThreadPool = sics::graph::core::common::ThreadPool;
+  using GCR = sics::graph::miniclean::data_structures::gcr::LightGCR;
 
  public:
   explicit IOManager(const size_t num_subgraphs, const std::string& graph_home)
@@ -60,6 +62,9 @@ class IOManager {
   // Destruct the graph object and the graph data in memory.
   void ReleaseSubgraph(const GraphID gid);
 
+  // Load GCR set.
+  void LoadGCRs();
+
  private:
   const size_t num_subgraphs_;
   const std::string graph_home_;
@@ -67,6 +72,7 @@ class IOManager {
   std::vector<GraphStateType> subgraph_state_;
   std::vector<std::unique_ptr<SerializedGraph>> serialized_graphs_;
   std::vector<std::unique_ptr<Graph>> graphs_;
+  std::vector<GCR> gcrs_;
 };
 }  // namespace sics::graph::miniclean::components::error_detector
 
