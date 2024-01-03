@@ -7,19 +7,13 @@
 namespace sics::graph::miniclean::components::error_detector {
 
 void ErrorDetector::InitGCRSet() {
-  YAML::Node gcr_set;
-  try {
-    gcr_set = YAML::LoadFile(data_path_ + "gcrs.yaml");
-  } catch (YAML::BadFile& e) {
-    LOG_FATAL("gcrs.yaml file read failed! ", e.msg);
-  }
-  gcrs_ = gcr_set["GCRs"].as<std::vector<GCR>>();
-  gcr_index_.resize(gcrs_.size());
-  for (size_t i = 0; i < gcrs_.size(); i++) {
+  const auto& gcrs = io_manager_->GetGCRs();
+  gcr_index_.resize(gcrs.size());
+  for (size_t i = 0; i < gcrs.size(); i++) {
     const auto& left_pattern_constraints =
-        gcrs_[i].get_left_pattern_constraints();
+        gcrs[i].get_left_pattern_constraints();
     const auto& right_pattern_constraints =
-        gcrs_[i].get_right_pattern_constraints();
+        gcrs[i].get_right_pattern_constraints();
     // Decompose the left pattern.
     for (size_t j = 0; j < left_pattern_constraints.size(); j++) {
       size_t left_path_id = GetAttributedPathID(left_pattern_constraints[j]);

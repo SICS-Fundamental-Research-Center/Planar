@@ -50,6 +50,7 @@ class ErrorDetector {
   using VertexID = sics::graph::miniclean::common::VertexID;
 
  public:
+  ErrorDetector() = default;
   explicit ErrorDetector(IOManager* io_manager)
       : io_manager_(io_manager) {}
 
@@ -93,7 +94,6 @@ class ErrorDetector {
   // matching results will be returned as the partial results.
   std::vector<ConstrainedStarInstance> MatchConstrainedStarPattern();
 
-  const std::vector<GCR>& get_gcrs() const { return gcrs_; }
   const std::vector<std::vector<AttributedVertex>>& get_attributed_paths()
       const {
     return attributed_paths_;
@@ -107,13 +107,12 @@ class ErrorDetector {
  private:
   // Determine whether a path has existed in `attributed_paths_`.
   size_t GetAttributedPathID(std::vector<AttributedVertex> attributed_path);
+  
+  IOManager* io_manager_;
+  Graph* graph_;
 
-  std::vector<GCR> gcrs_;
   std::vector<std::vector<AttributedVertex>> attributed_paths_;
   std::vector<GCRIndex> gcr_index_;
-
-  Graph* graph_;
-  IOManager* io_manager_;
   std::vector<std::vector<size_t>> vid_to_path_id_;
   std::vector<VertexID> active_vids_;
 };
