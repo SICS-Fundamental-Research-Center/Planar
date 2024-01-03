@@ -6,6 +6,8 @@
 #include "core/data_structures/serialized.h"
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/graphs/miniclean_graph.h"
+#include "miniclean/data_structures/graphs/miniclean_graph_metadata.h"
+#include "miniclean/data_structures/graphs/serialized_miniclean_graph.h"
 
 namespace sics::graph::miniclean::components::error_detector {
 
@@ -16,15 +18,16 @@ typedef enum {
 
 class GraphManager {
  private:
-  using Serialized = sics::graph::core::data_structures::Serialized;
+  using SerializedMiniCleanGraph =
+      sics::graph::miniclean::data_structures::graphs::SerializedMiniCleanGraph;
   using Graph = sics::graph::miniclean::data_structures::graphs::MiniCleanGraph;
   using GraphID = sics::graph::miniclean::common::GraphID;
 
  public:
-  explicit GraphManager(const size_t num_subgraphs, const std::string& path)
+  explicit GraphManager(const size_t num_subgraphs)
       : num_subgraphs_(num_subgraphs) {
     subgraph_state_.resize(num_subgraphs_, kOnDisk);
-    serialized_.resize(num_subgraphs_);
+    serialized_graphs_.resize(num_subgraphs_);
     graphs_.resize(num_subgraphs_);
   }
 
@@ -32,16 +35,19 @@ class GraphManager {
     return subgraph_state_.at(gid);
   }
 
-  Graph* GetSubgraphPtr(const GraphID gid) const {
-    return graphs_.at(gid).get();
+  SerializedMiniCleanGraph* NewSerializedSubgraph(const GraphID gid) {
+    serialized_graphs_.at(gid) = std::make_unique<SerializedMiniCleanGraph>();
+    return serialized_graphs_.at(gid).get();
   }
 
-  void LoadSubgraph(const GraphID gid);
+  Graph* NewSubgraph(const GraphID gid) {
+    
+  }
 
  private:
   const size_t num_subgraphs_;
   std::vector<GraphStateType> subgraph_state_;
-  std::vector<std::unique_ptr<Serialized>> serialized_;
+  std::vector<std::unique_ptr<SerializedMiniCleanGraph>> serialized_graphs_;
   std::vector<std::unique_ptr<Graph>> graphs_;
 };
 }  // namespace sics::graph::miniclean::components::error_detector
