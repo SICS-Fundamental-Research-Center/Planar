@@ -10,9 +10,9 @@
 
 namespace sics::graph::miniclean::components::error_detector {
 
-struct GCRPatternID {
-  size_t left_star_pattern_id;
-  size_t right_star_pattern_id;
+struct GCRIndex {
+  std::vector<size_t> left_path_ids;
+  std::vector<size_t> right_path_ids;
 };
 
 // Partial match.
@@ -58,7 +58,7 @@ class ErrorDetector {
   // created). It will analyse the input GCR set and decompose it to distinct
   // path patterns which are the minimum units for the pattern matching.
   // The decomposed components will be indexed and the mapping relation will be
-  // stored in `gcr_id_to_star_ids_` and `star_id_to_path_id_`.
+  // stored in `gcr_index_`.
   void InitGCRSet();
 
   // Load basic components: subgraph, active vertices, and the index for
@@ -92,21 +92,25 @@ class ErrorDetector {
   // matching results will be returned as the partial results.
   std::vector<ConstrainedStarInstance> MatchConstrainedStarPattern();
 
+  const std::vector<GCR>& get_gcrs() const { return gcrs_; }
+  const std::vector<std::vector<AttributedVertex>>& get_attributed_paths()
+      const {
+    return attributed_paths_;
+  }
+  const std::vector<GCRIndex>& get_gcr_index() const { return gcr_index_; }
+  const std::vector<std::vector<size_t>>& get_vid_to_path_id() const {
+    return vid_to_path_id_;
+  }
+  const std::vector<VertexID>& get_active_vids() const { return active_vids_; }
+
  private:
-  // Decompose GCR to star patterns.
-  //
-  // This function will be called by `InitGCRSet`.
-  // It first assigns a unique id to each star pattern, and then build
-  // `gcr_id_to_star_ids_` and `star_id_to_path_id_` to record the mapping
-  // between gcr id and star pattern id, and the mapping between star pattern id
-  // and path id.
-  void DecomposeGCR();
+  // Determine whether a path has existed in `attributed_paths_`.
+  size_t GetAttributedPathID(std::vector<AttributedVertex> attributed_path);
 
   std::string data_path_;
   std::vector<GCR> gcrs_;
   std::vector<std::vector<AttributedVertex>> attributed_paths_;
-  std::vector<GCRPatternID> gcr_id_to_star_ids_;
-  std::vector<std::vector<size_t>> star_id_to_path_ids_;
+  std::vector<GCRIndex> gcr_index_;
 
   Graph* graph_;
   std::vector<std::vector<size_t>> vid_to_path_id_;

@@ -1,0 +1,163 @@
+GCRs:
+  - left_star_constraints:
+      pattern_constraints:
+        -
+          - label: Movie
+            constant_predicates:
+              - attribute_name: movie_genre
+                operator_type: Eq
+                attribute_value: Comedy
+              - attribute_name: movie_year
+                operator_type: Gt
+                attribute_value: 2000
+          - label: Cast
+        -
+          - label: Movie
+            constant_predicates:
+              - attribute_name: movie_genre
+                operator_type: Eq
+                attribute_value: Comedy
+              - attribute_name: movie_year
+                operator_type: Gt
+                attribute_value: 2000
+          - label: Cast
+      relation_constraints:
+        - lhs:
+            star_position: left
+            path_index: 0
+            vertex_index: 1
+            attribute_name: cast_name
+          operator_type: Eq
+          rhs:
+            star_position: left
+            path_index: 1
+            vertex_index: 1
+            attribute_name: cast_name
+    right_star_constraints:
+      pattern_constraints:
+        -
+          - label: Movie
+            constant_predicates:
+              - attribute_name: movie_rating
+                operator_type: Gt
+                attribute_value: 70
+          - label: Director
+            constant_predicates:
+              - attribute_name: director_name
+                operator_type: Eq
+                attribute_value: James Cameron
+        -
+          - label: Movie
+            constant_predicates:
+              - attribute_name: movie_rating
+                operator_type: Gt
+                attribute_value: 70
+          - label: Cast
+    gcr_constraints:
+      - lhs:
+          star_position: left
+          path_index: 0
+          vertex_index: 0
+          attribute_name: movie_name
+        operator_type: Eq
+        rhs:
+          star_position: right
+          path_index: 0
+          vertex_index: 0
+          attribute_name: movie_name
+      - lhs:
+          star_position: left
+          path_index: 0
+          vertex_index: 1
+          attribute_name: cast_name
+        operator_type: Eq
+        rhs:
+          star_position: right
+          path_index: 1
+          vertex_index: 1
+          attribute_name: cast_name
+    consequence:
+      lhs:
+        star_position: left
+        path_index: 0
+        vertex_index: 0
+        attribute_name: movie_vid
+      operator_type: Eq
+      rhs:
+        star_position: right
+        path_index: 0
+        vertex_index: 0
+        attribute_name: movie_vid
+  - left_star_constraints:
+      pattern_constraints:
+        -
+          - label: Movie
+            constant_predicates:
+              - attribute_name: movie_genre
+                operator_type: Eq
+                attribute_value: Comedy
+              - attribute_name: movie_year
+                operator_type: Gt
+                attribute_value: 2000
+          - label: Cast
+        -
+          - label: Movie
+            constant_predicates:
+              - attribute_name: movie_genre
+                operator_type: Eq
+                attribute_value: Comedy
+              - attribute_name: movie_year
+                operator_type: Gt
+                attribute_value: 2000
+          - label: Cast
+    right_star_constraints:
+      pattern_constraints:
+        -
+          - label: Movie
+            constant_predicates:
+              - attribute_name: movie_rating
+                operator_type: Gt
+                attribute_value: 70
+          - label: Director
+            constant_predicates:
+              - attribute_name: director_name
+                operator_type: Eq
+                attribute_value: James Cameron
+        -
+          - label: Movie
+            constant_predicates:
+              - attribute_name: movie_rating
+                operator_type: Gt
+                attribute_value: 70
+          - label: Cast
+    gcr_constraints:
+      - lhs:
+          star_position: left
+          path_index: 0
+          vertex_index: 0
+          attribute_name: movie_name
+        operator_type: Eq
+        rhs:
+          star_position: right
+          path_index: 0
+          vertex_index: 0
+          attribute_name: movie_name
+      - lhs:
+          star_position: left
+          path_index: 0
+          vertex_index: 1
+          attribute_name: cast_name
+        operator_type: Eq
+        rhs:
+          star_position: right
+          path_index: 1
+          vertex_index: 1
+          attribute_name: cast_name
+    consequence:
+      lhs:
+        star_position: left
+        path_index: 0
+        vertex_index: 0
+        attribute_name: movie_year
+      operator_type: Eq
+      rhs: 2018
