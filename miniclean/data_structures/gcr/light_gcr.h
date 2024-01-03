@@ -150,7 +150,7 @@ class LightGCR {
     return left_star_constraints_;
   }
 
-  const std::vector<std::vector<AttributedVertex>>
+  const std::vector<std::vector<AttributedVertex>>&
   get_left_pattern_constraints() const {
     return left_star_constraints_.pattern_constraints;
   }
@@ -163,7 +163,7 @@ class LightGCR {
     return right_star_constraints_;
   }
 
-  const std::vector<std::vector<AttributedVertex>>
+  const std::vector<std::vector<AttributedVertex>>&
   get_right_pattern_constraints() const {
     return right_star_constraints_.pattern_constraints;
   }
