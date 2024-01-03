@@ -54,7 +54,6 @@ class IOManager {
     LoadGCRs();
     // Initialize graphs.
     subgraph_state_.resize(graph_metadata_.num_subgraphs, kOnDisk);
-    serialized_graphs_.resize(graph_metadata_.num_subgraphs);
     graphs_.resize(graph_metadata_.num_subgraphs);
   }
 
@@ -79,7 +78,6 @@ class IOManager {
   GraphMetadata graph_metadata_;
   std::vector<GCR> gcrs_;
   std::vector<GraphStateType> subgraph_state_;
-  std::vector<std::unique_ptr<SerializedGraph>> serialized_graphs_;
   std::vector<std::unique_ptr<Graph>> graphs_;
 };
 }  // namespace sics::graph::miniclean::components::error_detector
