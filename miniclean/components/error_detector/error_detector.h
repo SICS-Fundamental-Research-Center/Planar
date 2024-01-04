@@ -50,7 +50,6 @@ class ErrorDetector {
   using VertexID = sics::graph::miniclean::common::VertexID;
 
  public:
-  ErrorDetector() = default;
   explicit ErrorDetector(IOManager* io_manager) : io_manager_(io_manager) {}
 
   // Load GCR set decompose it to path patterns.
@@ -67,7 +66,7 @@ class ErrorDetector {
   //
   // For the first round of error detection, the active vertices and index have
   // not been created yet, so they will be skipped.
-  void LoadBasicComponents(const GraphID graph_id);
+  void LoadBasicComponents(GraphID graph_id);
 
   // Build path level index for every vertices in the subgraph.
   //

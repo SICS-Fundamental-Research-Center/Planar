@@ -37,44 +37,26 @@ class IOManager {
   using GCR = sics::graph::miniclean::data_structures::gcr::LightGCR;
 
  public:
-  IOManager() = default;
-  explicit IOManager(const std::string& data_home,
-                     const std::string& graph_home)
-      : data_home_(data_home), graph_home_(graph_home) {
-    // Load graph metadata.
-    YAML::Node metadata_node;
-    try {
-      metadata_node =
-          YAML::LoadFile(graph_home_ + "partition_result/meta.yaml");
-    } catch (YAML::BadFile& e) {
-      LOG_FATAL("Read meta.yaml failed. ", e.msg);
-    }
-    graph_metadata_ = metadata_node.as<GraphMetadata>();
-    // Load GCR set.
-    LoadGCRs();
-    // Initialize graphs.
-    subgraph_state_.resize(graph_metadata_.num_subgraphs, kOnDisk);
-    graphs_.resize(graph_metadata_.num_subgraphs);
-  }
+  IOManager(const std::string& data_home, const std::string& graph_home);
 
   const std::vector<GCR>& GetGCRs() const { return gcrs_; }
 
-  GraphStateType GetSubgraphState(const GraphID gid) const {
+  GraphStateType GetSubgraphState(GraphID gid) const {
     return subgraph_state_.at(gid);
   }
 
   // Construct the subgraph.
-  Graph* NewSubgraph(const GraphID gid);
+  Graph* NewSubgraph(GraphID gid);
 
   // Destruct the graph object and the graph data in memory.
-  void ReleaseSubgraph(const GraphID gid);
+  void ReleaseSubgraph(GraphID gid);
 
  private:
   // Load GCR set.
   void LoadGCRs();
 
-  std::string data_home_;
-  std::string graph_home_;
+  const std::string& data_home_;
+  const std::string& graph_home_;
   GraphMetadata graph_metadata_;
   std::vector<GCR> gcrs_;
   std::vector<GraphStateType> subgraph_state_;
