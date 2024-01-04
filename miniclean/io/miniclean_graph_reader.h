@@ -30,15 +30,18 @@ class MiniCleanGraphReader : public sics::graph::core::io::Reader {
 
  public:
   explicit MiniCleanGraphReader(const std::string& root_path)
-      : root_path_(root_path){};
+      : root_path_(root_path), read_size_(0) {};
 
   void Read(ReadMessage* message, TaskRunner* runner = nullptr) override;
+
+  size_t SizeOfReadNow() override { return read_size_; }
 
  private:
   void LoadBinFileAsBuffer(const std::string& bin_path,
                            Serialized* serialized_object);
 
   const std::string root_path_;
+  size_t read_size_;  // use MB
 };
 }  // namespace sics::graph::miniclean::io
 
