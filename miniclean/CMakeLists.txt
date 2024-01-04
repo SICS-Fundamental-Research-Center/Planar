@@ -35,6 +35,8 @@ file(GLOB GRAPH_MINICLEAN_SOURCES
         "components/preprocessor/*.cpp"
         "components/rule_discovery/*.cpp"
         "components/error_detector/*.cpp"
+        "modules/*.cpp"
+        "messages/*.cpp"
         "io/*.cpp"
         )
 message(STATUS "CORE source files: ${GRAPH_MINICLEAN_SOURCES}")
@@ -50,6 +52,8 @@ file(GLOB GRAPH_MINICLEAN_HEADERS
         "components/preprocessor/*.h"
         "components/rule_discovery/*.h"
         "components/error_detector/*.h"
+        "components/error_detector/modules/*.h"
+        "components/error_detector/messages/*.h"
         "io/*.h"
         )
 message(STATUS "CORE header files: ${GRAPH_MINICLEAN_HEADERS}")
