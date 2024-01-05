@@ -23,6 +23,8 @@ IOManager::IOManager(const std::string& data_home,
   // Initialize graphs.
   subgraph_state_.resize(graph_metadata_.num_subgraphs, kOnDisk);
   graphs_.resize(graph_metadata_.num_subgraphs);
+  current_round_subgraph_pending_.resize(graph_metadata_.num_subgraphs, true);
+  subgraph_round_.resize(graph_metadata_.num_subgraphs, 0);
 }
 
 Graph* IOManager::NewSubgraph(const GraphID gid) {

@@ -5,12 +5,9 @@ namespace sics::graph::miniclean {
 
 // Base class for MiniClean applications.
 // Classes that inherit from this class can be holded by `ExecuteMessage`.
-// TODO (bai-wenchao): added virtual functions if MiniClean applications can be
+// TODO (bai-wenchao): add virtual functions if MiniClean applications can be
 // further abstracted.
-class MiniCleanAppBase {
- public:
-  virtual ~MiniCleanAppBase() = default;
-};
+class MiniCleanAppBase {};
 
 }  // namespace sics::graph::miniclean
 

@@ -51,6 +51,18 @@ class IOManager {
   // Destruct the graph object and the graph data in memory.
   void ReleaseSubgraph(GraphID gid);
 
+  // In BSP model, pending subgraphs will be set to `true` when current round is
+  // finished.
+  void SyncCurrentRoundPending() {
+    for (GraphID gid = 0; gid < graph_metadata_.num_subgraphs; ++gid) {
+      current_round_subgraph_pending_.at(gid) = true;
+    }
+  }
+
+  void IncreaseSubgraphRound(GraphID gid) { ++subgraph_round_.at(gid); }
+
+  
+
  private:
   // Load GCR set.
   void LoadGCRs();
@@ -60,6 +72,8 @@ class IOManager {
   GraphMetadata graph_metadata_;
   std::vector<GCR> gcrs_;
   std::vector<GraphStateType> subgraph_state_;
+  std::vector<bool> current_round_subgraph_pending_;
+  std::vector<size_t> subgraph_round_;
   std::vector<std::unique_ptr<Graph>> graphs_;
 };
 }  // namespace sics::graph::miniclean::components::error_detector
