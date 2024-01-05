@@ -108,6 +108,28 @@ struct Consequence {
   OpType op_type;
 };
 
+struct StarConstraints {
+  StarConstraints() = default;
+  StarConstraints(
+      const std::vector<std::vector<AttributedVertex>>& pattern_constraints,
+      const std::vector<BinaryPredicate>& relation_constraints)
+      : pattern_constraints(pattern_constraints),
+        relation_constraints(relation_constraints) {
+    // Check whether the constraints are valid.
+    for (const auto& rc : relation_constraints) {
+      if (rc.lhs_in_left_star != rc.rhs_in_left_star) {
+        LOGF_FATAL(
+            "Relation constraint do not locate in the same star: "
+            "lhs_in_left_star {} != rhs_in_left_star {}.",
+            rc.lhs_in_left_star, rc.rhs_in_left_star);
+      }
+    }
+  }
+
+  std::vector<std::vector<AttributedVertex>> pattern_constraints;
+  std::vector<BinaryPredicate> relation_constraints;
+};
+
 class LightGCR {
  private:
   using VertexLabel = sics::graph::miniclean::common::VertexLabel;
@@ -115,52 +137,64 @@ class LightGCR {
 
  public:
   LightGCR() = default;
-  LightGCR(const std::vector<GCRPath>& left_star_pattern,
-           const std::vector<GCRPath>& right_star_pattern,
-           const std::vector<BinaryPredicate>& binary_preconditions,
+  LightGCR(const StarConstraints& left_star_constraints,
+           const StarConstraints& right_star_constraints,
+           const std::vector<BinaryPredicate>& gcr_constraints,
            const Consequence& consequence)
-      : left_star_pattern_(left_star_pattern),
-        right_star_pattern_(right_star_pattern),
-        binary_preconditions_(binary_preconditions),
+      : left_star_constraints_(left_star_constraints),
+        right_star_constraints_(right_star_constraints),
+        gcr_constraints_(gcr_constraints),
         consequence_(consequence) {}
 
-  const std::vector<GCRPath>& get_left_star_pattern() const {
-    return left_star_pattern_;
+  const StarConstraints& get_left_star_constraints() const {
+    return left_star_constraints_;
   }
 
-  const std::vector<GCRPath>& get_right_star_pattern() const {
-    return right_star_pattern_;
+  const std::vector<std::vector<AttributedVertex>>&
+  get_left_pattern_constraints() const {
+    return left_star_constraints_.pattern_constraints;
   }
 
-  const GCRPath& get_left_path_by_index(size_t index) const {
-    return left_star_pattern_[index];
+  const std::vector<BinaryPredicate>& get_left_relation_constraints() const {
+    return left_star_constraints_.relation_constraints;
   }
 
-  const GCRPath& get_right_path_by_index(size_t index) const {
-    return right_star_pattern_[index];
+  const StarConstraints& get_right_star_constraints() const {
+    return right_star_constraints_;
   }
 
-  const std::vector<BinaryPredicate>& get_binary_preconditions() const {
-    return binary_preconditions_;
+  const std::vector<std::vector<AttributedVertex>>&
+  get_right_pattern_constraints() const {
+    return right_star_constraints_.pattern_constraints;
   }
 
-  const BinaryPredicate& get_binary_precondition_by_index(size_t index) const {
-    return binary_preconditions_[index];
+  const std::vector<BinaryPredicate>& get_right_relation_constraints() const {
+    return right_star_constraints_.relation_constraints;
+  }
+
+  const std::vector<BinaryPredicate>& get_gcr_constraints() const {
+    return gcr_constraints_;
   }
 
   const Consequence& get_consequence() const { return consequence_; }
 
-  void set_left_star_pattern(const std::vector<GCRPath>& left_star_pattern) {
-    left_star_pattern_ = left_star_pattern;
+  void set_left_star_constraints(
+      const std::vector<std::vector<AttributedVertex>>& pattern_constraints,
+      const std::vector<BinaryPredicate>& relation_constraints) {
+    left_star_constraints_ =
+        StarConstraints(pattern_constraints, relation_constraints);
   }
 
-  void set_right_star_pattern(const std::vector<GCRPath>& right_star_pattern) {
-    right_star_pattern_ = right_star_pattern;
+  void set_right_star_constraints(
+      const std::vector<std::vector<AttributedVertex>>& pattern_constraints,
+      const std::vector<BinaryPredicate>& relation_constraints) {
+    right_star_constraints_ =
+        StarConstraints(pattern_constraints, relation_constraints);
   }
 
-  void set_binary_preconditions(
-      const std::vector<BinaryPredicate>& binary_preconditions) {
-    binary_preconditions_ = binary_preconditions;
+  void set_gcr_constraints(
+      const std::vector<BinaryPredicate>& gcr_constraints) {
+    gcr_constraints_ = gcr_constraints;
   }
 
   void set_consequence(const Consequence& consequence) {
@@ -168,9 +202,9 @@ class LightGCR {
   }
 
  private:
-  std::vector<GCRPath> left_star_pattern_;
-  std::vector<GCRPath> right_star_pattern_;
-  std::vector<BinaryPredicate> binary_preconditions_;
+  StarConstraints left_star_constraints_;
+  StarConstraints right_star_constraints_;
+  std::vector<BinaryPredicate> gcr_constraints_;
   Consequence consequence_;
 };
 
@@ -183,9 +217,9 @@ struct convert<sics::graph::miniclean::data_structures::gcr::LightGCR> {
   static Node encode(
       const sics::graph::miniclean::data_structures::gcr::LightGCR& rhs) {
     Node node;
-    node["left_star_pattern"] = rhs.get_left_star_pattern();
-    node["right_star_pattern"] = rhs.get_right_star_pattern();
-    node["binary_preconditions"] = rhs.get_binary_preconditions();
+    node["left_star_constraints"] = rhs.get_left_star_constraints();
+    node["right_star_constraints"] = rhs.get_right_star_constraints();
+    node["gcr_constraints"] = rhs.get_gcr_constraints();
     node["consequence"] = rhs.get_consequence();
     return node;
   }
@@ -197,19 +231,51 @@ struct convert<sics::graph::miniclean::data_structures::gcr::LightGCR> {
       LOGF_FATAL("LightGCR node size {} != 4.", node.size());
     }
     rhs = sics::graph::miniclean::data_structures::gcr::LightGCR(
-        node["left_star_pattern"]
-            .as<std::vector<
-                std::vector<sics::graph::miniclean::data_structures::gcr::
-                                AttributedVertex>>>(),
-        node["right_star_pattern"]
-            .as<std::vector<
-                std::vector<sics::graph::miniclean::data_structures::gcr::
-                                AttributedVertex>>>(),
-        node["binary_preconditions"]
+        node["left_star_constraints"]
+            .as<sics::graph::miniclean::data_structures::gcr::
+                    StarConstraints>(),
+        node["right_star_constraints"]
+            .as<sics::graph::miniclean::data_structures::gcr::
+                    StarConstraints>(),
+        node["gcr_constraints"]
             .as<std::vector<sics::graph::miniclean::data_structures::gcr::
                                 BinaryPredicate>>(),
         node["consequence"]
             .as<sics::graph::miniclean::data_structures::gcr::Consequence>());
+    return true;
+  }
+};
+
+template <>
+struct convert<sics::graph::miniclean::data_structures::gcr::StarConstraints> {
+  static Node encode(
+      const sics::graph::miniclean::data_structures::gcr::StarConstraints&
+          rhs) {
+    Node node;
+    node["pattern_constraints"] = rhs.pattern_constraints;
+    if (rhs.relation_constraints.size() > 0) {
+      node["relation_constraints"] = rhs.relation_constraints;
+    }
+    return node;
+  }
+
+  static bool decode(
+      const Node& node,
+      sics::graph::miniclean::data_structures::gcr::StarConstraints& rhs) {
+    std::vector<sics::graph::miniclean::data_structures::gcr::BinaryPredicate>
+        relation_constraints = {};
+    if (node.size() == 2) {
+      relation_constraints =
+          node["relation_constraints"]
+              .as<std::vector<sics::graph::miniclean::data_structures::gcr::
+                                  BinaryPredicate>>();
+    }
+    rhs = sics::graph::miniclean::data_structures::gcr::StarConstraints(
+        node["pattern_constraints"]
+            .as<std::vector<
+                std::vector<sics::graph::miniclean::data_structures::gcr::
+                                AttributedVertex>>>(),
+        relation_constraints);
     return true;
   }
 };

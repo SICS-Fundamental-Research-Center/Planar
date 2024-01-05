@@ -20,13 +20,15 @@ namespace sics::graph::miniclean::data_structures::graphs {
 struct MiniCleanVertex {
  private:
   using VertexID = sics::graph::miniclean::common::VertexID;
+  using VertexLabel = sics::graph::miniclean::common::VertexLabel;
 
  public:
   VertexID global_vid;
   VertexID indegree = 0;
   VertexID outdegree = 0;
-  VertexID* incoming_edges;
-  VertexID* outgoing_edges;
+  VertexLabel label;
+  VertexID* incoming_local_vids;
+  VertexID* outgoing_local_vids;
 };
 
 class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
@@ -79,9 +81,10 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
     v.global_vid = GetVertexGlobalID(local_vid);
     v.indegree = GetInDegreeByLocalID(local_vid);
     v.outdegree = GetOutDegreeByLocalID(local_vid);
-    v.incoming_edges =
+    v.label = GetVertexLabel(local_vid);
+    v.incoming_local_vids =
         incoming_local_vid_base_pointer_ + in_offset_base_pointer_[local_vid];
-    v.outgoing_edges =
+    v.outgoing_local_vids =
         outgoing_local_vid_base_pointer_ + out_offset_base_pointer_[local_vid];
     return v;
   }

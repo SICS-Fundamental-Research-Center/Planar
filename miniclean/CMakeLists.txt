@@ -34,6 +34,7 @@ file(GLOB GRAPH_MINICLEAN_SOURCES
         "components/matcher/*.cpp"
         "components/preprocessor/*.cpp"
         "components/rule_discovery/*.cpp"
+        "components/error_detector/*.cpp"
         "io/*.cpp"
         )
 message(STATUS "CORE source files: ${GRAPH_MINICLEAN_SOURCES}")
@@ -48,6 +49,7 @@ file(GLOB GRAPH_MINICLEAN_HEADERS
         "components/matcher/*.h"
         "components/preprocessor/*.h"
         "components/rule_discovery/*.h"
+        "components/error_detector/*.h"
         "io/*.h"
         )
 message(STATUS "CORE header files: ${GRAPH_MINICLEAN_HEADERS}")

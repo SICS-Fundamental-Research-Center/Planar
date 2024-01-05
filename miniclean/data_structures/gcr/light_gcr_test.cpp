@@ -27,9 +27,10 @@ class LightGCRTest : public ::testing::Test {
     graph_metadata_ = graph_metadata.as<MiniCleanGraphMetadata>();
     ErrorDetectionConfig::Init(graph_metadata_);
 
-    // 1. Left star pattern.
+    // 1. Left star constraints.
     //    path 0: Movie [genre=Comedy, year>2000] -> Cast
     //    path 1: Movie [genre=Comedy, year>2000] -> Cast
+    //    constraint 0: Cast[0].name = Cast[1].name
     AttributedVertex left_center =
         ErrorDetectionConfig::Get()->GetLabelIDByName("Movie");
     left_center.attribute_ids.push_back(
@@ -44,10 +45,14 @@ class LightGCRTest : public ::testing::Test {
         ErrorDetectionConfig::Get()->GetLabelIDByName("Cast"));
     AttributedVertex actor1(
         ErrorDetectionConfig::Get()->GetLabelIDByName("Cast"));
-    gcr_0_.set_left_star_pattern(
-        {{left_center, actor0}, {left_center, actor1}});
-    gcr_1_.set_left_star_pattern(
-        {{left_center, actor0}, {left_center, actor1}});
+    BinaryPredicate pred(
+        true, true, 0, 1, 1, 1,
+        ErrorDetectionConfig::Get()->GetAttrIDByName("cast_name"),
+        ErrorDetectionConfig::Get()->GetAttrIDByName("cast_name"), OpType::kEq);
+    gcr_0_.set_left_star_constraints(
+        {{left_center, actor0}, {left_center, actor1}}, {pred});
+    gcr_1_.set_left_star_constraints(
+        {{left_center, actor0}, {left_center, actor1}}, {});
     // 2. Right star pattern.
     //    path 0: Movie [rating>70] -> Director[name="James Cameron"]
     //    path 1: Movie [rating>70] -> Cast
@@ -65,10 +70,10 @@ class LightGCRTest : public ::testing::Test {
     director.op_types.push_back(OpType::kEq);
     AttributedVertex actor(
         ErrorDetectionConfig::Get()->GetLabelIDByName("Cast"));
-    gcr_0_.set_right_star_pattern(
-        {{right_center, director}, {right_center, actor}});
-    gcr_1_.set_right_star_pattern(
-        {{right_center, director}, {right_center, actor}});
+    gcr_0_.set_right_star_constraints(
+        {{right_center, director}, {right_center, actor}}, {});
+    gcr_1_.set_right_star_constraints(
+        {{right_center, director}, {right_center, actor}}, {});
     // 3. Binary predicates.
     //    pred 0: left movie name = right movie name
     //    pred 1: left cast name = right cast name
@@ -81,8 +86,8 @@ class LightGCRTest : public ::testing::Test {
         true, false, 0, 1, 1, 1,
         ErrorDetectionConfig::Get()->GetAttrIDByName("cast_name"),
         ErrorDetectionConfig::Get()->GetAttrIDByName("cast_name"), OpType::kEq);
-    gcr_0_.set_binary_preconditions({pred0, pred1});
-    gcr_1_.set_binary_preconditions({pred0, pred1});
+    gcr_0_.set_gcr_constraints({pred0, pred1});
+    gcr_1_.set_gcr_constraints({pred0, pred1});
     // 4. Consequence.
     //    cons 0: left movie vid = right movie vid
     //    cons 1: left movie year = 2018
@@ -127,27 +132,55 @@ TEST_F(LightGCRTest, TestDecoding) {
       gcrs["GCRs"].as<std::vector<LightGCR>>();
 
   // Test GCR 0: left pattern
-  EXPECT_EQ(gcr_set_decoded[0].get_left_star_pattern().size(),
-            gcr_0_.get_left_star_pattern().size());
-  for (size_t i = 0; i < gcr_0_.get_left_star_pattern().size(); i++) {
-    EXPECT_EQ(gcr_set_decoded[0].get_left_star_pattern()[i].size(),
-              gcr_0_.get_left_star_pattern()[i].size());
-    for (size_t j = 0; j < gcr_0_.get_left_star_pattern()[i].size(); j++) {
-      EXPECT_EQ(gcr_set_decoded[0].get_left_star_pattern()[i][j].label_id,
-                gcr_0_.get_left_star_pattern()[i][j].label_id);
-      EXPECT_EQ(gcr_set_decoded[0].get_left_star_pattern()[i][j].attribute_ids,
-                gcr_0_.get_left_star_pattern()[i][j].attribute_ids);
-      EXPECT_EQ(
-          gcr_set_decoded[0].get_left_star_pattern()[i][j].attribute_values,
-          gcr_0_.get_left_star_pattern()[i][j].attribute_values);
-      EXPECT_EQ(gcr_set_decoded[0].get_left_star_pattern()[i][j].op_types,
-                gcr_0_.get_left_star_pattern()[i][j].op_types);
+  EXPECT_EQ(
+      gcr_set_decoded[0].get_left_star_constraints().pattern_constraints.size(),
+      gcr_0_.get_left_star_constraints().pattern_constraints.size());
+  for (size_t i = 0;
+       i < gcr_0_.get_left_star_constraints().pattern_constraints.size(); i++) {
+    EXPECT_EQ(gcr_set_decoded[0]
+                  .get_left_star_constraints()
+                  .pattern_constraints[i]
+                  .size(),
+              gcr_0_.get_left_star_constraints().pattern_constraints[i].size());
+    for (size_t j = 0;
+         j < gcr_0_.get_left_star_constraints().pattern_constraints[i].size();
+         j++) {
+      EXPECT_EQ(gcr_set_decoded[0]
+                    .get_left_star_constraints()
+                    .pattern_constraints[i][j]
+                    .label_id,
+                gcr_0_.get_left_star_constraints()
+                    .pattern_constraints[i][j]
+                    .label_id);
+      EXPECT_EQ(gcr_set_decoded[0]
+                    .get_left_star_constraints()
+                    .pattern_constraints[i][j]
+                    .attribute_ids,
+                gcr_0_.get_left_star_constraints()
+                    .pattern_constraints[i][j]
+                    .attribute_ids);
+      EXPECT_EQ(gcr_set_decoded[0]
+                    .get_left_star_constraints()
+                    .pattern_constraints[i][j]
+                    .attribute_values,
+                gcr_0_.get_left_star_constraints()
+                    .pattern_constraints[i][j]
+                    .attribute_values);
+      EXPECT_EQ(gcr_set_decoded[0]
+                    .get_left_star_constraints()
+                    .pattern_constraints[i][j]
+                    .op_types,
+                gcr_0_.get_left_star_constraints()
+                    .pattern_constraints[i][j]
+                    .op_types);
     }
   }
 
   // Test attribute convert.
-  std::string attr_value =
-      gcr_set_decoded[0].get_left_star_pattern()[0][0].attribute_values[1];
+  std::string attr_value = gcr_set_decoded[0]
+                               .get_left_star_constraints()
+                               .pattern_constraints[0][0]
+                               .attribute_values[1];
   EXPECT_EQ(attr_value, "2000");
 }
 }  // namespace sics::graph::miniclean::data_structures::gcr
