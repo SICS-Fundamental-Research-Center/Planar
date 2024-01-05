@@ -4,10 +4,9 @@
 #include <string>
 
 #include "core/common/blocking_queue.h"
-#include "core/data_structures/serializable.h"
-#include "core/data_structures/serialized.h"
 #include "core/util/logging.h"
 #include "miniclean/common/types.h"
+#include "miniclean/data_structures/graphs/miniclean_graph.h"
 #include "miniclean/miniclean_app_base.h"
 
 namespace sics::graph::miniclean::messages {
@@ -17,8 +16,6 @@ struct ReadMessage {
   ReadMessage(const ReadMessage& message) = default;
   // Request fields.
   sics::graph::miniclean::common::GraphID graph_id;
-  sics::graph::miniclean::common::VertexID num_vertices;
-  int round;
 
   // Response fields.
   sics::graph::core::data_structures::Serialized*
@@ -43,7 +40,7 @@ struct ExecuteMessage {
   sics::graph::core::data_structures::Serialized* serialized;
   ExecuteType execute_type = kPEval;
   // TODO: add subgraph metadata fields and API program objects.
-  sics::graph::core::data_structures::Serializable* graph;
+  sics::graph::miniclean::data_structures::graphs::MiniCleanGraph* graph;
   sics::graph::miniclean::MiniCleanAppBase* app;
   // Response fields.
   sics::graph::core::data_structures::Serializable* response_serializable;
