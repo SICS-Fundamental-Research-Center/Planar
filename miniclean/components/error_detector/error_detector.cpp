@@ -7,13 +7,19 @@
 namespace sics::graph::miniclean::components::error_detector {
 
 void ErrorDetector::InitGCRSet() {
-  const auto& gcrs = io_manager_->GetGCRs();
-  gcr_index_.resize(gcrs.size());
-  for (size_t i = 0; i < gcrs.size(); i++) {
+  YAML::Node gcrs_node;
+  try {
+    gcrs_node = YAML::LoadFile(gcr_path_);
+  } catch (YAML::BadFile& e) {
+    LOG_FATAL("gcrs.yaml file read failed! ", e.msg);
+  }
+  gcrs_ = gcrs_node["GCRs"].as<std::vector<GCR>>();
+  gcr_index_.resize(gcrs_.size());
+  for (size_t i = 0; i < gcrs_.size(); i++) {
     const auto& left_pattern_constraints =
-        gcrs[i].get_left_pattern_constraints();
+        gcrs_[i].get_left_pattern_constraints();
     const auto& right_pattern_constraints =
-        gcrs[i].get_right_pattern_constraints();
+        gcrs_[i].get_right_pattern_constraints();
     // Decompose the left pattern.
     for (size_t j = 0; j < left_pattern_constraints.size(); j++) {
       size_t left_path_id = GetAttributedPathID(left_pattern_constraints[j]);
@@ -31,18 +37,6 @@ void ErrorDetector::InitGCRSet() {
       gcr_index_[i].right_path_ids.push_back(right_path_id);
     }
   }
-}
-
-void ErrorDetector::LoadBasicComponents(const GraphID gid) {
-  // TODO (bai-wenchao): load the avtive vertices and vertex index when they are
-  // available.
-  graph_ = io_manager_->NewSubgraph(gid);
-}
-
-void ErrorDetector::DischargePartialResults(
-    const std::vector<ConstrainedStarInstance>& partial_results) {
-  // TODO (bai-wenchao): discharge the partial results when they are available.
-  io_manager_->ReleaseSubgraph(graph_->GetMetadata().gid);
 }
 
 size_t ErrorDetector::GetAttributedPathID(

@@ -8,14 +8,14 @@
 #include <string>
 
 #include "core/common/multithreading/thread_pool.h"
-#include "core/scheduler/message.h"
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/graphs/miniclean_graph.h"
 #include "miniclean/data_structures/graphs/serialized_miniclean_graph.h"
+#include "miniclean/messages/message.h"
 
 using SerializedMiniCleanGraph =
     sics::graph::miniclean::data_structures::graphs::SerializedMiniCleanGraph;
-using ReadMessage = sics::graph::core::scheduler::ReadMessage;
+using ReadMessage = sics::graph::miniclean::messages::ReadMessage;
 using MiniCleanGraph =
     sics::graph::miniclean::data_structures::graphs::MiniCleanGraph;
 using MiniCleanGraphMetadata =
@@ -216,7 +216,8 @@ TEST_F(MiniCleanGraphReaderTest, ReadSubgraph1Test) {
   std::string expected_cast_name[3] = {"Jutta_Yûki", "M._Nawaz",
                                        "Yûkei_Hasegawa"};
   for (VertexID local_vid = 0; local_vid < 3; local_vid++) {
-    std::string str((char*)miniclean_graph.GetVertexAttributePtr(local_vid, 10));
+    std::string str(
+        (char*)miniclean_graph.GetVertexAttributePtr(local_vid, 10));
     EXPECT_EQ(str, expected_cast_name[local_vid]);
   }
 
