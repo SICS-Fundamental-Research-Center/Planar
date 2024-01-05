@@ -3,11 +3,19 @@
 
 namespace sics::graph::nvme::apis {
 
-class BlockModel {
+class BlockModelBase {
  public:
-  virtual ~BlockModel() = default;
+  virtual ~BlockModelBase() = default;
 
   virtual void Compute() = 0;
+
+  virtual void ComputeVertex() = 0;
+
+  virtual void ComputeEdge() = 0;
+
+  virtual void ComputeAndMutateEdge() = 0;
+
+ protected:
 };
 
 }  // namespace sics::graph::nvme::apis
