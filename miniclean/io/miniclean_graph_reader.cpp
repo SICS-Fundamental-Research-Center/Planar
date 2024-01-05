@@ -57,18 +57,18 @@ void MiniCleanGraphReader::LoadBinFileAsBuffer(const std::string& bin_path,
 
   // Compute the file size.
   file.seekg(0, std::ios::end);
-  size_t fileSize = file.tellg();
+  size_t file_size = file.tellg();
   file.seekg(0, std::ios::beg);
 
-  // Update read size (use MB).
-  read_size_ += (fileSize >> 20);
+  // Update read size.
+  read_size_mb_ += (file_size >> 20);
 
   // Initialize buffer.
   std::vector<OwnedBuffer> file_buffers;
-  file_buffers.emplace_back(fileSize);
+  file_buffers.emplace_back(file_size);
 
   // Read the file data.
-  file.read(reinterpret_cast<char*>(file_buffers.back().Get()), fileSize);
+  file.read(reinterpret_cast<char*>(file_buffers.back().Get()), file_size);
   if (!file) {
     LOG_FATAL("Error reading file: ", bin_path.c_str());
   }
