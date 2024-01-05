@@ -11,16 +11,16 @@
 #include "core/data_structures/buffer.h"
 #include "core/data_structures/serialized.h"
 #include "core/io/reader_writer.h"
-#include "core/scheduler/message.h"
+#include "miniclean/messages/message.h"
 #include "core/util/logging.h"
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/graphs/miniclean_graph_metadata.h"
 
 namespace sics::graph::miniclean::io {
 
-class MiniCleanGraphReader : public sics::graph::core::io::Reader {
+class MiniCleanGraphReader {
  private:
-  using ReadMessage = sics::graph::core::scheduler::ReadMessage;
+  using ReadMessage = sics::graph::miniclean::messages::ReadMessage;
   using TaskRunner = sics::graph::core::common::TaskRunner;
   using Serialized = sics::graph::core::data_structures::Serialized;
   using OwnedBuffer = sics::graph::core::data_structures::OwnedBuffer;
@@ -32,9 +32,9 @@ class MiniCleanGraphReader : public sics::graph::core::io::Reader {
   explicit MiniCleanGraphReader(const std::string& root_path)
       : root_path_(root_path), read_size_mb_(0) {};
 
-  void Read(ReadMessage* message, TaskRunner* runner = nullptr) override;
+  void Read(ReadMessage* message, TaskRunner* runner = nullptr);
 
-  size_t SizeOfReadNow() override { return read_size_mb_; }
+  size_t SizeOfReadNow() { return read_size_mb_; }
 
  private:
   void LoadBinFileAsBuffer(const std::string& bin_path,

@@ -1,5 +1,5 @@
-#ifndef MINICLEAN_COMPONENTS_ERROR_DETECTOR_IO_MANAGER_H_
-#define MINICLEAN_COMPONENTS_ERROR_DETECTOR_IO_MANAGER_H_
+#ifndef MINICLEAN_MODULES_IO_MANAGER_H_
+#define MINICLEAN_MODULES_IO_MANAGER_H_
 
 #include <yaml-cpp/yaml.h>
 
@@ -16,11 +16,14 @@
 #include "miniclean/data_structures/graphs/serialized_miniclean_graph.h"
 #include "miniclean/io/miniclean_graph_reader.h"
 
-namespace sics::graph::miniclean::components::error_detector {
+namespace sics::graph::miniclean::modules {
 
 typedef enum {
   kOnDisk = 0,
-  kInMemory,
+  kReading,
+  kSerialized,
+  kDeserialized,
+  kComputed,
 } GraphStateType;
 
 class IOManager {
@@ -39,29 +42,52 @@ class IOManager {
  public:
   IOManager(const std::string& data_home, const std::string& graph_home);
 
-  const std::vector<GCR>& GetGCRs() const { return gcrs_; }
+  GraphID GetNumSubgraphs() const { return graph_metadata_.num_subgraphs; }
 
   GraphStateType GetSubgraphState(GraphID gid) const {
     return subgraph_state_.at(gid);
   }
 
-  // Construct the subgraph.
+  size_t GetSubgraphRound(GraphID gid) const { return subgraph_round_.at(gid); }
+
+  Graph* GetSubgraph(GraphID gid) const { return graphs_.at(gid).get(); }
+
+  void SetSubgraphState(GraphID gid, GraphStateType state);
+
+  bool IsCurrentPendingSubgraph(GraphID gid) const {
+    return current_round_subgraph_pending_.at(gid);
+  }
+
+  SerializedGraph* NewSerializedSubgraph(GraphID gid);
+
   Graph* NewSubgraph(GraphID gid);
 
-  // Destruct the graph object and the graph data in memory.
-  void ReleaseSubgraph(GraphID gid);
+  void ReleaseSerializedSubgraph(GraphID gid) {
+    serialized_graphs_.at(gid).reset();
+  }
+
+  void ReleaseSubgraph(GraphID gid) { graphs_.at(gid).reset(); }
+
+  // In BSP model, pending subgraphs will be set to `true` when current round is
+  // finished.
+  void SyncCurrentRoundPending() {
+    for (GraphID gid = 0; gid < graph_metadata_.num_subgraphs; ++gid) {
+      current_round_subgraph_pending_.at(gid) = true;
+    }
+  }
+
+  void IncreaseSubgraphRound(GraphID gid) { ++subgraph_round_.at(gid); }
 
  private:
-  // Load GCR set.
-  void LoadGCRs();
-
   const std::string& data_home_;
   const std::string& graph_home_;
   GraphMetadata graph_metadata_;
-  std::vector<GCR> gcrs_;
   std::vector<GraphStateType> subgraph_state_;
+  std::vector<bool> current_round_subgraph_pending_;
+  std::vector<size_t> subgraph_round_;
+  std::vector<std::unique_ptr<SerializedGraph>> serialized_graphs_;
   std::vector<std::unique_ptr<Graph>> graphs_;
 };
-}  // namespace sics::graph::miniclean::components::error_detector
+}  // namespace sics::graph::miniclean::modules
 
-#endif  // MINICLEAN_COMPONENTS_ERROR_DETECTOR_IO_MANAGER_H_
+#endif  // MINICLEAN_MODULES_IO_MANAGER_H_
