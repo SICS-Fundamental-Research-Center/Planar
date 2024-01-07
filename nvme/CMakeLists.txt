@@ -18,6 +18,7 @@ file(GLOB NVME_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/apis/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/apps/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/components/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/scheduler/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/update_stores/*.cpp"
         )
@@ -29,6 +30,7 @@ file(GLOB NVME_HEADERS
         "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/apis/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/apps/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/components/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/scheduler/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/update_stores/*.h"
         )

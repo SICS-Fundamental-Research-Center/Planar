@@ -9,11 +9,11 @@ class BlockModelBase {
 
   virtual void Compute() = 0;
 
-  virtual void ComputeVertex() = 0;
+  //  virtual void MapVertex() = 0;
 
-  virtual void ComputeEdge() = 0;
+  //  virtual void MapEdge() = 0;
 
-  virtual void ComputeAndMutateEdge() = 0;
+  //  virtual void MapAndMutateEdge() = 0;
 
  protected:
 };

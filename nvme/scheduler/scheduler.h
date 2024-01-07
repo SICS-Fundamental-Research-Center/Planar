@@ -16,22 +16,22 @@
 #include "core/data_structures/graph_metadata.h"
 #include "core/data_structures/serializable.h"
 #include "core/io/mutable_csr_reader.h"
-#include "core/scheduler/graph_state.h"
-#include "core/scheduler/message_hub.h"
 #include "core/update_stores/update_store_base.h"
+#include "nvme/scheduler/graph_state.h"
+#include "nvme/scheduler/message_hub.h"
 
 namespace sics::graph::nvme::scheduler {
 
 using namespace sics::graph::core;
 
 class PramScheduler {
-  using MessageHub = sics::graph::core::scheduler::MessageHub;
-  using Message = sics::graph::core::scheduler::Message;
-  using ReadMessage = sics::graph::core::scheduler::ReadMessage;
-  using WriteMessage = sics::graph::core::scheduler::WriteMessage;
-  using ExecuteMessage = sics::graph::core::scheduler::ExecuteMessage;
-  using GraphState = sics::graph::core::scheduler::GraphState;
-  using ExecuteType = sics::graph::core::scheduler::ExecuteType;
+  using MessageHub = sics::graph::nvme::scheduler::MessageHub;
+  using Message = sics::graph::nvme::scheduler::Message;
+  using ReadMessage = sics::graph::nvme::scheduler::ReadMessage;
+  using WriteMessage = sics::graph::nvme::scheduler::WriteMessage;
+  using ExecuteMessage = sics::graph::nvme::scheduler::ExecuteMessage;
+  using ExecuteType = sics::graph::nvme::scheduler::ExecuteType;
+  using GraphState = sics::graph::nvme::scheduler::GraphState;
 
   using MutableCSRGraphUInt32 = data_structures::graph::MutableCSRGraphUInt32;
   using MutableCSRGraphUInt16 = data_structures::graph::MutableCSRGraphUInt16;
@@ -85,6 +85,8 @@ class PramScheduler {
   size_t GetVertexNumber() const {
     return graph_metadata_info_.get_num_vertices();
   }
+
+  void RunMapVertex(ExecuteMessage execute_msg);
 
  protected:
   virtual bool ReadMessageResponseAndExecute(const ReadMessage& read_resp);

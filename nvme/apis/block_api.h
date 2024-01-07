@@ -10,16 +10,12 @@
 #include "core/data_structures/serializable.h"
 #include "core/util/logging.h"
 #include "nvme/apis/block_api_base.h"
+#include "nvme/scheduler/message_hub.h"
+#include "nvme/scheduler/scheduler.h"
 
 namespace sics::graph::nvme::apis {
 
 using core::data_structures::Serializable;
-
-enum BlockModelApiType {
-  kVertex = 1,
-  kEdge,
-  kMutateEdge,
-};
 
 template <typename GraphType>
 class BlockModel : public BlockModelBase {
@@ -33,27 +29,46 @@ class BlockModel : public BlockModelBase {
   using VertexIndex = core::common::VertexIndex;
   using EdgeIndex = core::common::EdgeIndex;
 
+  using ExecuteMessage = sics::graph::nvme::scheduler::ExecuteMessage;
+  using ExecuteType = sics::graph::nvme::scheduler::ExecuteType;
+
  public:
   BlockModel() {}
 
   ~BlockModel() override = default;
 
- protected:
-  void Compute() override {
-    switch (type_) {}
+  // ===============================================================
+  // Map functions should use scheduler to iterate over all blocks
+  // ===============================================================
+
+  void MapVertex(const std::function<void(VertexID)>& vertex_func) {
+    // all blocks should be executor the vertex function
+    ExecuteMessage message;
+    message.execute_type = ExecuteType::kCompute;
+    scheduler_->RunMapVertex(message);
   }
 
- protected:
-  BlockModelApiType type_ = kVertex;
+  void MapEdge(const std::function<void(VertexID, VertexID)>& edge_func) {}
 
-  core::common::TaskRunner* runner_;
+  void MapAndMutateEdge(
+      const std::function<void(VertexID, VertexID, EdgeIndex)>& edge_del_func) {
+  }
+
+  // ===============================================================
+  // Map functions should use scheduler to iterate over all blocks
+  // ===============================================================
+
+ protected:
+  core::common::TaskRunner* exe_runner_ = nullptr;
 
   GraphType* graph_ = nullptr;
+
+  scheduler::PramScheduler* scheduler_ = nullptr;
 
   int round_ = 0;
 
   // configs
-  const uint32_t parallelism_;
+  const uint32_t parallelism_ = 10;
 };
 
 }  // namespace sics::graph::nvme::apis

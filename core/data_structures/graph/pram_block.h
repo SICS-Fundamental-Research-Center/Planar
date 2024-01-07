@@ -105,6 +105,9 @@ class PramBlock : public Serializable {
   }
 
   // TODO: add block methods like sub-graph
+  size_t GetVertexNums() const { return block_metadata_->num_vertices; }
+
+  size_t GetOutEdgeNums() const { return block_metadata_->num_outgoing_edges; }
 
   // log functions for lookup block info
   void LogBlockVertices() const {

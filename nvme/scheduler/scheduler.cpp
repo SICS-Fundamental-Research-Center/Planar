@@ -156,9 +156,9 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
           execute_message.graph_id = group_graphs_.at(0);
           execute_message.graph = group_serializable_graph_.get();
           if (current_round_ == 0) {
-            execute_message.execute_type = ExecuteType::kPEval;
+            execute_message.execute_type = ExecuteType::kCompute;
           } else {
-            execute_message.execute_type = ExecuteType::kIncEval;
+            execute_message.execute_type = ExecuteType::kCompute;
           }
           SetAppRuntimeGraph(group_graphs_.at(0));
           SetAppRound(current_round_);
@@ -170,9 +170,9 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
         execute_message.graph_id = execute_resp.graph_id;
         execute_message.graph = execute_resp.response_serializable;
         if (current_round_ == 0) {
-          execute_message.execute_type = ExecuteType::kPEval;
+          execute_message.execute_type = ExecuteType::kCompute;
         } else {
-          execute_message.execute_type = ExecuteType::kIncEval;
+          execute_message.execute_type = ExecuteType::kCompute;
         }
         SetAppRuntimeGraph(execute_message.graph_id);
         SetAppRound(current_round_);
@@ -181,8 +181,7 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
       }
       break;
     }
-    case ExecuteType::kPEval:
-    case ExecuteType::kIncEval: {
+    case ExecuteType::kCompute: {
       // TODO: decide a subgraph if it stays in memory
       if (group_mode_) {
         for (int i = 0; i < group_num_; i++) {
