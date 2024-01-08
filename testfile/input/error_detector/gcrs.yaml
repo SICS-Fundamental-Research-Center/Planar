@@ -6,20 +6,15 @@ GCRs:
             constant_predicates:
               - attribute_name: movie_genre
                 operator_type: Eq
-                attribute_value: Comedy
-              - attribute_name: movie_year
-                operator_type: Gt
-                attribute_value: 2000
+                attribute_value: Thriller
           - label: Cast
+          - label: Movie
         -
           - label: Movie
             constant_predicates:
               - attribute_name: movie_genre
                 operator_type: Eq
-                attribute_value: Comedy
-              - attribute_name: movie_year
-                operator_type: Gt
-                attribute_value: 2000
+                attribute_value: Thriller
           - label: Cast
       relation_constraints:
         - lhs:
@@ -37,22 +32,18 @@ GCRs:
       pattern_constraints:
         -
           - label: Movie
-            constant_predicates:
-              - attribute_name: movie_rating
-                operator_type: Gt
-                attribute_value: 70
           - label: Director
             constant_predicates:
               - attribute_name: director_name
                 operator_type: Eq
-                attribute_value: James Cameron
+                attribute_value: "'Big' James_Wroblewski"
         -
           - label: Movie
-            constant_predicates:
-              - attribute_name: movie_rating
-                operator_type: Gt
-                attribute_value: 70
           - label: Cast
+            constant_predicates:
+              - attribute_name: cast_name
+                operator_type: Eq
+                attribute_value: "'Aziz_Al-Na'ib"
     gcr_constraints:
       - lhs:
           star_position: left
@@ -93,19 +84,14 @@ GCRs:
         -
           - label: Movie
             constant_predicates:
-              - attribute_name: movie_genre
-                operator_type: Eq
-                attribute_value: Comedy
               - attribute_name: movie_year
                 operator_type: Gt
                 attribute_value: 2000
-          - label: Cast
+          - label: Director
+          - label: Movie
         -
           - label: Movie
             constant_predicates:
-              - attribute_name: movie_genre
-                operator_type: Eq
-                attribute_value: Comedy
               - attribute_name: movie_year
                 operator_type: Gt
                 attribute_value: 2000
@@ -114,21 +100,9 @@ GCRs:
       pattern_constraints:
         -
           - label: Movie
-            constant_predicates:
-              - attribute_name: movie_rating
-                operator_type: Gt
-                attribute_value: 70
-          - label: Director
-            constant_predicates:
-              - attribute_name: director_name
-                operator_type: Eq
-                attribute_value: James Cameron
+          - label: Cast
         -
           - label: Movie
-            constant_predicates:
-              - attribute_name: movie_rating
-                operator_type: Gt
-                attribute_value: 70
           - label: Cast
     gcr_constraints:
       - lhs:
