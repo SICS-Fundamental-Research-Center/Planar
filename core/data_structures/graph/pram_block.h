@@ -109,6 +109,8 @@ class PramBlock : public Serializable {
 
   size_t GetOutEdgeNums() const { return block_metadata_->num_outgoing_edges; }
 
+  void MutateGraphEdge(common::TaskRunner* runner) {}
+
   // log functions for lookup block info
   void LogBlockVertices() const {
     LOGF_INFO("block {} begin {} end {}: ==== ", block_metadata_->bid,

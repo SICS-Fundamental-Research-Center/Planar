@@ -89,6 +89,75 @@ class Executor : public Component {
 
   core::common::TaskRunner* GetTaskRunner() { return &task_runner_; }
 
+  void ParallelVertexDO(
+      Block32* block,
+      const std::function<void(VertexID, VertexIndex)>& vertex_func) {
+    LOG_DEBUG("ParallelVertexDo is begin");
+    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+    core::common::TaskPackage tasks;
+    tasks.reserve(parallelism_ * task_package_factor_);
+    VertexIndex begin_index = 0, end_index = 0;
+    for (; begin_index < block->GetVertexNums();) {
+      end_index += task_size;
+      if (end_index > block->GetVertexNums())
+        end_index = block->GetVertexNums();
+      auto task = [&vertex_func, this, begin_index, end_index]() {
+        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
+          //          vertex_func(block->GetVertexIDByIndex(idx));
+        }
+      };
+      tasks.push_back(task);
+      begin_index = end_index;
+    }
+    //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}", task_size,
+    //              tasks.size());
+    task_runner_.SubmitSync(tasks);
+    // TODO: sync of update_store and graph_ vertex data
+    //    graph->SyncVertexData();
+    LOG_DEBUG("ParallelVertexDo is done");
+  }
+
+  void ParallelEdgeMutateDo(
+      Block32* block,
+      const std::function<void(VertexID, VertexID, EdgeIndex)>& edge_del_func) {
+    LOG_DEBUG("ParallelEdgeDelDo is begin");
+    //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+    uint32_t task_size = block->GetVertexNums();
+    core::common::TaskPackage tasks;
+    VertexIndex begin_index = 0, end_index = 0;
+    for (; begin_index < block->GetVertexNums();) {
+      end_index += task_size;
+      if (end_index > block->GetVertexNums())
+        end_index = block->GetVertexNums();
+      auto task = [&edge_del_func, this, begin_index, end_index]() {
+        for (VertexIndex i = begin_index; i < end_index; i++) {
+          //          auto degree = block->GetOutDegreeByIndex(i);
+          //          if (degree != 0) {
+          //            EdgeIndex outOffset_base =
+          //            block->GetOutOffsetByIndex(i); VertexID* outEdges =
+          //            block->GetOutEdgesByIndex(i); for (VertexIndex j = 0; j
+          //            < degree; j++) {
+          //              edge_del_func(block->GetVertexIDByIndex(i),
+          //              outEdges[j],
+          //                            outOffset_base + j);
+          //            }
+          //          }
+        }
+      };
+      tasks.push_back(task);
+      begin_index = end_index;
+    }
+    task_runner_.SubmitSync(tasks);
+    block->MutateGraphEdge(&task_runner_);
+    LOG_DEBUG("ParallelEdgedelDo is done");
+  }
+
+  size_t GetTaskSize(VertexID max_vid) const {
+    auto task_num = parallelism_ * task_package_factor_;
+    size_t task_size = ceil((double)max_vid / task_num);
+    return task_size < 2 ? 2 : task_size;
+  }
+
  private:
   scheduler::ExecutorQueue* execute_q_;
   scheduler::ResponseQueue* response_q_;
@@ -99,6 +168,10 @@ class Executor : public Component {
   bool in_memory_time_ = false;
   std::chrono::time_point<std::chrono::system_clock> start_time_;
   std::chrono::time_point<std::chrono::system_clock> end_time_;
+
+  // configs
+  const uint32_t parallelism_ = 8;
+  const uint32_t task_package_factor_ = 100000;
 };
 
 }  // namespace sics::graph::nvme::components

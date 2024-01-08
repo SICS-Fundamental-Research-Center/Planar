@@ -79,70 +79,26 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
     return read_data_[vid];
   }
 
-  VertexData ReadWriteBuffer(VertexID vid) {
-    if (vid >= message_count_) {
-      LOG_FATAL("Read out of bound");
-    }
-    return write_data_[vid];
-  }
-
   bool Write(VertexID vid, VertexData vdata_new) {
     if (vid >= message_count_) {
       return false;
     }
-    if (border_vertex_bitmap_.GetBit(vid)) {
-      write_data_[vid] = vdata_new;
-      active_count_++;
-    }
+    write_data_[vid] = vdata_new;
     return true;
-  }
-
-  bool WriteMinBorderVertex(VertexID vid, VertexData vdata_new) {
-    if (vid >= message_count_) {
-      return false;
-    }
-    if (border_vertex_bitmap_.GetBit(vid)) {
-      if (util::atomic::WriteMin(write_data_ + vid, vdata_new)) {
-        active_count_++;
-        return true;
-      }
-    }
-    return false;
   }
 
   bool WriteMin(VertexID id, VertexData new_data) {
     if (id >= message_count_) {
       return false;
     }
-    if (util::atomic::WriteMin(write_data_ + id, new_data)) {
-      active_count_++;
-      return true;
-    }
-    return false;
+    return util::atomic::WriteMin(write_data_ + id, new_data);
   }
 
-  bool WriteMax(VertexID vid, VertexData vdata_new) {
+  bool WriteMax(VertexID vid, VertexData new_data) {
     if (vid >= message_count_) {
       return false;
     }
-    if (border_vertex_bitmap_.GetBit(vid)) {
-      if (util::atomic::WriteMax(write_data_ + vid, vdata_new)) {
-        active_count_++;
-        return true;
-      }
-    }
-    return false;
-  }
-
-  bool WriteMinEdgeCutVertex(VertexID id, VertexData new_data) {
-    if (id >= message_count_) {
-      return false;
-    }
-    if (util::atomic::WriteMin(write_data_ + id, new_data)) {
-      active_count_++;
-      return true;
-    }
-    return false;
+    return util::atomic::WriteMax(write_data_ + vid, new_data);
   }
 
   bool IsActive() override { return active_count_ != 0; }
@@ -156,30 +112,13 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
     }
   }
 
-  bool IsBorderVertex(VertexID vid) {
-    if (vid >= message_count_) {
-      LOG_FATAL("Read out of bound");
-    }
-    return border_vertex_bitmap_.GetBit(vid);
-  }
-
   uint32_t GetMessageCount() { return message_count_; }
-
-  void LogBorderVertexInfo() {
-    LOG_INFO("Border vertex info:");
-    for (size_t i = 0; i < message_count_; i++) {
-      LOGF_INFO("vertex id: {}, is border: {}", i,
-                border_vertex_bitmap_.GetBit(i));
-    }
-  }
 
   void LogGlobalMessage() {
     LOG_INFO("Global message info:");
     for (size_t i = 0; i < message_count_; i++) {
-      if (border_vertex_bitmap_.GetBit(i)) {
-        LOGF_INFO("global message: id({}) -> read: {} write: {}", i,
-                  read_data_[i], write_data_[i]);
-      }
+      LOGF_INFO("global message: id({}) -> read: {} write: {}", i,
+                read_data_[i], write_data_[i]);
     }
   }
 
@@ -206,8 +145,6 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   VertexData* read_data_;
   VertexData* write_data_;
   common::VertexCount message_count_;
-
-  common::Bitmap border_vertex_bitmap_;
 
   size_t active_count_ = 0;
 

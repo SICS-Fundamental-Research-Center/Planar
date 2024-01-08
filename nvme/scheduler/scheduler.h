@@ -88,6 +88,10 @@ class PramScheduler {
 
   void RunMapVertex(ExecuteMessage execute_msg);
 
+  size_t GetGraphEdges() const {
+    graph_metadata_info_.get_num_edges();
+  }
+
  protected:
   virtual bool ReadMessageResponseAndExecute(const ReadMessage& read_resp);
 
