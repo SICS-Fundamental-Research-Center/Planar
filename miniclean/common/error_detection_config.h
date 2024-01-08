@@ -2,6 +2,7 @@
 #define MINICLEAN_COMMON_ERROR_DETECTION_CONFIG_H_
 
 #include <map>
+#include <thread>
 #include <vector>
 
 #include "core/util/logging.h"
@@ -12,9 +13,9 @@ namespace sics::graph::miniclean::common {
 
 class ErrorDetectionConfig {
  private:
-  using MiniCleanGraphMetadata = sics::graph::miniclean::data_structures::graphs::
-      MiniCleanGraphMetadata;
-      
+  using MiniCleanGraphMetadata =
+      sics::graph::miniclean::data_structures::graphs::MiniCleanGraphMetadata;
+
  public:
   ErrorDetectionConfig(const ErrorDetectionConfig&) = delete;
   ErrorDetectionConfig& operator=(const ErrorDetectionConfig&) = delete;
@@ -80,6 +81,10 @@ class ErrorDetectionConfig {
     }
     return attr_name_to_attr_id_.at(attr_name);
   }
+
+ public:
+  inline static unsigned int path_indexing_parallelism_ =
+      std::thread::hardware_concurrency();
 
  private:
   ErrorDetectionConfig() = default;

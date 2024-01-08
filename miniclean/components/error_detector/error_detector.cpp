@@ -2,8 +2,6 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <vector>
-
 namespace sics::graph::miniclean::components::error_detector {
 
 void ErrorDetector::InitGCRSet() {
@@ -38,6 +36,129 @@ void ErrorDetector::InitGCRSet() {
       gcr_path_pattern_collections_[i].right_path_pattern_ids.push_back(
           right_path_id);
     }
+  }
+}
+
+void ErrorDetector::BuildPathIndexForVertices() {
+  TaskPackage task_package;
+  task_package.reserve(parallelism_);
+  vid_to_path_pattern_id_.resize(graph_->GetNumVertices());
+  for (unsigned int i = 0; i < parallelism_; i++) {
+    auto task = std::bind([this, i]() {
+      for (VertexID j = i; j < graph_->GetNumVertices(); j += parallelism_) {
+        std::vector<size_t> path_pattern_ids;
+        for (size_t k = 0; k < attributed_path_patterns_.size(); k++) {
+          if (MatchPathForVertex(j, 0, attributed_path_patterns_[k])) {
+            path_pattern_ids.push_back(k);
+          }
+        }
+        {
+          std::lock_guard<std::mutex> lock(path_indexing_mtx_);
+          vid_to_path_pattern_id_[j] = path_pattern_ids;
+        }
+      }
+    });
+    task_package.push_back(task);
+  }
+  thread_pool_.SubmitSync(task_package);
+  task_package.clear();
+}
+
+bool ErrorDetector::MatchPathForVertex(
+    VertexID local_vid, size_t match_position,
+    const std::vector<AttributedVertex>& attributed_path) {
+  if (match_position == attributed_path.size()) return true;
+  // Check the labels.
+  if (graph_->GetVertexLabel(local_vid) !=
+      attributed_path.at(match_position).label_id)
+    return false;
+  // Check the attributes.
+  for (size_t i = 0;
+       i < attributed_path.at(match_position).attribute_ids.size(); i++) {
+    std::string current_str_val((char*)graph_->GetVertexAttributePtr(
+        local_vid, attributed_path.at(match_position).attribute_ids[i]));
+    std::string pattern_str_val =
+        attributed_path.at(match_position).attribute_values[i];
+    VertexAttributeType vattr_type =
+        graph_->GetVertexAttributeTypeByAttributeID(
+            attributed_path.at(match_position).attribute_ids[i]);
+    OpType op_type = attributed_path.at(match_position).op_types[i];
+    if (!IsPredicateSatisfied(vattr_type, op_type, current_str_val,
+                              pattern_str_val)) {
+      return false;
+    }
+  }
+  // Check the next vertex.
+  VertexID* next_local_vids = graph_->GetOutgoingLocalVIDsByLocalID(local_vid);
+  for (size_t i = 0; i < graph_->GetOutDegreeByLocalID(local_vid); i++) {
+    if (MatchPathForVertex(next_local_vids[i], match_position + 1,
+                           attributed_path)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ErrorDetector::IsPredicateSatisfied(VertexAttributeType vattr_type,
+                                         OpType op_type, const std::string& rhs,
+                                         const std::string& lhs) {
+  switch (vattr_type) {
+    case sics::graph::miniclean::data_structures::graphs::kUInt8: {
+      switch (op_type) {
+        case sics::graph::miniclean::data_structures::gcr::kEq:
+          return std::stoi(lhs) == std::stoi(rhs);
+        case sics::graph::miniclean::data_structures::gcr::kGt:
+          return std::stoi(lhs) > std::stoi(rhs);
+        default:
+          LOGF_FATAL("Unsupported op type: {}", op_type);
+          break;
+      }
+    }
+    case sics::graph::miniclean::data_structures::graphs::kUInt16: {
+      switch (op_type) {
+        case sics::graph::miniclean::data_structures::gcr::kEq:
+          return std::stoi(lhs) == std::stoi(rhs);
+        case sics::graph::miniclean::data_structures::gcr::kGt:
+          return std::stoi(lhs) > std::stoi(rhs);
+        default:
+          LOGF_FATAL("Unsupported op type: {}", op_type);
+          break;
+      }
+    }
+    case sics::graph::miniclean::data_structures::graphs::kUInt32: {
+      switch (op_type) {
+        case sics::graph::miniclean::data_structures::gcr::kEq:
+          return std::stol(lhs) == std::stol(rhs);
+        case sics::graph::miniclean::data_structures::gcr::kGt:
+          return std::stol(lhs) > std::stol(rhs);
+        default:
+          LOGF_FATAL("Unsupported op type: {}", op_type);
+          break;
+      }
+    }
+    case sics::graph::miniclean::data_structures::graphs::kUInt64: {
+      switch (op_type) {
+        case sics::graph::miniclean::data_structures::gcr::kEq:
+          return std::stoull(lhs) == std::stoull(rhs);
+        case sics::graph::miniclean::data_structures::gcr::kGt:
+          return std::stoull(lhs) > std::stoull(rhs);
+        default:
+          LOGF_FATAL("Unsupported op type: {}", op_type);
+          break;
+      }
+    }
+    case sics::graph::miniclean::data_structures::graphs::kString: {
+      switch (op_type) {
+        case sics::graph::miniclean::data_structures::gcr::kEq:
+          return lhs == rhs;
+        default:
+          LOGF_FATAL("Unsupported op type: {}", op_type);
+          break;
+      }
+    }
+    default:
+      LOGF_FATAL("Unsupported vertex attribute type: {}", vattr_type);
+      break;
   }
 }
 
