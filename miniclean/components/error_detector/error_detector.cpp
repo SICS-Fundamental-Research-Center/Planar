@@ -23,18 +23,20 @@ void ErrorDetector::InitGCRSet() {
     // Decompose the left pattern.
     for (size_t j = 0; j < left_pattern_constraints.size(); j++) {
       size_t left_path_id = GetAttributedPathID(left_pattern_constraints[j]);
-      if (left_path_id == attributed_paths_.size()) {
-        attributed_paths_.push_back(left_pattern_constraints[j]);
+      if (left_path_id == attributed_path_patterns_.size()) {
+        attributed_path_patterns_.push_back(left_pattern_constraints[j]);
       }
-      gcr_path_pattern_collections_[i].left_path_pattern_ids.push_back(left_path_id);
+      gcr_path_pattern_collections_[i].left_path_pattern_ids.push_back(
+          left_path_id);
     }
     // Decompose the right pattern.
     for (size_t j = 0; j < right_pattern_constraints.size(); j++) {
       size_t right_path_id = GetAttributedPathID(right_pattern_constraints[j]);
-      if (right_path_id == attributed_paths_.size()) {
-        attributed_paths_.push_back(right_pattern_constraints[j]);
+      if (right_path_id == attributed_path_patterns_.size()) {
+        attributed_path_patterns_.push_back(right_pattern_constraints[j]);
       }
-      gcr_path_pattern_collections_[i].right_path_pattern_ids.push_back(right_path_id);
+      gcr_path_pattern_collections_[i].right_path_pattern_ids.push_back(
+          right_path_id);
     }
   }
 }
@@ -42,25 +44,26 @@ void ErrorDetector::InitGCRSet() {
 size_t ErrorDetector::GetAttributedPathID(
     std::vector<AttributedVertex> attributed_path) {
   bool has_matched = false;
-  for (size_t i = 0; i < attributed_paths_.size(); i++) {
+  for (size_t i = 0; i < attributed_path_patterns_.size(); i++) {
     has_matched = true;
     // Check the path length.
-    if (attributed_paths_[i].size() != attributed_path.size()) continue;
-    for (size_t j = 0; j < attributed_paths_[i].size(); j++) {
+    if (attributed_path_patterns_[i].size() != attributed_path.size()) continue;
+    for (size_t j = 0; j < attributed_path_patterns_[i].size(); j++) {
       // Check the label ID.
-      if (attributed_paths_[i][j].label_id != attributed_path[j].label_id) {
+      if (attributed_path_patterns_[i][j].label_id !=
+          attributed_path[j].label_id) {
         has_matched = false;
         break;
       }
       // Check the attribute IDs.
-      if (attributed_paths_[i][j].attribute_ids.size() !=
+      if (attributed_path_patterns_[i][j].attribute_ids.size() !=
           attributed_path[j].attribute_ids.size()) {
         has_matched = false;
         break;
       }
-      for (size_t k = 0; k < attributed_paths_[i][j].attribute_ids.size();
-           k++) {
-        if (attributed_paths_[i][j].attribute_ids[k] !=
+      for (size_t k = 0;
+           k < attributed_path_patterns_[i][j].attribute_ids.size(); k++) {
+        if (attributed_path_patterns_[i][j].attribute_ids[k] !=
             attributed_path[j].attribute_ids[k]) {
           has_matched = false;
           break;
@@ -68,9 +71,9 @@ size_t ErrorDetector::GetAttributedPathID(
       }
       if (!has_matched) break;
       // Check the attribute values.
-      for (size_t k = 0; k < attributed_paths_[i][j].attribute_values.size();
-           k++) {
-        if (attributed_paths_[i][j].attribute_values[k] !=
+      for (size_t k = 0;
+           k < attributed_path_patterns_[i][j].attribute_values.size(); k++) {
+        if (attributed_path_patterns_[i][j].attribute_values[k] !=
             attributed_path[j].attribute_values[k]) {
           has_matched = false;
           break;
@@ -78,8 +81,9 @@ size_t ErrorDetector::GetAttributedPathID(
       }
       if (!has_matched) break;
       // Check the op types.
-      for (size_t k = 0; k < attributed_paths_[i][j].op_types.size(); k++) {
-        if (attributed_paths_[i][j].op_types[k] !=
+      for (size_t k = 0; k < attributed_path_patterns_[i][j].op_types.size();
+           k++) {
+        if (attributed_path_patterns_[i][j].op_types[k] !=
             attributed_path[j].op_types[k]) {
           has_matched = false;
           break;
@@ -91,7 +95,7 @@ size_t ErrorDetector::GetAttributedPathID(
   }
   // If no match is found, then add the path to the attributed paths.
   // The new ID of the path is the size of the attributed paths.
-  return attributed_paths_.size();
+  return attributed_path_patterns_.size();
 }
 
 }  // namespace sics::graph::miniclean::components::error_detector

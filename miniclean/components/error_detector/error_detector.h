@@ -94,7 +94,7 @@ class ErrorDetector {
   Graph* GetGraph() { return graph_; }
   const std::vector<GCR>& GetGCRs() const { return gcrs_; }
   const std::vector<std::vector<AttributedVertex>>& GetAttributedPaths() const {
-    return attributed_paths_;
+    return attributed_path_patterns_;
   }
   const std::vector<GCRPathCollection>& GetGcrPathCollections() const {
     return gcr_path_pattern_collections_;
@@ -112,7 +112,7 @@ class ErrorDetector {
 
   const std::string gcr_path_;
   std::vector<GCR> gcrs_;
-  std::vector<std::vector<AttributedVertex>> attributed_paths_;
+  std::vector<std::vector<AttributedVertex>> attributed_path_patterns_;
   std::vector<GCRPathCollection> gcr_path_pattern_collections_;
   std::vector<std::vector<size_t>> vid_to_path_pattern_id_;
   std::vector<VertexID> active_vids_;
