@@ -14,7 +14,7 @@ void ErrorDetector::InitGCRSet() {
     LOG_FATAL("gcrs.yaml file read failed! ", e.msg);
   }
   gcrs_ = gcrs_node["GCRs"].as<std::vector<GCR>>();
-  gcr_index_.resize(gcrs_.size());
+  gcr_path_collections_.resize(gcrs_.size());
   for (size_t i = 0; i < gcrs_.size(); i++) {
     const auto& left_pattern_constraints =
         gcrs_[i].get_left_pattern_constraints();
@@ -26,7 +26,7 @@ void ErrorDetector::InitGCRSet() {
       if (left_path_id == attributed_paths_.size()) {
         attributed_paths_.push_back(left_pattern_constraints[j]);
       }
-      gcr_index_[i].left_path_ids.push_back(left_path_id);
+      gcr_path_collections_[i].left_path_ids.push_back(left_path_id);
     }
     // Decompose the right pattern.
     for (size_t j = 0; j < right_pattern_constraints.size(); j++) {
@@ -34,7 +34,7 @@ void ErrorDetector::InitGCRSet() {
       if (right_path_id == attributed_paths_.size()) {
         attributed_paths_.push_back(right_pattern_constraints[j]);
       }
-      gcr_index_[i].right_path_ids.push_back(right_path_id);
+      gcr_path_collections_[i].right_path_ids.push_back(right_path_id);
     }
   }
 }

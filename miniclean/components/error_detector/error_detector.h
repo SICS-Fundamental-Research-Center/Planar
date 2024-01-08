@@ -10,7 +10,7 @@
 
 namespace sics::graph::miniclean::components::error_detector {
 
-struct GCRIndex {
+struct GCRPathCollection {
   std::vector<size_t> left_path_ids;
   std::vector<size_t> right_path_ids;
 };
@@ -96,7 +96,9 @@ class ErrorDetector {
   const std::vector<std::vector<AttributedVertex>>& GetAttributedPaths() const {
     return attributed_paths_;
   }
-  const std::vector<GCRIndex>& GetGcrIndex() const { return gcr_index_; }
+  const std::vector<GCRPathCollection>& GetGcrPathCollections() const {
+    return gcr_path_collections_;
+  }
   const std::vector<std::vector<size_t>>& GetVidToPathId() const {
     return vid_to_path_id_;
   }
@@ -107,11 +109,11 @@ class ErrorDetector {
   size_t GetAttributedPathID(std::vector<AttributedVertex> attributed_path);
 
   Graph* graph_;
-  
+
   const std::string gcr_path_;
   std::vector<GCR> gcrs_;
   std::vector<std::vector<AttributedVertex>> attributed_paths_;
-  std::vector<GCRIndex> gcr_index_;
+  std::vector<GCRPathCollection> gcr_path_collections_;
   std::vector<std::vector<size_t>> vid_to_path_id_;
   std::vector<VertexID> active_vids_;
 };
