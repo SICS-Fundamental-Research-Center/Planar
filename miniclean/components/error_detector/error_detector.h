@@ -3,16 +3,20 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
+#include "core/common/multithreading/task.h"
+#include "core/common/multithreading/thread_pool.h"
+#include "miniclean/common/error_detection_config.h"
 #include "miniclean/common/types.h"
 #include "miniclean/data_structures/gcr/light_gcr.h"
 #include "miniclean/data_structures/graphs/miniclean_graph.h"
 
 namespace sics::graph::miniclean::components::error_detector {
 
-struct GCRIndex {
-  std::vector<size_t> left_path_ids;
-  std::vector<size_t> right_path_ids;
+struct GCRPathCollection {
+  std::vector<size_t> left_path_pattern_ids;
+  std::vector<size_t> right_path_pattern_ids;
 };
 
 // Partial match.
@@ -47,9 +51,19 @@ class ErrorDetector {
   using AttributedVertex =
       sics::graph::miniclean::data_structures::gcr::AttributedVertex;
   using VertexID = sics::graph::miniclean::common::VertexID;
+  using VertexAttributeID = sics::graph::miniclean::common::VertexAttributeID;
+  using VertexAttributeType =
+      sics::graph::miniclean::data_structures::graphs::VertexAttributeType;
+  using OpType = sics::graph::miniclean::data_structures::gcr::OpType;
+  using Config = sics::graph::miniclean::common::ErrorDetectionConfig;
+  using TaskPackage = sics::graph::core::common::TaskPackage;
+  using ThreadPool = sics::graph::core::common::ThreadPool;
 
  public:
-  explicit ErrorDetector(const std::string& gcr_path) : gcr_path_(gcr_path) {}
+  explicit ErrorDetector(const std::string& gcr_path)
+      : gcr_path_(gcr_path),
+        parallelism_(Config::Get()->path_indexing_parallelism_),
+        thread_pool_(Config::Get()->path_indexing_parallelism_) {}
 
   // Load GCR set decompose it to path patterns.
   //
@@ -94,11 +108,13 @@ class ErrorDetector {
   Graph* GetGraph() { return graph_; }
   const std::vector<GCR>& GetGCRs() const { return gcrs_; }
   const std::vector<std::vector<AttributedVertex>>& GetAttributedPaths() const {
-    return attributed_paths_;
+    return attributed_path_patterns_;
   }
-  const std::vector<GCRIndex>& GetGcrIndex() const { return gcr_index_; }
+  const std::vector<GCRPathCollection>& GetGcrPathCollections() const {
+    return gcr_path_pattern_collections_;
+  }
   const std::vector<std::vector<size_t>>& GetVidToPathId() const {
-    return vid_to_path_id_;
+    return vid_to_path_pattern_id_;
   }
   const std::vector<VertexID>& GetActiveVids() const { return active_vids_; }
 
@@ -106,14 +122,24 @@ class ErrorDetector {
   // Determine whether a path has existed in `attributed_paths_`.
   size_t GetAttributedPathID(std::vector<AttributedVertex> attributed_path);
 
+  bool MatchPathForVertex(VertexID local_vid, size_t match_position,
+                          const std::vector<AttributedVertex>& attributed_path);
+
+  bool IsPredicateSatisfied(VertexAttributeType vattr_type, OpType op_type,
+                            const std::string& rhs, const std::string& lhs);
+
   Graph* graph_;
-  
+
   const std::string gcr_path_;
   std::vector<GCR> gcrs_;
-  std::vector<std::vector<AttributedVertex>> attributed_paths_;
-  std::vector<GCRIndex> gcr_index_;
-  std::vector<std::vector<size_t>> vid_to_path_id_;
+  std::vector<std::vector<AttributedVertex>> attributed_path_patterns_;
+  std::vector<GCRPathCollection> gcr_path_pattern_collections_;
+  std::vector<std::vector<size_t>> vid_to_path_pattern_id_;
   std::vector<VertexID> active_vids_;
+
+  ThreadPool thread_pool_;
+  unsigned int parallelism_;
+  std::mutex path_indexing_mtx_;
 };
 
 }  // namespace sics::graph::miniclean::components::error_detector

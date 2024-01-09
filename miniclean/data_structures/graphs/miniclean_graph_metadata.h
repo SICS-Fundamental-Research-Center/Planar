@@ -56,6 +56,7 @@ struct MiniCleanGraphMetadata {
   VertexID min_global_vid;
   VertexID num_border_vertices;
   GraphID num_subgraphs;
+  // TODO: local_vid -> global_vid
   std::vector<std::pair<VertexID, VertexID>> vlabel_id_to_local_vid_range;
   std::vector<std::string> label_id_to_label_name;
   std::vector<std::string> attr_id_to_attr_name;

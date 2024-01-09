@@ -97,6 +97,21 @@ class MiniCleanGraph : public sics::graph::core::data_structures::Serializable {
     return outdegree_base_pointer_[local_vid];
   }
 
+  VertexAttributeType GetVertexAttributeTypeByAttributeID(
+      VertexAttributeID vattr_id) const {
+    return vattr_types_[vattr_id];
+  }
+
+  VertexID* GetIncomingLocalVIDsByLocalID(VertexID local_vid) const {
+    return incoming_local_vid_base_pointer_ +
+           in_offset_base_pointer_[local_vid];
+  }
+
+  VertexID* GetOutgoingLocalVIDsByLocalID(VertexID local_vid) const {
+    return outgoing_local_vid_base_pointer_ +
+           out_offset_base_pointer_[local_vid];
+  }
+
  private:
   void ParseSubgraphCSR(const OwnedBuffer& buffer);
   void ParseBitmapHandle(const OwnedBuffer& buffer);

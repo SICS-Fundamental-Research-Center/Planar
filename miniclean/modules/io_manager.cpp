@@ -35,7 +35,7 @@ void IOManager::SetSubgraphState(const GraphID gid,
         LOGF_FATAL(
             "Cannot set a non-serialized graph {} with state {} to the state: "
             "kOnDisk!",
-            gid, state);
+            gid, int(state));
       }
       break;
     case kReading:
@@ -43,7 +43,7 @@ void IOManager::SetSubgraphState(const GraphID gid,
         LOGF_FATAL(
             "Cannot set a non-on-disk graph {} with state {} to the state: "
             "kReading!",
-            gid, state);
+            gid, int(state));
       }
       break;
     case kSerialized:
@@ -52,7 +52,7 @@ void IOManager::SetSubgraphState(const GraphID gid,
         LOGF_FATAL(
             "Cannot set a non-reading or non-computed graph {} with state {} "
             "to the state: kSerialized!",
-            gid, state);
+            gid, int(state));
       }
       break;
     case kDeserialized:
@@ -60,7 +60,7 @@ void IOManager::SetSubgraphState(const GraphID gid,
         LOGF_FATAL(
             "Cannot set a non-serialized graph {} with state {} to the state: "
             "kDeserialized!",
-            gid, state);
+            gid, int(state));
       }
       break;
     case kComputed:
@@ -68,7 +68,7 @@ void IOManager::SetSubgraphState(const GraphID gid,
         LOGF_FATAL(
             "Cannot set a non-deserialized graph {} with state {} to the "
             "state: kComputed!",
-            gid, state);
+            gid, int(state));
       }
       break;
   }
@@ -82,7 +82,7 @@ SerializedGraph* IOManager::NewSerializedSubgraph(const GraphID gid) {
         "Cannot new serialized object for graph {} with state {}. Make sure "
         "that the graph should on the disk and the serialized graph should be "
         "reset to nullptr!",
-        gid, subgraph_state_.at(gid));
+        gid, int(subgraph_state_.at(gid)));
   }
   serialized_graphs_.at(gid) = std::make_unique<SerializedGraph>();
   return serialized_graphs_.at(gid).get();
@@ -94,7 +94,7 @@ Graph* IOManager::NewSubgraph(const GraphID gid) {
         "Cannot new graph object for graph {} with state {}. Make sure "
         "that the graph should on the disk and the serialized graph should be "
         "reset to nullptr!",
-        gid, subgraph_state_.at(gid));
+        gid, int(subgraph_state_.at(gid)));
   }
   graphs_.at(gid) = std::make_unique<Graph>(graph_metadata_.subgraphs.at(gid),
                                             graph_metadata_.num_vertices);
