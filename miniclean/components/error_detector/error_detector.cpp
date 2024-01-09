@@ -44,7 +44,7 @@ void ErrorDetector::BuildPathIndexForVertices() {
   task_package.reserve(parallelism_);
   vid_to_path_pattern_id_.resize(graph_->GetNumVertices());
   for (unsigned int i = 0; i < parallelism_; i++) {
-    auto task = std::bind([this, i]() {
+    auto task = [this, i]() {
       for (VertexID j = i; j < graph_->GetNumVertices(); j += parallelism_) {
         std::vector<size_t> path_pattern_ids;
         for (size_t k = 0; k < attributed_path_patterns_.size(); k++) {
@@ -57,7 +57,7 @@ void ErrorDetector::BuildPathIndexForVertices() {
           vid_to_path_pattern_id_[j] = path_pattern_ids;
         }
       }
-    });
+    };
     task_package.push_back(task);
   }
   thread_pool_.SubmitSync(task_package);
