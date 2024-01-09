@@ -11,6 +11,11 @@
 #include "core/data_structures/serializable.h"
 #include "core/util/logging.h"
 #include "nvme/apis/block_api_base.h"
+#include "nvme/components/discharge.h"
+#include "nvme/components/executor.h"
+#include "nvme/components/loader.h"
+#include "nvme/io/pram_block_reader.h"
+#include "nvme/io/pram_block_writer.h"
 #include "nvme/scheduler/message_hub.h"
 #include "nvme/scheduler/scheduler.h"
 #include "nvme/update_stores/nvme_update_store.h"
@@ -33,7 +38,18 @@ class BlockModel : public BlockModelBase {
   using ExecuteType = sics::graph::nvme::scheduler::ExecuteType;
 
  public:
-  BlockModel() {}
+  BlockModel() = default;
+  BlockModel(const std::string& root_path) {
+    scheduler_ = std::make_unique<scheduler::PramScheduler>(root_path);
+    update_store_ = std::make_unique<update_stores::BspUpdateStoreUInt32>(
+        scheduler_->GetVertexNumber());
+    loader_ = std::make_unique<components::Loader<io::PramBlockReader>>(
+        root_path, scheduler_->GetMessageHub());
+    discharge_ = std::make_unique<components::Discharger<io::PramBlockWriter>>(
+        root_path, scheduler_->GetMessageHub());
+    executor_ =
+        std::make_unique<components::Executor>(scheduler_->GetMessageHub());
+  }
 
   ~BlockModel() override = default;
 
@@ -46,11 +62,12 @@ class BlockModel : public BlockModelBase {
     // for different blocks, init different data
   }
 
-  void MapVertex(const std::function<void(VertexID)>& vertex_func) {
+  void MapVertex(std::function<void(VertexID)>* vertex_func) {
     // all blocks should be executor the vertex function
     ExecuteMessage message;
     message.execute_type = ExecuteType::kCompute;
-    scheduler_->RunMapVertex(message);
+    message.func_vertex = vertex_func;
+    scheduler_->RunMapExecute(message);
   }
 
   void MapEdge(const std::function<void(VertexID, VertexID)>& edge_func) {}
@@ -59,6 +76,26 @@ class BlockModel : public BlockModelBase {
       const std::function<void(VertexID, VertexID, EdgeIndex)>& edge_del_func) {
   }
 
+  void Run() {
+    LOG_INFO("Start running");
+    auto start_time = std::chrono::system_clock::now();
+    loader_->Start();
+    discharge_->Start();
+    executor_->Start();
+    scheduler_->Start();
+
+    scheduler_->Stop();
+    Stop();
+    auto end_time = std::chrono::system_clock::now();
+    LOGF_INFO(" =========== Hole Runtime: {} s ===========",
+              std::chrono::duration<double>(end_time - start_time).count());
+  }
+
+  void Stop() {
+    loader_->StopAndJoin();
+    discharge_->StopAndJoin();
+    executor_->StopAndJoin();
+  }
   // ===============================================================
   // Map functions should use scheduler to iterate over all blocks
   // ===============================================================
@@ -78,9 +115,11 @@ class BlockModel : public BlockModelBase {
   core::common::TaskRunner* exe_runner_ = nullptr;
 
   // all blocks are stored in the GraphState of scheduler
-  scheduler::PramScheduler* scheduler_ = nullptr;
-
-  update_stores::BspUpdateStoreUInt32* update_store_ = nullptr;
+  std::unique_ptr<scheduler::PramScheduler> scheduler_;
+  std::unique_ptr<components::Loader<io::PramBlockReader>> loader_;
+  std::unique_ptr<components::Discharger<io::PramBlockWriter>> discharge_;
+  std::unique_ptr<components::Executor> executor_;
+  std::unique_ptr<update_stores::BspUpdateStoreUInt32> update_store_;
 
   int round_ = 0;
 

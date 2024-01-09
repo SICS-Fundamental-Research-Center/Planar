@@ -5,11 +5,10 @@
 #include <thread>
 #include <type_traits>
 
-#include "core/components/component.h"
-#include "core/io/reader_writer.h"
-#include "core/scheduler/message_hub.h"
 #include "core/util/logging.h"
 #include "nvme/components/component.h"
+#include "nvme/io/reader_writer.h"
+#include "nvme/scheduler/message_hub.h"
 
 namespace sics::graph::nvme::components {
 
@@ -18,11 +17,11 @@ namespace sics::graph::nvme::components {
 template <typename WriterType>
 class Discharger : public Component {
  protected:
-  static_assert(std::is_base_of<core::io::Writer, WriterType>::value,
+  static_assert(std::is_base_of<io::Writer, WriterType>::value,
                 "WriterType must be a subclass of Writer");
 
  public:
-  Discharger(const std::string& root_path, core::scheduler::MessageHub* hub)
+  Discharger(const std::string& root_path, scheduler::MessageHub* hub)
       : writer_(root_path),
         writer_q_(hub->get_writer_queue()),
         response_q_(hub->get_response_queue()) {}
@@ -32,7 +31,7 @@ class Discharger : public Component {
   void Start() override {
     thread_ = std::make_unique<std::thread>([this]() {
       while (true) {
-        core::scheduler::WriteMessage message = writer_q_->PopOrWait();
+        scheduler::WriteMessage message = writer_q_->PopOrWait();
         if (message.terminated) {
           LOG_INFO("*** Discharger is signaled termination ***");
           break;
@@ -41,13 +40,13 @@ class Discharger : public Component {
         LOGF_INFO("Discharger starts writing subgraph {}", message.graph_id);
         writer_.Write(&message);
         LOGF_INFO("Discharger completes writing subgraph {}", message.graph_id);
-        response_q_->Push(core::scheduler::Message(message));
+        response_q_->Push(scheduler::Message(message));
       }
     });
   }
 
   void StopAndJoin() override {
-    core::scheduler::WriteMessage message;
+    scheduler::WriteMessage message;
     message.terminated = true;
     writer_q_->Push(message);
     thread_->join();
@@ -56,8 +55,8 @@ class Discharger : public Component {
  private:
   WriterType writer_;
 
-  core::scheduler::WriterQueue* writer_q_;
-  core::scheduler::ResponseQueue* response_q_;
+  scheduler::WriterQueue* writer_q_;
+  scheduler::ResponseQueue* response_q_;
 
   std::unique_ptr<std::thread> thread_;
 };

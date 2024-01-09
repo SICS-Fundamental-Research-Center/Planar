@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
   // wcc nvme specific configurations
   core::common::Configurations::GetMutable()->is_block_mode = true;
 
-  WCCNvmeApp app;
+  WCCNvmeApp app(FLAGS_i);
   app.Compute();
   return 0;
 }

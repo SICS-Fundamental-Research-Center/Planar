@@ -4,9 +4,9 @@
 #include <memory>
 #include <thread>
 
-#include "core/io/reader_writer.h"
-#include "core/scheduler/message_hub.h"
 #include "nvme/components/component.h"
+#include "nvme/io/reader_writer.h"
+#include "nvme/scheduler/message_hub.h"
 
 namespace sics::graph::nvme::components {
 
@@ -15,11 +15,11 @@ namespace sics::graph::nvme::components {
 template <typename ReaderType>
 class Loader : public Component {
  protected:
-  static_assert(std::is_base_of<core::io::Reader, ReaderType>::value,
+  static_assert(std::is_base_of<io::Reader, ReaderType>::value,
                 "ReaderType must be a subclass of Reader");
 
  public:
-  Loader(const std::string& root_path, core::scheduler::MessageHub* hub)
+  explicit Loader(const std::string& root_path, scheduler::MessageHub* hub)
       : reader_(root_path),
         reader_q_(hub->get_reader_queue()),
         response_q_(hub->get_response_queue()) {}
@@ -29,7 +29,7 @@ class Loader : public Component {
   void Start() override {
     thread_ = std::make_unique<std::thread>([this]() {
       while (true) {
-        core::scheduler::ReadMessage message = reader_q_->PopOrWait();
+        scheduler::ReadMessage message = reader_q_->PopOrWait();
         if (message.terminated) {
           LOGF_INFO("Read size all: {}", reader_.SizeOfReadNow());
           LOG_INFO("*** Loader is signaled termination ***");
@@ -39,13 +39,13 @@ class Loader : public Component {
         LOGF_INFO("Loader starts reading subgraph {}", message.graph_id);
         reader_.Read(&message);
         LOGF_INFO("Loader completes reading subgraph {}", message.graph_id);
-        response_q_->Push(core::scheduler::Message(message));
+        response_q_->Push(scheduler::Message(message));
       }
     });
   }
 
   void StopAndJoin() override {
-    core::scheduler::ReadMessage message;
+    scheduler::ReadMessage message;
     message.terminated = true;
     reader_q_->Push(message);
     thread_->join();
@@ -56,8 +56,8 @@ class Loader : public Component {
  private:
   ReaderType reader_;
 
-  core::scheduler::ReaderQueue* reader_q_;
-  core::scheduler::ResponseQueue* response_q_;
+  scheduler::ReaderQueue* reader_q_;
+  scheduler::ResponseQueue* response_q_;
 
   std::unique_ptr<std::thread> thread_;
 };

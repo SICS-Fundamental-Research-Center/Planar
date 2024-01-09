@@ -62,6 +62,12 @@ class Executor : public Component {
             message.app->PEval();
             if (in_memory_time_) end_time_ = std::chrono::system_clock::now();
             break;
+          case scheduler::ExecuteType::kMapVertex:
+            break;
+          case scheduler::ExecuteType::kMapEdge:
+            break;
+          case scheduler::ExecuteType::kMapEdgeAndMutate:
+            break;
           case scheduler::ExecuteType::kSerialize:
             LOGF_INFO("Executor: Serialized block {}", message.graph_id);
             // Set serialized graph to message for write back to disk.

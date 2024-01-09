@@ -4,21 +4,17 @@
 #include <cstdlib>
 #include <random>
 
-#include "core/apis/pie.h"
-#include "core/apis/planar_app_base.h"
-#include "core/apis/planar_app_group_base.h"
 #include "core/common/config.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/common/types.h"
-#include "core/data_structures/graph/mutable_csr_graph.h"
-#include "core/data_structures/graph/mutable_group_csr_grah.h"
 #include "core/data_structures/graph/pram_block.h"
 #include "core/data_structures/graph_metadata.h"
 #include "core/data_structures/serializable.h"
-#include "core/io/mutable_csr_reader.h"
-#include "core/update_stores/update_store_base.h"
+#include "core/data_structures/serialized.h"
+#include "nvme/io/pram_block_reader.h"
 #include "nvme/scheduler/graph_state.h"
 #include "nvme/scheduler/message_hub.h"
+#include "nvme/update_stores/nvme_update_store.h"
 
 namespace sics::graph::nvme::scheduler {
 
@@ -33,12 +29,6 @@ class PramScheduler {
   using ExecuteType = sics::graph::nvme::scheduler::ExecuteType;
   using GraphState = sics::graph::nvme::scheduler::GraphState;
 
-  using MutableCSRGraphUInt32 = data_structures::graph::MutableCSRGraphUInt32;
-  using MutableCSRGraphUInt16 = data_structures::graph::MutableCSRGraphUInt16;
-  using MutableGroupCSRGraphUInt32 =
-      data_structures::graph::MutableGroupCSRGraphUInt32;
-  using MutableGroupCSRGraphUInt16 =
-      data_structures::graph::MutableGroupCSRGraphUInt16;
   using BlockCSRGraphUInt32 = data_structures::graph::BlockCSRGraphUInt32;
   using BlockCSRGraphUInt16 = data_structures::graph::BlockCSRGraphUInt16;
 
@@ -64,12 +54,11 @@ class PramScheduler {
 
   virtual ~PramScheduler() = default;
 
-  void Init(update_stores::UpdateStoreBase* update_store,
-            common::TaskRunner* task_runner, apis::PIE* app,
-            io::MutableCSRReader* loader) {
+  void Init(update_stores::BspUpdateStoreUInt32* update_store,
+            common::TaskRunner* task_runner, io::PramBlockReader* loader) {
     update_store_ = update_store;
     executor_task_runner_ = task_runner;
-    app_ = app;
+    //    app_ = app;
     loader_ = loader;
   }
 
@@ -86,11 +75,9 @@ class PramScheduler {
     return graph_metadata_info_.get_num_vertices();
   }
 
-  void RunMapVertex(ExecuteMessage execute_msg);
+  void RunMapExecute(ExecuteMessage execute_msg);
 
-  size_t GetGraphEdges() const {
-    graph_metadata_info_.get_num_edges();
-  }
+  size_t GetGraphEdges() const { graph_metadata_info_.get_num_edges(); }
 
  protected:
   virtual bool ReadMessageResponseAndExecute(const ReadMessage& read_resp);
@@ -109,9 +96,6 @@ class PramScheduler {
 
   void CreateSerializableGraph(common::GraphID graph_id);
   data_structures::Serialized* CreateSerialized(common::GraphID graph_id);
-  void CreateGroupSerializableGraph();
-
-  void InitGroupSerializableGraph();
 
   common::GraphID GetNextReadGraphInCurrentRound() const;
 
@@ -146,12 +130,11 @@ class PramScheduler {
   MessageHub message_hub_;
 
   // ExecuteMessage info, used for setting APP context
-  update_stores::UpdateStoreBase* update_store_;
+  update_stores::BspUpdateStoreUInt32* update_store_;
   common::TaskRunner* executor_task_runner_;
-  apis::PIE* app_;
 
   // Loader
-  io::MutableCSRReader* loader_ = nullptr;
+  io::PramBlockReader* loader_ = nullptr;
 
   // mark if the executor is running
   bool is_executor_running_ = false;

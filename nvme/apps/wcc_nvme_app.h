@@ -18,6 +18,7 @@ class WCCNvmeApp : public apis::BlockModel {
   using VertexData = typename BlockGraph ::VertexData;
   using EdgeData = typename BlockGraph ::EdgeData;
   WCCNvmeApp() = default;
+  WCCNvmeApp(const std::string& root_path) : BlockModel(root_path) {}
   ~WCCNvmeApp() override = default;
 
   // actually, this is no use.
@@ -39,7 +40,7 @@ class WCCNvmeApp : public apis::BlockModel {
       Contract(src_id, dst_id, idx);
     };
 
-    MapVertex(init);
+    MapVertex(&Init);
 
     while (true) {
       MapEdge(graft);

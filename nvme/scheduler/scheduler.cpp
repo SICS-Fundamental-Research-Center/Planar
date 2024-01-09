@@ -150,8 +150,6 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
       if (group_mode_) {
         group_deserialized_num_++;
         if (group_deserialized_num_ == group_num_) {
-          CreateGroupSerializableGraph();
-
           ExecuteMessage execute_message;
           execute_message.graph_id = group_graphs_.at(0);
           execute_message.graph = group_serializable_graph_.get();
@@ -162,7 +160,6 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
           }
           SetAppRuntimeGraph(group_graphs_.at(0));
           SetAppRound(current_round_);
-          execute_message.app = app_;
           message_hub_.get_executor_queue()->Push(execute_message);
         }
       } else {
@@ -176,7 +173,6 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
         }
         SetAppRuntimeGraph(execute_message.graph_id);
         SetAppRound(current_round_);
-        execute_message.app = app_;
         message_hub_.get_executor_queue()->Push(execute_message);
       }
       break;
@@ -458,60 +454,21 @@ bool PramScheduler::TryReadNextGraph(bool sync) {
 void PramScheduler::CreateSerializableGraph(common::GraphID graph_id) {
   if (common::Configurations::Get()->vertex_data_type ==
       common::VertexDataType::kVertexDataTypeUInt32) {
-    if (is_block_mode_) {
-      std::unique_ptr<data_structures::Serializable> serializable_graph =
-          std::make_unique<BlockCSRGraphUInt32>(
-              graph_metadata_info_.GetBlockMetadataPtr(graph_id));
-      graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
-    } else {
-      std::unique_ptr<data_structures::Serializable> serializable_graph =
-          std::make_unique<MutableCSRGraphUInt32>(
-              graph_metadata_info_.GetSubgraphMetadataPtr(graph_id),
-              graph_metadata_info_.get_num_vertices());
-      graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
-    }
+    std::unique_ptr<data_structures::Serializable> serializable_graph =
+        std::make_unique<BlockCSRGraphUInt32>(
+            graph_metadata_info_.GetBlockMetadataPtr(graph_id));
+    graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
   } else {
-    if (is_block_mode_) {
-      std::unique_ptr<data_structures::Serializable> serializable_graph =
-          std::make_unique<BlockCSRGraphUInt16>(
-              graph_metadata_info_.GetBlockMetadataPtr(graph_id));
-      graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
-    } else {
-      std::unique_ptr<data_structures::Serializable> serializable_graph =
-          std::make_unique<MutableCSRGraphUInt16>(
-              graph_metadata_info_.GetSubgraphMetadataPtr(graph_id),
-              graph_metadata_info_.get_num_vertices());
-      graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
-    }
+    std::unique_ptr<data_structures::Serializable> serializable_graph =
+        std::make_unique<BlockCSRGraphUInt16>(
+            graph_metadata_info_.GetBlockMetadataPtr(graph_id));
+    graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
   }
 }
 
 data_structures::Serialized* PramScheduler::CreateSerialized(
     common::GraphID graph_id) {
   return graph_state_.NewSerializedBlockGraph(graph_id);
-}
-
-void PramScheduler::CreateGroupSerializableGraph() {
-  //  if (common::Configurations::Get()->vertex_data_type ==
-  //      common::VertexDataType::kVertexDataTypeUInt32) {
-  //    group_serializable_graph_ =
-  //    std::make_unique<MutableGroupCSRGraphUInt32>();
-  //  } else {
-  //    group_serializable_graph_ =
-  //    std::make_unique<MutableGroupCSRGraphUInt16>();
-  //  }
-  group_serializable_graph_ = std::make_unique<MutableGroupCSRGraphUInt32>();
-  InitGroupSerializableGraph();
-}
-
-void PramScheduler::InitGroupSerializableGraph() {
-  for (int i = 0; i < group_num_; i++) {
-    auto gid = group_graphs_.at(i);
-    auto group_graph =
-        (MutableGroupCSRGraphUInt32*)(group_serializable_graph_.get());
-    group_graph->AddSubgraph(
-        (MutableCSRGraphUInt32*)graph_state_.GetSubgraph(gid));
-  }
 }
 
 // release all graphs in memory. not write back to disk. just release memory.
@@ -524,43 +481,20 @@ void PramScheduler::ReleaseAllGraph() {
 
 void PramScheduler::SetAppRuntimeGraph(common::GraphID gid) {
   if (group_mode_) {
-    auto app =
-        dynamic_cast<apis::PlanarAppGroupBase<MutableGroupCSRGraphUInt32>*>(
-            app_);
-    app->SetRuntimeGraph(dynamic_cast<MutableGroupCSRGraphUInt32*>(
-        group_serializable_graph_.get()));
   } else {
     if (common::Configurations::Get()->vertex_data_type ==
         common::VertexDataType::kVertexDataTypeUInt32) {
-      auto app =
-          dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt32>*>(app_);
-      app->SetRuntimeGraph(
-          dynamic_cast<MutableCSRGraphUInt32*>(graph_state_.GetSubgraph(gid)));
     } else {
-      auto app =
-          dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt16>*>(app_);
-      app->SetRuntimeGraph(
-          dynamic_cast<MutableCSRGraphUInt16*>(graph_state_.GetSubgraph(gid)));
     }
   }
 }
 
 void PramScheduler::SetAppRound(int round) {
   if (group_mode_) {
-    auto app =
-        dynamic_cast<apis::PlanarAppGroupBase<MutableGroupCSRGraphUInt32>*>(
-            app_);
-    app->SetRound(round);
   } else {
     if (common::Configurations::Get()->vertex_data_type ==
         common::VertexDataType::kVertexDataTypeUInt32) {
-      auto app =
-          dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt32>*>(app_);
-      app->SetRound(round);
     } else {
-      auto app =
-          dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt16>*>(app_);
-      app->SetRound(round);
     }
   }
 }
@@ -651,5 +585,7 @@ bool PramScheduler::IsCurrentRoundFinish() const {
 bool PramScheduler::IsSystemStop() const {
   return IsCurrentRoundFinish() && !update_store_->IsActive();
 }
+
+void PramScheduler::RunMapExecute(ExecuteMessage execute_msg) {}
 
 }  // namespace sics::graph::nvme::scheduler

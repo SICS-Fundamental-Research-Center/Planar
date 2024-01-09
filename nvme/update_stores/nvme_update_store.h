@@ -23,8 +23,7 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
  public:
   PramNvmeUpdateStore()
       : read_data_(nullptr), write_data_(nullptr), message_count_(0) {}
-  explicit PramNvmeUpdateStore(const std::string& root_path,
-                               common::VertexCount vertex_num)
+  explicit PramNvmeUpdateStore(common::VertexCount vertex_num)
       : message_count_(vertex_num) {
     application_type_ = common::Configurations::Get()->application;
     no_data_need_ = common::Configurations::Get()->no_data_need;
@@ -113,6 +112,11 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   }
 
   uint32_t GetMessageCount() { return message_count_; }
+
+  void SetMessageCount(uint32_t message_count) {
+    message_count_ = message_count;
+    InitMemorySizeOfBlock();
+  }
 
   void LogGlobalMessage() {
     LOG_INFO("Global message info:");

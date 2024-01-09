@@ -12,6 +12,8 @@
 
 namespace sics::graph::nvme::scheduler {
 
+using VertexID = core::common::VertexID;
+
 struct ReadMessage {
   ReadMessage() = default;
   ReadMessage(const ReadMessage& message) = default;
@@ -21,7 +23,8 @@ struct ReadMessage {
   int round;
 
   // Response fields.
-  core::data_structures::Serialized* response_serialized;  // initialized in loader
+  core::data_structures::Serialized*
+      response_serialized;  // initialized in loader
 
   // Termination flag.
   bool terminated = false;
@@ -30,18 +33,36 @@ struct ReadMessage {
 typedef enum {
   kDeserialize = 1,
   kCompute,
+  kMapVertex,
+  kMapEdge,
+  kMapEdgeAndMutate,
   kSerialize,
 } ExecuteType;
 
 struct ExecuteMessage {
   ExecuteMessage() = default;
+  // copy assignment operator
+  //  ExecuteMessage& operator=(const ExecuteMessage& message) {
+  //    graph_id = message.graph_id;
+  //    serialized = message.serialized;
+  //    execute_type = message.execute_type;
+  //    graph = message.graph;
+  //    func_vertex = message.func_vertex;
+  //    func_edge = message.func_edge;
+  //    response_serializable = message.response_serializable;
+  //    terminated = message.terminated;
+  //    return *this;
+  //  }
+
   // Request fields.
   core::common::GraphID graph_id;
   core::data_structures::Serialized* serialized;
   ExecuteType execute_type = kCompute;
   // TODO: add subgraph metadata fields and API program objects.
   core::data_structures::Serializable* graph;
-  core::apis::PIE* app;
+
+  std::function<void(VertexID)>* func_vertex;
+  //  std::function<void(VertexID, VertexID)>& func_edge;
 
   // Response fields.
   core::data_structures::Serializable* response_serializable;
@@ -115,7 +136,7 @@ class Message {
   } message_;
 };
 
-}  // namespace sics::graph::core::scheduler
+}  // namespace sics::graph::nvme::scheduler
 
 // The following snippet helps the logger to format the MessageType enum.
 template <>

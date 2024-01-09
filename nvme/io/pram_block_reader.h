@@ -8,14 +8,14 @@
 #include <string>
 #include <utility>
 
-#include "common/config.h"
-#include "data_structures/buffer.h"
-#include "data_structures/graph/serialized_pram_block_csr.h"
-#include "data_structures/graph_metadata.h"
-#include "data_structures/serialized.h"
-#include "io/reader_writer.h"
+#include "core/common/config.h"
+#include "core/data_structures/buffer.h"
+#include "core/data_structures/graph/serialized_pram_block_csr.h"
+#include "core/data_structures/graph_metadata.h"
+#include "core/data_structures/serialized.h"
+#include "nvme/io/reader_writer.h"
 
-namespace sics::graph::core::io {
+namespace sics::graph::nvme::io {
 
 // @DESCRIPTION Class to read data from ssd to memory
 // @EXAMPLE
@@ -30,15 +30,17 @@ class PramBlockReader : public Reader {
   using Serialized = sics::graph::core::data_structures::Serialized;
 
  public:
-  PramBlockReader(const std::string& root_path) : root_path_(root_path) {}
+  explicit PramBlockReader(const std::string& root_path)
+      : root_path_(root_path) {}
 
   void Read(ReadMessage* message,
-            common::TaskRunner* runner = nullptr) override;
+            core::common::TaskRunner* runner = nullptr) override;
 
   size_t SizeOfReadNow() override { return read_size_; }
 
  private:
-  void ReadBlockInfo(const std::string& path, common::VertexCount num_vertices,
+  void ReadBlockInfo(const std::string& path,
+                     core::common::VertexCount num_vertices,
                      std::vector<OwnedBuffer>* buffers);
 
  private:
@@ -46,6 +48,6 @@ class PramBlockReader : public Reader {
   size_t read_size_ = 0;  // use MB
 };
 
-}  // namespace sics::graph::core::io
+}  // namespace sics::graph::nvme::io
 
 #endif  // GRAPH_SYSTEMS_CORE_IO_PRAM_BLOCK_READER_H_
