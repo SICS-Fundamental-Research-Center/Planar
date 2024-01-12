@@ -110,7 +110,7 @@ bool ErrorDetector::IsPredicateSatisfied(VertexAttributeType vattr_type,
         case sics::graph::miniclean::data_structures::gcr::kGt:
           return std::stoi(lhs) > std::stoi(rhs);
         default:
-          LOGF_FATAL("Unsupported op type: {}", op_type);
+          LOGF_FATAL("Unsupported op type: {}", int(op_type));
           break;
       }
     }
@@ -121,7 +121,7 @@ bool ErrorDetector::IsPredicateSatisfied(VertexAttributeType vattr_type,
         case sics::graph::miniclean::data_structures::gcr::kGt:
           return std::stoi(lhs) > std::stoi(rhs);
         default:
-          LOGF_FATAL("Unsupported op type: {}", op_type);
+          LOGF_FATAL("Unsupported op type: {}", int(op_type));
           break;
       }
     }
@@ -132,7 +132,7 @@ bool ErrorDetector::IsPredicateSatisfied(VertexAttributeType vattr_type,
         case sics::graph::miniclean::data_structures::gcr::kGt:
           return std::stol(lhs) > std::stol(rhs);
         default:
-          LOGF_FATAL("Unsupported op type: {}", op_type);
+          LOGF_FATAL("Unsupported op type: {}", int(op_type));
           break;
       }
     }
@@ -143,7 +143,7 @@ bool ErrorDetector::IsPredicateSatisfied(VertexAttributeType vattr_type,
         case sics::graph::miniclean::data_structures::gcr::kGt:
           return std::stoull(lhs) > std::stoull(rhs);
         default:
-          LOGF_FATAL("Unsupported op type: {}", op_type);
+          LOGF_FATAL("Unsupported op type: {}", int(op_type));
           break;
       }
     }
@@ -152,12 +152,12 @@ bool ErrorDetector::IsPredicateSatisfied(VertexAttributeType vattr_type,
         case sics::graph::miniclean::data_structures::gcr::kEq:
           return lhs == rhs;
         default:
-          LOGF_FATAL("Unsupported op type: {}", op_type);
+          LOGF_FATAL("Unsupported op type: {}", int(op_type));
           break;
       }
     }
     default:
-      LOGF_FATAL("Unsupported vertex attribute type: {}", vattr_type);
+      LOGF_FATAL("Unsupported vertex attribute type: {}", int(vattr_type));
       break;
   }
 }

@@ -3,7 +3,6 @@
 
 #include <string>
 
-#include "apis/pie.h"
 #include "core/common/blocking_queue.h"
 #include "core/common/types.h"
 #include "core/data_structures/serializable.h"
@@ -41,18 +40,32 @@ typedef enum {
 
 struct ExecuteMessage {
   ExecuteMessage() = default;
+  ~ExecuteMessage() { func_vertex.~function(); }
+
+  // copy constructor
+  ExecuteMessage(const ExecuteMessage& message) {
+    graph_id = message.graph_id;
+    serialized = message.serialized;
+    execute_type = message.execute_type;
+    graph = message.graph;
+    func_vertex = message.func_vertex;
+    response_serializable = message.response_serializable;
+    terminated = message.terminated;
+  }
+
   // copy assignment operator
-  //  ExecuteMessage& operator=(const ExecuteMessage& message) {
-  //    graph_id = message.graph_id;
-  //    serialized = message.serialized;
-  //    execute_type = message.execute_type;
-  //    graph = message.graph;
-  //    func_vertex = message.func_vertex;
-  //    func_edge = message.func_edge;
-  //    response_serializable = message.response_serializable;
-  //    terminated = message.terminated;
-  //    return *this;
-  //  }
+  ExecuteMessage& operator=(const ExecuteMessage& message) {
+    if (this != &message) {
+      graph_id = message.graph_id;
+      serialized = message.serialized;
+      execute_type = message.execute_type;
+      graph = message.graph;
+      func_vertex = message.func_vertex;
+      response_serializable = message.response_serializable;
+      terminated = message.terminated;
+    }
+    return *this;
+  }
 
   // Request fields.
   core::common::GraphID graph_id;
@@ -61,8 +74,8 @@ struct ExecuteMessage {
   // TODO: add subgraph metadata fields and API program objects.
   core::data_structures::Serializable* graph;
 
-  std::function<void(VertexID)>* func_vertex;
-  //  std::function<void(VertexID, VertexID)>& func_edge;
+  std::function<void(VertexID)> func_vertex;
+  //  std::function<void(VertexID, VertexID)> func_edge;
 
   // Response fields.
   core::data_structures::Serializable* response_serializable;
@@ -99,7 +112,9 @@ class Message {
   explicit Message(const ReadMessage& message);
   explicit Message(const ExecuteMessage& message);
   explicit Message(const WriteMessage& message);
-  ~Message() = default;
+  ~Message();
+
+  Message(const Message& message);
 
   void Set(const ReadMessage& message);
   void Set(const ExecuteMessage& message);
@@ -113,11 +128,11 @@ class Message {
   [[nodiscard]] bool is_terminated() const {
     switch (type_) {
       case kRead:
-        return message_.read_message.terminated;
+        return this->read_message.terminated;
       case kExecute:
-        return message_.execute_message.terminated;
+        return this->execute_message.terminated;
       case kWrite:
-        return message_.write_message.terminated;
+        return this->write_message.terminated;
       default:
         return false;
     }
@@ -126,14 +141,20 @@ class Message {
  private:
   Type type_;
 
-  union Messages {
+  union {
     ReadMessage read_message;
     ExecuteMessage execute_message;
     WriteMessage write_message;
-    Messages(const ReadMessage& message) { read_message = message; };
-    Messages(const ExecuteMessage& message) { execute_message = message; };
-    Messages(const WriteMessage& message) { write_message = message; };
-  } message_;
+    //    explicit Messages(const ReadMessage& message) { read_message =
+    //    message; }; explicit Messages(const ExecuteMessage& message) {
+    //      execute_message = message;
+    //    };
+    //    explicit Messages(const WriteMessage& message) { write_message =
+    //    message; };
+    // copy constructor
+
+    //    ~Messages() { execute_message.~ExecuteMessage(); }
+  };
 };
 
 }  // namespace sics::graph::nvme::scheduler

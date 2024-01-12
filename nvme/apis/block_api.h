@@ -62,7 +62,7 @@ class BlockModel : public BlockModelBase {
     // for different blocks, init different data
   }
 
-  void MapVertex(std::function<void(VertexID)>* vertex_func) {
+  void MapVertex(const std::function<void(VertexID)>& vertex_func) {
     // all blocks should be executor the vertex function
     ExecuteMessage message;
     message.execute_type = ExecuteType::kCompute;

@@ -59,7 +59,6 @@ class Executor : public Component {
           case scheduler::ExecuteType::kCompute:
             LOGF_INFO("Executor: PEval block {}", message.graph_id);
             if (in_memory_time_) start_time_ = std::chrono::system_clock::now();
-            message.app->PEval();
             if (in_memory_time_) end_time_ = std::chrono::system_clock::now();
             break;
           case scheduler::ExecuteType::kMapVertex:
@@ -96,8 +95,7 @@ class Executor : public Component {
   core::common::TaskRunner* GetTaskRunner() { return &task_runner_; }
 
   void ParallelVertexDO(
-      Block32* block,
-      const std::function<void(VertexID, VertexIndex)>& vertex_func) {
+      Block32* block, std::function<void(VertexID, VertexIndex)>* vertex_func) {
     LOG_DEBUG("ParallelVertexDo is begin");
     uint32_t task_size = GetTaskSize(block->GetVertexNums());
     core::common::TaskPackage tasks;
@@ -110,6 +108,7 @@ class Executor : public Component {
       auto task = [&vertex_func, this, begin_index, end_index]() {
         for (VertexIndex idx = begin_index; idx < end_index; idx++) {
           //          vertex_func(block->GetVertexIDByIndex(idx));
+
         }
       };
       tasks.push_back(task);

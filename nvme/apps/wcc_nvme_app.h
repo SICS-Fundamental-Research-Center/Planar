@@ -22,7 +22,7 @@ class WCCNvmeApp : public apis::BlockModel {
   ~WCCNvmeApp() override = default;
 
   // actually, this is no use.
-  void Init(VertexID id) { Write(id, id); }
+  void Init(VertexID id) { this->Write(id, id); }
 
   void Graft(VertexID src_id, VertexID dst_id) {}
   void PointJump(VertexID src_id) {}
@@ -40,7 +40,8 @@ class WCCNvmeApp : public apis::BlockModel {
       Contract(src_id, dst_id, idx);
     };
 
-    MapVertex(&Init);
+
+    MapVertex(init);
 
     while (true) {
       MapEdge(graft);
