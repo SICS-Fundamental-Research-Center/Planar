@@ -22,6 +22,8 @@ class MessageHub {
 
   void SendRequest(const WriteMessage& message) { writer_q_.Push(message); }
 
+  void SendResponse(const Message& message) { response_q_.Push(message); }
+
   Message GetResponse() { return response_q_.PopOrWait(); }
 
   ReaderQueue* get_reader_queue() { return &reader_q_; }

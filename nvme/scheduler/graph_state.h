@@ -25,15 +25,19 @@ struct GraphState {
 
   GraphState() : memory_size_(64 * 1024){};
   GraphState(size_t num_subgraphs)
-      : num_subgraphs_(num_subgraphs),
+      : num_blocks_(num_subgraphs),
         memory_size_(core::common::Configurations::Get()->memory_size) {
-    subgraph_round_.resize(num_subgraphs, 0);
     subgraph_storage_state_.resize(num_subgraphs, OnDisk);
     serialized_.resize(num_subgraphs);
     graphs_.resize(num_subgraphs);
     current_round_pending_.resize(num_subgraphs, true);
-    next_round_pending_.resize(num_subgraphs, false);
-    is_block_mode_ = core::common::Configurations::Get()->is_block_mode;
+  }
+
+  void ResetCurrentRoundPending() {
+    // all blocks should be iterated in current round
+    for (size_t i = 0; i < num_blocks_; ++i) {
+      current_round_pending_.at(i) = true;
+    }
   }
 
   StorageStateType GetSubgraphState(core::common::GraphID gid) const {
@@ -67,34 +71,18 @@ struct GraphState {
 
   void SetSerializedToOnDisk(core::common::GraphID gid) {
     subgraph_storage_state_.at(gid) = OnDisk;
-    subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
   }
 
   void SetComputedSerializedToReadSerialized(core::common::GraphID gid) {
     subgraph_storage_state_.at(gid) = Serialized;
-    subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
-  }
-
-  void UpdateSubgraphState2(core::common::GraphID gid, StorageStateType type) {
-    subgraph_storage_state_.at(gid) = type;
-    subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
-    current_round_pending_.at(gid) = false;
   }
 
   void SetGraphState(core::common::GraphID gid, StorageStateType type) {
     subgraph_storage_state_.at(gid) = type;
   }
 
-  int GetSubgraphRound(core::common::GraphID gid) const {
-    return subgraph_round_.at(gid);
-  }
-
-  void SetSubgraphRound(core::common::GraphID gid) {
-    subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
-  }
-
   void SyncCurrentRoundPending() {
-    for (int i = 0; i < num_subgraphs_; i++) {
+    for (int i = 0; i < num_blocks_; i++) {
       current_round_pending_.at(i) = true;
     }
   }
@@ -113,14 +101,9 @@ struct GraphState {
   // corresponding type Serialized graph.
   core::data_structures::Serialized* NewSerializedMutableCSRGraph(
       core::common::GraphID gid) {
-    if (is_block_mode_) {
-      serialized_.at(gid) = std::make_unique<
-          core::data_structures::graph::SerializedPramBlockCSRGraph>();
-    } else {
-      serialized_.at(gid) = std::make_unique<
-          core::data_structures::graph::SerializedMutableCSRGraph>();
-      return serialized_.at(gid).get();
-    }
+    serialized_.at(gid) = std::make_unique<
+        core::data_structures::graph::SerializedMutableCSRGraph>();
+    return serialized_.at(gid).get();
   }
 
   // allocate new Serialized block_nvme graph for reader.
@@ -150,21 +133,16 @@ struct GraphState {
   void ReleaseSubgraph(core::common::GraphID gid) { graphs_.at(gid).reset(); }
 
  public:
-  size_t num_subgraphs_;
-  std::vector<int> subgraph_round_;
+  size_t num_blocks_;
   std::vector<StorageStateType> subgraph_storage_state_;
 
   // label for if current round graph is executed
   std::vector<bool> current_round_pending_;
-  // label for if next round graph is executed
-  std::vector<bool> next_round_pending_;
 
   // memory size and graph size
   // TODO: memory size should be set by gflags
-  std::vector<size_t> subgraph_size_;
+
   const size_t memory_size_;
-  size_t subgraph_limits_ = 1;
-  bool is_block_mode_ = false;
 
  private:
   std::vector<std::unique_ptr<core::data_structures::Serialized>> serialized_;

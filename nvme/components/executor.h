@@ -59,13 +59,14 @@ class Executor : public Component {
           case scheduler::ExecuteType::kCompute:
             LOGF_INFO("Executor: PEval block {}", message.graph_id);
             if (in_memory_time_) start_time_ = std::chrono::system_clock::now();
+            if (message.map_type == scheduler::kMapVertex) {
+              ParallelVertexDo(message.graph, message.func_vertex);
+            } else if (message.map_type == scheduler::kMapEdge) {
+            } else if (message.map_type == scheduler::kMapEdgeAndMutate) {
+            } else {
+              LOG_FATAL("Executor: Invalid map type");
+            }
             if (in_memory_time_) end_time_ = std::chrono::system_clock::now();
-            break;
-          case scheduler::ExecuteType::kMapVertex:
-            break;
-          case scheduler::ExecuteType::kMapEdge:
-            break;
-          case scheduler::ExecuteType::kMapEdgeAndMutate:
             break;
           case scheduler::ExecuteType::kSerialize:
             LOGF_INFO("Executor: Serialized block {}", message.graph_id);
@@ -94,9 +95,10 @@ class Executor : public Component {
 
   core::common::TaskRunner* GetTaskRunner() { return &task_runner_; }
 
-  void ParallelVertexDO(
-      Block32* block, std::function<void(VertexID, VertexIndex)>* vertex_func) {
+  void ParallelVertexDo(core::data_structures::Serializable* graph,
+                        const std::function<void(VertexID)>& vertex_func) {
     LOG_DEBUG("ParallelVertexDo is begin");
+    auto block = dynamic_cast<Block32*>(graph);
     uint32_t task_size = GetTaskSize(block->GetVertexNums());
     core::common::TaskPackage tasks;
     tasks.reserve(parallelism_ * task_package_factor_);
@@ -108,7 +110,6 @@ class Executor : public Component {
       auto task = [&vertex_func, this, begin_index, end_index]() {
         for (VertexIndex idx = begin_index; idx < end_index; idx++) {
           //          vertex_func(block->GetVertexIDByIndex(idx));
-
         }
       };
       tasks.push_back(task);
@@ -123,10 +124,11 @@ class Executor : public Component {
   }
 
   void ParallelEdgeMutateDo(
-      Block32* block,
+      core::data_structures::Serializable* graph,
       const std::function<void(VertexID, VertexID, EdgeIndex)>& edge_del_func) {
     LOG_DEBUG("ParallelEdgeDelDo is begin");
     //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+    auto block = dynamic_cast<Block32*>(graph);
     uint32_t task_size = block->GetVertexNums();
     core::common::TaskPackage tasks;
     VertexIndex begin_index = 0, end_index = 0;

@@ -32,11 +32,15 @@ struct ReadMessage {
 typedef enum {
   kDeserialize = 1,
   kCompute,
-  kMapVertex,
-  kMapEdge,
-  kMapEdgeAndMutate,
   kSerialize,
 } ExecuteType;
+
+enum MapType {
+  kDefault = 0,
+  kMapVertex = 1,
+  kMapEdge = 2,
+  kMapEdgeAndMutate = 3,
+};
 
 struct ExecuteMessage {
   ExecuteMessage() = default;
@@ -71,6 +75,7 @@ struct ExecuteMessage {
   core::common::GraphID graph_id;
   core::data_structures::Serialized* serialized;
   ExecuteType execute_type = kCompute;
+  MapType map_type = kDefault;
   // TODO: add subgraph metadata fields and API program objects.
   core::data_structures::Serializable* graph;
 
@@ -178,6 +183,30 @@ struct fmt::formatter<sics::graph::nvme::scheduler::Message::Type> {
         return fmt::format_to(ctx.out(), "ExecuteMessage");
       case MessageType::kWrite:
         return fmt::format_to(ctx.out(), "WriteMessage");
+    }
+  }
+};
+
+template <>
+struct fmt::formatter<sics::graph::nvme::scheduler::MapType> {
+  typedef sics::graph::nvme::scheduler::MapType MapType;
+
+  constexpr auto parse(::fmt::format_parse_context& ctx)
+      -> ::fmt::format_parse_context::iterator {
+    return ctx.begin();
+  }
+
+  auto format(const MapType& type, ::fmt::format_context& ctx) const
+      -> fmt::format_context::iterator {
+    switch (type) {
+      case MapType::kDefault:
+        return fmt::format_to(ctx.out(), "Default");
+      case MapType::kMapVertex:
+        return fmt::format_to(ctx.out(), "MapVertex");
+      case MapType::kMapEdge:
+        return fmt::format_to(ctx.out(), "MapEdge");
+      case MapType::kMapEdgeAndMutate:
+        return fmt::format_to(ctx.out(), "MapEdgeAndMutate");
     }
   }
 };

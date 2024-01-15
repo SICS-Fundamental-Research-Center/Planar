@@ -36,6 +36,7 @@ class BlockModel : public BlockModelBase {
 
   using ExecuteMessage = sics::graph::nvme::scheduler::ExecuteMessage;
   using ExecuteType = sics::graph::nvme::scheduler::ExecuteType;
+  using MapType = sics::graph::nvme::scheduler::MapType;
 
  public:
   BlockModel() = default;
@@ -51,22 +52,29 @@ class BlockModel : public BlockModelBase {
         std::make_unique<components::Executor>(scheduler_->GetMessageHub());
   }
 
-  ~BlockModel() override = default;
+  ~BlockModel() override {
+    Stop();
+    end_time_ = std::chrono::system_clock::now();
+    LOGF_INFO(" =========== Hole Runtime: {} s ===========",
+              std::chrono::duration<double>(end_time_ - begin_time_).count());
+  }
 
   // ===============================================================
   // Map functions should use scheduler to iterate over all blocks
   // ===============================================================
 
   // init all data of blocks
+  // TODO:
+  //  move init in update_store to here
   void Init() {
     // for different blocks, init different data
   }
 
-  void MapVertex(const std::function<void(VertexID)>& vertex_func) {
+  void MapVertex(const std::function<void(VertexID)>& func_vertex) {
     // all blocks should be executor the vertex function
     ExecuteMessage message;
-    message.execute_type = ExecuteType::kCompute;
-    message.func_vertex = vertex_func;
+    message.map_type = MapType::kMapVertex;
+    message.func_vertex = func_vertex;
     scheduler_->RunMapExecute(message);
   }
 
@@ -78,20 +86,15 @@ class BlockModel : public BlockModelBase {
 
   void Run() {
     LOG_INFO("Start running");
-    auto start_time = std::chrono::system_clock::now();
+    begin_time_ = std::chrono::system_clock::now();
     loader_->Start();
     discharge_->Start();
     executor_->Start();
     scheduler_->Start();
-
-    scheduler_->Stop();
-    Stop();
-    auto end_time = std::chrono::system_clock::now();
-    LOGF_INFO(" =========== Hole Runtime: {} s ===========",
-              std::chrono::duration<double>(end_time - start_time).count());
   }
 
   void Stop() {
+    scheduler_->Stop();
     loader_->StopAndJoin();
     discharge_->StopAndJoin();
     executor_->StopAndJoin();
@@ -122,6 +125,9 @@ class BlockModel : public BlockModelBase {
   std::unique_ptr<update_stores::BspUpdateStoreUInt32> update_store_;
 
   int round_ = 0;
+
+  std::chrono::time_point<std::chrono::system_clock> begin_time_;
+  std::chrono::time_point<std::chrono::system_clock> end_time_;
 
   // configs
   const uint32_t parallelism_ = 10;

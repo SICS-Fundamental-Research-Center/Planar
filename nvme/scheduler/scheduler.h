@@ -27,6 +27,7 @@ class PramScheduler {
   using WriteMessage = sics::graph::nvme::scheduler::WriteMessage;
   using ExecuteMessage = sics::graph::nvme::scheduler::ExecuteMessage;
   using ExecuteType = sics::graph::nvme::scheduler::ExecuteType;
+  using MapType = sics::graph::nvme::scheduler::MapType;
   using GraphState = sics::graph::nvme::scheduler::GraphState;
 
   using BlockCSRGraphUInt32 = data_structures::graph::BlockCSRGraphUInt32;
@@ -35,7 +36,6 @@ class PramScheduler {
  public:
   PramScheduler(const std::string& root_path)
       : graph_metadata_info_(root_path),
-        current_round_(0),
         graph_state_(graph_metadata_info_.get_num_subgraphs()) {
     is_block_mode_ = common::Configurations::Get()->is_block_mode;
     memory_left_size_ = common::Configurations::Get()->memory_size;
@@ -62,12 +62,16 @@ class PramScheduler {
     loader_ = loader;
   }
 
-  int GetCurrentRound() const { return current_round_; }
-
   // schedule subgraph execute and its IO(read and write)
   void Start();
 
-  void Stop() { thread_->join(); }
+  // TODO: decide which type message to send
+  void Stop() {
+    scheduler::ExecuteMessage execute_msg;
+    execute_msg.terminated = true;
+    message_hub_.SendResponse(scheduler::Message(execute_msg));
+    thread_->join();
+  }
 
   MessageHub* GetMessageHub() { return &message_hub_; }
 
@@ -124,8 +128,6 @@ class PramScheduler {
   bool is_block_mode_ = false;
   GraphState graph_state_;
 
-  int current_round_ = 0;
-
   // message hub
   MessageHub message_hub_;
 
@@ -138,7 +140,12 @@ class PramScheduler {
 
   // mark if the executor is running
   bool is_executor_running_ = false;
+
   std::unique_ptr<std::thread> thread_;
+
+  MapType current_Map_type_ = MapType::kDefault;
+
+  size_t step_ = 0;
 
   size_t memory_left_size_ = 0;
   int limits_ = 0;
