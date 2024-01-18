@@ -24,9 +24,34 @@ class WCCNvmeApp : public apis::BlockModel {
   // actually, this is no use.
   void Init(VertexID id) { this->Write(id, id); }
 
-  void Graft(VertexID src_id, VertexID dst_id) {}
-  void PointJump(VertexID src_id) {}
-  void Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {}
+  void Graft(VertexID src_id, VertexID dst_id) {
+    VertexID src_parent_id = Read(src_id);
+    VertexID dst_parent_id = Read(dst_id);
+
+    if (src_parent_id < dst_parent_id) {
+      this->WriteMin(dst_parent_id, src_parent_id);
+    } else if (src_parent_id > dst_parent_id) {
+      this->WriteMin(src_parent_id, dst_parent_id);
+    }
+  }
+
+  void PointJump(VertexID src_id) {
+    VertexID parent_id = Read(src_id);
+    if (parent_id == src_id) {
+      return;
+    } else {
+      while (parent_id != Read(parent_id)) {
+        parent_id = Read(parent_id);
+      }
+      this->WriteMin(src_id, parent_id);
+    }
+  }
+
+  void Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
+    if (Read(src_id) == Read(dst_id)) {
+      this->DeleteEdge(src_id, dst_id, idx);
+    }
+  }
 
   // TODO:
   // delete pointer 'this' in anonymous namespace
@@ -39,7 +64,6 @@ class WCCNvmeApp : public apis::BlockModel {
     auto contract = [this](VertexID src_id, VertexID dst_id, EdgeIndex idx) {
       Contract(src_id, dst_id, idx);
     };
-
 
     MapVertex(init);
 

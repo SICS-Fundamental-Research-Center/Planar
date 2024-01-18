@@ -43,7 +43,7 @@ class BlockModel : public BlockModelBase {
   BlockModel(const std::string& root_path) {
     scheduler_ = std::make_unique<scheduler::PramScheduler>(root_path);
     update_store_ = std::make_unique<update_stores::BspUpdateStoreUInt32>(
-        scheduler_->GetVertexNumber());
+        scheduler_->GetVertexNumber(), scheduler_->GetEdgeNumber());
     loader_ = std::make_unique<components::Loader<io::PramBlockReader>>(
         root_path, scheduler_->GetMessageHub());
     discharge_ = std::make_unique<components::Discharger<io::PramBlockWriter>>(
@@ -78,10 +78,21 @@ class BlockModel : public BlockModelBase {
     scheduler_->RunMapExecute(message);
   }
 
-  void MapEdge(const std::function<void(VertexID, VertexID)>& edge_func) {}
+  void MapEdge(const std::function<void(VertexID, VertexID)>& func_edge) {
+    // all blocks should be executor the edge function
+    ExecuteMessage message;
+    message.map_type = MapType::kMapEdge;
+    message.func_edge = func_edge;
+    scheduler_->RunMapExecute(message);
+  }
 
   void MapAndMutateEdge(
-      const std::function<void(VertexID, VertexID, EdgeIndex)>& edge_del_func) {
+      const std::function<void(VertexID, VertexID, EdgeIndex)>& func_edge_del) {
+    // all blocks should be executor the edge function
+    ExecuteMessage message;
+    message.map_type = MapType::kMapEdgeAndMutate;
+    message.func_edge_mutate = func_edge_del;
+    scheduler_->RunMapExecute(message);
   }
 
   void Run() {
@@ -109,6 +120,10 @@ class BlockModel : public BlockModelBase {
 
   void WriteMin(VertexID id, VertexData vdata) {
     update_store_->WriteMin(id, vdata);
+  }
+
+  void DeleteEdge(VertexID src, VertexID dst, EdgeIndex idx) {
+    update_store_->DeleteEdge(idx);
   }
 
   // methods for graph

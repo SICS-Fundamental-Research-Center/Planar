@@ -79,6 +79,10 @@ class PramScheduler {
     return graph_metadata_info_.get_num_vertices();
   }
 
+  core::common::EdgeIndex GetEdgeNumber() const {
+    return graph_metadata_info_.get_num_edges();
+  }
+
   void RunMapExecute(ExecuteMessage execute_msg);
 
   size_t GetGraphEdges() const { graph_metadata_info_.get_num_edges(); }

@@ -24,6 +24,7 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->is_block_mode = true;
 
   LOG_INFO("System begin");
-
+  nvme::apps::WCCNvmeApp app(FLAGS_i);
+  app.Compute();
   return 0;
 }

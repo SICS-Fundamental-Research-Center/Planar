@@ -30,9 +30,9 @@ int main(int argc, char** argv) {
   auto out_dir = FLAGS_out + "/";
 
   // create directory of out_dir + "/blocks"
-  fs::path dir = FLAGS_out;
+  fs::path dir = FLAGS_out + "/blocks";
   if (!fs::exists(dir)) {
-    if (!fs::create_directory(dir)) {
+    if (!fs::create_directories(dir)) {
       LOGF_FATAL("Failed creating directory: {}", dir.c_str());
     }
   }
@@ -97,20 +97,22 @@ int main(int argc, char** argv) {
         offset_new[i] = offset_addr[bid + i] - offset_begin;
       }
 
-      std::ofstream block_file(out_dir + std::to_string(file_id) + ".bin",
-                               std::ios::binary);
+      std::ofstream block_file(
+          out_dir + "blocks/" + std::to_string(file_id) + ".bin",
+          std::ios::binary);
       if (!block_file) {
         LOG_FATAL("Error opening bin file: ",
                   out_dir + std::to_string(file_id) + ".bin");
       }
       // degree info
-      block_file.write((char*)(degree_addr + bid), sizeof(VertexID) * size);
+      auto degree_begin = degree_addr + bid;
+      block_file.write((char*)degree_begin, sizeof(VertexID) * size);
       // offset info
       block_file.write((char*)offset_new, sizeof(EdgeIndex) * size);
       // edges info
-      block_file.write(
-          (char*)(edge_addr + offset_addr[bid]),
-          sizeof(VertexID) * (offset_new[eid - 1] + degree_addr[eid - 1]));
+      auto edge_begin = edge_addr + offset_addr[bid];
+      auto size_egde = offset_new[size - 1] + degree_addr[eid - 1];
+      block_file.write((char*)edge_begin, sizeof(VertexID) * size_egde);
       block_file.close();
       // write back to disk
     };

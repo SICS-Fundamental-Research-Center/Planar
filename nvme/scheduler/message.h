@@ -12,6 +12,7 @@
 namespace sics::graph::nvme::scheduler {
 
 using VertexID = core::common::VertexID;
+using EdgeIndex = core::common::EdgeIndex;
 
 struct ReadMessage {
   ReadMessage() = default;
@@ -44,7 +45,11 @@ enum MapType {
 
 struct ExecuteMessage {
   ExecuteMessage() = default;
-  ~ExecuteMessage() { func_vertex.~function(); }
+  ~ExecuteMessage() {
+    func_vertex.~function();
+    func_edge.~function();
+    func_edge_mutate.~function();
+  }
 
   // copy constructor
   ExecuteMessage(const ExecuteMessage& message) {
@@ -53,6 +58,8 @@ struct ExecuteMessage {
     execute_type = message.execute_type;
     graph = message.graph;
     func_vertex = message.func_vertex;
+    func_edge = message.func_edge;
+    func_edge_mutate = message.func_edge_mutate;
     response_serializable = message.response_serializable;
     terminated = message.terminated;
   }
@@ -65,6 +72,8 @@ struct ExecuteMessage {
       execute_type = message.execute_type;
       graph = message.graph;
       func_vertex = message.func_vertex;
+      func_edge = message.func_edge;
+      func_edge_mutate = message.func_edge_mutate;
       response_serializable = message.response_serializable;
       terminated = message.terminated;
     }
@@ -80,8 +89,8 @@ struct ExecuteMessage {
   core::data_structures::Serializable* graph;
 
   std::function<void(VertexID)> func_vertex;
-  //  std::function<void(VertexID, VertexID)> func_edge;
-
+  std::function<void(VertexID, VertexID)> func_edge;
+  std::function<void(VertexID, VertexID, EdgeIndex)> func_edge_mutate;
   // Response fields.
   core::data_structures::Serializable* response_serializable;
 

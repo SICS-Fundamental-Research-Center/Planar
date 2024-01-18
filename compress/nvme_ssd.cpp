@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
       }
     }
     auto time_m = std::chrono::system_clock::now();
-    LOGF_INFO("cpu time for load {} s: {} ns", time_load / double(1000000000),
+    LOGF_INFO("cpu time for load {} s: {} s", time_load / double(1000000000),
               time_load);
     LOGF_INFO("normal time used for load {} s",
               std::chrono::duration<double>(time_m - time_b).count());

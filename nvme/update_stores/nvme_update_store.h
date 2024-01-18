@@ -23,7 +23,8 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
  public:
   PramNvmeUpdateStore()
       : read_data_(nullptr), write_data_(nullptr), message_count_(0) {}
-  explicit PramNvmeUpdateStore(common::VertexCount vertex_num)
+  explicit PramNvmeUpdateStore(common::VertexCount vertex_num,
+                               common::EdgeIndex edge_num)
       : message_count_(vertex_num) {
     application_type_ = common::Configurations::Get()->application;
     no_data_need_ = common::Configurations::Get()->no_data_need;
@@ -100,6 +101,14 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
     return util::atomic::WriteMax(write_data_ + vid, new_data);
   }
 
+  bool DeleteEdge(core::common::EdgeIndex eid) {
+    if (eid >= edge_delete_map_.size()) {
+      return false;
+    }
+    edge_delete_map_.SetBit(eid);
+    return true;
+  }
+
   bool IsActive() override { return active_count_ != 0; }
   void SetActive() { active_count_ = 1; }
   void UnsetActive() { active_count_ = 0; }
@@ -149,6 +158,8 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   VertexData* read_data_;
   VertexData* write_data_;
   common::VertexCount message_count_;
+
+  core::common::Bitmap edge_delete_map_;
 
   size_t active_count_ = 0;
 
