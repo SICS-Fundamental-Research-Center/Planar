@@ -53,3 +53,21 @@ foreach (APP_SOURCE ${APP_SOURCES})
             ${FOLLY_LIBRARIES}
             )
 endforeach ()
+
+#######################
+# Tests
+#######################
+if (TEST)
+    add_subdirectory(tests)
+endif ()
+
+#######################
+# Generate libgraph_core
+#######################
+add_library(nvme_core ${NVME_SOURCES} ${NVME_HEADERS})
+
+target_link_libraries(nvme_core
+        yaml-cpp
+        gflags
+        ${FOLLY_LIBRARIES}
+        )

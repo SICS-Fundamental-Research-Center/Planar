@@ -4,6 +4,7 @@ namespace sics::graph::nvme::scheduler {
 
 void PramScheduler::Start() {
   thread_ = std::make_unique<std::thread>([this]() {
+    LOG_INFO("*** PramScheduler starts ***");
     auto update_store_size = update_store_->GetMemorySize();
     //    memory_left_size_ -= update_store_size;
     LOGF_INFO("global memory size: {} MB", memory_left_size_);
@@ -110,7 +111,7 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
           execute_message.graph = group_serializable_graph_.get();
           execute_message.execute_type = kCompute;
           execute_message.map_type = current_Map_type_;
-          SetAppRuntimeGraph(group_graphs_.at(0));
+          SetGlobalVertexData(group_graphs_.at(0));
           message_hub_.get_executor_queue()->Push(execute_message);
         }
       } else {
@@ -119,7 +120,9 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
         execute_message.graph = execute_resp.response_serializable;
         execute_message.execute_type = kCompute;
         execute_message.map_type = current_Map_type_;
-        SetAppRuntimeGraph(execute_message.graph_id);
+        SetExecuteMessageMapFunction(&execute_message);
+        SetGlobalVertexData(execute_message.graph_id);
+        current_bid_ = execute_resp.graph_id;
         message_hub_.get_executor_queue()->Push(execute_message);
       }
       break;
@@ -128,26 +131,42 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
       // require map type of current graph
       if (current_Map_type_ == kDefault) {
         current_Map_type_ = execute_resp.map_type;
-      }
-
-      if (group_mode_) {
-        for (int i = 0; i < group_num_; i++) {
-          auto gid = group_graphs_.at(i);
-          graph_state_.SetDeserializedToComputed(gid);
-          ExecuteMessage execute_message;
-          execute_message.graph_id = gid;
+        switch (current_Map_type_) {
+          case MapType::kMapVertex:
+            func_vertex_ = execute_resp.func_vertex;
+            break;
+          case MapType::kMapEdge:
+            func_edge_ = execute_resp.func_edge;
+            break;
+          case MapType::kMapEdgeAndMutate:
+            func_edge_mutate_ = execute_resp.func_edge_mutate;
+            break;
+          default:
+            LOGF_ERROR("Map type is not supported!");
+            break;
+        }
+        // read first block.
+        TryReadNextGraph();
+      } else {
+        if (group_mode_) {
+          for (int i = 0; i < group_num_; i++) {
+            auto gid = group_graphs_.at(i);
+            graph_state_.SetDeserializedToComputed(gid);
+            ExecuteMessage execute_message;
+            execute_message.graph_id = gid;
+            execute_message.execute_type = ExecuteType::kSerialize;
+            execute_message.graph = graph_state_.GetSubgraph(gid);
+            message_hub_.get_executor_queue()->Push(execute_message);
+          }
+          // release the group_graph handler
+          group_serializable_graph_.reset();
+        } else {
+          graph_state_.SetDeserializedToComputed(execute_resp.graph_id);
+          ExecuteMessage execute_message(execute_resp);
+          execute_message.graph_id = execute_resp.graph_id;
           execute_message.execute_type = ExecuteType::kSerialize;
-          execute_message.graph = graph_state_.GetSubgraph(gid);
           message_hub_.get_executor_queue()->Push(execute_message);
         }
-        // release the group_graph handler
-        group_serializable_graph_.reset();
-      } else {
-        graph_state_.SetDeserializedToComputed(execute_resp.graph_id);
-        ExecuteMessage execute_message(execute_resp);
-        execute_message.graph_id = execute_resp.graph_id;
-        execute_message.execute_type = ExecuteType::kSerialize;
-        message_hub_.get_executor_queue()->Push(execute_message);
       }
       break;
     }
@@ -179,6 +198,15 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
         // This sync maybe replaced by borderVertex check.
         graph_state_.ResetCurrentRoundPending();
         update_store_->Sync();
+        LOGF_INFO(" ============ Current MapType: {}, Step: {} ============ ",
+                  current_Map_type_, step_);
+        current_Map_type_ = MapType::kDefault;
+        func_vertex_ = nullptr;
+        func_edge_ = nullptr;
+        func_edge_mutate_ = nullptr;
+
+        // inform this map exe is over
+
         if (group_mode_) {
           auto left = GetLeftPendingGraphNums();
           group_num_ = left >= need_read_graphs_ ? need_read_graphs_ : left;
@@ -186,8 +214,6 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
           group_deserialized_num_ = 0;
           group_graphs_.clear();
         }
-        LOGF_INFO(" ============ Current MapType: {}, Step: {} ============ ",
-                  current_Map_type_, step_);
         LOGF_INFO(" current read input size: {}", loader_->SizeOfReadNow());
 
         if (short_cut_) {
@@ -289,9 +315,16 @@ bool PramScheduler::WriteMessageResponseAndCheckTerminate(
   }
   //  have_read_graphs_--;
   // update subgraph size in memory
-  graph_metadata_info_.UpdateSubgraphSize(write_resp.graph_id);
+
+  graph_metadata_info_.UpdateBlockSize(write_resp.graph_id);
   // Read next subgraph if permitted
-  TryReadNextGraph();
+  if (current_Map_type_ == MapType::kDefault) {
+    std::lock_guard<std::mutex> lock(pram_mtx_);
+    pram_ready_ = true;
+    pram_cv_.notify_all();
+  } else {
+    TryReadNextGraph();
+  }
   return true;
 }
 
@@ -313,7 +346,7 @@ bool PramScheduler::TryReadNextGraph(bool sync) {
     if (next_graph_id != INVALID_GRAPH_ID) {
       if (use_limits_) {
         limits_--;
-        LOGF_INFO("Read on graph. now limits is {}", limits_);
+        LOGF_INFO("Read on graph {}. now limits is {}", next_graph_id, limits_);
       } else {
         auto read_size = graph_metadata_info_.GetSubgraphSize(next_graph_id);
         if (memory_left_size_ < read_size) {
@@ -329,7 +362,7 @@ bool PramScheduler::TryReadNextGraph(bool sync) {
       to_read_graphs_--;
       read_message.graph_id = next_graph_id;
       read_message.num_vertices =
-          graph_metadata_info_.GetSubgraphNumVertices(next_graph_id);
+          graph_metadata_info_.GetBlockNumVertices(next_graph_id);
       read_message.response_serialized = CreateSerialized(next_graph_id);
       graph_state_.SetOnDiskToReading(next_graph_id);
       message_hub_.get_reader_queue()->Push(read_message);
@@ -341,19 +374,19 @@ bool PramScheduler::TryReadNextGraph(bool sync) {
 void PramScheduler::CreateSerializableGraph(common::GraphID graph_id) {
   if (common::Configurations::Get()->vertex_data_type ==
       common::VertexDataType::kVertexDataTypeUInt32) {
-    std::unique_ptr<data_structures::Serializable> serializable_graph =
+    std::unique_ptr<core::data_structures::Serializable> serializable_graph =
         std::make_unique<BlockCSRGraphUInt32>(
             graph_metadata_info_.GetBlockMetadataPtr(graph_id));
     graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
   } else {
-    std::unique_ptr<data_structures::Serializable> serializable_graph =
+    std::unique_ptr<core::data_structures::Serializable> serializable_graph =
         std::make_unique<BlockCSRGraphUInt16>(
             graph_metadata_info_.GetBlockMetadataPtr(graph_id));
     graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
   }
 }
 
-data_structures::Serialized* PramScheduler::CreateSerialized(
+core::data_structures::Serialized* PramScheduler::CreateSerialized(
     common::GraphID graph_id) {
   return graph_state_.NewSerializedBlockGraph(graph_id);
 }
@@ -376,14 +409,9 @@ void PramScheduler::SetAppRuntimeGraph(common::GraphID gid) {
   }
 }
 
-void PramScheduler::SetAppRound(int round) {
-  if (group_mode_) {
-  } else {
-    if (common::Configurations::Get()->vertex_data_type ==
-        common::VertexDataType::kVertexDataTypeUInt32) {
-    } else {
-    }
-  }
+void PramScheduler::SetGlobalVertexData(common::GraphID bid) {
+  auto block = (BlockCSRGraphUInt32*)graph_state_.GetSubgraph(bid);
+  block->SetGlobalVertexData(update_store_);
 }
 
 common::GraphID PramScheduler::GetNextReadGraphInCurrentRound() const {
@@ -456,7 +484,24 @@ bool PramScheduler::IsCurrentRoundFinish() const {
 bool PramScheduler::IsSystemStop() const { return true; }
 
 void PramScheduler::RunMapExecute(ExecuteMessage execute_msg) {
-  message_hub_.SendResponse(scheduler::Message(execute_msg));
+  message_hub_.get_response_queue()->Push(scheduler::Message(execute_msg));
+}
+
+void PramScheduler::SetExecuteMessageMapFunction(ExecuteMessage* message) {
+  switch (current_Map_type_) {
+    case MapType::kMapVertex:
+      message->func_vertex = func_vertex_;
+      break;
+    case MapType::kMapEdge:
+      message->func_edge = func_edge_;
+      break;
+    case MapType::kMapEdgeAndMutate:
+      message->func_edge_mutate = func_edge_mutate_;
+      break;
+    default:
+      LOGF_ERROR("Map type is not supported!");
+      break;
+  }
 }
 
 }  // namespace sics::graph::nvme::scheduler

@@ -22,6 +22,10 @@ typedef uint8_t DefaultEdgeDataType;  // used for position
 typedef uint32_t Uint32VertexDataType;
 typedef uint16_t Uint16VertexDataType;
 
+typedef std::function<void(VertexID)> FuncVertex;
+typedef std::function<void(VertexID, VertexID)> FuncEdge;
+typedef std::function<void(VertexID, VertexID, EdgeIndex)> FuncEdgeAndMutate;
+
 #define MAX_VERTEX_ID std::numeric_limits<VertexID>::max()
 #define INVALID_GRAPH_ID \
   std::numeric_limits<sics::graph::core::common::GraphID>::max()

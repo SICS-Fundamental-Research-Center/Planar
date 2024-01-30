@@ -7,8 +7,6 @@
 #include "common/bitmap_no_ownership.h"
 #include "common/config.h"
 #include "common/types.h"
-#include "data_structures/graph/pram_block.h"
-#include "data_structures/graph/serialized_pram_block_csr.h"
 #include "data_structures/graph_metadata.h"
 #include "data_structures/serializable.h"
 #include "data_structures/serialized.h"
@@ -25,8 +23,6 @@ class PramCSRGraph : public Serializable {
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
   using VertexDegree = common::VertexDegree;
-  using SerializedPramBlockCSRGraph =
-      data_structures::graph::SerializedPramBlockCSRGraph;
 
  public:
   using VertexData = TV;

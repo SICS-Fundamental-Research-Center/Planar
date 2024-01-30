@@ -28,6 +28,7 @@ class Loader : public Component {
 
   void Start() override {
     thread_ = std::make_unique<std::thread>([this]() {
+      LOG_INFO("*** Loader starts ***");
       while (true) {
         scheduler::ReadMessage message = reader_q_->PopOrWait();
         if (message.terminated) {
@@ -49,6 +50,7 @@ class Loader : public Component {
     message.terminated = true;
     reader_q_->Push(message);
     thread_->join();
+    LOG_INFO("*** Loader stops ***");
   }
 
   ReaderType* GetReader() { return &reader_; }

@@ -14,6 +14,8 @@ GraphMetadata::GraphMetadata(const std::string& graph_metadata_path)
   vertex_data_size_ = common::Configurations::Get()->vertex_data_size;
   if (this->type_ != "block") {
     InitSubgraphSize();
+  } else {
+    InitBlockSize();
   }
 }
 

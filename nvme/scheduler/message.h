@@ -13,6 +13,9 @@ namespace sics::graph::nvme::scheduler {
 
 using VertexID = core::common::VertexID;
 using EdgeIndex = core::common::EdgeIndex;
+using FuncVertex = core::common::FuncVertex;
+using FuncEdge = core::common::FuncEdge;
+using FuncEdgeAndMutate = core::common::FuncEdgeAndMutate;
 
 struct ReadMessage {
   ReadMessage() = default;
@@ -45,40 +48,59 @@ enum MapType {
 
 struct ExecuteMessage {
   ExecuteMessage() = default;
-  ~ExecuteMessage() {
-    func_vertex.~function();
-    func_edge.~function();
-    func_edge_mutate.~function();
-  }
+  //  ~ExecuteMessage() { LOG_INFO("ExecuteMessage destructor called"); }
+  //  ~ExecuteMessage() = default;
 
   // copy constructor
-  ExecuteMessage(const ExecuteMessage& message) {
-    graph_id = message.graph_id;
-    serialized = message.serialized;
-    execute_type = message.execute_type;
-    graph = message.graph;
-    func_vertex = message.func_vertex;
-    func_edge = message.func_edge;
-    func_edge_mutate = message.func_edge_mutate;
-    response_serializable = message.response_serializable;
-    terminated = message.terminated;
-  }
+  //  ExecuteMessage(const ExecuteMessage& message) {
+  //    graph_id = message.graph_id;
+  //    serialized = message.serialized;
+  //    execute_type = message.execute_type;
+  //    graph = message.graph;
+  //    map_type = message.map_type;
+  //    switch (map_type) {
+  //      case kMapVertex:
+  //        func_vertex = message.func_vertex;
+  //        break;
+  //      case kMapEdge:
+  //        func_edge = message.func_edge;
+  //        break;
+  //      case kMapEdgeAndMutate:
+  //        func_edge_mutate = message.func_edge_mutate;
+  //        break;
+  //      default:
+  //        break;
+  //    }
+  //    response_serializable = message.response_serializable;
+  //    terminated = message.terminated;
+  //  }
 
   // copy assignment operator
-  ExecuteMessage& operator=(const ExecuteMessage& message) {
-    if (this != &message) {
-      graph_id = message.graph_id;
-      serialized = message.serialized;
-      execute_type = message.execute_type;
-      graph = message.graph;
-      func_vertex = message.func_vertex;
-      func_edge = message.func_edge;
-      func_edge_mutate = message.func_edge_mutate;
-      response_serializable = message.response_serializable;
-      terminated = message.terminated;
-    }
-    return *this;
-  }
+  //  ExecuteMessage& operator=(const ExecuteMessage& message) {
+  //    if (this != &message) {
+  //      graph_id = message.graph_id;
+  //      serialized = message.serialized;
+  //      execute_type = message.execute_type;
+  //      graph = message.graph;
+  //      map_type = message.map_type;
+  //      switch (map_type) {
+  //        case kMapVertex:
+  //          func_vertex = message.func_vertex;
+  //          break;
+  //        case kMapEdge:
+  //          func_edge = message.func_edge;
+  //          break;
+  //        case kMapEdgeAndMutate:
+  //          func_edge_mutate = message.func_edge_mutate;
+  //          break;
+  //        default:
+  //          break;
+  //      }
+  //      response_serializable = message.response_serializable;
+  //      terminated = message.terminated;
+  //    }
+  //    return *this;
+  //  }
 
   // Request fields.
   core::common::GraphID graph_id;
@@ -88,9 +110,9 @@ struct ExecuteMessage {
   // TODO: add subgraph metadata fields and API program objects.
   core::data_structures::Serializable* graph;
 
-  std::function<void(VertexID)> func_vertex;
-  std::function<void(VertexID, VertexID)> func_edge;
-  std::function<void(VertexID, VertexID, EdgeIndex)> func_edge_mutate;
+  FuncVertex* func_vertex;
+  FuncEdge* func_edge;
+  FuncEdgeAndMutate* func_edge_mutate;
   // Response fields.
   core::data_structures::Serializable* response_serializable;
 
@@ -126,9 +148,9 @@ class Message {
   explicit Message(const ReadMessage& message);
   explicit Message(const ExecuteMessage& message);
   explicit Message(const WriteMessage& message);
-  ~Message();
+  ~Message() {}
 
-  Message(const Message& message);
+  //  Message(const Message& message);
 
   void Set(const ReadMessage& message);
   void Set(const ExecuteMessage& message);

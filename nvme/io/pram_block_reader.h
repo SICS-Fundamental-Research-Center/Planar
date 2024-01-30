@@ -10,9 +10,9 @@
 
 #include "core/common/config.h"
 #include "core/data_structures/buffer.h"
-#include "core/data_structures/graph/serialized_pram_block_csr.h"
 #include "core/data_structures/graph_metadata.h"
 #include "core/data_structures/serialized.h"
+#include "nvme/data_structures/graph/serialized_pram_block_csr.h"
 #include "nvme/io/reader_writer.h"
 
 namespace sics::graph::nvme::io {

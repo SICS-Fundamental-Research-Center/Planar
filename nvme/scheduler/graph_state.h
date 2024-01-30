@@ -7,9 +7,9 @@
 #include "core/common/config.h"
 #include "core/common/types.h"
 #include "core/data_structures/graph/serialized_mutable_csr_graph.h"
-#include "core/data_structures/graph/serialized_pram_block_csr.h"
 #include "core/data_structures/serializable.h"
 #include "core/data_structures/serialized.h"
+#include "nvme/data_structures/graph/serialized_pram_block_csr.h"
 
 namespace sics::graph::nvme::scheduler {
 
@@ -109,8 +109,8 @@ struct GraphState {
   // allocate new Serialized block_nvme graph for reader.
   core::data_structures::Serialized* NewSerializedBlockGraph(
       core::common::GraphID gid) {
-    serialized_.at(gid) = std::make_unique<
-        core::data_structures::graph::SerializedPramBlockCSRGraph>();
+    serialized_.at(gid) =
+        std::make_unique<data_structures::graph::SerializedPramBlockCSRGraph>();
     return serialized_.at(gid).get();
   }
 

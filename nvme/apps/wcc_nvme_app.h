@@ -2,12 +2,12 @@
 #define GRAPH_SYSTEMS_NVME_APPS_WCC_NVME_APP_H_
 
 #include "core/apis/planar_app_base.h"
-#include "core/data_structures/graph/pram_block.h"
 #include "nvme/apis/block_api.h"
+#include "nvme/data_structures/graph/pram_block.h"
 
 namespace sics::graph::nvme::apps {
 
-using BlockGraph = core::data_structures::graph::BlockCSRGraphUInt32;
+using BlockGraph = data_structures::graph::BlockCSRGraphUInt32;
 
 class WCCNvmeApp : public apis::BlockModel {
   using VertexIndex = core::common::VertexIndex;
@@ -56,25 +56,40 @@ class WCCNvmeApp : public apis::BlockModel {
   // TODO:
   // delete pointer 'this' in anonymous namespace
   void Compute() override {
-    auto init = [this](VertexID id) { Init(id); };
-    auto graft = [this](VertexID src_id, VertexID dst_id) {
-      Graft(src_id, dst_id);
+    LOG_INFO("WCCNvmeApp::Compute() begin");
+    std::function<void(VertexID)> init = [this](VertexID id) { Init(id); };
+    std::function<void(VertexID, VertexID)> graft =
+        [this](VertexID src_id, VertexID dst_id) { Graft(src_id, dst_id); };
+    std::function<void(VertexID)> point_jump = [this](VertexID src_id) {
+      PointJump(src_id);
     };
-    auto point_jump = [this](VertexID src_id) { PointJump(src_id); };
-    auto contract = [this](VertexID src_id, VertexID dst_id, EdgeIndex idx) {
-      Contract(src_id, dst_id, idx);
-    };
+    std::function<void(VertexID, VertexID, EdgeIndex)> contract =
+        [this](VertexID src_id, VertexID dst_id, EdgeIndex idx) {
+          Contract(src_id, dst_id, idx);
+        };
 
-    MapVertex(init);
+    update_store_->LogVertexData();
+    MapVertex(&init);
+    update_store_->LogVertexData();
 
     while (true) {
-      MapEdge(graft);
-      MapVertex(point_jump);
-      MapAndMutateEdge(contract);
+      update_store_->LogVertexData();
+      MapEdge(&graft);
+      update_store_->LogVertexData();
+
+      MapVertex(&point_jump);
+      update_store_->LogVertexData();
+
+      update_store_->LogEdgeDelInfo();
+      MapAndMutateEdge(&contract);
+      update_store_->LogVertexData();
+      update_store_->LogEdgeDelInfo();
+
       if (GetGraphEdges() == 0) {
         break;
       }
     }
+    LOG_INFO("WCCNvmeApp::Compute() end");
   }
 
  private:

@@ -23,7 +23,8 @@ class PramBlockWriter : public Writer {
   using Serialized = core::data_structures::Serialized;
 
  public:
-  explicit PramBlockWriter(const std::string& root_path) : root_path_(root_path) {}
+  explicit PramBlockWriter(const std::string& root_path)
+      : root_path_(root_path) {}
 
   void Write(WriteMessage* message,
              core::common::TaskRunner* runner = nullptr) override;

@@ -1,16 +1,18 @@
 #ifndef GRAPH_SYSTEMS_NVME_SCHEDULER_SCHEDULER_H_
 #define GRAPH_SYSTEMS_NVME_SCHEDULER_SCHEDULER_H_
 
+#include <condition_variable>
 #include <cstdlib>
+#include <mutex>
 #include <random>
 
 #include "core/common/config.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "core/common/types.h"
-#include "core/data_structures/graph/pram_block.h"
 #include "core/data_structures/graph_metadata.h"
 #include "core/data_structures/serializable.h"
 #include "core/data_structures/serialized.h"
+#include "nvme/data_structures/graph/pram_block.h"
 #include "nvme/io/pram_block_reader.h"
 #include "nvme/scheduler/graph_state.h"
 #include "nvme/scheduler/message_hub.h"
@@ -54,12 +56,12 @@ class PramScheduler {
 
   virtual ~PramScheduler() = default;
 
-  void Init(update_stores::BspUpdateStoreUInt32* update_store,
-            common::TaskRunner* task_runner, io::PramBlockReader* loader) {
+  void Init(update_stores::PramUpdateStoreUInt32* update_store,
+            common::TaskRunner* task_runner, io::PramBlockReader* reader) {
     update_store_ = update_store;
     executor_task_runner_ = task_runner;
     //    app_ = app;
-    loader_ = loader;
+    loader_ = reader;
   }
 
   // schedule subgraph execute and its IO(read and write)
@@ -71,6 +73,7 @@ class PramScheduler {
     execute_msg.terminated = true;
     message_hub_.SendResponse(scheduler::Message(execute_msg));
     thread_->join();
+    LOG_INFO("*** Scheduler stop! ***");
   }
 
   MessageHub* GetMessageHub() { return &message_hub_; }
@@ -86,6 +89,17 @@ class PramScheduler {
   void RunMapExecute(ExecuteMessage execute_msg);
 
   size_t GetGraphEdges() const { graph_metadata_info_.get_num_edges(); }
+
+  const core::data_structures::GraphMetadata& GetGraphMetadata() {
+    return graph_metadata_info_;
+  }
+
+  // mtx and cv
+  std::mutex* GetPramMtx() { return &pram_mtx_; }
+  std::condition_variable* GetPramCv() { return &pram_cv_; }
+  bool* GetPramReady() { return &pram_ready_; }
+
+  core::common::GraphID GetCurrentBlockId() const { return current_bid_; }
 
  protected:
   virtual bool ReadMessageResponseAndExecute(const ReadMessage& read_resp);
@@ -103,7 +117,7 @@ class PramScheduler {
   bool TryReadNextGraph(bool sync = false);
 
   void CreateSerializableGraph(common::GraphID graph_id);
-  data_structures::Serialized* CreateSerialized(common::GraphID graph_id);
+  core::data_structures::Serialized* CreateSerialized(common::GraphID graph_id);
 
   common::GraphID GetNextReadGraphInCurrentRound() const;
 
@@ -124,11 +138,13 @@ class PramScheduler {
 
   void SetAppRuntimeGraph(common::GraphID gid);
 
-  void SetAppRound(int round);
+  void SetGlobalVertexData(common::GraphID bid);
+
+  void SetExecuteMessageMapFunction(ExecuteMessage* message);
 
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
-  data_structures::GraphMetadata graph_metadata_info_;
+  core::data_structures::GraphMetadata graph_metadata_info_;
   bool is_block_mode_ = false;
   GraphState graph_state_;
 
@@ -136,8 +152,12 @@ class PramScheduler {
   MessageHub message_hub_;
 
   // ExecuteMessage info, used for setting APP context
-  update_stores::BspUpdateStoreUInt32* update_store_;
+  update_stores::PramUpdateStoreUInt32* update_store_;
   common::TaskRunner* executor_task_runner_;
+
+  std::mutex pram_mtx_;
+  std::condition_variable pram_cv_;
+  bool pram_ready_ = false;
 
   // Loader
   io::PramBlockReader* loader_ = nullptr;
@@ -148,6 +168,10 @@ class PramScheduler {
   std::unique_ptr<std::thread> thread_;
 
   MapType current_Map_type_ = MapType::kDefault;
+  core::common::FuncVertex* func_vertex_ = nullptr;
+  core::common::FuncEdge* func_edge_ = nullptr;
+  core::common::FuncEdgeAndMutate* func_edge_mutate_ = nullptr;
+  core::common::GraphID current_bid_ = 0;
 
   size_t step_ = 0;
 
@@ -162,7 +186,8 @@ class PramScheduler {
   int group_serialized_num_ = 0;
   int group_deserialized_num_ = 0;
   std::vector<common::GraphID> group_graphs_;
-  std::unique_ptr<data_structures::Serializable> group_serializable_graph_;
+  std::unique_ptr<core::data_structures::Serializable>
+      group_serializable_graph_;
 
   int to_read_graphs_ = 0;
   int have_read_graphs_ = 0;

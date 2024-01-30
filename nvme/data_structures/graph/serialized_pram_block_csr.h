@@ -1,12 +1,16 @@
-#ifndef GRAPH_SYSTEMS_CORE_DATA_STRUCTURES_GRAPH_SERIALIZED_PRAM_BLOCK_CSR_H_
-#define GRAPH_SYSTEMS_CORE_DATA_STRUCTURES_GRAPH_SERIALIZED_PRAM_BLOCK_CSR_H_
+#ifndef GRAPH_SYSTEMS_NVME_DATA_STRUCTURES_GRAPH_SERIALIZED_PRAM_BLOCK_CSR_H_
+#define GRAPH_SYSTEMS_NVME_DATA_STRUCTURES_GRAPH_SERIALIZED_PRAM_BLOCK_CSR_H_
 
 #include <list>
 #include <utility>
 
-#include "data_structures/serialized.h"
+#include "core/data_structures/buffer.h"
+#include "core/data_structures/serialized.h"
 
-namespace sics::graph::core::data_structures::graph {
+namespace sics::graph::nvme::data_structures::graph {
+
+using Serialized = core::data_structures::Serialized;
+using OwnedBuffer = core::data_structures::OwnedBuffer;
 
 class SerializedPramBlockCSRGraph : public Serialized {
  public:
@@ -29,6 +33,6 @@ class SerializedPramBlockCSRGraph : public Serialized {
   }
 };
 
-}  // namespace sics::graph::core::data_structures::graph
+}  // namespace sics::graph::nvme::data_structures::graph
 
-#endif  // GRAPH_SYSTEMS_CORE_DATA_STRUCTURES_GRAPH_SERIALIZED_PRAM_BLOCK_CSR_H_
+#endif  // GRAPH_SYSTEMS_NVME_DATA_STRUCTURES_GRAPH_SERIALIZED_PRAM_BLOCK_CSR_H_

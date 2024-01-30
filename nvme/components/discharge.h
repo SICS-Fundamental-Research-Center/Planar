@@ -30,6 +30,7 @@ class Discharger : public Component {
 
   void Start() override {
     thread_ = std::make_unique<std::thread>([this]() {
+      LOG_INFO("*** Discharger starts ***");
       while (true) {
         scheduler::WriteMessage message = writer_q_->PopOrWait();
         if (message.terminated) {
@@ -50,6 +51,7 @@ class Discharger : public Component {
     message.terminated = true;
     writer_q_->Push(message);
     thread_->join();
+    LOG_INFO("*** Discharger stops ***");
   }
 
  private:

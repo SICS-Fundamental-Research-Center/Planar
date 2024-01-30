@@ -7,6 +7,7 @@
 #include "core/common/bitmap_no_ownership.h"
 #include "core/common/config.h"
 #include "core/common/types.h"
+#include "core/data_structures/graph_metadata.h"
 #include "core/update_stores/update_store_base.h"
 #include "core/util/atomic.h"
 #include "core/util/logging.h"
@@ -22,35 +23,38 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
 
  public:
   PramNvmeUpdateStore()
-      : read_data_(nullptr), write_data_(nullptr), message_count_(0) {}
-  explicit PramNvmeUpdateStore(common::VertexCount vertex_num,
-                               common::EdgeIndex edge_num)
-      : message_count_(vertex_num) {
+      : read_data_(nullptr), write_data_(nullptr), vertex_count_(0) {}
+  explicit PramNvmeUpdateStore(
+      const core::data_structures::GraphMetadata& graph_metadata)
+      : graph_metadata_(graph_metadata),
+        vertex_count_(graph_metadata.get_num_vertices()),
+        edges_count_(graph_metadata.get_num_edges()) {
     application_type_ = common::Configurations::Get()->application;
     no_data_need_ = common::Configurations::Get()->no_data_need;
     is_block_mode_ = common::Configurations::Get()->is_block_mode;
 
     if (!no_data_need_) {
-      read_data_ = new VertexData[message_count_];
-      write_data_ = new VertexData[message_count_];
+      read_data_ = new VertexData[vertex_count_];
+      write_data_ = new VertexData[vertex_count_];
       switch (application_type_) {
         case common::ApplicationType::WCC:
         case common::ApplicationType::MST: {
-          for (uint32_t i = 0; i < vertex_num; i++) {
+          for (uint32_t i = 0; i < vertex_count_; i++) {
             read_data_[i] = i;
             write_data_[i] = i;
           }
+          edge_delete_map_.Init(edges_count_);
           break;
         }
         case common::ApplicationType::Coloring: {
-          for (uint32_t i = 0; i < vertex_num; i++) {
+          for (uint32_t i = 0; i < vertex_count_; i++) {
             read_data_[i] = 0;
             write_data_[i] = 0;
           }
           break;
         }
         case common::ApplicationType::Sssp: {
-          for (uint32_t i = 0; i < vertex_num; i++) {
+          for (uint32_t i = 0; i < vertex_count_; i++) {
             read_data_[i] = std::numeric_limits<VertexData>::max();
             write_data_[i] = std::numeric_limits<VertexData>::max();
           }
@@ -73,14 +77,14 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
 
   // used for basic unsigned type
   VertexData Read(VertexID vid) {
-    if (vid >= message_count_) {
+    if (vid >= vertex_count_) {
       LOG_FATAL("Read out of bound");
     }
     return read_data_[vid];
   }
 
   bool Write(VertexID vid, VertexData vdata_new) {
-    if (vid >= message_count_) {
+    if (vid >= vertex_count_) {
       return false;
     }
     write_data_[vid] = vdata_new;
@@ -88,21 +92,21 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   }
 
   bool WriteMin(VertexID id, VertexData new_data) {
-    if (id >= message_count_) {
+    if (id >= vertex_count_) {
       return false;
     }
     return util::atomic::WriteMin(write_data_ + id, new_data);
   }
 
   bool WriteMax(VertexID vid, VertexData new_data) {
-    if (vid >= message_count_) {
+    if (vid >= vertex_count_) {
       return false;
     }
     return util::atomic::WriteMax(write_data_ + vid, new_data);
   }
 
   bool DeleteEdge(core::common::EdgeIndex eid) {
-    if (eid >= edge_delete_map_.size()) {
+    if (eid > edges_count_) {
       return false;
     }
     edge_delete_map_.SetBit(eid);
@@ -115,49 +119,78 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
 
   void Sync() override {
     if (!no_data_need_) {
-      memcpy(read_data_, write_data_, message_count_ * sizeof(VertexData));
+      memcpy(read_data_, write_data_, vertex_count_ * sizeof(VertexData));
       active_count_ = 0;
     }
   }
 
-  uint32_t GetMessageCount() { return message_count_; }
+  uint32_t GetMessageCount() { return vertex_count_; }
 
   void SetMessageCount(uint32_t message_count) {
-    message_count_ = message_count;
+    vertex_count_ = message_count;
     InitMemorySizeOfBlock();
   }
 
-  void LogGlobalMessage() {
-    LOG_INFO("Global message info:");
-    for (size_t i = 0; i < message_count_; i++) {
-      LOGF_INFO("global message: id({}) -> read: {} write: {}", i,
-                read_data_[i], write_data_[i]);
+  void LogVertexData() {
+    LOG_INFO("VertexData info:");
+    for (size_t i = 0; i < vertex_count_; i++) {
+      LOGF_INFO("VertexData: id({}) -> read: {} write: {}", i, read_data_[i],
+                write_data_[i]);
     }
   }
 
-  void LogAllMessage() {
-    LOG_INFO("All Global message info:");
-    for (size_t i = 0; i < message_count_; i++) {
-      LOGF_INFO("global message: id({}) -> read: {} write: {}", i,
-                read_data_[i], write_data_[i]);
+  void LogEdgeDelInfo() {
+    LOG_INFO("Delete edges info:");
+    std::stringstream edges_del;
+    auto index = 0;
+    for (size_t i = 0; i < graph_metadata_.get_num_blocks(); i++) {
+      auto block = graph_metadata_.GetBlockMetadata(i);
+      for (size_t j = 0; j < block.num_outgoing_edges; j++) {
+        if (!edge_delete_map_.GetBit(index)) {
+          edges_del << index << " ";
+        } else {
+          edges_del << "x ";
+        }
+        index++;
+      }
+      edges_del << std::endl;
     }
+    LOGF_INFO("{}", edges_del.str());
   }
 
   size_t GetActiveCount() const override { return active_count_; }
 
   size_t GetMemorySize() const override { return memory_size_; }
 
- private:
-  void InitMemorySizeOfBlock() {
-    auto global_messgeage_size =
-        (sizeof(VertexData) * message_count_ * 2) >> 20;
-    memory_size_ = global_messgeage_size + 1;
+  //  const core::common::Bitmap* GetDeleteBitmap(size_t block_id) const {
+  //    return &delete_bitmaps_[block_id];
+  //  }
+
+  const core::common::Bitmap* GetDeleteBitmap() const {
+    return &edge_delete_map_;
   }
 
  private:
+  void InitMemorySizeOfBlock() {
+    auto global_messgeage_size = (sizeof(VertexData) * vertex_count_ * 2) >> 20;
+    auto delete_map_size = edge_delete_map_.size() >> 23;
+    memory_size_ = global_messgeage_size + delete_map_size + 1;
+  }
+
+  //  void InitDeleteBitmaps() {
+  //    delete_bitmaps_.resize(graph_metadata_->get_num_blocks());
+  //    for (size_t i = 0; i < graph_metadata_->get_num_blocks(); i++) {
+  //      delete_bitmaps_[i].Init(graph_metadata_->GetBlockNumEdges(i));
+  //    }
+  //  }
+
+ private:
+  const core::data_structures::GraphMetadata& graph_metadata_;
+
   VertexData* read_data_;
   VertexData* write_data_;
-  common::VertexCount message_count_;
+  common::VertexCount vertex_count_;
+  common::EdgeIndex edges_count_;
 
   core::common::Bitmap edge_delete_map_;
 
@@ -169,14 +202,16 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   common::ApplicationType application_type_;
   bool no_data_need_;
   bool is_block_mode_;
+
+  //  std::vector<core::common::Bitmap> delete_bitmaps_;
 };
 
 typedef PramNvmeUpdateStore<common::Uint32VertexDataType,
                             common::DefaultEdgeDataType>
-    BspUpdateStoreUInt32;
+    PramUpdateStoreUInt32;
 typedef PramNvmeUpdateStore<common::Uint16VertexDataType,
                             common::DefaultEdgeDataType>
-    BspUpdateStoreUInt16;
+    PramUpdateStoreUint16;
 
 }  // namespace sics::graph::nvme::update_stores
 

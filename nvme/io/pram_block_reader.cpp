@@ -2,12 +2,20 @@
 
 namespace sics::graph::nvme::io {
 using SerializedPramBlockCSRGraph =
-    core::data_structures::graph::SerializedPramBlockCSRGraph;
+    data_structures::graph::SerializedPramBlockCSRGraph;
 
 void PramBlockReader::Read(scheduler::ReadMessage* message,
                            core::common::TaskRunner* /* runner */) {
   // Init path.
-  std::string path = root_path_ + std::to_string(message->graph_id) + ".bin";
+  std::string path =
+      root_path_ + "blocks/" + std::to_string(message->graph_id) + ".bin";
+
+  // Read block info.
+  Serialized* block_serialized = message->response_serialized;
+  std::vector<OwnedBuffer> buffers;
+  ReadBlockInfo(path, message->num_vertices, &buffers);
+
+  block_serialized->ReceiveBuffers(std::move(buffers));
 }
 
 void PramBlockReader::ReadBlockInfo(const std::string& path,
@@ -24,7 +32,7 @@ void PramBlockReader::ReadBlockInfo(const std::string& path,
 
   read_size_ += (file_size >> 20);
 
-  size_t meta_size = num_vertices * sizeof(core::common::VertexID) * 2 +
+  size_t meta_size = num_vertices * sizeof(core::common::VertexID) +
                      num_vertices * sizeof(core::common::EdgeIndex);
   size_t edge_size = file_size - meta_size;
 

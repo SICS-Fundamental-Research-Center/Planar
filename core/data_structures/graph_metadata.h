@@ -129,6 +129,7 @@ class GraphMetadata {
   // type: "subgraph" or "block"
   void set_type(const std::string& type) { type_ = type; }
   const std::string& get_type() const { return type_; }
+  GraphID get_num_blocks() const { return num_subgraphs_; }
   void set_block_metadata_vec(
       const std::vector<BlockMetadata>& block_metadata_vec) {
     block_metadata_vec_ = block_metadata_vec;
@@ -140,6 +141,20 @@ class GraphMetadata {
   BlockMetadata* GetBlockMetadataPtr(BlockID bid) {
     return &block_metadata_vec_.at(bid);
   }
+
+  common::VertexCount GetBlockNumVertices(common::GraphID gid) const {
+    return block_metadata_vec_.at(gid).num_vertices;
+  }
+
+  common::EdgeIndex GetBlockNumEdges(common::GraphID gid) const {
+    return block_metadata_vec_.at(gid).num_outgoing_edges;
+  }
+
+  size_t GetBlockSize(common::GraphID gid) const {
+    return subgraph_size_.at(gid);
+  }
+
+  void UpdateBlockSize(common::GraphID bid) {}
 
  private:
   void InitSubgraphSize() {
@@ -176,6 +191,35 @@ class GraphMetadata {
     }
     for (int gid = 0; gid < num_subgraphs_; ++gid) {
       LOGF_INFO("subgraph {} size: {} MB", gid, subgraph_size_.at(gid));
+    }
+  }
+
+  void InitBlockSize() {
+    for (int gid = 0; gid < num_subgraphs_; ++gid) {
+      auto& subgraph = block_metadata_vec_.at(gid);
+      auto size_out_degree =
+          (subgraph.num_vertices * sizeof(VertexDegree)) >> 20;
+      auto size_out_offset = (subgraph.num_vertices * sizeof(EdgeIndex)) >> 20;
+      auto size_out_edges =
+          (subgraph.num_outgoing_edges * sizeof(VertexID)) >> 20;
+
+      auto size_total = size_out_degree + size_out_offset + size_out_edges;
+
+      if (common::Configurations::Get()->edge_mutate) {
+        auto size_out_degree_new =
+            (subgraph.num_vertices * sizeof(VertexDegree)) >> 20;
+        auto size_out_offset_new =
+            (subgraph.num_vertices * sizeof(EdgeIndex)) >> 20;
+        auto size_out_edges_new =
+            (subgraph.num_outgoing_edges * sizeof(VertexID)) >> 20;
+        auto size_egdes_delete_bitmap = subgraph.num_outgoing_edges >> 23;
+        size_total += size_out_degree_new + size_out_offset_new +
+                      size_out_edges_new + size_egdes_delete_bitmap;
+      }
+      subgraph_size_.push_back(size_total + 1);
+    }
+    for (int gid = 0; gid < num_subgraphs_; ++gid) {
+      LOGF_INFO("Block {} size: {} MB", gid, subgraph_size_.at(gid));
     }
   }
 

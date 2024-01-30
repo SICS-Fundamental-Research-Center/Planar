@@ -1,19 +1,21 @@
 #ifndef GRAPH_SYSTEMS_NVME_APIS_BLOCK_API_H_
 #define GRAPH_SYSTEMS_NVME_APIS_BLOCK_API_H_
 
+#include <condition_variable>
 #include <functional>
+#include <mutex>
 #include <type_traits>
 #include <vector>
 
 #include "core/common/multithreading/task_runner.h"
 #include "core/common/types.h"
-#include "core/data_structures/graph/pram_block.h"
 #include "core/data_structures/serializable.h"
 #include "core/util/logging.h"
 #include "nvme/apis/block_api_base.h"
 #include "nvme/components/discharge.h"
 #include "nvme/components/executor.h"
 #include "nvme/components/loader.h"
+#include "nvme/data_structures/graph/pram_block.h"
 #include "nvme/io/pram_block_reader.h"
 #include "nvme/io/pram_block_writer.h"
 #include "nvme/scheduler/message_hub.h"
@@ -23,7 +25,7 @@
 namespace sics::graph::nvme::apis {
 
 using core::data_structures::Serializable;
-using Block32 = core::data_structures::graph::BlockCSRGraphUInt32;
+using Block32 = data_structures::graph::BlockCSRGraphUInt32;
 
 class BlockModel : public BlockModelBase {
   using VertexData = typename Block32::VertexData;
@@ -42,14 +44,17 @@ class BlockModel : public BlockModelBase {
   BlockModel() = default;
   BlockModel(const std::string& root_path) {
     scheduler_ = std::make_unique<scheduler::PramScheduler>(root_path);
-    update_store_ = std::make_unique<update_stores::BspUpdateStoreUInt32>(
-        scheduler_->GetVertexNumber(), scheduler_->GetEdgeNumber());
+    update_store_ = std::make_unique<update_stores::PramUpdateStoreUInt32>(
+        scheduler_->GetGraphMetadata());
     loader_ = std::make_unique<components::Loader<io::PramBlockReader>>(
         root_path, scheduler_->GetMessageHub());
     discharge_ = std::make_unique<components::Discharger<io::PramBlockWriter>>(
         root_path, scheduler_->GetMessageHub());
     executor_ =
         std::make_unique<components::Executor>(scheduler_->GetMessageHub());
+
+    scheduler_->Init(update_store_.get(), executor_->GetTaskRunner(),
+                     loader_->GetReader());
   }
 
   ~BlockModel() override {
@@ -70,30 +75,40 @@ class BlockModel : public BlockModelBase {
     // for different blocks, init different data
   }
 
-  void MapVertex(const std::function<void(VertexID)>& func_vertex) {
+  void MapVertex(std::function<void(VertexID)>* func_vertex) {
     // all blocks should be executor the vertex function
     ExecuteMessage message;
     message.map_type = MapType::kMapVertex;
     message.func_vertex = func_vertex;
     scheduler_->RunMapExecute(message);
+    LockAndWaitResult();
+    LOG_INFO("MapVertex finished");
   }
 
-  void MapEdge(const std::function<void(VertexID, VertexID)>& func_edge) {
+  void MapEdge(std::function<void(VertexID, VertexID)>* func_edge) {
     // all blocks should be executor the edge function
     ExecuteMessage message;
     message.map_type = MapType::kMapEdge;
     message.func_edge = func_edge;
     scheduler_->RunMapExecute(message);
+    LockAndWaitResult();
+    LOG_INFO("MapEdge finished");
   }
 
   void MapAndMutateEdge(
-      const std::function<void(VertexID, VertexID, EdgeIndex)>& func_edge_del) {
+      std::function<void(VertexID, VertexID, EdgeIndex)>* func_edge_del) {
     // all blocks should be executor the edge function
     ExecuteMessage message;
     message.map_type = MapType::kMapEdgeAndMutate;
     message.func_edge_mutate = func_edge_del;
     scheduler_->RunMapExecute(message);
+    LockAndWaitResult();
+    LOG_INFO("MapEdgeAndMutate finished");
   }
+
+  // ===============================================================
+  // Map functions should use scheduler to iterate over all blocks
+  // ===============================================================
 
   void Run() {
     LOG_INFO("Start running");
@@ -102,6 +117,8 @@ class BlockModel : public BlockModelBase {
     discharge_->Start();
     executor_->Start();
     scheduler_->Start();
+
+    Compute();
   }
 
   void Stop() {
@@ -110,11 +127,17 @@ class BlockModel : public BlockModelBase {
     discharge_->StopAndJoin();
     executor_->StopAndJoin();
   }
-  // ===============================================================
-  // Map functions should use scheduler to iterate over all blocks
-  // ===============================================================
 
-  VertexData Read(VertexID id) { update_store_->Read(id); }
+  void LockAndWaitResult() {
+    //    std::unique_lock<std::mutex> lock(pram_mtx_);
+    //    pram_cv_.wait(lock, [] { return true; });
+    std::unique_lock<std::mutex> lock(*scheduler_->GetPramMtx());
+    auto pram_ready = scheduler_->GetPramReady();
+    *pram_ready = false;
+    scheduler_->GetPramCv()->wait(lock, [pram_ready] { return *pram_ready; });
+  }
+
+  VertexData Read(VertexID id) { return update_store_->Read(id); }
 
   void Write(VertexID id, VertexData vdata) { update_store_->Write(id, vdata); }
 
@@ -137,9 +160,12 @@ class BlockModel : public BlockModelBase {
   std::unique_ptr<components::Loader<io::PramBlockReader>> loader_;
   std::unique_ptr<components::Discharger<io::PramBlockWriter>> discharge_;
   std::unique_ptr<components::Executor> executor_;
-  std::unique_ptr<update_stores::BspUpdateStoreUInt32> update_store_;
+  std::unique_ptr<update_stores::PramUpdateStoreUInt32> update_store_;
 
   int round_ = 0;
+
+  std::mutex pram_mtx_;
+  std::condition_variable pram_cv_;
 
   std::chrono::time_point<std::chrono::system_clock> begin_time_;
   std::chrono::time_point<std::chrono::system_clock> end_time_;

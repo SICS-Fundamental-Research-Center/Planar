@@ -11,35 +11,35 @@ Message::Message(const ExecuteMessage& message)
 Message::Message(const WriteMessage& message)
     : type_(kWrite), write_message(message) {}
 
-Message::~Message() {
-  switch (type_) {
-    case kRead:
-    case kWrite:
-      break;
-    case kExecute:
-      this->execute_message.~ExecuteMessage();
-      break;
-    default:
-      break;
-  }
-}
+// Message::~Message() {
+//   switch (type_) {
+//     case kRead:
+//     case kWrite:
+//       break;
+//     case kExecute:
+//       this->execute_message.~ExecuteMessage();
+//       break;
+//     default:
+//       break;
+//   }
+// }
 
-Message::Message(const Message& message) {
-  type_ = message.type_;
-  switch (type_) {
-    case kRead:
-      this->read_message = message.read_message;
-      break;
-    case kExecute:
-      this->execute_message = message.execute_message;
-      break;
-    case kWrite:
-      this->write_message = message.write_message;
-      break;
-    default:
-      break;
-  }
-}
+// Message::Message(const Message& message) {
+//   type_ = message.type_;
+//   switch (type_) {
+//     case kRead:
+//       this->read_message = message.read_message;
+//       break;
+//     case kExecute:
+//       this->execute_message = message.execute_message;
+//       break;
+//     case kWrite:
+//       this->write_message = message.write_message;
+//       break;
+//     default:
+//       break;
+//   }
+// }
 
 void Message::Set(const ReadMessage& message) {
   type_ = kRead;
