@@ -4,6 +4,7 @@
 #include <gflags/gflags.h>
 
 #include <cstdint>
+#include <functional>
 #include <limits>
 #include <string>
 
