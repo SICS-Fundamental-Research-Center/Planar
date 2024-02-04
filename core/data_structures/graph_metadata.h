@@ -23,6 +23,7 @@ struct BlockMetadata {
   VertexID end_id;    // excluded
   VertexID num_vertices;
   EdgeIndex num_outgoing_edges;
+  EdgeIndex edge_offset;
 };
 
 struct SubgraphMetadata {
@@ -150,6 +151,10 @@ class GraphMetadata {
     return block_metadata_vec_.at(gid).num_outgoing_edges;
   }
 
+  common::EdgeIndex GetBlockEdgeOffset(common::GraphID bid) const {
+    return block_offset_.at(bid);
+  }
+
   size_t GetBlockSize(common::GraphID gid) const {
     return subgraph_size_.at(gid);
   }
@@ -221,6 +226,15 @@ class GraphMetadata {
     for (int gid = 0; gid < num_subgraphs_; ++gid) {
       LOGF_INFO("Block {} size: {} MB", gid, subgraph_size_.at(gid));
     }
+    // init block_offset_
+    block_offset_.resize(num_subgraphs_);
+    block_offset_[0] = 0;
+    block_metadata_vec_.at(0).edge_offset = 0;
+    for (int i = 1; i < num_subgraphs_; ++i) {
+      block_offset_[i] = block_offset_[i - 1] +
+                         block_metadata_vec_.at(i - 1).num_outgoing_edges;
+      block_metadata_vec_.at(i).edge_offset = block_offset_[i];
+    }
   }
 
  private:
@@ -239,6 +253,7 @@ class GraphMetadata {
   // type: subgraph or block
   std::string type_ = "subgraph";
   std::vector<BlockMetadata> block_metadata_vec_;
+  std::vector<EdgeIndex> block_offset_;
   // configs
   uint32_t vertex_data_size_ = 4;
 };

@@ -169,6 +169,10 @@ class PramBlock : public core::data_structures::Serializable {
     return update_store_->GetDeleteBitmap();
   }
 
+  core::common::EdgeIndex GetBlockEdgeOffset() const {
+    return block_metadata_->edge_offset;
+  }
+
  private:
   VertexID GetIndex(VertexID id) const {
     return id - block_metadata_->begin_id;

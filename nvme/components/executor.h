@@ -49,11 +49,13 @@ class Executor : public Component {
           break;
         }
 
-        LOGF_INFO("Executor starts executing block {}", message.graph_id);
+        //        LOGF_INFO("Executor starts executing block {}",
+        //        message.graph_id);
         // TODO: execute api logic
         switch (message.execute_type) {
           case scheduler::ExecuteType::kDeserialize: {
-            LOGF_INFO("Executor: Deserialize block {}", message.graph_id);
+            //            LOGF_INFO("Executor: Deserialize block {}",
+            //            message.graph_id);
             core::data_structures::Serializable* graph = message.graph;
             graph->Deserialize(
                 task_runner_,
@@ -82,13 +84,15 @@ class Executor : public Component {
             if (in_memory_time_) end_time_ = std::chrono::system_clock::now();
             break;
           case scheduler::ExecuteType::kSerialize:
-            LOGF_INFO("Executor: Serialized block {}", message.graph_id);
+            //            LOGF_INFO("Executor: Serialized block {}",
+            //            message.graph_id);
             // Set serialized graph to message for write back to disk.
             message.serialized =
                 message.graph->Serialize(task_runner_).release();
             break;
         }
-        LOGF_INFO("Executor completes executing block {}", message.graph_id);
+        //        LOGF_INFO("Executor completes executing block {}",
+        //        message.graph_id);
         response_q_->Push(scheduler::Message(message));
       }
     });
@@ -111,7 +115,7 @@ class Executor : public Component {
 
   void ParallelVertexDo(core::data_structures::Serializable* graph,
                         const FuncVertex& vertex_func) {
-    LOG_DEBUG("ParallelVertexDo begins!");
+    //    LOG_DEBUG("ParallelVertexDo begins!");
     auto block = dynamic_cast<Block32*>(graph);
     uint32_t task_size = GetTaskSize(block->GetVertexNums());
     core::common::TaskPackage tasks;
@@ -131,17 +135,17 @@ class Executor : public Component {
     }
     //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}", task_size,
     //              tasks.size());
-    block->LogBlockVertices();
-    block->LogBlockEdges();
+    //    block->LogBlockVertices();
+    //    block->LogBlockEdges();
     task_runner_.SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
     //    graph->SyncVertexData();
-    LOG_DEBUG("ParallelVertexDo ends!");
+    //    LOG_DEBUG("ParallelVertexDo ends!");
   }
 
   void ParallelEdgeDo(core::data_structures::Serializable* graph,
                       const FuncEdge& edge_func) {
-    LOG_DEBUG("ParallelEdgeDelDo begins!");
+    //    LOG_DEBUG("ParallelEdgeDelDo begins!");
     //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
     auto block = dynamic_cast<Block32*>(graph);
     core::common::TaskPackage tasks;
@@ -161,18 +165,19 @@ class Executor : public Component {
     tasks.push_back(task);
     //    begin_index = end_index;
     task_runner_.SubmitSync(tasks);
-    LOG_DEBUG("ParallelEdgedelDo ends!");
+    //    LOG_DEBUG("ParallelEdgedelDo ends!");
   }
 
   void ParallelEdgeDoWithMutate(core::data_structures::Serializable* graph,
                                 const FuncEdge& edge_func) {
-    LOG_DEBUG("ParallelEdgeDelDo begins!");
+    //    LOG_DEBUG("ParallelEdgeDelDo begins!");
     //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
     auto block = dynamic_cast<Block32*>(graph);
     core::common::TaskPackage tasks;
     VertexIndex begin_index = 0, end_index = block->GetVertexNums();
     auto del_bitmap = block->GetEdgeDeleteBitmap();
-    auto task = [&edge_func, block, end_index, del_bitmap]() {
+    core::common::EdgeIndex edge_offset = block->GetBlockEdgeOffset();
+    auto task = [&edge_func, block, end_index, del_bitmap, edge_offset]() {
       for (VertexIndex idx = 0; idx < end_index; idx++) {
         auto degree = block->GetOutDegreeByIndex(idx);
         if (degree != 0) {
@@ -180,7 +185,7 @@ class Executor : public Component {
           EdgeIndex outOffset_base = block->GetOutOffsetByIndex(idx);
           VertexID* outEdges = block->GetOutEdgesBaseByIndex(idx);
           for (VertexIndex j = 0; j < degree; j++) {
-            EdgeIndex edge_index = outOffset_base + j;
+            EdgeIndex edge_index = outOffset_base + j + edge_offset;
             if (!del_bitmap->GetBit(edge_index)) {
               edge_func(src_id, outEdges[j]);
             }
@@ -191,17 +196,18 @@ class Executor : public Component {
     tasks.push_back(task);
     //    begin_index = end_index;
     task_runner_.SubmitSync(tasks);
-    LOG_DEBUG("ParallelEdgedelDo ends!");
+    //    LOG_DEBUG("ParallelEdgedelDo ends!");
   }
 
   void ParallelEdgeAndMutateDo(core::data_structures::Serializable* graph,
                                const FuncEdgeAndMutate& edge_del_func) {
-    LOG_INFO("ParallelEdgeAndMutateDo begins!");
+    //    LOG_INFO("ParallelEdgeAndMutateDo begins!");
     auto block = dynamic_cast<Block32*>(graph);
     core::common::TaskPackage tasks;
     VertexIndex begin_index = 0, end_index = block->GetVertexNums();
     auto del_bitmap = block->GetEdgeDeleteBitmap();
-    auto task = [&edge_del_func, block, end_index, del_bitmap]() {
+    core::common::EdgeIndex edge_offset = block->GetBlockEdgeOffset();
+    auto task = [&edge_del_func, block, end_index, del_bitmap, edge_offset]() {
       for (VertexIndex idx = 0; idx < end_index; idx++) {
         auto degree = block->GetOutDegreeByIndex(idx);
         if (degree != 0) {
@@ -209,7 +215,7 @@ class Executor : public Component {
           EdgeIndex outOffset_base = block->GetOutOffsetByIndex(idx);
           VertexID* outEdges = block->GetOutEdgesBaseByIndex(idx);
           for (VertexIndex j = 0; j < degree; j++) {
-            EdgeIndex edge_index = outOffset_base + j;
+            EdgeIndex edge_index = outOffset_base + j + edge_offset;
             if (!del_bitmap->GetBit(edge_index)) {
               edge_del_func(src_id, outEdges[j], edge_index);
             }
@@ -219,7 +225,7 @@ class Executor : public Component {
     };
     tasks.push_back(task);
     task_runner_.SubmitSync(tasks);
-    LOG_INFO("ParallelEdgeAndMutateDo ends!");
+    //    LOG_INFO("ParallelEdgeAndMutateDo ends!");
   }
 
   size_t GetTaskSize(VertexID max_vid) const {

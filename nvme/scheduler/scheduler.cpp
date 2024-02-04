@@ -84,12 +84,14 @@ bool PramScheduler::ReadMessageResponseAndExecute(
       execute_message.graph = graph_state_.GetSubgraph(read_resp.graph_id);
       execute_message.execute_type = ExecuteType::kDeserialize;
       is_executor_running_ = true;
-      LOGF_INFO("read finished, deserialize and execute the read graph {}",
-                read_resp.graph_id);
+      //      LOGF_INFO("read finished, deserialize and execute the read graph
+      //      {}",
+      //                read_resp.graph_id);
       message_hub_.get_executor_queue()->Push(execute_message);
     } else {
       // When executor is running, do nothing, wait for executor finish.
-      LOG_INFO("read finished, but executor is running, wait for executor");
+      //      LOG_INFO("read finished, but executor is running, wait for
+      //      executor");
     }
   }
   TryReadNextGraph();
@@ -200,6 +202,7 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
         update_store_->Sync();
         LOGF_INFO(" ============ Current MapType: {}, Step: {} ============ ",
                   current_Map_type_, step_);
+        step_++;
         current_Map_type_ = MapType::kDefault;
         func_vertex_ = nullptr;
         func_edge_ = nullptr;
@@ -302,14 +305,14 @@ bool PramScheduler::WriteMessageResponseAndCheckTerminate(
   graph_state_.SetSerializedToOnDisk(write_resp.graph_id);
   graph_state_.ReleaseSubgraphSerialized(write_resp.graph_id);
   auto write_size = graph_metadata_info_.GetSubgraphSize(write_resp.graph_id);
-  LOGF_INFO(
-      "Release subgraph: {}, size: {}. *** Memory size now: {}, after: {} "
-      "***",
-      write_resp.graph_id, write_size, memory_left_size_,
-      memory_left_size_ + write_size);
+  //  LOGF_INFO(
+  //      "Release subgraph: {}, size: {}. *** Memory size now: {}, after: {} "
+  //      "***",
+  //      write_resp.graph_id, write_size, memory_left_size_,
+  //      memory_left_size_ + write_size);
   if (use_limits_) {
     limits_++;
-    LOGF_INFO("Write back one graph. now limits is {}", limits_);
+    //    LOGF_INFO("Write back one graph. now limits is {}", limits_);
   } else {
     memory_left_size_ += write_size;
   }
@@ -346,7 +349,8 @@ bool PramScheduler::TryReadNextGraph(bool sync) {
     if (next_graph_id != INVALID_GRAPH_ID) {
       if (use_limits_) {
         limits_--;
-        LOGF_INFO("Read on graph {}. now limits is {}", next_graph_id, limits_);
+        //        LOGF_INFO("Read on graph {}. now limits is {}", next_graph_id,
+        //        limits_);
       } else {
         auto read_size = graph_metadata_info_.GetSubgraphSize(next_graph_id);
         if (memory_left_size_ < read_size) {

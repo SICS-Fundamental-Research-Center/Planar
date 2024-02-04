@@ -162,6 +162,10 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
 
   size_t GetMemorySize() const override { return memory_size_; }
 
+  core::common::EdgeIndex GetLeftEdges() const {
+    return edges_count_ - edge_delete_map_.Count();
+  }
+
   //  const core::common::Bitmap* GetDeleteBitmap(size_t block_id) const {
   //    return &delete_bitmaps_[block_id];
   //  }

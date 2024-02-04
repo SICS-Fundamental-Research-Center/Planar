@@ -48,7 +48,9 @@ class WCCNvmeApp : public apis::BlockModel {
   }
 
   void Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
-    if (Read(src_id) == Read(dst_id)) {
+    auto src_parent_id = Read(src_id);
+    auto dst_parent_id = Read(dst_id);
+    if (src_parent_id == dst_parent_id) {
       this->DeleteEdge(src_id, dst_id, idx);
     }
   }
@@ -68,25 +70,27 @@ class WCCNvmeApp : public apis::BlockModel {
           Contract(src_id, dst_id, idx);
         };
 
-    update_store_->LogVertexData();
-    MapVertex(&init);
-    update_store_->LogVertexData();
+    //    update_store_->LogVertexData();
+    //    MapVertex(&init);
+    //    update_store_->LogVertexData();
 
     while (true) {
-      update_store_->LogVertexData();
+      //      update_store_->LogVertexData();
       MapEdge(&graft);
-      update_store_->LogVertexData();
+      //      update_store_->LogVertexData();
 
       MapVertex(&point_jump);
-      update_store_->LogVertexData();
+      //      update_store_->LogVertexData();
 
-      update_store_->LogEdgeDelInfo();
+      //      update_store_->LogEdgeDelInfo();
       MapAndMutateEdge(&contract);
-      update_store_->LogVertexData();
-      update_store_->LogEdgeDelInfo();
+      //      update_store_->LogVertexData();
+      //      update_store_->LogEdgeDelInfo();
 
-      if (GetGraphEdges() == 0) {
+      if (update_store_->GetLeftEdges() == 0) {
         break;
+      } else {
+        LOGF_INFO("left edges num: {}", update_store_->GetLeftEdges());
       }
     }
     LOG_INFO("WCCNvmeApp::Compute() end");
