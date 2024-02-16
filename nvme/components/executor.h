@@ -120,12 +120,13 @@ class Executor : public Component {
     //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
     uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
-    tasks.reserve(ceil((double)block->GetVertexNums() / task_size));
+    //    tasks.reserve(ceil((double)block->GetVertexNums() / task_size));
     VertexIndex begin_index = 0, end_index = 0;
     for (; begin_index < block->GetVertexNums();) {
       end_index += task_size;
-      if (end_index > block->GetVertexNums())
+      if (end_index > block->GetVertexNums()) {
         end_index = block->GetVertexNums();
+      }
       auto task = [&vertex_func, block, begin_index, end_index]() {
         for (VertexIndex idx = begin_index; idx < end_index; idx++) {
           vertex_func(block->GetVertexID(idx));
@@ -178,7 +179,7 @@ class Executor : public Component {
     //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
     uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
-    VertexIndex begin_index = 0, end_index = block->GetVertexNums();
+    VertexIndex begin_index = 0, end_index = 0;
     auto del_bitmap = block->GetEdgeDeleteBitmap();
     core::common::EdgeIndex edge_offset = block->GetBlockEdgeOffset();
 
@@ -225,7 +226,7 @@ class Executor : public Component {
 
     for (; begin_index < block->GetVertexNums();) {
       end_index += task_size;
-      if (end_index < block->GetVertexNums()) {
+      if (end_index > block->GetVertexNums()) {
         end_index = block->GetVertexNums();
       }
 
@@ -280,7 +281,7 @@ class Executor : public Component {
   const uint32_t parallelism_ = 8;
   const uint32_t task_package_factor_ = 100000;
   bool edge_mutate_ = false;
-  const uint32_t task_size_ = 500000;
+  const uint32_t task_size_ = 200000;
 };
 
 }  // namespace sics::graph::nvme::components
