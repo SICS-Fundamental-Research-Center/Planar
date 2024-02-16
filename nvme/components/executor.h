@@ -117,9 +117,10 @@ class Executor : public Component {
                         const FuncVertex& vertex_func) {
     //    LOG_DEBUG("ParallelVertexDo begins!");
     auto block = dynamic_cast<Block32*>(graph);
-    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+    //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+    uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
-    tasks.reserve(parallelism_ * task_package_factor_);
+    tasks.reserve(ceil((double)block->GetVertexNums() / task_size));
     VertexIndex begin_index = 0, end_index = 0;
     for (; begin_index < block->GetVertexNums();) {
       end_index += task_size;
@@ -173,28 +174,38 @@ class Executor : public Component {
     //    LOG_DEBUG("ParallelEdgeDelDo begins!");
     //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
     auto block = dynamic_cast<Block32*>(graph);
+    //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+    uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
     VertexIndex begin_index = 0, end_index = block->GetVertexNums();
     auto del_bitmap = block->GetEdgeDeleteBitmap();
     core::common::EdgeIndex edge_offset = block->GetBlockEdgeOffset();
-    auto task = [&edge_func, block, end_index, del_bitmap, edge_offset]() {
-      for (VertexIndex idx = 0; idx < end_index; idx++) {
-        auto degree = block->GetOutDegreeByIndex(idx);
-        if (degree != 0) {
-          auto src_id = block->GetVertexID(idx);
-          EdgeIndex outOffset_base = block->GetOutOffsetByIndex(idx);
-          VertexID* outEdges = block->GetOutEdgesBaseByIndex(idx);
-          for (VertexIndex j = 0; j < degree; j++) {
-            EdgeIndex edge_index = outOffset_base + j + edge_offset;
-            if (!del_bitmap->GetBit(edge_index)) {
-              edge_func(src_id, outEdges[j]);
+
+    for (; begin_index < block->GetVertexNums();) {
+      end_index += task_size;
+      if (end_index > block->GetVertexNums()) {
+        end_index = block->GetVertexNums();
+      }
+      auto task = [&edge_func, block, begin_index, end_index, del_bitmap,
+                   edge_offset]() {
+        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
+          auto degree = block->GetOutDegreeByIndex(idx);
+          if (degree != 0) {
+            auto src_id = block->GetVertexID(idx);
+            EdgeIndex outOffset_base = block->GetOutOffsetByIndex(idx);
+            VertexID* outEdges = block->GetOutEdgesBaseByIndex(idx);
+            for (VertexIndex j = 0; j < degree; j++) {
+              EdgeIndex edge_index = outOffset_base + j + edge_offset;
+              if (!del_bitmap->GetBit(edge_index)) {
+                edge_func(src_id, outEdges[j]);
+              }
             }
           }
         }
-      }
-    };
-    tasks.push_back(task);
-    //    begin_index = end_index;
+      };
+      tasks.push_back(task);
+      begin_index = end_index;
+    }
     task_runner_.SubmitSync(tasks);
     //    LOG_DEBUG("ParallelEdgedelDo ends!");
   }
@@ -203,35 +214,52 @@ class Executor : public Component {
                                const FuncEdgeAndMutate& edge_del_func) {
     //    LOG_INFO("ParallelEdgeAndMutateDo begins!");
     auto block = dynamic_cast<Block32*>(graph);
+    //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+    uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
-    VertexIndex begin_index = 0, end_index = block->GetVertexNums();
+    VertexIndex begin_index = 0, end_index = 0;
     auto del_bitmap = block->GetEdgeDeleteBitmap();
     core::common::EdgeIndex edge_offset = block->GetBlockEdgeOffset();
-    auto task = [&edge_del_func, block, end_index, del_bitmap, edge_offset]() {
-      for (VertexIndex idx = 0; idx < end_index; idx++) {
-        auto degree = block->GetOutDegreeByIndex(idx);
-        if (degree != 0) {
-          auto src_id = block->GetVertexID(idx);
-          EdgeIndex outOffset_base = block->GetOutOffsetByIndex(idx);
-          VertexID* outEdges = block->GetOutEdgesBaseByIndex(idx);
-          for (VertexIndex j = 0; j < degree; j++) {
-            EdgeIndex edge_index = outOffset_base + j + edge_offset;
-            if (!del_bitmap->GetBit(edge_index)) {
-              edge_del_func(src_id, outEdges[j], edge_index);
+
+    for (; begin_index < block->GetVertexNums();) {
+      end_index += task_size;
+      if (end_index < block->GetVertexNums()) {
+        end_index = block->GetVertexNums();
+      }
+
+      auto task = [&edge_del_func, block, begin_index, end_index, del_bitmap,
+                   edge_offset]() {
+        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
+          auto degree = block->GetOutDegreeByIndex(idx);
+          if (degree != 0) {
+            auto src_id = block->GetVertexID(idx);
+            EdgeIndex outOffset_base = block->GetOutOffsetByIndex(idx);
+            VertexID* outEdges = block->GetOutEdgesBaseByIndex(idx);
+            for (VertexIndex j = 0; j < degree; j++) {
+              EdgeIndex edge_index = outOffset_base + j + edge_offset;
+              if (!del_bitmap->GetBit(edge_index)) {
+                edge_del_func(src_id, outEdges[j], edge_index);
+              }
             }
           }
         }
-      }
-    };
-    tasks.push_back(task);
+      };
+      tasks.push_back(task);
+      begin_index = end_index;
+    }
     task_runner_.SubmitSync(tasks);
     //    LOG_INFO("ParallelEdgeAndMutateDo ends!");
   }
 
   size_t GetTaskSize(VertexID max_vid) const {
-    auto task_num = parallelism_ * task_package_factor_;
-    size_t task_size = ceil((double)max_vid / task_num);
-    return task_size < 2 ? 2 : task_size;
+    if (max_vid > 1000000) {
+      return 500000;
+    } else {
+      return ceil((double)max_vid / 2);
+    }
+    //    auto task_num = parallelism_ * task_package_factor_;
+    //    size_t task_size = ceil((double)max_vid / task_num);
+    //    return task_size < 2 ? 2 : task_size;
   }
 
  private:
@@ -249,6 +277,7 @@ class Executor : public Component {
   const uint32_t parallelism_ = 8;
   const uint32_t task_package_factor_ = 100000;
   bool edge_mutate_ = false;
+  const uint32_t task_size_ = 500000;
 };
 
 }  // namespace sics::graph::nvme::components

@@ -74,6 +74,9 @@ class Configurations {
 
   bool is_block_mode = false;
 
+  // for nvme
+  uint32_t task_size = 500000;
+
  private:
   Configurations() = default;
   inline static Configurations* instance_ = nullptr;

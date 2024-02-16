@@ -14,7 +14,6 @@ void PramScheduler::Start() {
       Message resp = message_hub_.GetResponse();
 
       if (resp.is_terminated()) {
-        LOG_INFO("*** PramScheduler is signaled termination ***");
         break;
       }
       switch (resp.get_type()) {
@@ -200,8 +199,7 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
         // This sync maybe replaced by borderVertex check.
         graph_state_.ResetCurrentRoundPending();
         update_store_->Sync();
-        LOGF_INFO(" ============ Current MapType: {}, Step: {} ============ ",
-                  current_Map_type_, step_);
+        LOGF_INFO(" Current MapType: {}, Step: {}", current_Map_type_, step_);
         step_++;
         current_Map_type_ = MapType::kDefault;
         func_vertex_ = nullptr;

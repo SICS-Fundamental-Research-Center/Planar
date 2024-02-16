@@ -88,9 +88,11 @@ class WCCNvmeApp : public apis::BlockModel {
       //      update_store_->LogEdgeDelInfo();
 
       if (update_store_->GetLeftEdges() == 0) {
+        LOG_INFO("======= Round end, no edges left =======");
         break;
       } else {
-        LOGF_INFO("left edges num: {}", update_store_->GetLeftEdges());
+        LOGF_INFO("======= Round end, left edges num: {} =======",
+                  update_store_->GetLeftEdges());
       }
     }
     LOG_INFO("WCCNvmeApp::Compute() end");
