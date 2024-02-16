@@ -36,6 +36,7 @@ class Executor : public Component {
         task_runner_(core::common::Configurations::Get()->parallelism) {
     in_memory_time_ = core::common::Configurations::Get()->in_memory;
     edge_mutate_ = core::common::Configurations::Get()->edge_mutate;
+    task_size_ = core::common::Configurations::Get()->task_size;
   }
   ~Executor() final = default;
 
@@ -281,7 +282,7 @@ class Executor : public Component {
   const uint32_t parallelism_ = 8;
   const uint32_t task_package_factor_ = 100000;
   bool edge_mutate_ = false;
-  const uint32_t task_size_ = 200000;
+  uint32_t task_size_ = 500000;
 };
 
 }  // namespace sics::graph::nvme::components
