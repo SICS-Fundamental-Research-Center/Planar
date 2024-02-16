@@ -138,6 +138,7 @@ class Executor : public Component {
     //              tasks.size());
     //    block->LogBlockVertices();
     //    block->LogBlockEdges();
+    LOGF_INFO("task num: {}", tasks.size());
     task_runner_.SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
     //    graph->SyncVertexData();
@@ -206,6 +207,7 @@ class Executor : public Component {
       tasks.push_back(task);
       begin_index = end_index;
     }
+    LOGF_INFO("task num: {}", tasks.size());
     task_runner_.SubmitSync(tasks);
     //    LOG_DEBUG("ParallelEdgedelDo ends!");
   }
@@ -247,6 +249,7 @@ class Executor : public Component {
       tasks.push_back(task);
       begin_index = end_index;
     }
+    LOGF_INFO("task num: {}", tasks.size());
     task_runner_.SubmitSync(tasks);
     //    LOG_INFO("ParallelEdgeAndMutateDo ends!");
   }
