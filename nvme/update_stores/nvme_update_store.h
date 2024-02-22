@@ -67,6 +67,12 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
       }
     }
 
+    // Init del bitmaps
+    for (uint32_t i = 0; i < graph_metadata_.get_num_blocks(); i++) {
+      auto block = graph_metadata_.GetBlockMetadata(i);
+      edge_delete_map_.Init(block.num_outgoing_edges);
+    }
+
     InitMemorySizeOfBlock();
   }
 
@@ -92,9 +98,6 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   }
 
   bool WriteMin(VertexID id, VertexData new_data) {
-    if (id >= vertex_count_) {
-      return false;
-    }
     return util::atomic::WriteMin(write_data_ + id, new_data);
   }
 
@@ -197,6 +200,7 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   common::EdgeIndex edges_count_;
 
   core::common::Bitmap edge_delete_map_;
+  std::vector<core::common::Bitmap> edge_del_bitmaps_;
 
   size_t active_count_ = 0;
 

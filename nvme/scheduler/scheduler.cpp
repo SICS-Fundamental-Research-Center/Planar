@@ -147,7 +147,24 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
             break;
         }
         // read first block.
-        TryReadNextGraph();
+        if (in_memory_) {
+          auto bid = GetNextExecuteGraphInMemory();
+          if (bid != INVALID_GRAPH_ID) {
+            ExecuteMessage execute_message;
+            execute_message.graph_id = bid;
+            execute_message.graph = graph_state_.GetSubgraph(bid);
+            execute_message.execute_type = kCompute;
+            execute_message.map_type = current_Map_type_;
+            SetExecuteMessageMapFunction(&execute_message);
+            SetGlobalVertexData(execute_message.graph_id);
+            current_bid_ = execute_message.graph_id;
+            message_hub_.get_executor_queue()->Push(execute_message);
+          } else {
+            TryReadNextGraph();
+          }
+        } else {
+          TryReadNextGraph();
+        }
       } else {
         if (group_mode_) {
           for (int i = 0; i < group_num_; i++) {
@@ -162,11 +179,50 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
           // release the group_graph handler
           group_serializable_graph_.reset();
         } else {
-          graph_state_.SetDeserializedToComputed(execute_resp.graph_id);
-          ExecuteMessage execute_message(execute_resp);
-          execute_message.graph_id = execute_resp.graph_id;
-          execute_message.execute_type = ExecuteType::kSerialize;
-          message_hub_.get_executor_queue()->Push(execute_message);
+          if (in_memory_) {
+            // still keep deserialized state
+            graph_state_.SetCurrentRoundPendingFinish(execute_resp.graph_id);
+            if (IsCurrentRoundFinish()) {
+              graph_state_.ResetCurrentRoundPending();
+              update_store_->Sync();
+              LOGF_INFO(" Current MapType: {}, Step: {}", current_Map_type_,
+                        step_);
+              step_++;
+              current_Map_type_ = MapType::kDefault;
+              func_vertex_ = nullptr;
+              func_edge_ = nullptr;
+              func_edge_mutate_ = nullptr;
+              if (current_Map_type_ == MapType::kDefault) {
+                std::lock_guard<std::mutex> lock(pram_mtx_);
+                pram_ready_ = true;
+                pram_cv_.notify_all();
+              }
+            } else {
+              auto next_execute_gid = GetNextExecuteGraphInMemory();
+              if (next_execute_gid != INVALID_GRAPH_ID) {
+                ExecuteMessage execute_message;
+                execute_message.graph_id = next_execute_gid;
+                CreateSerializableGraph(next_execute_gid);
+                execute_message.graph =
+                    graph_state_.GetSubgraph(next_execute_gid);
+                execute_message.execute_type = ExecuteType::kCompute;
+                execute_message.map_type = current_Map_type_;
+                SetExecuteMessageMapFunction(&execute_message);
+                SetGlobalVertexData(execute_resp.graph_id);
+                current_bid_ = execute_message.graph_id;
+                is_executor_running_ = true;
+                message_hub_.get_executor_queue()->Push(execute_message);
+              } else {
+                TryReadNextGraph();
+              }
+            }
+          } else {
+            graph_state_.SetDeserializedToComputed(execute_resp.graph_id);
+            ExecuteMessage execute_message(execute_resp);
+            execute_message.graph_id = execute_resp.graph_id;
+            execute_message.execute_type = ExecuteType::kSerialize;
+            message_hub_.get_executor_queue()->Push(execute_message);
+          }
         }
       }
       break;
@@ -368,6 +424,8 @@ bool PramScheduler::TryReadNextGraph(bool sync) {
       read_message.response_serialized = CreateSerialized(next_graph_id);
       graph_state_.SetOnDiskToReading(next_graph_id);
       message_hub_.get_reader_queue()->Push(read_message);
+    } else {
+      return false;
     }
   }
   return true;
@@ -431,6 +489,17 @@ common::GraphID PramScheduler::GetNextExecuteGraph() const {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
             GraphState::StorageStateType::Serialized) {
+      return gid;
+    }
+  }
+  return INVALID_GRAPH_ID;
+}
+
+common::GraphID PramScheduler::GetNextExecuteGraphInMemory() const {
+  for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+    if (graph_state_.current_round_pending_.at(gid) &&
+        graph_state_.subgraph_storage_state_.at(gid) ==
+            GraphState::StorageStateType::Deserialized) {
       return gid;
     }
   }

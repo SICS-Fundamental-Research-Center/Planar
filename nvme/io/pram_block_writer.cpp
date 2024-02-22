@@ -8,7 +8,7 @@ void PramBlockWriter::Write(WriteMessage* message,
       root_path_ + std::to_string(message->graph_id) + ".bin.new";
   if (message->serialized->HasNext()) {
     auto a = message->serialized->PopNext();
-    WriteBlockInfo(file_path, a);
+    //    WriteBlockInfo(file_path, a);
   }
 }
 

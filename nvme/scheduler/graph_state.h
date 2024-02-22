@@ -81,6 +81,10 @@ struct GraphState {
     subgraph_storage_state_.at(gid) = type;
   }
 
+  void SetCurrentRoundPendingFinish(core::common::GraphID gid) {
+    current_round_pending_.at(gid) = false;
+  }
+
   void SyncCurrentRoundPending() {
     for (int i = 0; i < num_blocks_; i++) {
       current_round_pending_.at(i) = true;

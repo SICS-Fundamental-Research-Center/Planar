@@ -33,7 +33,10 @@ class Executor : public Component {
   Executor(scheduler::MessageHub* hub)
       : execute_q_(hub->get_executor_queue()),
         response_q_(hub->get_response_queue()),
-        task_runner_(core::common::Configurations::Get()->parallelism) {
+        task_runner_(core::common::Configurations::Get()->parallelism),
+        parallelism_(core::common::Configurations::Get()->parallelism),
+        task_package_factor_(
+            core::common::Configurations::Get()->task_package_factor) {
     in_memory_time_ = core::common::Configurations::Get()->in_memory;
     edge_mutate_ = core::common::Configurations::Get()->edge_mutate;
     task_size_ = core::common::Configurations::Get()->task_size;
@@ -118,8 +121,8 @@ class Executor : public Component {
                         const FuncVertex& vertex_func) {
     //    LOG_DEBUG("ParallelVertexDo begins!");
     auto block = dynamic_cast<Block32*>(graph);
-    //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
-    uint32_t task_size = task_size_;
+    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+    //    uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
     //    tasks.reserve(ceil((double)block->GetVertexNums() / task_size));
     VertexIndex begin_index = 0, end_index = 0;
@@ -177,8 +180,8 @@ class Executor : public Component {
     //    LOG_DEBUG("ParallelEdgeDelDo begins!");
     //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
     auto block = dynamic_cast<Block32*>(graph);
-    //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
-    uint32_t task_size = task_size_;
+    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+    //    uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
     VertexIndex begin_index = 0, end_index = 0;
     auto del_bitmap = block->GetEdgeDeleteBitmap();
@@ -218,8 +221,8 @@ class Executor : public Component {
                                const FuncEdgeAndMutate& edge_del_func) {
     //    LOG_INFO("ParallelEdgeAndMutateDo begins!");
     auto block = dynamic_cast<Block32*>(graph);
-    //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
-    uint32_t task_size = task_size_;
+    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+    //    uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
     VertexIndex begin_index = 0, end_index = 0;
     auto del_bitmap = block->GetEdgeDeleteBitmap();
@@ -257,14 +260,9 @@ class Executor : public Component {
   }
 
   size_t GetTaskSize(VertexID max_vid) const {
-    if (max_vid > 1000000) {
-      return 500000;
-    } else {
-      return ceil((double)max_vid / 2);
-    }
-    //    auto task_num = parallelism_ * task_package_factor_;
-    //    size_t task_size = ceil((double)max_vid / task_num);
-    //    return task_size < 2 ? 2 : task_size;
+    auto task_num = parallelism_ * task_package_factor_;
+    size_t task_size = ceil((double)max_vid / task_num);
+    return task_size < 2 ? 2 : task_size;
   }
 
  private:
@@ -279,8 +277,8 @@ class Executor : public Component {
   std::chrono::time_point<std::chrono::system_clock> end_time_;
 
   // configs
-  const uint32_t parallelism_ = 8;
-  const uint32_t task_package_factor_ = 100000;
+  const uint32_t parallelism_;
+  const uint32_t task_package_factor_;
   bool edge_mutate_ = false;
   uint32_t task_size_ = 500000;
 };

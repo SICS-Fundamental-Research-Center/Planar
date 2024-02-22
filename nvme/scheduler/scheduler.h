@@ -51,6 +51,7 @@ class PramScheduler {
     group_mode_ = common::Configurations::Get()->group;
     group_graphs_.reserve(graph_metadata_info_.get_num_subgraphs());
     group_num_ = common::Configurations::Get()->group_num;
+    in_memory_ = common::Configurations::Get()->in_memory;
     srand(0);
   }
 
@@ -125,6 +126,8 @@ class PramScheduler {
 
   common::GraphID GetNextReadGraphInNextRound() const;
 
+  common::GraphID GetNextExecuteGraphInMemory() const;
+
   void GetNextExecuteGroupGraphs();
 
   size_t GetLeftPendingGraphNums() const;
@@ -179,6 +182,7 @@ class PramScheduler {
   int limits_ = 0;
   bool use_limits_ = false;
   bool short_cut_ = true;
+  bool in_memory_ = false;
 
   // group mode
   bool group_mode_ = false;
