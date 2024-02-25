@@ -476,7 +476,7 @@ bool Scheduler::TryReadNextGraph(bool sync) {
       to_read_graphs_--;
       read_message.graph_id = next_graph_id;
       read_message.num_vertices =
-          graph_metadata_info_.GetBlockNumVertices(next_graph_id);
+          graph_metadata_info_.GetSubgraphNumVertices(next_graph_id);
       read_message.round = graph_state_.GetSubgraphRound(next_graph_id);
       read_message.response_serialized = CreateSerialized(next_graph_id);
       graph_state_.SetOnDiskToReading(next_graph_id);
