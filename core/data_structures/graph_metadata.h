@@ -161,6 +161,15 @@ class GraphMetadata {
 
   void UpdateBlockSize(common::GraphID bid) {}
 
+  void UpdateOutEdgeNumInBLockMode() {
+    // update whole graph metadata
+    EdgeIndex num_edges_new = 0;
+    for (uint32_t i = 0; i < num_subgraphs_; i++) {
+      num_edges_new += block_metadata_vec_.at(i).num_outgoing_edges;
+    }
+    num_edges_ = num_edges_new;
+  }
+
  private:
   void InitSubgraphSize() {
     for (int gid = 0; gid < num_subgraphs_; ++gid) {

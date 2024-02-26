@@ -16,6 +16,7 @@ using EdgeIndex = core::common::EdgeIndex;
 using FuncVertex = core::common::FuncVertex;
 using FuncEdge = core::common::FuncEdge;
 using FuncEdgeAndMutate = core::common::FuncEdgeAndMutate;
+using FuncEdgeMutate = core::common::FuncEdgeMutate;
 
 struct ReadMessage {
   ReadMessage() = default;
@@ -43,7 +44,7 @@ enum MapType {
   kDefault = 0,
   kMapVertex = 1,
   kMapEdge = 2,
-  kMapEdgeAndMutate = 3,
+  kMapEdgeAndMutate = 3
 };
 
 struct ExecuteMessage {
@@ -113,6 +114,8 @@ struct ExecuteMessage {
   FuncVertex* func_vertex;
   FuncEdge* func_edge;
   FuncEdgeAndMutate* func_edge_mutate;
+  FuncEdgeMutate* func_edge_mutate_bool;
+
   // Response fields.
   core::data_structures::Serializable* response_serializable;
 

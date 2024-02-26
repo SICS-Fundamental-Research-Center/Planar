@@ -55,6 +55,16 @@ class WCCNvmeApp : public apis::BlockModel {
     }
   }
 
+  bool ContractEdge(VertexID src_id, VertexID dst_id) {
+    auto src_parent_id = Read(src_id);
+    auto dst_parent_id = Read(dst_id);
+    if (src_parent_id == dst_parent_id) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   // TODO:
   // delete pointer 'this' in anonymous namespace
   void Compute() override {
@@ -69,11 +79,14 @@ class WCCNvmeApp : public apis::BlockModel {
         [this](VertexID src_id, VertexID dst_id, EdgeIndex idx) {
           Contract(src_id, dst_id, idx);
         };
-
+    std::function<bool(VertexID, VertexID)> contractEdge =
+        [this](VertexID src_id, VertexID dst_id) {
+          return ContractEdge(src_id, dst_id);
+        };
     //    update_store_->LogVertexData();
     //    MapVertex(&init);
     //    update_store_->LogVertexData();
-
+    int round = 0;
     while (true) {
       //      update_store_->LogVertexData();
       MapEdge(&graft);
@@ -83,17 +96,18 @@ class WCCNvmeApp : public apis::BlockModel {
       //      update_store_->LogVertexData();
 
       //      update_store_->LogEdgeDelInfo();
-      MapAndMutateEdge(&contract);
+      MapAndMutateEdgeBool(&contractEdge);
       //      update_store_->LogVertexData();
       //      update_store_->LogEdgeDelInfo();
 
       if (update_store_->GetLeftEdges() == 0) {
-        LOG_INFO("======= Round end, no edges left =======");
+        LOGF_INFO("======= Round {} end, no edges left =======", round);
         break;
       } else {
-        LOGF_INFO("======= Round end, left edges num: {} =======",
+        LOGF_INFO("======= Round {} end, left edges num: {} =======", round,
                   update_store_->GetLeftEdges());
       }
+      round++;
     }
     LOG_INFO("WCCNvmeApp::Compute() end");
   }

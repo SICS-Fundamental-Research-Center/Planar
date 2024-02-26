@@ -74,6 +74,7 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
     }
 
     InitMemorySizeOfBlock();
+    //    InitDeleteBitmaps();
   }
 
   ~PramNvmeUpdateStore() {
@@ -166,7 +167,8 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   size_t GetMemorySize() const override { return memory_size_; }
 
   core::common::EdgeIndex GetLeftEdges() const {
-    return edges_count_ - edge_delete_map_.Count();
+    //    return edges_count_ - edge_delete_map_.Count();
+    return graph_metadata_.get_num_edges();
   }
 
   //  const core::common::Bitmap* GetDeleteBitmap(size_t block_id) const {
@@ -185,9 +187,9 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   }
 
   //  void InitDeleteBitmaps() {
-  //    delete_bitmaps_.resize(graph_metadata_->get_num_blocks());
-  //    for (size_t i = 0; i < graph_metadata_->get_num_blocks(); i++) {
-  //      delete_bitmaps_[i].Init(graph_metadata_->GetBlockNumEdges(i));
+  //    edge_del_bitmaps_.resize(graph_metadata_.get_num_blocks());
+  //    for (size_t i = 0; i < graph_metadata_.get_num_blocks(); i++) {
+  //      edge_del_bitmaps_[i].Init(graph_metadata_.GetBlockNumEdges(i));
   //    }
   //  }
 
@@ -200,7 +202,7 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   common::EdgeIndex edges_count_;
 
   core::common::Bitmap edge_delete_map_;
-  std::vector<core::common::Bitmap> edge_del_bitmaps_;
+  //  std::vector<core::common::Bitmap> edge_del_bitmaps_;
 
   size_t active_count_ = 0;
 

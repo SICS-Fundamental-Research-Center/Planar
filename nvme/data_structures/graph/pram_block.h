@@ -44,7 +44,10 @@ class PramBlock : public core::data_structures::Serializable {
         out_edges_base_(nullptr),
         out_degree_base_new_(nullptr),
         out_offset_base_new_(nullptr),
-        out_edges_base_new_(nullptr) {}
+        out_edges_base_new_(nullptr),
+        parallelism_(core::common::Configurations::Get()->parallelism),
+        task_package_factor_(
+            core::common::Configurations::Get()->task_package_factor) {}
 
   ~PramBlock() override {
     if (block_buf_base_ != nullptr) {
@@ -98,18 +101,157 @@ class PramBlock : public core::data_structures::Serializable {
     // mutate
     if (core::common::Configurations::Get()->edge_mutate &&
         block_metadata_->num_outgoing_edges != 0) {
+      // edges_new buffer is malloc when used. and release in the call function.
+      out_edges_base_new_ = nullptr;
       out_degree_base_new_ = new VertexDegree[block_metadata_->num_vertices];
       memcpy(out_degree_base_new_, out_degree_base_,
              sizeof(VertexDegree) * block_metadata_->num_vertices);
       out_offset_base_new_ = new EdgeIndex[block_metadata_->num_vertices];
       edge_delete_bitmap_.Init(block_metadata_->num_outgoing_edges);
-      // edges_new buffer is malloc when used. and release in the call function.
-      out_edges_base_new_ = nullptr;
     } else {
       out_edges_base_new_ = nullptr;
       out_degree_base_new_ = nullptr;
       out_offset_base_new_ = nullptr;
+      edge_delete_bitmap_.Init(0);
     }
+  }
+
+  void UpdateOutOffsetBaseNew(core::common::TaskRunner* runner) {
+    //    LOG_INFO("out_offset_base_new update begin!");
+    // TODO: change simple logic
+    uint32_t step = ceil((double)block_metadata_->num_vertices / parallelism_);
+    VertexIndex b1 = 0, e1 = 0;
+    {
+      core::common::TaskPackage pre_tasks;
+      pre_tasks.reserve(parallelism_);
+      for (uint32_t i = 0; i < parallelism_; i++) {
+        b1 = i * step;
+        if (b1 + step > block_metadata_->num_vertices) {
+          e1 = block_metadata_->num_vertices;
+        } else {
+          e1 = b1 + step;
+        }
+        auto task = [this, b1, e1]() {
+          out_offset_base_new_[b1] = 0;
+          for (uint32_t i = b1 + 1; i < e1; i++) {
+            out_offset_base_new_[i] =
+                out_offset_base_new_[i - 1] + out_degree_base_new_[i - 1];
+          }
+        };
+        pre_tasks.push_back(task);
+      }
+      runner->SubmitSync(pre_tasks);
+    }
+    // compute the base offset of each range
+    EdgeIndex accumulate_base = 0;
+    for (uint32_t i = 0; i < parallelism_; i++) {
+      VertexIndex b = i * step;
+      VertexIndex e = (i + 1) * step;
+      if (e > block_metadata_->num_vertices) {
+        e = block_metadata_->num_vertices;
+      }
+      out_offset_base_new_[b] += accumulate_base;
+      accumulate_base += out_offset_base_new_[e - 1];
+      accumulate_base += out_degree_base_new_[e - 1];
+    }
+    {
+      core::common::TaskPackage fix_tasks;
+      fix_tasks.reserve(parallelism_);
+      b1 = 0;
+      e1 = 0;
+      for (uint32_t i = 0; i < parallelism_; i++) {
+        b1 = i * step;
+        if (b1 + step > block_metadata_->num_vertices) {
+          e1 = block_metadata_->num_vertices;
+        } else {
+          e1 = b1 + step;
+        }
+        auto task = [this, b1, e1]() {
+          for (uint32_t i = b1 + 1; i < e1; i++) {
+            out_offset_base_new_[i] += out_offset_base_new_[b1];
+          }
+        };
+        fix_tasks.push_back(task);
+        b1 += step;
+      }
+      runner->SubmitSync(fix_tasks);
+    }
+    //    LOG_INFO("out_offset_base_new update finish!");
+  }
+
+  void MutateGraphEdge(core::common::TaskRunner* runner) {
+    if (block_metadata_->num_outgoing_edges == 0) {
+      return;
+    }
+    auto del_edges = edge_delete_bitmap_.Count();
+    size_t num_outgoing_edges_new =
+        block_metadata_->num_outgoing_edges - del_edges;
+    if (block_metadata_->num_outgoing_edges < del_edges) {
+      //      num_outgoing_edges_new = 0;
+      LOG_FATAL("delete edges number is more than left, stop!");
+    }
+
+    if (num_outgoing_edges_new != 0) {
+      out_edges_base_new_ = new VertexID[num_outgoing_edges_new];
+      UpdateOutOffsetBaseNew(runner);
+
+      size_t task_num = parallelism_ * task_package_factor_;
+      uint32_t task_size =
+          ceil((double)block_metadata_->num_vertices / task_num);
+      task_size = task_size < 2 ? 2 : task_size;
+      core::common::TaskPackage tasks;
+      tasks.reserve(task_num);
+      VertexIndex begin_index = 0, end_index = 0;
+      for (; begin_index < block_metadata_->num_vertices;) {
+        end_index += task_size;
+        if (end_index > block_metadata_->num_vertices) {
+          end_index = block_metadata_->num_vertices;
+        }
+        auto task = std::bind([&, begin_index, end_index]() {
+          EdgeIndex index = out_offset_base_new_[begin_index];
+          for (int i = begin_index; i < end_index; i++) {
+            EdgeIndex offset = out_offset_base_[i];
+            for (int j = 0; j < out_degree_base_[i]; j++) {
+              if (!edge_delete_bitmap_.GetBit(offset + j)) {
+                out_edges_base_new_[index++] = out_edges_base_[offset + j];
+              }
+            }
+          }
+        });
+        tasks.push_back(task);
+        begin_index = end_index;
+      }
+      runner->SubmitSync(tasks);
+      memcpy(out_degree_base_, out_degree_base_new_,
+             sizeof(VertexDegree) * block_metadata_->num_vertices);
+      memcpy(out_offset_base_, out_offset_base_new_,
+             sizeof(EdgeIndex) * block_metadata_->num_vertices);
+      edge_delete_bitmap_.Clear();
+      edge_delete_bitmap_.Init(num_outgoing_edges_new);
+      LOGF_INFO("left edges: {}", num_outgoing_edges_new);
+      graph_serialized_->GetCSRBuffer()->at(1) =
+          OwnedBuffer(sizeof(VertexID) * num_outgoing_edges_new,
+                      std::unique_ptr<uint8_t>((uint8_t*)out_edges_base_new_));
+      out_edges_base_ = out_edges_base_new_;
+      out_edges_base_new_ = nullptr;
+    } else {
+      LOG_INFO("No edges left, release all assistant buffer");
+      graph_serialized_->GetCSRBuffer()->at(1) = OwnedBuffer(0);
+      memcpy(out_degree_base_, out_degree_base_new_,
+             sizeof(VertexDegree) * block_metadata_->num_vertices);
+      delete[] out_degree_base_new_;
+      out_degree_base_new_ = nullptr;
+      delete[] out_offset_base_new_;
+      out_offset_base_new_ = nullptr;
+    }
+    block_metadata_->num_outgoing_edges = num_outgoing_edges_new;
+  }
+
+  void DeleteEdge(VertexID idx, EdgeIndex eid) {
+    edge_delete_bitmap_.SetBit(eid);
+    out_degree_base_new_[idx] = out_degree_base_new_[idx] - 1;
+    //    core::util::atomic::WriteMin(&out_degree_base_new_[idx],
+    //                                 out_degree_base_new_[idx] - 1);
   }
 
   // TODO: add block methods like sub-graph
@@ -132,8 +274,6 @@ class PramBlock : public core::data_structures::Serializable {
   VertexID* GetOutEdgesBaseByIndex(VertexIndex index) {
     return out_edges_base_ + out_offset_base_[index];
   }
-
-  void MutateGraphEdge(core::common::TaskRunner* runner) {}
 
   // log functions for lookup block info
   void LogBlockVertices() const {
@@ -197,6 +337,10 @@ class PramBlock : public core::data_structures::Serializable {
   core::common::Bitmap edge_delete_bitmap_;
 
   update_stores::PramUpdateStoreUInt32* update_store_;
+
+  // configs
+  uint32_t parallelism_;
+  uint32_t task_package_factor_;
 };
 
 typedef PramBlock<core::common::Uint32VertexDataType,

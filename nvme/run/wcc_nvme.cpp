@@ -25,8 +25,8 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->in_memory = FLAGS_in_memory;
   core::common::Configurations::GetMutable()->limits = FLAGS_limits;
   core::common::Configurations::GetMutable()->short_cut = FLAGS_short_cut;
-  core::common::Configurations::GetMutable()->edge_mutate = true;
   // wcc nvme specific configurations
+  core::common::Configurations::GetMutable()->edge_mutate = true;
   core::common::Configurations::GetMutable()->is_block_mode = true;
   core::common::Configurations::GetMutable()->task_size = FLAGS_task_size;
 

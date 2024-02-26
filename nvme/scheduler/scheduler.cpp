@@ -140,7 +140,7 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
             func_edge_ = execute_resp.func_edge;
             break;
           case MapType::kMapEdgeAndMutate:
-            func_edge_mutate_ = execute_resp.func_edge_mutate;
+            func_edge_mutate_bool_ = execute_resp.func_edge_mutate_bool;
             break;
           default:
             LOGF_ERROR("Map type is not supported!");
@@ -185,13 +185,16 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
             if (IsCurrentRoundFinish()) {
               graph_state_.ResetCurrentRoundPending();
               update_store_->Sync();
+              if (current_Map_type_ == MapType::kMapEdgeAndMutate) {
+                graph_metadata_info_.UpdateOutEdgeNumInBLockMode();
+              }
               LOGF_INFO(" Current MapType: {}, Step: {}", current_Map_type_,
                         step_);
               step_++;
               current_Map_type_ = MapType::kDefault;
               func_vertex_ = nullptr;
               func_edge_ = nullptr;
-              func_edge_mutate_ = nullptr;
+              func_edge_mutate_bool_ = nullptr;
               if (current_Map_type_ == MapType::kDefault) {
                 std::lock_guard<std::mutex> lock(pram_mtx_);
                 pram_ready_ = true;
@@ -260,7 +263,7 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
         current_Map_type_ = MapType::kDefault;
         func_vertex_ = nullptr;
         func_edge_ = nullptr;
-        func_edge_mutate_ = nullptr;
+        func_edge_mutate_bool_ = nullptr;
 
         // inform this map exe is over
 
@@ -567,7 +570,7 @@ void PramScheduler::SetExecuteMessageMapFunction(ExecuteMessage* message) {
       message->func_edge = func_edge_;
       break;
     case MapType::kMapEdgeAndMutate:
-      message->func_edge_mutate = func_edge_mutate_;
+      message->func_edge_mutate_bool = func_edge_mutate_bool_;
       break;
     default:
       LOGF_ERROR("Map type is not supported!");

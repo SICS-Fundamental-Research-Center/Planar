@@ -173,7 +173,7 @@ class PramScheduler {
   MapType current_Map_type_ = MapType::kDefault;
   core::common::FuncVertex* func_vertex_ = nullptr;
   core::common::FuncEdge* func_edge_ = nullptr;
-  core::common::FuncEdgeAndMutate* func_edge_mutate_ = nullptr;
+  core::common::FuncEdgeMutate* func_edge_mutate_bool_ = nullptr;
   core::common::GraphID current_bid_ = 0;
 
   size_t step_ = 0;

@@ -106,6 +106,16 @@ class BlockModel : public BlockModelBase {
     LOG_INFO("MapEdgeAndMutate finished");
   }
 
+  void MapAndMutateEdgeBool(
+      std::function<bool(VertexID, VertexID)>* func_edge_del) {
+    ExecuteMessage message;
+    message.map_type = MapType::kMapEdgeAndMutate;
+    message.func_edge_mutate_bool = func_edge_del;
+    scheduler_->RunMapExecute(message);
+    LockAndWaitResult();
+    LOG_INFO("MapEdgeAndMutate finished");
+  }
+
   // ===============================================================
   // Map functions should use scheduler to iterate over all blocks
   // ===============================================================
@@ -164,8 +174,8 @@ class BlockModel : public BlockModelBase {
 
   int round_ = 0;
 
-  std::mutex pram_mtx_;
-  std::condition_variable pram_cv_;
+  //  std::mutex pram_mtx_;
+  //  std::condition_variable pram_cv_;
 
   std::chrono::time_point<std::chrono::system_clock> begin_time_;
   std::chrono::time_point<std::chrono::system_clock> end_time_;

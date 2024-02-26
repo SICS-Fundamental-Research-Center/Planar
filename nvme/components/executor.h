@@ -28,6 +28,7 @@ class Executor : public Component {
   using FuncVertex = core::common::FuncVertex;
   using FuncEdge = core::common::FuncEdge;
   using FuncEdgeAndMutate = core::common::FuncEdgeAndMutate;
+  using FuncEdgeMutate = core::common::FuncEdgeMutate;
 
  public:
   Executor(scheduler::MessageHub* hub)
@@ -81,7 +82,8 @@ class Executor : public Component {
                 ParallelEdgeDo(message.graph, *message.func_edge);
               }
             } else if (message.map_type == scheduler::kMapEdgeAndMutate) {
-              ParallelEdgeAndMutateDo(message.graph, *message.func_edge_mutate);
+              ParallelEdgeAndMutateDo(message.graph,
+                                      *message.func_edge_mutate_bool);
             } else {
               LOG_FATAL("Executor: Invalid map type");
             }
@@ -155,22 +157,31 @@ class Executor : public Component {
     //    LOG_DEBUG("ParallelEdgeDelDo begins!");
     //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
     auto block = dynamic_cast<Block32*>(graph);
+    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+    //    uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
-    VertexIndex begin_index = 0, end_index = block->GetVertexNums();
-    auto task = [&edge_func, block, end_index]() {
-      for (VertexIndex idx = 0; idx < end_index; idx++) {
-        auto degree = block->GetOutDegreeByIndex(idx);
-        if (degree != 0) {
-          auto src_id = block->GetVertexID(idx);
-          VertexID* outEdges = block->GetOutEdgesBaseByIndex(idx);
-          for (VertexIndex j = 0; j < degree; j++) {
-            edge_func(src_id, outEdges[j]);
+    VertexIndex begin_index = 0, end_index = 0;
+    for (; begin_index < block->GetVertexNums();) {
+      end_index += task_size;
+      if (end_index > block->GetVertexNums()) {
+        end_index = block->GetVertexNums();
+      }
+      auto task = [&edge_func, block, begin_index, end_index]() {
+        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
+          auto degree = block->GetOutDegreeByIndex(idx);
+          if (degree != 0) {
+            auto src_id = block->GetVertexID(idx);
+            VertexID* outEdges = block->GetOutEdgesBaseByIndex(idx);
+            for (VertexIndex j = 0; j < degree; j++) {
+              edge_func(src_id, outEdges[j]);
+            }
           }
         }
-      }
-    };
-    tasks.push_back(task);
-    //    begin_index = end_index;
+      };
+      tasks.push_back(task);
+      begin_index = end_index;
+    }
+    LOGF_INFO("task num: {}", tasks.size());
     task_runner_.SubmitSync(tasks);
     //    LOG_DEBUG("ParallelEdgedelDo ends!");
   }
@@ -218,15 +229,15 @@ class Executor : public Component {
   }
 
   void ParallelEdgeAndMutateDo(core::data_structures::Serializable* graph,
-                               const FuncEdgeAndMutate& edge_del_func) {
+                               const FuncEdgeMutate& edge_del_func) {
     //    LOG_INFO("ParallelEdgeAndMutateDo begins!");
     auto block = dynamic_cast<Block32*>(graph);
     uint32_t task_size = GetTaskSize(block->GetVertexNums());
     //    uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
     VertexIndex begin_index = 0, end_index = 0;
-    auto del_bitmap = block->GetEdgeDeleteBitmap();
-    core::common::EdgeIndex edge_offset = block->GetBlockEdgeOffset();
+    //    auto del_bitmap = block->GetEdgeDeleteBitmap();
+    //    core::common::EdgeIndex edge_offset = block->GetBlockEdgeOffset();
 
     for (; begin_index < block->GetVertexNums();) {
       end_index += task_size;
@@ -234,8 +245,7 @@ class Executor : public Component {
         end_index = block->GetVertexNums();
       }
 
-      auto task = [&edge_del_func, block, begin_index, end_index, del_bitmap,
-                   edge_offset]() {
+      auto task = [&edge_del_func, block, begin_index, end_index]() {
         for (VertexIndex idx = begin_index; idx < end_index; idx++) {
           auto degree = block->GetOutDegreeByIndex(idx);
           if (degree != 0) {
@@ -243,9 +253,9 @@ class Executor : public Component {
             EdgeIndex outOffset_base = block->GetOutOffsetByIndex(idx);
             VertexID* outEdges = block->GetOutEdgesBaseByIndex(idx);
             for (VertexIndex j = 0; j < degree; j++) {
-              EdgeIndex edge_index = outOffset_base + j + edge_offset;
-              if (!del_bitmap->GetBit(edge_index)) {
-                edge_del_func(src_id, outEdges[j], edge_index);
+              EdgeIndex edge_index = outOffset_base + j;
+              if (edge_del_func(src_id, outEdges[j])) {
+                block->DeleteEdge(idx, edge_index);
               }
             }
           }
@@ -256,6 +266,8 @@ class Executor : public Component {
     }
     LOGF_INFO("task num: {}", tasks.size());
     task_runner_.SubmitSync(tasks);
+
+    block->MutateGraphEdge(&task_runner_);
     //    LOG_INFO("ParallelEdgeAndMutateDo ends!");
   }
 

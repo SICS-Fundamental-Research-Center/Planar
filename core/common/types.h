@@ -26,6 +26,7 @@ typedef uint16_t Uint16VertexDataType;
 typedef std::function<void(VertexID)> FuncVertex;
 typedef std::function<void(VertexID, VertexID)> FuncEdge;
 typedef std::function<void(VertexID, VertexID, EdgeIndex)> FuncEdgeAndMutate;
+typedef std::function<bool(VertexID, VertexID)> FuncEdgeMutate;
 
 #define MAX_VERTEX_ID std::numeric_limits<VertexID>::max()
 #define INVALID_GRAPH_ID \
