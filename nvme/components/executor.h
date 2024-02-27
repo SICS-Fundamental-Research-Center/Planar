@@ -76,11 +76,7 @@ class Executor : public Component {
             if (message.map_type == scheduler::kMapVertex) {
               ParallelVertexDo(message.graph, *message.func_vertex);
             } else if (message.map_type == scheduler::kMapEdge) {
-              if (edge_mutate_) {
-                ParallelEdgeDoWithMutate(message.graph, *message.func_edge);
-              } else {
-                ParallelEdgeDo(message.graph, *message.func_edge);
-              }
+              ParallelEdgeDo(message.graph, *message.func_edge);
             } else if (message.map_type == scheduler::kMapEdgeAndMutate) {
               ParallelEdgeAndMutateDo(message.graph,
                                       *message.func_edge_mutate_bool);
