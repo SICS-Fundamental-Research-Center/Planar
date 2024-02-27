@@ -188,8 +188,9 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
               if (current_Map_type_ == MapType::kMapEdgeAndMutate) {
                 graph_metadata_info_.UpdateOutEdgeNumInBLockMode();
               }
-              LOGF_INFO(" Current MapType: {}, Step: {}", current_Map_type_,
-                        step_);
+              //              LOGF_INFO(" Current MapType: {}, Step: {}",
+              //              current_Map_type_,
+              //                        step_);
               step_++;
               current_Map_type_ = MapType::kDefault;
               func_vertex_ = nullptr;

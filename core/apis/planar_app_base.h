@@ -233,6 +233,7 @@ class PlanarAppBase : public PIE {
     //    LOGF_INFO("task_size: {}, num tasks: {}. left edges: {}", task_size,
     //    count,
     //              graph_->GetOutEdgeNums());
+    LOGF_INFO("task num: {}", tasks.size());
     runner_->SubmitSync(tasks);
     graph_->SyncVertexData(use_readdata_only_);
     LOG_DEBUG("ParallelEdgeDo is done");
@@ -276,7 +277,7 @@ class PlanarAppBase : public PIE {
 
   size_t GetTaskSize(VertexID max_vid) const {
     auto task_num = parallelism_ * task_package_factor_;
-    size_t task_size = ceil((double) max_vid / task_num);
+    size_t task_size = ceil((double)max_vid / task_num);
     return task_size < 2 ? 2 : task_size;
   }
 

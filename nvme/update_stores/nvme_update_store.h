@@ -84,16 +84,10 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
 
   // used for basic unsigned type
   VertexData Read(VertexID vid) {
-    if (vid >= vertex_count_) {
-      LOG_FATAL("Read out of bound");
-    }
     return read_data_[vid];
   }
 
   bool Write(VertexID vid, VertexData vdata_new) {
-    if (vid >= vertex_count_) {
-      return false;
-    }
     write_data_[vid] = vdata_new;
     return true;
   }
@@ -103,9 +97,6 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   }
 
   bool WriteMax(VertexID vid, VertexData new_data) {
-    if (vid >= vertex_count_) {
-      return false;
-    }
     return util::atomic::WriteMax(write_data_ + vid, new_data);
   }
 

@@ -265,8 +265,9 @@ class MutableCSRGraph : public Serializable {
       // change out_edges_buffer to new one
       edge_delete_bitmap_.Clear();
       edge_delete_bitmap_.Init(num_outgoing_edges_new);
-      LOGF_INFO("left edges: {}, new del num:{}", num_outgoing_edges_new,
-                edge_delete_bitmap_.Count());
+      //      LOGF_INFO("left edges: {}, new del num:{}",
+      //      num_outgoing_edges_new,
+      //                edge_delete_bitmap_.Count());
       // replace edges buffer of subgraph
       graph_serialized_->GetCSRBuffer()->at(1) =
           OwnedBuffer(sizeof(VertexID) * num_outgoing_edges_new,
