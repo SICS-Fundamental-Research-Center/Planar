@@ -42,19 +42,17 @@ class BlockModel : public BlockModelBase {
 
  public:
   BlockModel() = default;
-  BlockModel(const std::string& root_path) {
-    scheduler_ = std::make_unique<scheduler::PramScheduler>(root_path);
-    update_store_ = std::make_unique<update_stores::PramUpdateStoreUInt32>(
-        scheduler_->GetGraphMetadata());
+  BlockModel(const std::string& root_path)
+      : scheduler_(root_path), update_store_(scheduler_.GetGraphMetadata()) {
     loader_ = std::make_unique<components::Loader<io::PramBlockReader>>(
-        root_path, scheduler_->GetMessageHub());
+        root_path, scheduler_.GetMessageHub());
     discharge_ = std::make_unique<components::Discharger<io::PramBlockWriter>>(
-        root_path, scheduler_->GetMessageHub());
+        root_path, scheduler_.GetMessageHub());
     executor_ =
-        std::make_unique<components::Executor>(scheduler_->GetMessageHub());
+        std::make_unique<components::Executor>(scheduler_.GetMessageHub());
 
-    scheduler_->Init(update_store_.get(), executor_->GetTaskRunner(),
-                     loader_->GetReader());
+    scheduler_.Init(&update_store_, executor_->GetTaskRunner(),
+                    loader_->GetReader());
   }
 
   ~BlockModel() override {
@@ -80,7 +78,7 @@ class BlockModel : public BlockModelBase {
     ExecuteMessage message;
     message.map_type = MapType::kMapVertex;
     message.func_vertex = func_vertex;
-    scheduler_->RunMapExecute(message);
+    scheduler_.RunMapExecute(message);
     LockAndWaitResult();
     LOG_INFO("MapVertex finished");
   }
@@ -90,7 +88,7 @@ class BlockModel : public BlockModelBase {
     ExecuteMessage message;
     message.map_type = MapType::kMapEdge;
     message.func_edge = func_edge;
-    scheduler_->RunMapExecute(message);
+    scheduler_.RunMapExecute(message);
     LockAndWaitResult();
     LOG_INFO("MapEdge finished");
   }
@@ -101,7 +99,7 @@ class BlockModel : public BlockModelBase {
     ExecuteMessage message;
     message.map_type = MapType::kMapEdgeAndMutate;
     message.func_edge_mutate = func_edge_del;
-    scheduler_->RunMapExecute(message);
+    scheduler_.RunMapExecute(message);
     LockAndWaitResult();
     LOG_INFO("MapEdgeAndMutate finished");
   }
@@ -111,7 +109,7 @@ class BlockModel : public BlockModelBase {
     ExecuteMessage message;
     message.map_type = MapType::kMapEdgeAndMutate;
     message.func_edge_mutate_bool = func_edge_del;
-    scheduler_->RunMapExecute(message);
+    scheduler_.RunMapExecute(message);
     LockAndWaitResult();
     LOG_INFO("MapEdgeAndMutate finished");
   }
@@ -126,13 +124,13 @@ class BlockModel : public BlockModelBase {
     loader_->Start();
     discharge_->Start();
     executor_->Start();
-    scheduler_->Start();
+    scheduler_.Start();
 
     Compute();
   }
 
   void Stop() {
-    scheduler_->Stop();
+    scheduler_.Stop();
     loader_->StopAndJoin();
     discharge_->StopAndJoin();
     executor_->StopAndJoin();
@@ -141,36 +139,36 @@ class BlockModel : public BlockModelBase {
   void LockAndWaitResult() {
     //    std::unique_lock<std::mutex> lock(pram_mtx_);
     //    pram_cv_.wait(lock, [] { return true; });
-    std::unique_lock<std::mutex> lock(*scheduler_->GetPramMtx());
-    auto pram_ready = scheduler_->GetPramReady();
+    std::unique_lock<std::mutex> lock(*scheduler_.GetPramMtx());
+    auto pram_ready = scheduler_.GetPramReady();
     *pram_ready = false;
-    scheduler_->GetPramCv()->wait(lock, [pram_ready] { return *pram_ready; });
+    scheduler_.GetPramCv()->wait(lock, [pram_ready] { return *pram_ready; });
   }
 
-  VertexData Read(VertexID id) { return update_store_->Read(id); }
+  VertexData Read(VertexID id) { return update_store_.Read(id); }
 
-  void Write(VertexID id, VertexData vdata) { update_store_->Write(id, vdata); }
+  void Write(VertexID id, VertexData vdata) { update_store_.Write(id, vdata); }
 
   void WriteMin(VertexID id, VertexData vdata) {
-    update_store_->WriteMin(id, vdata);
+    update_store_.WriteMin(id, vdata);
   }
 
   void DeleteEdge(VertexID src, VertexID dst, EdgeIndex idx) {
-    update_store_->DeleteEdge(idx);
+    update_store_.DeleteEdge(idx);
   }
 
   // methods for graph
-  size_t GetGraphEdges() const { return scheduler_->GetGraphEdges(); }
+  size_t GetGraphEdges() const { return scheduler_.GetGraphEdges(); }
 
  protected:
   core::common::TaskRunner* exe_runner_ = nullptr;
 
   // all blocks are stored in the GraphState of scheduler
-  std::unique_ptr<scheduler::PramScheduler> scheduler_;
+  scheduler::PramScheduler scheduler_;
   std::unique_ptr<components::Loader<io::PramBlockReader>> loader_;
   std::unique_ptr<components::Discharger<io::PramBlockWriter>> discharge_;
   std::unique_ptr<components::Executor> executor_;
-  std::unique_ptr<update_stores::PramUpdateStoreUInt32> update_store_;
+  update_stores::PramUpdateStoreUInt32 update_store_;
 
   int round_ = 0;
 

@@ -100,12 +100,12 @@ class WCCNvmeApp : public apis::BlockModel {
       //      update_store_->LogVertexData();
       //      update_store_->LogEdgeDelInfo();
 
-      if (update_store_->GetLeftEdges() == 0) {
+      if (update_store_.GetLeftEdges() == 0) {
         LOGF_INFO("======= Round {} end, no edges left =======", round);
         break;
       } else {
         LOGF_INFO("======= Round {} end, left edges num: {} =======", round,
-                  update_store_->GetLeftEdges());
+                  update_store_.GetLeftEdges());
       }
       round++;
     }
