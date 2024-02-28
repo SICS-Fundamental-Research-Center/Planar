@@ -7,8 +7,13 @@ using SerializedPramBlockCSRGraph =
 void PramBlockReader::Read(scheduler::ReadMessage* message,
                            core::common::TaskRunner* /* runner */) {
   // Init path.
-  std::string path =
-      root_path_ + "blocks/" + std::to_string(message->graph_id) + ".bin";
+  std::string path = "";
+  if (message->changed) {
+    path =
+        root_path_ + "blocks/" + std::to_string(message->graph_id) + ".bin.new";
+  } else {
+    path = root_path_ + "blocks/" + std::to_string(message->graph_id) + ".bin";
+  }
 
   // Read block info.
   Serialized* block_serialized = message->response_serialized;

@@ -24,7 +24,7 @@ struct ReadMessage {
   // Request fields.
   core::common::GraphID graph_id;
   core::common::VertexCount num_vertices;
-  int round;
+  bool changed = false;
 
   // Response fields.
   core::data_structures::Serialized*
@@ -130,7 +130,7 @@ struct WriteMessage {
   core::data_structures::Serializable* serializable;
   core::data_structures::Serialized* serialized;
   // TODO: add subgraph metadata fields.
-
+  bool changed = false;
   // Response fields.
   size_t bytes_written;
 

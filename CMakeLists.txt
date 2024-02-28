@@ -12,6 +12,10 @@ if (NOT CMAKE_BUILD_TYPE)
     # cmake default flags with relwithdebinfo is -O2 -g
     # cmake default flags with release is -O3 -DNDEBUG
     set(CMAKE_BUILD_TYPE "Debug")
+else ()
+    #    set(CMAKE_BUILD_TYPE "Release")
+    #    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
+    #    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 endif ()
 message(STATUS "[Graph Systems] will build in type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Using compiler: ${CMAKE_CXX_COMPILER} ${CMAKE_CXX_COMPILER_VERSION}")
@@ -47,9 +51,9 @@ if (TEST)
     set(BUILD_GMOCK ON CACHE BOOL "Option: build gmock and gtest -- ON" FORCE)
     set(INSTALL_GTEST OFF CACHE BOOL "Option: install gtest -- OFF" FORCE)
 
+    add_subdirectory("${THIRD_PARTY_ROOT}/googletest" EXCLUDE_FROM_ALL)
     include_directories(SYSTEM ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
     include_directories(SYSTEM ${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
-    add_subdirectory("${THIRD_PARTY_ROOT}/googletest" EXCLUDE_FROM_ALL)
 endif ()
 
 # gflags

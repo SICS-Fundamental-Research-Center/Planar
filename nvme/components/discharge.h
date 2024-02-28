@@ -38,10 +38,10 @@ class Discharger : public Component {
           break;
         }
 
-        LOGF_INFO("Discharger starts writing subgraph {}", message.graph_id);
-        writer_.Write(&message);
-        //        LOGF_INFO("Discharger completes writing subgraph {}",
+        //        LOGF_INFO("Discharger starts writing subgraph {}",
         //        message.graph_id);
+        writer_.Write(&message);
+        LOGF_INFO("Discharger completes writing subgraph {}", message.graph_id);
         response_q_->Push(scheduler::Message(message));
       }
     });

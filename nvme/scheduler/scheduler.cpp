@@ -78,7 +78,9 @@ bool PramScheduler::ReadMessageResponseAndExecute(
     if (!is_executor_running_) {
       ExecuteMessage execute_message;
       execute_message.graph_id = read_resp.graph_id;
-      execute_message.serialized = read_resp.response_serialized;
+      //      execute_message.serialized = read_resp.response_serialized;
+      execute_message.serialized =
+          graph_state_.GetSubgraphHandler(read_resp.graph_id);
       CreateSerializableGraph(read_resp.graph_id);
       execute_message.graph = graph_state_.GetSubgraph(read_resp.graph_id);
       execute_message.execute_type = ExecuteType::kDeserialize;
@@ -143,7 +145,7 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
             func_edge_mutate_bool_ = execute_resp.func_edge_mutate_bool;
             break;
           default:
-            LOGF_ERROR("Map type is not supported!");
+            LOG_ERROR("Map type is not supported!");
             break;
         }
         // read first block.
@@ -234,6 +236,10 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
     case ExecuteType::kSerialize: {
       graph_state_.SetComputedToSerialized(execute_resp.graph_id);
       graph_state_.ReleaseSubgraph(execute_resp.graph_id);
+      if (!graph_state_.IsBlockMutated(execute_resp.graph_id) &&
+          core::common::Configurations::Get()->edge_mutate) {
+        graph_state_.SetBlockMutated(execute_resp.graph_id);
+      }
       // Check if current round finish.
       if (group_mode_) {
         group_serialized_num_++;
@@ -259,7 +265,10 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
         // This sync maybe replaced by borderVertex check.
         graph_state_.ResetCurrentRoundPending();
         update_store_->Sync();
-        LOGF_INFO(" Current MapType: {}, Step: {}", current_Map_type_, step_);
+        if (current_Map_type_ == MapType::kMapEdgeAndMutate) {
+          graph_metadata_info_.UpdateOutEdgeNumInBLockMode();
+        }
+        LOGF_INFO(" ==== Current MapType: {}, Step: {} ==== ", current_Map_type_, step_);
         step_++;
         current_Map_type_ = MapType::kDefault;
         func_vertex_ = nullptr;
@@ -275,7 +284,8 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
           group_deserialized_num_ = 0;
           group_graphs_.clear();
         }
-        LOGF_INFO(" current read input size: {}", loader_->SizeOfReadNow());
+        //        LOGF_INFO(" current read input size: {}",
+        //        loader_->SizeOfReadNow());
 
         if (short_cut_) {
           // Keep the last graph in memory and execute first in next round.
@@ -286,6 +296,8 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
           WriteMessage write_message;
           write_message.graph_id = execute_resp.graph_id;
           write_message.serialized = execute_resp.serialized;
+          write_message.changed =
+              graph_state_.IsBlockMutated(execute_resp.graph_id);
           message_hub_.get_writer_queue()->Push(write_message);
         }
       } else {
@@ -298,6 +310,8 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
           WriteMessage write_message;
           write_message.graph_id = execute_resp.graph_id;
           write_message.serialized = execute_resp.serialized;
+          write_message.changed =
+              graph_state_.IsBlockMutated(execute_resp.graph_id);
           message_hub_.get_writer_queue()->Push(write_message);
           // second execute next ready subgraph if exist
           auto next_execute_gid = GetNextExecuteGraph();
@@ -426,6 +440,7 @@ bool PramScheduler::TryReadNextGraph(bool sync) {
       read_message.num_vertices =
           graph_metadata_info_.GetBlockNumVertices(next_graph_id);
       read_message.response_serialized = CreateSerialized(next_graph_id);
+      read_message.changed = graph_state_.IsBlockMutated(next_graph_id);
       graph_state_.SetOnDiskToReading(next_graph_id);
       message_hub_.get_reader_queue()->Push(read_message);
     } else {
@@ -574,7 +589,7 @@ void PramScheduler::SetExecuteMessageMapFunction(ExecuteMessage* message) {
       message->func_edge_mutate_bool = func_edge_mutate_bool_;
       break;
     default:
-      LOGF_ERROR("Map type is not supported!");
+      LOG_ERROR("Map type is not supported!");
       break;
   }
 }

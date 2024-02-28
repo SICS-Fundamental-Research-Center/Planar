@@ -90,7 +90,7 @@ class BlockModel : public BlockModelBase {
     message.func_edge = func_edge;
     scheduler_.RunMapExecute(message);
     LockAndWaitResult();
-    LOG_INFO("MapEdge finished");
+    LOG_INFO("MapEdge finishes");
   }
 
   void MapAndMutateEdge(
@@ -101,7 +101,7 @@ class BlockModel : public BlockModelBase {
     message.func_edge_mutate = func_edge_del;
     scheduler_.RunMapExecute(message);
     LockAndWaitResult();
-    LOG_INFO("MapEdgeAndMutate finished");
+    LOG_INFO("MapEdgeAndMutate finishes");
   }
 
   void MapAndMutateEdgeBool(
@@ -111,7 +111,7 @@ class BlockModel : public BlockModelBase {
     message.func_edge_mutate_bool = func_edge_del;
     scheduler_.RunMapExecute(message);
     LockAndWaitResult();
-    LOG_INFO("MapEdgeAndMutate finished");
+    LOG_INFO("MapEdgeAndMutate finishes");
   }
 
   // ===============================================================
@@ -126,6 +126,7 @@ class BlockModel : public BlockModelBase {
     executor_->Start();
     scheduler_.Start();
 
+    LOG_INFO(" ================ Start Algorithm executing! ================= ");
     Compute();
   }
 

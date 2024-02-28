@@ -4,11 +4,19 @@ namespace sics::graph::nvme::io {
 
 void PramBlockWriter::Write(WriteMessage* message,
                             core::common::TaskRunner* /* runner */) {
-  std::string file_path =
-      root_path_ + std::to_string(message->graph_id) + ".bin.new";
-  if (message->serialized->HasNext()) {
-    auto a = message->serialized->PopNext();
-    //    WriteBlockInfo(file_path, a);
+  std::string file_path = "";
+  if (message->changed) {
+    file_path =
+        root_path_ + "blocks/" + std::to_string(message->graph_id) + ".bin.new";
+    if (message->serialized->HasNext()) {
+      auto a = message->serialized->PopNext();
+      WriteBlockInfo(file_path, a);
+    }
+  } else {
+    // if not changed, just release the OwnedBuffer and return.
+    if (message->serialized->HasNext()) {
+      message->serialized->PopNext();
+    }
   }
 }
 

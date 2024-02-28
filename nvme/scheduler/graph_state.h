@@ -31,6 +31,7 @@ struct GraphState {
     serialized_.resize(num_subgraphs);
     graphs_.resize(num_subgraphs);
     current_round_pending_.resize(num_subgraphs, true);
+    block_mutate_state_.resize(num_subgraphs, false);
   }
 
   void ResetCurrentRoundPending() {
@@ -91,10 +92,25 @@ struct GraphState {
     }
   }
 
+  // block mutate state functions
+
+  void SetBlockMutated(core::common::GraphID bid) {
+    block_mutate_state_.at(bid) = true;
+  }
+
+  bool IsBlockMutated(core::common::GraphID bid) const {
+    return block_mutate_state_.at(bid);
+  }
+
   // graph handlers
   core::data_structures::Serialized* GetSubgraphSerialized(
       core::common::GraphID gid) {
     return serialized_.at(gid).get();
+  }
+
+  core::data_structures::Serialized* GetSubgraphHandler(
+      core::common::GraphID gid) {
+    return serialized_.at(gid).release();
   }
 
   core::data_structures::Serializable* GetSubgraph(core::common::GraphID gid) {
@@ -143,6 +159,7 @@ struct GraphState {
   // label for if current round graph is executed
   std::vector<bool> current_round_pending_;
 
+  std::vector<bool> block_mutate_state_;
   // memory size and graph size
   // TODO: memory size should be set by gflags
 
