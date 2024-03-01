@@ -13,6 +13,7 @@ DEFINE_string(i, "/testfile", "graph files root path");
 DEFINE_string(out, "/", "output dir for block files");
 DEFINE_uint32(step_v, 500000, "vertex step for block");
 DEFINE_uint32(p, 8, "parallelism");
+DEFINE_uint32(n, 1, "number of partition");
 
 using namespace sics::graph;
 using sics::graph::core::common::BlockID;

@@ -150,6 +150,7 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
         }
         // read first block.
         if (in_memory_) {
+          // if in-memory mode, first round read, than keep the block in memory.
           auto bid = GetNextExecuteGraphInMemory();
           if (bid != INVALID_GRAPH_ID) {
             ExecuteMessage execute_message;
@@ -198,6 +199,7 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
               func_vertex_ = nullptr;
               func_edge_ = nullptr;
               func_edge_mutate_bool_ = nullptr;
+              // release all graph before return.
               if (current_Map_type_ == MapType::kDefault) {
                 std::lock_guard<std::mutex> lock(pram_mtx_);
                 pram_ready_ = true;

@@ -49,11 +49,7 @@ class PramBlock : public core::data_structures::Serializable {
         task_package_factor_(
             core::common::Configurations::Get()->task_package_factor) {}
 
-  ~PramBlock() override {
-    if (block_buf_base_ != nullptr) {
-      delete[] block_buf_base_;
-    }
-  }
+  ~PramBlock() override {}
 
   std::unique_ptr<Serialized> Serialize(
       const core::common::TaskRunner& runner) override {
