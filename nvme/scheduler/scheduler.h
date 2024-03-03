@@ -43,9 +43,16 @@ class PramScheduler {
     memory_left_size_ = common::Configurations::Get()->memory_size;
     limits_ = common::Configurations::Get()->limits;
     use_limits_ = limits_ != 0;
-    LOGF_INFO(
-        "Scheduler create! Use limits for graph pre-fetch, can pre-fetch {}",
-        limits_);
+    if (use_limits_) {
+      LOGF_INFO(
+          "Scheduler create! Use limits for graph pre-fetch, can pre-fetch {}",
+          limits_);
+    } else {
+      LOGF_INFO(
+          "Scheduler create! Use memory buffer for graph pre-fetch. buffer "
+          "size: {}",
+          memory_left_size_);
+    }
     short_cut_ = common::Configurations::Get()->short_cut;
     // group mode
     group_mode_ = common::Configurations::Get()->group;
@@ -178,7 +185,7 @@ class PramScheduler {
 
   size_t step_ = 0;
 
-  size_t memory_left_size_ = 0;
+  size_t memory_left_size_;
   int limits_ = 0;
   bool use_limits_ = false;
   bool short_cut_ = true;

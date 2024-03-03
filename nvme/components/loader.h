@@ -37,8 +37,7 @@ class Loader : public Component {
           break;
         }
 
-        //        LOGF_INFO("Loader starts reading subgraph {}",
-        //        message.graph_id);
+        LOGF_INFO("Loader starts reading block {}", message.graph_id);
         reader_.Read(&message);
         LOGF_INFO("Loader completes reading block {}", message.graph_id);
         response_q_->Push(scheduler::Message(message));

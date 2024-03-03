@@ -158,7 +158,7 @@ struct GraphState {
 
   // label for if current round graph is executed
   std::vector<bool> current_round_pending_;
-
+  std::vector<int> round_;
   std::vector<bool> block_mutate_state_;
   // memory size and graph size
   // TODO: memory size should be set by gflags

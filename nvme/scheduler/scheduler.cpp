@@ -270,7 +270,8 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
         if (current_Map_type_ == MapType::kMapEdgeAndMutate) {
           graph_metadata_info_.UpdateOutEdgeNumInBLockMode();
         }
-        LOGF_INFO(" ==== Current MapType: {}, Step: {} ==== ", current_Map_type_, step_);
+        LOGF_INFO(" ==== Current MapType: {}, Step: {} ==== ",
+                  current_Map_type_, step_);
         step_++;
         current_Map_type_ = MapType::kDefault;
         func_vertex_ = nullptr;
@@ -409,46 +410,34 @@ bool PramScheduler::WriteMessageResponseAndCheckTerminate(
 
 // try to read a graph from disk into memory if memory_limit is permitted
 bool PramScheduler::TryReadNextGraph(bool sync) {
-  bool read_flag = false;
+  auto load_graph_id = GetNextReadGraphInCurrentRound();
+  if (load_graph_id == INVALID_GRAPH_ID) return false;
+
   // group_mode use the same logic
   if (use_limits_) {
-    if (limits_ > 0) read_flag = true;
+    if (limits_ <= 0) return false;
+    limits_--;
+    // LOGF_INFO("Read on graph {}. now limits is {}", load_graph_id, limits_);
   } else {
-    if (memory_left_size_ > 0) read_flag = true;
+    auto read_size = graph_metadata_info_.GetSubgraphSize(load_graph_id);
+    if (memory_left_size_ < read_size) return false;
+    //    LOGF_INFO(
+    //        "To read subgraph {}. *** Memory size now: {}, after read: {} "
+    //        "***",
+    //        load_graph_id, memory_left_size_, memory_left_size_ - read_size);
+    memory_left_size_ -= read_size;
   }
-  //  if (memory_left_size_ > 0) {
-  if (read_flag) {
-    auto next_graph_id = GetNextReadGraphInCurrentRound();
-    ReadMessage read_message;
-    if (next_graph_id != INVALID_GRAPH_ID) {
-      if (use_limits_) {
-        limits_--;
-        //        LOGF_INFO("Read on graph {}. now limits is {}", next_graph_id,
-        //        limits_);
-      } else {
-        auto read_size = graph_metadata_info_.GetSubgraphSize(next_graph_id);
-        if (memory_left_size_ < read_size) {
-          // Memory is not enough, return.
-          return false;
-        }
-        LOGF_INFO(
-            "To read subgraph {}. *** Memory size now: {}, after read: {} "
-            "***",
-            next_graph_id, memory_left_size_, memory_left_size_ - read_size);
-        memory_left_size_ -= read_size;
-      }
-      to_read_graphs_--;
-      read_message.graph_id = next_graph_id;
-      read_message.num_vertices =
-          graph_metadata_info_.GetBlockNumVertices(next_graph_id);
-      read_message.response_serialized = CreateSerialized(next_graph_id);
-      read_message.changed = graph_state_.IsBlockMutated(next_graph_id);
-      graph_state_.SetOnDiskToReading(next_graph_id);
-      message_hub_.get_reader_queue()->Push(read_message);
-    } else {
-      return false;
-    }
-  }
+
+  // condition satisfied
+  ReadMessage read_message;
+  to_read_graphs_--;
+  read_message.graph_id = load_graph_id;
+  read_message.num_vertices =
+      graph_metadata_info_.GetBlockNumVertices(load_graph_id);
+  read_message.response_serialized = CreateSerialized(load_graph_id);
+  read_message.changed = graph_state_.IsBlockMutated(load_graph_id);
+  graph_state_.SetOnDiskToReading(load_graph_id);
+  message_hub_.get_reader_queue()->Push(read_message);
   return true;
 }
 

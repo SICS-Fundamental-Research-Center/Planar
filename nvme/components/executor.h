@@ -107,10 +107,11 @@ class Executor : public Component {
     // first stop the task_runner, then stop the Executor thread
     thread_->join();
     LOG_INFO("*** Executor stops ***");
-    if (in_memory_time_) {
-      LOGF_INFO("========== In memory time: {} s ==========",
-                std::chrono::duration<double>(end_time_ - start_time_).count());
-    }
+    //    if (in_memory_time_) {
+    //      LOGF_INFO("========== In memory time: {} s ==========",
+    //                std::chrono::duration<double>(end_time_ -
+    //                start_time_).count());
+    //    }
   }
 
   core::common::TaskRunner* GetTaskRunner() { return &task_runner_; }
