@@ -6,6 +6,7 @@
 #include <type_traits>
 
 #include "core/util/logging.h"
+#include "nvme/common/multithreading/occupied_task_runner.h"
 #include "nvme/components/component.h"
 #include "nvme/io/reader_writer.h"
 #include "nvme/scheduler/message_hub.h"
@@ -34,11 +35,13 @@ class Discharger : public Component {
       while (true) {
         scheduler::WriteMessage message = writer_q_->PopOrWait();
         if (message.terminated) {
-          LOG_INFO("*** Discharger is signaled termination ***");
+          // LOG_INFO("*** Discharger is signaled termination ***");
           break;
         }
-
-        LOGF_INFO("Discharger starts writing block {}", message.graph_id);
+        // LOGF_INFO("Discharger starts writing block {}", message.graph_id);
+        // First serialized.
+        message.serialized = message.graph->Serialize(occupied_pool_).release();
+        // Then write to disk.
         writer_.Write(&message);
         LOGF_INFO("Discharger completes writing block {}", message.graph_id);
         response_q_->Push(scheduler::Message(message));
@@ -56,7 +59,7 @@ class Discharger : public Component {
 
  private:
   WriterType writer_;
-
+  common::OccupiedPool occupied_pool_;
   scheduler::WriterQueue* writer_q_;
   scheduler::ResponseQueue* response_q_;
 

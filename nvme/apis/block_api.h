@@ -57,9 +57,13 @@ class BlockModel : public BlockModelBase {
 
   ~BlockModel() override {
     Stop();
-    end_time_ = std::chrono::system_clock::now();
-    LOGF_INFO(" =========== Hole Runtime: {} s ===========",
-              std::chrono::duration<double>(end_time_ - begin_time_).count());
+    whole_end_time_ = std::chrono::system_clock::now();
+    LOGF_INFO(
+        " =========== Compute Runtime: {} s ===========",
+        std::chrono::duration<double>(compute_end_time_ - begin_time_).count());
+    LOGF_INFO(
+        " =========== Whole Runtime: {} s ===========",
+        std::chrono::duration<double>(whole_end_time_ - begin_time_).count());
   }
 
   // ===============================================================
@@ -128,6 +132,11 @@ class BlockModel : public BlockModelBase {
 
     LOG_INFO(" ================ Start Algorithm executing! ================= ");
     Compute();
+    compute_end_time_ = std::chrono::system_clock::now();
+    if (scheduler_.ReleaseResources()) {
+      LockAndWaitResult();
+    }
+    LOGF_INFO("Running finished!");
   }
 
   void Stop() {
@@ -177,7 +186,8 @@ class BlockModel : public BlockModelBase {
   //  std::condition_variable pram_cv_;
 
   std::chrono::time_point<std::chrono::system_clock> begin_time_;
-  std::chrono::time_point<std::chrono::system_clock> end_time_;
+  std::chrono::time_point<std::chrono::system_clock> compute_end_time_;
+  std::chrono::time_point<std::chrono::system_clock> whole_end_time_;
 
   // configs
   const uint32_t parallelism_ = 10;

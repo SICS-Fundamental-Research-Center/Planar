@@ -58,7 +58,7 @@ class Planar {
     scheduler_->Stop();
     Stop();
     end_time_ = std::chrono::system_clock::now();
-    LOGF_INFO(" =========== Hole Runtime: {} s ===========",
+    LOGF_INFO(" =========== whole Runtime: {} s ===========",
               std::chrono::duration<double>(end_time_ - start_time_).count());
   }
 

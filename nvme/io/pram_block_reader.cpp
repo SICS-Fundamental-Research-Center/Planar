@@ -16,7 +16,7 @@ void PramBlockReader::Read(scheduler::ReadMessage* message,
   }
 
   // Read block info.
-  Serialized* block_serialized = message->response_serialized;
+  Serialized* block_serialized = message->serialized;
   std::vector<OwnedBuffer> buffers;
   ReadBlockInfo(path, message->num_vertices, &buffers);
 

@@ -25,10 +25,9 @@ struct ReadMessage {
   core::common::GraphID graph_id;
   core::common::VertexCount num_vertices;
   bool changed = false;
-
+  core::data_structures::Serialized* serialized;  // initialized in scheduler
+  core::data_structures::Serializable* graph;     // initialized in scheduler
   // Response fields.
-  core::data_structures::Serialized*
-      response_serialized;  // initialized in loader
 
   // Termination flag.
   bool terminated = false;
@@ -127,7 +126,7 @@ struct WriteMessage {
   WriteMessage() = default;
   // Request fields.
   core::common::GraphID graph_id;
-  core::data_structures::Serializable* serializable;
+  core::data_structures::Serializable* graph;
   core::data_structures::Serialized* serialized;
   // TODO: add subgraph metadata fields.
   bool changed = false;

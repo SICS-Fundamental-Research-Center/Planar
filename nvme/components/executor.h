@@ -50,7 +50,7 @@ class Executor : public Component {
       while (true) {
         scheduler::ExecuteMessage message = execute_q_->PopOrWait();
         if (message.terminated) {
-          LOG_INFO("*** Executor is signaled termination ***");
+          // LOG_INFO("*** Executor is signaled termination ***");
           break;
         }
 

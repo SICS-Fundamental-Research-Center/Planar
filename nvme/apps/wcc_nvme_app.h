@@ -15,8 +15,8 @@ class WCCNvmeApp : public apis::BlockModel {
   using VertexID = core::common::VertexID;
 
  public:
-  using VertexData = typename BlockGraph ::VertexData;
-  using EdgeData = typename BlockGraph ::EdgeData;
+  using VertexData = typename BlockGraph::VertexData;
+  using EdgeData = typename BlockGraph::EdgeData;
   WCCNvmeApp() = default;
   WCCNvmeApp(const std::string& root_path) : BlockModel(root_path) {}
   ~WCCNvmeApp() override = default;

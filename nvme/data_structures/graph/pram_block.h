@@ -246,6 +246,7 @@ class PramBlock : public core::data_structures::Serializable {
   void DeleteEdge(VertexID idx, EdgeIndex eid) {
     edge_delete_bitmap_.SetBit(eid);
     out_degree_base_new_[idx] = out_degree_base_new_[idx] - 1;
+    // TODO: Use atomic to update out_degree_base_new_ for discontinued vertex.
     //    core::util::atomic::WriteMin(&out_degree_base_new_[idx],
     //                                 out_degree_base_new_[idx] - 1);
   }

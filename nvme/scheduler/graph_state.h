@@ -21,6 +21,7 @@ struct GraphState {
     Serialized,
     Deserialized,
     Computed,
+    Writing,
   } StorageStateType;
 
   GraphState() : memory_size_(64 * 1024){};

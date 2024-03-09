@@ -20,8 +20,6 @@
 
 namespace sics::graph::nvme::scheduler {
 
-using namespace sics::graph::core;
-
 class PramScheduler {
   using MessageHub = sics::graph::nvme::scheduler::MessageHub;
   using Message = sics::graph::nvme::scheduler::Message;
@@ -35,13 +33,16 @@ class PramScheduler {
   using BlockCSRGraphUInt32 = data_structures::graph::BlockCSRGraphUInt32;
   using BlockCSRGraphUInt16 = data_structures::graph::BlockCSRGraphUInt16;
 
+  using GraphID = core::common::GraphID;
+  using EdgeIndex = core::common::EdgeIndex;
+
  public:
   PramScheduler(const std::string& root_path)
       : graph_metadata_info_(root_path),
         graph_state_(graph_metadata_info_.get_num_subgraphs()) {
-    is_block_mode_ = common::Configurations::Get()->is_block_mode;
-    memory_left_size_ = common::Configurations::Get()->memory_size;
-    limits_ = common::Configurations::Get()->limits;
+    is_block_mode_ = core::common::Configurations::Get()->is_block_mode;
+    memory_left_size_ = core::common::Configurations::Get()->memory_size;
+    limits_ = core::common::Configurations::Get()->limits;
     use_limits_ = limits_ != 0;
     if (use_limits_) {
       LOGF_INFO(
@@ -50,22 +51,23 @@ class PramScheduler {
     } else {
       LOGF_INFO(
           "Scheduler create! Use memory buffer for graph pre-fetch. buffer "
-          "size: {}",
+          "size: {} MB",
           memory_left_size_);
     }
-    short_cut_ = common::Configurations::Get()->short_cut;
+    short_cut_ = core::common::Configurations::Get()->short_cut;
     // group mode
-    group_mode_ = common::Configurations::Get()->group;
+    group_mode_ = core::common::Configurations::Get()->group;
     group_graphs_.reserve(graph_metadata_info_.get_num_subgraphs());
-    group_num_ = common::Configurations::Get()->group_num;
-    in_memory_ = common::Configurations::Get()->in_memory;
+    group_num_ = core::common::Configurations::Get()->group_num;
+    in_memory_ = core::common::Configurations::Get()->in_memory;
     srand(0);
   }
 
   virtual ~PramScheduler() = default;
 
   void Init(update_stores::PramUpdateStoreUInt32* update_store,
-            common::TaskRunner* task_runner, io::PramBlockReader* reader) {
+            core::common::TaskRunner* task_runner,
+            io::PramBlockReader* reader) {
     update_store_ = update_store;
     executor_task_runner_ = task_runner;
     //    app_ = app;
@@ -84,13 +86,18 @@ class PramScheduler {
     LOG_INFO("*** Scheduler stop! ***");
   }
 
+  bool ReleaseResources() {
+    release_ = true;
+    return ReleaseInMemoryGraph();
+  }
+
   MessageHub* GetMessageHub() { return &message_hub_; }
 
   size_t GetVertexNumber() const {
     return graph_metadata_info_.get_num_vertices();
   }
 
-  core::common::EdgeIndex GetEdgeNumber() const {
+  EdgeIndex GetEdgeNumber() const {
     return graph_metadata_info_.get_num_edges();
   }
 
@@ -107,7 +114,7 @@ class PramScheduler {
   std::condition_variable* GetPramCv() { return &pram_cv_; }
   bool* GetPramReady() { return &pram_ready_; }
 
-  core::common::GraphID GetCurrentBlockId() const { return current_bid_; }
+  GraphID GetCurrentBlockId() const { return current_bid_; }
 
  protected:
   virtual bool ReadMessageResponseAndExecute(const ReadMessage& read_resp);
@@ -124,16 +131,18 @@ class PramScheduler {
   // in current round or next round
   bool TryReadNextGraph(bool sync = false);
 
-  void CreateSerializableGraph(common::GraphID graph_id);
-  core::data_structures::Serialized* CreateSerialized(common::GraphID graph_id);
+  core::data_structures::Serializable* CreateSerializableGraph(
+      core::common::GraphID graph_id);
+  core::data_structures::Serialized* CreateSerialized(
+      core::common::GraphID graph_id);
 
-  common::GraphID GetNextReadGraphInCurrentRound() const;
+  GraphID GetNextReadGraphInCurrentRound() const;
 
-  common::GraphID GetNextExecuteGraph() const;
+  GraphID GetNextExecuteGraph() const;
 
-  common::GraphID GetNextReadGraphInNextRound() const;
+  GraphID GetNextReadGraphInNextRound() const;
 
-  common::GraphID GetNextExecuteGraphInMemory() const;
+  GraphID GetNextExecuteGraphInMemory() const;
 
   void GetNextExecuteGroupGraphs();
 
@@ -142,15 +151,29 @@ class PramScheduler {
   bool IsCurrentRoundFinish() const;
 
   // If current and next round both have no graph to read, system stop.
-  bool IsSystemStop() const;
+  bool IsSchedulerStop() const;
 
   void ReleaseAllGraph();
 
-  void SetAppRuntimeGraph(common::GraphID gid);
+  void SetAppRuntimeGraph(GraphID gid);
 
-  void SetGlobalVertexData(common::GraphID bid);
+  void SetGlobalVertexData(GraphID bid);
 
   void SetExecuteMessageMapFunction(ExecuteMessage* message);
+
+  void ResetMapFunction();
+
+  void UnlockAndReleaseResult();
+
+  void CheckMapFunctionFinish();
+
+  bool ReleaseInMemoryGraph();
+
+  void SendExecuteMessage(GraphID bid);
+
+  void ExecuteNextGraphInMemory();
+
+  void SendWriteMessage(GraphID bid);
 
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
@@ -163,7 +186,7 @@ class PramScheduler {
 
   // ExecuteMessage info, used for setting APP context
   update_stores::PramUpdateStoreUInt32* update_store_;
-  common::TaskRunner* executor_task_runner_;
+  core::common::TaskRunner* executor_task_runner_;
 
   std::mutex pram_mtx_;
   std::condition_variable pram_cv_;
@@ -174,6 +197,7 @@ class PramScheduler {
 
   // mark if the executor is running
   bool is_executor_running_ = false;
+  bool release_ = false;
 
   std::unique_ptr<std::thread> thread_;
 
@@ -196,7 +220,7 @@ class PramScheduler {
   int group_num_ = 0;
   int group_serialized_num_ = 0;
   int group_deserialized_num_ = 0;
-  std::vector<common::GraphID> group_graphs_;
+  std::vector<GraphID> group_graphs_;
   std::unique_ptr<core::data_structures::Serializable>
       group_serializable_graph_;
 

@@ -14,12 +14,10 @@
 
 namespace sics::graph::nvme::update_stores {
 
-using namespace sics::graph::core;
-
 template <typename VertexData, typename EdgeData>
 class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
-  using GraphID = common::GraphID;
-  using VertexID = common::VertexID;
+  using GraphID = core::common::GraphID;
+  using VertexID = core::common::VertexID;
 
  public:
   PramNvmeUpdateStore()
@@ -29,16 +27,16 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
       : graph_metadata_(graph_metadata),
         vertex_count_(graph_metadata.get_num_vertices()),
         edges_count_(graph_metadata.get_num_edges()) {
-    application_type_ = common::Configurations::Get()->application;
-    no_data_need_ = common::Configurations::Get()->no_data_need;
-    is_block_mode_ = common::Configurations::Get()->is_block_mode;
+    application_type_ = core::common::Configurations::Get()->application;
+    no_data_need_ = core::common::Configurations::Get()->no_data_need;
+    is_block_mode_ = core::common::Configurations::Get()->is_block_mode;
 
     if (!no_data_need_) {
       read_data_ = new VertexData[vertex_count_];
       write_data_ = new VertexData[vertex_count_];
       switch (application_type_) {
-        case common::ApplicationType::WCC:
-        case common::ApplicationType::MST: {
+        case core::common::ApplicationType::WCC:
+        case core::common::ApplicationType::MST: {
           for (uint32_t i = 0; i < vertex_count_; i++) {
             read_data_[i] = i;
             write_data_[i] = i;
@@ -46,14 +44,14 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
           edge_delete_map_.Init(edges_count_);
           break;
         }
-        case common::ApplicationType::Coloring: {
+        case core::common::ApplicationType::Coloring: {
           for (uint32_t i = 0; i < vertex_count_; i++) {
             read_data_[i] = 0;
             write_data_[i] = 0;
           }
           break;
         }
-        case common::ApplicationType::Sssp: {
+        case core::common::ApplicationType::Sssp: {
           for (uint32_t i = 0; i < vertex_count_; i++) {
             read_data_[i] = std::numeric_limits<VertexData>::max();
             write_data_[i] = std::numeric_limits<VertexData>::max();
@@ -78,14 +76,16 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   }
 
   ~PramNvmeUpdateStore() {
-    delete[] read_data_;
-    delete[] write_data_;
+    if (read_data_) {
+      delete[] read_data_;
+    }
+    if (write_data_) {
+      delete[] write_data_;
+    }
   }
 
   // used for basic unsigned type
-  VertexData Read(VertexID vid) {
-    return read_data_[vid];
-  }
+  VertexData Read(VertexID vid) { return read_data_[vid]; }
 
   bool Write(VertexID vid, VertexData vdata_new) {
     write_data_[vid] = vdata_new;
@@ -93,11 +93,11 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   }
 
   bool WriteMin(VertexID id, VertexData new_data) {
-    return util::atomic::WriteMin(write_data_ + id, new_data);
+    return core::util::atomic::WriteMin(write_data_ + id, new_data);
   }
 
   bool WriteMax(VertexID vid, VertexData new_data) {
-    return util::atomic::WriteMax(write_data_ + vid, new_data);
+    return core::util::atomic::WriteMax(write_data_ + vid, new_data);
   }
 
   bool DeleteEdge(core::common::EdgeIndex eid) {
@@ -189,8 +189,8 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
 
   VertexData* read_data_;
   VertexData* write_data_;
-  common::VertexCount vertex_count_;
-  common::EdgeIndex edges_count_;
+  core::common::VertexCount vertex_count_;
+  core::common::EdgeIndex edges_count_;
 
   core::common::Bitmap edge_delete_map_;
   //  std::vector<core::common::Bitmap> edge_del_bitmaps_;
@@ -200,18 +200,18 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   size_t memory_size_ = 0;
 
   // configs
-  common::ApplicationType application_type_;
+  core::common::ApplicationType application_type_;
   bool no_data_need_;
   bool is_block_mode_;
 
   //  std::vector<core::common::Bitmap> delete_bitmaps_;
 };
 
-typedef PramNvmeUpdateStore<common::Uint32VertexDataType,
-                            common::DefaultEdgeDataType>
+typedef PramNvmeUpdateStore<core::common::Uint32VertexDataType,
+                            core::common::DefaultEdgeDataType>
     PramUpdateStoreUInt32;
-typedef PramNvmeUpdateStore<common::Uint16VertexDataType,
-                            common::DefaultEdgeDataType>
+typedef PramNvmeUpdateStore<core::common::Uint16VertexDataType,
+                            core::common::DefaultEdgeDataType>
     PramUpdateStoreUint16;
 
 }  // namespace sics::graph::nvme::update_stores
