@@ -83,19 +83,18 @@ bool PramScheduler::ExecuteMessageResponseAndWrite(
     //    if (in_memory_) {
     // Still keep deserialized state.
     graph_state_.SetCurrentRoundPendingFinish(execute_resp.graph_id);
+    // Check if edges of block mutated.
+    if (current_Map_type_ == MapType::kMapEdgeAndMutate) {
+      graph_metadata_info_.UpdateOutEdgeNumInBLockMode();
+      graph_state_.SetBlockMutated(execute_resp.graph_id);
+    }
     if (!in_memory_) {
+      // TODO: if memory is enough, keep the block in memory.
       SendWriteMessage(execute_resp.graph_id);  // Write back to disk.
     }
     if (IsCurrentRoundFinish()) {
       graph_state_.ResetCurrentRoundPending();
       update_store_->Sync();
-      if (current_Map_type_ == MapType::kMapEdgeAndMutate) {
-        graph_metadata_info_.UpdateOutEdgeNumInBLockMode();
-        graph_state_.SetBlockMutated(execute_resp.graph_id);
-      }
-      //              LOGF_INFO(" Current MapType: {}, Step: {}",
-      //              current_Map_type_,
-      //                        step_);
       step_++;
       ResetMapFunction();
       // Return current map function scheduling.

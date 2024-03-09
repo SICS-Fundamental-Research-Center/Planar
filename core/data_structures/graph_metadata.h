@@ -159,7 +159,32 @@ class GraphMetadata {
     return subgraph_size_.at(gid);
   }
 
-  void UpdateBlockSize(common::GraphID bid) {}
+  void UpdateBlockSize(common::GraphID bid) {
+    auto& block = block_metadata_vec_.at(bid);
+
+    auto size_out_degree = (block.num_vertices * sizeof(VertexDegree)) >> 20;
+    auto size_out_offset = (block.num_vertices * sizeof(EdgeIndex)) >> 20;
+    auto size_out_edges = (block.num_outgoing_edges * sizeof(VertexID)) >> 20;
+
+    auto size_total = size_out_degree + size_out_offset + size_out_edges;
+
+    if (common::Configurations::Get()->edge_mutate &&
+        block.num_outgoing_edges != 0) {
+      auto size_out_degree_new =
+          (block.num_vertices * sizeof(VertexDegree)) >> 20;
+      auto size_out_offset_new = (block.num_vertices * sizeof(EdgeIndex)) >> 20;
+      auto size_out_edges_new =
+          (block.num_outgoing_edges * sizeof(VertexID)) >> 20;
+      auto size_egdes_delete_bitmap = block.num_outgoing_edges >> 23;
+
+      size_total += size_out_degree_new + size_out_offset_new +
+                    size_out_edges_new + size_egdes_delete_bitmap;
+    }
+    if ((size_total + 1) == subgraph_size_.at(bid)) return;
+    LOGF_INFO("memory size changed for block {}, from {}MB to {}MB", bid,
+              subgraph_size_.at(bid), size_total + 1);
+    subgraph_size_.at(bid) = size_total + 1;
+  }
 
   void UpdateOutEdgeNumInBLockMode() {
     // update whole graph metadata
@@ -197,9 +222,9 @@ class GraphMetadata {
             (subgraph.num_vertices * sizeof(EdgeIndex)) >> 20;
         auto size_out_edges_new =
             (subgraph.num_outgoing_edges * sizeof(VertexID)) >> 20;
-        auto size_egdes_dellete_bitmap = subgraph.num_outgoing_edges >> 23;
+        auto size_egdes_delete_bitmap = subgraph.num_outgoing_edges >> 23;
         size_total += size_out_degree_new + size_out_offset_new +
-                      size_out_edges_new + size_egdes_dellete_bitmap;
+                      size_out_edges_new + size_egdes_delete_bitmap;
       }
       subgraph_size_.push_back(size_total + 1);
     }
