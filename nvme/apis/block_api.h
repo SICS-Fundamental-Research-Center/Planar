@@ -27,9 +27,10 @@ namespace sics::graph::nvme::apis {
 using core::data_structures::Serializable;
 using Block32 = data_structures::graph::BlockCSRGraphUInt32;
 
+template <typename TV>
 class BlockModel : public BlockModelBase {
-  using VertexData = typename Block32::VertexData;
-  using EdgeData = typename Block32::EdgeData;
+  using VertexData = TV;
+  using EdgeData = core::common::DefaultEdgeDataType;
 
   using GraphID = core::common::GraphID;
   using VertexID = core::common::VertexID;
@@ -163,6 +164,10 @@ class BlockModel : public BlockModelBase {
     update_store_.WriteMin(id, vdata);
   }
 
+  void WriteAdd(VertexID id, VertexData vdata) {
+    update_store_.WriteAdd(id, vdata);
+  }
+
   void DeleteEdge(VertexID src, VertexID dst, EdgeIndex idx) {
     update_store_.DeleteEdge(idx);
   }
@@ -174,11 +179,11 @@ class BlockModel : public BlockModelBase {
   core::common::TaskRunner* exe_runner_ = nullptr;
 
   // all blocks are stored in the GraphState of scheduler
-  scheduler::PramScheduler scheduler_;
+  scheduler::PramScheduler<VertexData> scheduler_;
   std::unique_ptr<components::Loader<io::PramBlockReader>> loader_;
   std::unique_ptr<components::Discharger<io::PramBlockWriter>> discharge_;
   std::unique_ptr<components::Executor> executor_;
-  update_stores::PramUpdateStoreUInt32 update_store_;
+  update_stores::PramNvmeUpdateStore<VertexData, EdgeData> update_store_;
 
   int round_ = 0;
 

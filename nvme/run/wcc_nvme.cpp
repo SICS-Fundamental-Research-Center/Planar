@@ -29,6 +29,8 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->edge_mutate = true;
   core::common::Configurations::GetMutable()->is_block_mode = true;
   core::common::Configurations::GetMutable()->task_size = FLAGS_task_size;
+  core::common::Configurations::GetMutable()->vertex_data_type =
+      core::common::VertexDataType::kVertexDataTypeUInt32;
 
   LOG_INFO("System begin");
   nvme::apps::WCCNvmeApp app(FLAGS_i);

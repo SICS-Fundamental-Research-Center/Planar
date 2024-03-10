@@ -22,6 +22,7 @@ typedef uint32_t BlockID;
 typedef uint8_t DefaultEdgeDataType;  // used for position
 typedef uint32_t Uint32VertexDataType;
 typedef uint16_t Uint16VertexDataType;
+typedef float FloatVertexDataType;
 
 typedef std::function<void(VertexID)> FuncVertex;
 typedef std::function<void(VertexID, VertexID)> FuncEdge;

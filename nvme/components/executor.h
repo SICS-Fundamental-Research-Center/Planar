@@ -192,7 +192,8 @@ class Executor : public Component {
     //    uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
     VertexIndex begin_index = 0, end_index = 0;
-    auto del_bitmap = block->GetEdgeDeleteBitmap();
+    //    auto del_bitmap = block->GetEdgeDeleteBitmap();
+    auto del_bitmap = new core::common::Bitmap();
     core::common::EdgeIndex edge_offset = block->GetBlockEdgeOffset();
 
     for (; begin_index < block->GetVertexNums();) {

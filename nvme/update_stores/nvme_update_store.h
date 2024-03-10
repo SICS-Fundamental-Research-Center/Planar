@@ -14,12 +14,14 @@
 
 namespace sics::graph::nvme::update_stores {
 
-template <typename VertexData, typename EdgeData>
+template <typename TV, typename TE>
 class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   using GraphID = core::common::GraphID;
   using VertexID = core::common::VertexID;
 
  public:
+  using VertexData = TV;
+  using EdgeData = TE;
   PramNvmeUpdateStore()
       : read_data_(nullptr), write_data_(nullptr), vertex_count_(0) {}
   explicit PramNvmeUpdateStore(
@@ -98,6 +100,10 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
 
   bool WriteMax(VertexID vid, VertexData new_data) {
     return core::util::atomic::WriteMax(write_data_ + vid, new_data);
+  }
+
+  void WriteAdd(VertexID vid, VertexData new_data) {
+    core::util::atomic::WriteAdd(write_data_ + vid, new_data);
   }
 
   bool DeleteEdge(core::common::EdgeIndex eid) {
@@ -213,6 +219,9 @@ typedef PramNvmeUpdateStore<core::common::Uint32VertexDataType,
 typedef PramNvmeUpdateStore<core::common::Uint16VertexDataType,
                             core::common::DefaultEdgeDataType>
     PramUpdateStoreUint16;
+typedef PramNvmeUpdateStore<core::common::FloatVertexDataType,
+                            core::common::DefaultEdgeDataType>
+    PramUpdateStoreFloat;
 
 }  // namespace sics::graph::nvme::update_stores
 

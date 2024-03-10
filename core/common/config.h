@@ -8,6 +8,7 @@ namespace sics::graph::core::common {
 enum VertexDataType {
   kVertexDataTypeUInt32 = 1,
   kVertexDataTypeUInt16,
+  kVertexDataTypeFloat,
 };
 
 enum PartitionType {

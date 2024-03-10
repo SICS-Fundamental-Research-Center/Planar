@@ -9,14 +9,12 @@ namespace sics::graph::nvme::apps {
 
 using BlockGraph = data_structures::graph::BlockCSRGraphUInt32;
 
-class WCCNvmeApp : public apis::BlockModel {
+class WCCNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
   using VertexIndex = core::common::VertexIndex;
   using EdgeIndex = core::common::EdgeIndex;
   using VertexID = core::common::VertexID;
 
  public:
-  using VertexData = typename BlockGraph::VertexData;
-  using EdgeData = typename BlockGraph::EdgeData;
   WCCNvmeApp() = default;
   WCCNvmeApp(const std::string& root_path) : BlockModel(root_path) {}
   ~WCCNvmeApp() override = default;

@@ -13,7 +13,6 @@
 #include "core/util/atomic.h"
 #include "core/util/pointer_cast.h"
 #include "nvme/data_structures/graph/serialized_pram_block_csr.h"
-#include "nvme/update_stores/nvme_update_store.h"
 
 namespace sics::graph::nvme::data_structures::graph {
 
@@ -24,7 +23,6 @@ using Serializable = core::data_structures::Serializable;
 template <typename TV, typename TE>
 class PramBlock : public core::data_structures::Serializable {
   using GraphID = core::common::GraphID;
-  using BlockID = core::common::BlockID;
   using VertexID = core::common::VertexID;
   using VertexIndex = core::common::VertexIndex;
   using EdgeIndex = core::common::EdgeIndex;
@@ -298,14 +296,6 @@ class PramBlock : public core::data_structures::Serializable {
     }
   }
 
-  void SetGlobalVertexData(update_stores::PramUpdateStoreUInt32* update_store) {
-    update_store_ = update_store;
-  }
-
-  const core::common::Bitmap* GetEdgeDeleteBitmap() {
-    return update_store_->GetDeleteBitmap();
-  }
-
   core::common::EdgeIndex GetBlockEdgeOffset() const {
     return block_metadata_->edge_offset;
   }
@@ -333,8 +323,6 @@ class PramBlock : public core::data_structures::Serializable {
   VertexID* out_edges_base_new_;
   core::common::Bitmap edge_delete_bitmap_;
 
-  update_stores::PramUpdateStoreUInt32* update_store_;
-
   // configs
   uint32_t parallelism_;
   uint32_t task_package_factor_;
@@ -347,6 +335,10 @@ typedef PramBlock<core::common::Uint32VertexDataType,
 typedef PramBlock<core::common::Uint16VertexDataType,
                   core::common::DefaultEdgeDataType>
     BlockCSRGraphUInt16;
+
+typedef PramBlock<core::common::FloatVertexDataType,
+                  core::common::DefaultEdgeDataType>
+    BlockCSRGraphFloat;
 
 }  // namespace sics::graph::nvme::data_structures::graph
 
