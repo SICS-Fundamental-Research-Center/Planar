@@ -36,6 +36,7 @@ class BlockModel : public BlockModelBase {
   using VertexID = core::common::VertexID;
   using VertexIndex = core::common::VertexIndex;
   using EdgeIndex = core::common::EdgeIndex;
+  using VertexDegree = core::common::VertexDegree;
 
   using ExecuteMessage = sics::graph::nvme::scheduler::ExecuteMessage;
   using ExecuteType = sics::graph::nvme::scheduler::ExecuteType;
@@ -49,8 +50,8 @@ class BlockModel : public BlockModelBase {
         root_path, scheduler_.GetMessageHub());
     discharge_ = std::make_unique<components::Discharger<io::PramBlockWriter>>(
         root_path, scheduler_.GetMessageHub());
-    executor_ =
-        std::make_unique<components::Executor>(scheduler_.GetMessageHub());
+    executor_ = std::make_unique<components::Executor<VertexData, EdgeData>>(
+        scheduler_.GetMessageHub());
 
     scheduler_.Init(&update_store_, executor_->GetTaskRunner(),
                     loader_->GetReader());
@@ -156,6 +157,8 @@ class BlockModel : public BlockModelBase {
     scheduler_.GetPramCv()->wait(lock, [pram_ready] { return *pram_ready; });
   }
 
+  // Used for block api.
+
   VertexData Read(VertexID id) { return update_store_.Read(id); }
 
   void Write(VertexID id, VertexData vdata) { update_store_.Write(id, vdata); }
@@ -168,9 +171,19 @@ class BlockModel : public BlockModelBase {
     update_store_.WriteAdd(id, vdata);
   }
 
+  void WriteAddDirect(VertexID id, VertexData vdata) {
+    update_store_.WriteAddDirect(id, vdata);
+  }
+
   void DeleteEdge(VertexID src, VertexID dst, EdgeIndex idx) {
     update_store_.DeleteEdge(idx);
   }
+
+  VertexDegree GetOutDegree(VertexID id) { return scheduler_.GetOutDegree(id); }
+
+  const VertexID* GetEdges(VertexID id) { return scheduler_.GetEdges(id); }
+
+  VertexID GetNumVertices() { return scheduler_.GetVertexNumber(); }
 
   // methods for graph
   size_t GetGraphEdges() const { return scheduler_.GetGraphEdges(); }
@@ -182,7 +195,7 @@ class BlockModel : public BlockModelBase {
   scheduler::PramScheduler<VertexData> scheduler_;
   std::unique_ptr<components::Loader<io::PramBlockReader>> loader_;
   std::unique_ptr<components::Discharger<io::PramBlockWriter>> discharge_;
-  std::unique_ptr<components::Executor> executor_;
+  std::unique_ptr<components::Executor<VertexData, EdgeData>> executor_;
   update_stores::PramNvmeUpdateStore<VertexData, EdgeData> update_store_;
 
   int round_ = 0;

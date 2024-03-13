@@ -29,7 +29,6 @@ struct GraphState {
       : num_blocks_(num_subgraphs),
         memory_size_(core::common::Configurations::Get()->memory_size) {
     subgraph_storage_state_.resize(num_subgraphs, OnDisk);
-    serialized_.resize(num_subgraphs);
     graphs_.resize(num_subgraphs);
     current_round_pending_.resize(num_subgraphs, true);
     block_mutate_state_.resize(num_subgraphs, false);
@@ -103,55 +102,18 @@ struct GraphState {
     return block_mutate_state_.at(bid);
   }
 
-  // graph handlers
-  core::data_structures::Serialized* GetSubgraphSerialized(
-      core::common::GraphID gid) {
-    return serialized_.at(gid).get();
-  }
+//  core::data_structures::Serializable* GetSubgraph(core::common::GraphID gid) {
+//    return graphs_.at(gid).get();
+//  }
 
-  core::data_structures::Serialized* GetSubgraphHandler(
-      core::common::GraphID gid) {
-    return serialized_.at(gid).release();
-  }
+//  void SetSubGraph(
+//      core::common::GraphID gid,
+//      std::unique_ptr<core::data_structures::Serializable> subgraph) {
+//    graphs_.at(gid).swap(subgraph);
+//  }
 
-  core::data_structures::Serializable* GetSubgraph(core::common::GraphID gid) {
-    return graphs_.at(gid).get();
-  }
-
-  // allocate new Serialized graph for reader. This function will create
-  // corresponding type Serialized graph.
-  core::data_structures::Serialized* NewSerializedMutableCSRGraph(
-      core::common::GraphID gid) {
-    serialized_.at(gid) = std::make_unique<
-        core::data_structures::graph::SerializedMutableCSRGraph>();
-    return serialized_.at(gid).get();
-  }
-
-  // allocate new Serialized block_nvme graph for reader.
-  core::data_structures::Serialized* NewSerializedBlockGraph(
-      core::common::GraphID gid) {
-    serialized_.at(gid) =
-        std::make_unique<data_structures::graph::SerializedPramBlockCSRGraph>();
-    return serialized_.at(gid).get();
-  }
-
-  void SetSubgraphSerialized(
-      core::common::GraphID gid,
-      std::unique_ptr<core::data_structures::Serialized> serialized) {
-    serialized_.at(gid).swap(serialized);
-  }
-
-  void SetSubGraph(
-      core::common::GraphID gid,
-      std::unique_ptr<core::data_structures::Serializable> subgraph) {
-    graphs_.at(gid).swap(subgraph);
-  }
-  // release unique_ptr of serialized graph
-  void ReleaseSubgraphSerialized(core::common::GraphID gid) {
-    serialized_.at(gid).reset();
-  }
   // release unique_ptr of serializable graph
-  void ReleaseSubgraph(core::common::GraphID gid) { graphs_.at(gid).reset(); }
+//  void ReleaseSubgraph(core::common::GraphID gid) { graphs_.at(gid).reset(); }
 
  public:
   size_t num_blocks_;
@@ -167,7 +129,6 @@ struct GraphState {
   const size_t memory_size_;
 
  private:
-  std::vector<std::unique_ptr<core::data_structures::Serialized>> serialized_;
   std::vector<std::unique_ptr<core::data_structures::Serializable>> graphs_;
 };
 }  // namespace sics::graph::nvme::scheduler

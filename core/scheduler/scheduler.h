@@ -24,6 +24,7 @@ namespace sics::graph::core::scheduler {
 class Scheduler {
   using MutableCSRGraphUInt32 = data_structures::graph::MutableCSRGraphUInt32;
   using MutableCSRGraphUInt16 = data_structures::graph::MutableCSRGraphUInt16;
+  using MutableCSRGraphFloat = data_structures::graph::MutableCSRGraphFloat;
   using MutableGroupCSRGraphUInt32 =
       data_structures::graph::MutableGroupCSRGraphUInt32;
   using MutableGroupCSRGraphUInt16 =

@@ -536,9 +536,17 @@ void Scheduler::CreateSerializableGraph(common::GraphID graph_id) {
             graph_metadata_info_.GetSubgraphMetadataPtr(graph_id),
             graph_metadata_info_.get_num_vertices());
     graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
-  } else {
+  } else if (common::Configurations::Get()->vertex_data_type ==
+             common::VertexDataType::kVertexDataTypeUInt16) {
     std::unique_ptr<data_structures::Serializable> serializable_graph =
         std::make_unique<MutableCSRGraphUInt16>(
+            graph_metadata_info_.GetSubgraphMetadataPtr(graph_id),
+            graph_metadata_info_.get_num_vertices());
+    graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
+  } else if (common::Configurations::Get()->vertex_data_type ==
+             common::VertexDataType::kVertexDataTypeFloat) {
+    std::unique_ptr<data_structures::Serializable> serializable_graph =
+        std::make_unique<MutableCSRGraphFloat>(
             graph_metadata_info_.GetSubgraphMetadataPtr(graph_id),
             graph_metadata_info_.get_num_vertices());
     graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
@@ -595,11 +603,17 @@ void Scheduler::SetAppRuntimeGraph(common::GraphID gid) {
           dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt32>*>(app_);
       app->SetRuntimeGraph(
           dynamic_cast<MutableCSRGraphUInt32*>(graph_state_.GetSubgraph(gid)));
-    } else {
+    } else if (common::Configurations::Get()->vertex_data_type ==
+               common::VertexDataType::kVertexDataTypeUInt16) {
       auto app =
           dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt16>*>(app_);
       app->SetRuntimeGraph(
           dynamic_cast<MutableCSRGraphUInt16*>(graph_state_.GetSubgraph(gid)));
+    } else if (common::Configurations::Get()->vertex_data_type ==
+               common::VertexDataType::kVertexDataTypeFloat) {
+      auto app = dynamic_cast<apis::PlanarAppBase<MutableCSRGraphFloat>*>(app_);
+      app->SetRuntimeGraph(
+          dynamic_cast<MutableCSRGraphFloat*>(graph_state_.GetSubgraph(gid)));
     }
   }
 }
@@ -616,9 +630,14 @@ void Scheduler::SetAppRound(int round) {
       auto app =
           dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt32>*>(app_);
       app->SetRound(round);
-    } else {
+    } else if (common::Configurations::Get()->vertex_data_type ==
+               common::VertexDataType::kVertexDataTypeUInt16) {
       auto app =
           dynamic_cast<apis::PlanarAppBase<MutableCSRGraphUInt16>*>(app_);
+      app->SetRound(round);
+    } else if (common::Configurations::Get()->vertex_data_type ==
+               common::VertexDataType::kVertexDataTypeFloat) {
+      auto app = dynamic_cast<apis::PlanarAppBase<MutableCSRGraphFloat>*>(app_);
       app->SetRound(round);
     }
   }
@@ -628,13 +647,15 @@ void Scheduler::SetAppRound(int round) {
 common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
   //  if (test == 0) {
   //    if (graph_state_.current_round_pending_.at(4) &&
-  //        graph_state_.subgraph_storage_state_.at(4) == GraphState::OnDisk) {
+  //        graph_state_.subgraph_storage_state_.at(4) ==
+  //        GraphState::OnDisk) {
   //      test++;
   //      return 4;
   //    }
   //  } else if (test == 1) {
   //    if (graph_state_.current_round_pending_.at(5) &&
-  //        graph_state_.subgraph_storage_state_.at(5) == GraphState::OnDisk) {
+  //        graph_state_.subgraph_storage_state_.at(5) ==
+  //        GraphState::OnDisk) {
   //      test++;
   //      return 5;
   //    }

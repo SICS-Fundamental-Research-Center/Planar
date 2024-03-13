@@ -262,12 +262,20 @@ class PramBlock : public core::data_structures::Serializable {
     return out_degree_base_[index];
   }
 
+  VertexDegree GetOutDegreeByID(VertexID id) {
+    return out_degree_base_[GetIndex(id)];
+  }
+
   EdgeIndex GetOutOffsetByIndex(VertexIndex index) {
     return out_offset_base_[index];
   }
 
   VertexID* GetOutEdgesBaseByIndex(VertexIndex index) {
     return out_edges_base_ + out_offset_base_[index];
+  }
+
+  const VertexID* GetOutEdgesByID(VertexID id) {
+    return out_edges_base_ + out_offset_base_[GetIndex(id)];
   }
 
   // log functions for lookup block info

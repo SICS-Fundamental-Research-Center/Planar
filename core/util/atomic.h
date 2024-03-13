@@ -14,7 +14,7 @@ namespace atomic {
 //  value and, only if they are the same, modifies the contents of that memory
 //  location to a new given value.
 template <class ET>
-inline bool CAS(ET* ptr, ET oldv, ET newv)  {
+inline bool CAS(ET* ptr, ET oldv, ET newv) {
   if (sizeof(ET) == 8) {
     return __sync_bool_compare_and_swap((long*)ptr, *((long*)&oldv),
                                         *((long*)&newv));

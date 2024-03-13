@@ -18,17 +18,20 @@
 
 namespace sics::graph::nvme::components {
 
+template <typename TV, typename TE>
 class Executor : public Component {
   using GraphID = core::common::GraphID;
   using VertexID = core::common::VertexID;
   using VertexIndex = core::common::VertexIndex;
   using EdgeIndex = core::common::EdgeIndex;
-  using Block32 = data_structures::graph::BlockCSRGraphUInt32;
-  using Block16 = data_structures::graph::BlockCSRGraphUInt16;
   using FuncVertex = core::common::FuncVertex;
   using FuncEdge = core::common::FuncEdge;
   using FuncEdgeAndMutate = core::common::FuncEdgeAndMutate;
   using FuncEdgeMutate = core::common::FuncEdgeMutate;
+
+  using Block32 = data_structures::graph::BlockCSRGraphUInt32;
+  using Block16 = data_structures::graph::BlockCSRGraphUInt16;
+  using BLockCSR = data_structures::graph::PramBlock<TV, TE>;
 
  public:
   Executor(scheduler::MessageHub* hub)
@@ -119,7 +122,7 @@ class Executor : public Component {
   void ParallelVertexDo(core::data_structures::Serializable* graph,
                         const FuncVertex& vertex_func) {
     //    LOG_DEBUG("ParallelVertexDo begins!");
-    auto block = dynamic_cast<Block32*>(graph);
+    auto block = static_cast<BLockCSR*>(graph);
     uint32_t task_size = GetTaskSize(block->GetVertexNums());
     //    uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
@@ -153,7 +156,7 @@ class Executor : public Component {
                       const FuncEdge& edge_func) {
     //    LOG_DEBUG("ParallelEdgeDelDo begins!");
     //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
-    auto block = dynamic_cast<Block32*>(graph);
+    auto block = static_cast<BLockCSR*>(graph);
     uint32_t task_size = GetTaskSize(block->GetVertexNums());
     //    uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
@@ -187,7 +190,7 @@ class Executor : public Component {
                                 const FuncEdge& edge_func) {
     //    LOG_DEBUG("ParallelEdgeDelDo begins!");
     //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
-    auto block = dynamic_cast<Block32*>(graph);
+    auto block = static_cast<BLockCSR*>(graph);
     uint32_t task_size = GetTaskSize(block->GetVertexNums());
     //    uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;
@@ -229,7 +232,7 @@ class Executor : public Component {
   void ParallelEdgeAndMutateDo(core::data_structures::Serializable* graph,
                                const FuncEdgeMutate& edge_del_func) {
     //    LOG_INFO("ParallelEdgeAndMutateDo begins!");
-    auto block = dynamic_cast<Block32*>(graph);
+    auto block = static_cast<BLockCSR*>(graph);
     uint32_t task_size = GetTaskSize(block->GetVertexNums());
     //    uint32_t task_size = task_size_;
     core::common::TaskPackage tasks;

@@ -66,6 +66,10 @@ class Configurations {
   bool fast = false;
   // for random walk
   uint32_t walk = 5;
+  // for pagerank
+  uint32_t pr_iter = 10;
+
+  bool sync = true;
   bool no_data_need = false;
 
   bool threefour_mode = false;

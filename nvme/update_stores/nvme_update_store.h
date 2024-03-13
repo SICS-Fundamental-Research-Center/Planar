@@ -28,7 +28,8 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
       const core::data_structures::GraphMetadata& graph_metadata)
       : graph_metadata_(graph_metadata),
         vertex_count_(graph_metadata.get_num_vertices()),
-        edges_count_(graph_metadata.get_num_edges()) {
+        edges_count_(graph_metadata.get_num_edges()),
+        sync_(core::common::Configurations::Get()->sync) {
     application_type_ = core::common::Configurations::Get()->application;
     no_data_need_ = core::common::Configurations::Get()->no_data_need;
     is_block_mode_ = core::common::Configurations::Get()->is_block_mode;
@@ -58,6 +59,13 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
             read_data_[i] = std::numeric_limits<VertexData>::max();
             write_data_[i] = std::numeric_limits<VertexData>::max();
           }
+          break;
+        }
+        case core::common::ApplicationType::PageRank: {
+          //          for (uint32_t i = 0; i < vertex_count_; i++) {
+          //            read_data_[i] = 1.0;
+          //            write_data_[i] = 1.0;
+          //          }
           break;
         }
         default: {
@@ -106,6 +114,10 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
     core::util::atomic::WriteAdd(write_data_ + vid, new_data);
   }
 
+  void WriteAddDirect(VertexID id, VertexData new_data) {
+    write_data_[id] += new_data;
+  }
+
   bool DeleteEdge(core::common::EdgeIndex eid) {
     if (eid > edges_count_) {
       return false;
@@ -115,14 +127,17 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   }
 
   bool IsActive() override { return active_count_ != 0; }
-  void SetActive() { active_count_ = 1; }
-  void UnsetActive() { active_count_ = 0; }
 
-  void Sync() override {
-    if (!no_data_need_) {
-      memcpy(read_data_, write_data_, vertex_count_ * sizeof(VertexData));
-      active_count_ = 0;
+  void Sync(bool sync = false) override {
+    if (sync_ || sync) {
+      if (!no_data_need_) {
+        memcpy(read_data_, write_data_, vertex_count_ * sizeof(VertexData));
+      }
     }
+  }
+
+  void ResetWriteBuffer() {
+    memset(write_data_, 0, vertex_count_ * sizeof(VertexData));
   }
 
   uint32_t GetMessageCount() { return vertex_count_; }
@@ -209,7 +224,7 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   core::common::ApplicationType application_type_;
   bool no_data_need_;
   bool is_block_mode_;
-
+  bool sync_;
   //  std::vector<core::common::Bitmap> delete_bitmaps_;
 };
 

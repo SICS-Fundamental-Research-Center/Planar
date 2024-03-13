@@ -52,6 +52,13 @@ class BspUpdateStore : public UpdateStoreBase {
           }
           break;
         }
+        case common::ApplicationType::PageRank: {
+          for (uint32_t i = 0; i < vertex_num; i++) {
+            read_data_[i] = 0;
+            write_data_[i] = 0;
+          }
+          break;
+        }
         default: {
           LOG_FATAL("Application type not supported");
           break;
@@ -131,6 +138,18 @@ class BspUpdateStore : public UpdateStoreBase {
     return false;
   }
 
+  bool WriteAdd(VertexID vid, VertexData vdata_new) {
+    if (vid >= message_count_) {
+      return false;
+    }
+    if (border_vertex_bitmap_.GetBit(vid)) {
+      util::atomic::WriteAdd(write_data_ + vid, vdata_new);
+      active_count_++;
+      return true;
+    }
+    return false;
+  }
+
   bool WriteMinEdgeCutVertex(VertexID id, VertexData new_data) {
     if (id >= message_count_) {
       return false;
@@ -146,11 +165,15 @@ class BspUpdateStore : public UpdateStoreBase {
   void SetActive() { active_count_ = 1; }
   void UnsetActive() { active_count_ = 0; }
 
-  void Sync() override {
+  void Sync(bool sync = false) override {
     if (!no_data_need_) {
       memcpy(read_data_, write_data_, message_count_ * sizeof(VertexData));
       active_count_ = 0;
     }
+  }
+
+  void ResetWriteBuffer() {
+    memset(write_data_, 0, message_count_ * sizeof(VertexData));
   }
 
   bool IsBorderVertex(VertexID vid) {

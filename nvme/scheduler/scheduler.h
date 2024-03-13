@@ -37,9 +37,12 @@ class PramScheduler {
 
   using GraphID = core::common::GraphID;
   using EdgeIndex = core::common::EdgeIndex;
+  using VertexDegree = core::common::VertexDegree;
 
   using VertexData = TV;
   using EdgeData = core::common::DefaultEdgeDataType;
+
+  using BlockCSRGraph = data_structures::graph::PramBlock<TV, EdgeData>;
 
  public:
   PramScheduler(const std::string& root_path)
@@ -66,6 +69,8 @@ class PramScheduler {
     group_num_ = core::common::Configurations::Get()->group_num;
     in_memory_ = core::common::Configurations::Get()->in_memory;
     srand(0);
+
+    graphs_.resize(graph_metadata_info_.get_num_subgraphs());
   }
 
   virtual ~PramScheduler() = default;
@@ -133,7 +138,7 @@ class PramScheduler {
 
   MessageHub* GetMessageHub() { return &message_hub_; }
 
-  size_t GetVertexNumber() const {
+  VertexID GetVertexNumber() const {
     return graph_metadata_info_.get_num_vertices();
   }
 
@@ -157,6 +162,18 @@ class PramScheduler {
   bool* GetPramReady() { return &pram_ready_; }
 
   GraphID GetCurrentBlockId() const { return current_bid_; }
+
+  VertexDegree GetOutDegree(VertexID id) {
+    auto serializable = GetBlock(current_bid_);
+    auto graph = static_cast<BlockCSRGraph*>(serializable);
+    return graph->GetOutDegreeByID(id);
+  }
+
+  const VertexID* GetEdges(VertexID id) {
+    auto serializable = GetBlock(current_bid_);
+    auto graph = static_cast<BlockCSRGraph*>(serializable);
+    return graph->GetOutEdgesByID(id);
+  }
 
  protected:
   virtual bool ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
@@ -234,7 +251,8 @@ class PramScheduler {
     graph_state_.SetGraphState(write_resp.graph_id, GraphState::OnDisk);
     auto write_size = graph_metadata_info_.GetBlockSize(write_resp.graph_id);
     //  LOGF_INFO(
-    //      "Release subgraph: {}, size: {}. *** Memory size now: {}, after: {} "
+    //      "Release subgraph: {}, size: {}. *** Memory size now: {}, after: {}
+    //      "
     //      "***",
     //      write_resp.graph_id, write_size, memory_left_size_,
     //      memory_left_size_ + write_size);
@@ -268,14 +286,16 @@ class PramScheduler {
     if (use_limits_) {
       if (limits_ <= 0) return false;
       limits_--;
-      // LOGF_INFO("Read on graph {}. now limits is {}", load_graph_id, limits_);
+      // LOGF_INFO("Read on graph {}. now limits is {}", load_graph_id,
+      // limits_);
     } else {
       auto read_size = graph_metadata_info_.GetBlockSize(load_graph_id);
       if (memory_left_size_ < read_size) return false;
       //    LOGF_INFO(
       //        "To read subgraph {}. *** Memory size now: {}, after read: {} "
       //        "***",
-      //        load_graph_id, memory_left_size_, memory_left_size_ - read_size);
+      //        load_graph_id, memory_left_size_, memory_left_size_ -
+      //        read_size);
       memory_left_size_ -= read_size;
     }
 
@@ -292,27 +312,15 @@ class PramScheduler {
     return true;
   }
 
+  core::data_structures::Serializable* GetBlock(GraphID bid) {
+    return graphs_.at(bid).get();
+  }
+
   core::data_structures::Serializable* CreateSerializableGraph(
       core::common::GraphID graph_id) {
-    if (core::common::Configurations::Get()->vertex_data_type ==
-        core::common::VertexDataType::kVertexDataTypeUInt32) {
-      std::unique_ptr<core::data_structures::Serializable> serializable_graph =
-          std::make_unique<BlockCSRGraphUInt32>(
-              graph_metadata_info_.GetBlockMetadataPtr(graph_id));
-      graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
-    } else if (core::common::Configurations::Get()->vertex_data_type ==
-               core::common::VertexDataType::kVertexDataTypeUInt16) {
-      std::unique_ptr<core::data_structures::Serializable> serializable_graph =
-          std::make_unique<BlockCSRGraphUInt16>(
-              graph_metadata_info_.GetBlockMetadataPtr(graph_id));
-      graph_state_.SetSubGraph(graph_id, std::move(serializable_graph));
-    } else if (core::common::Configurations::Get()->vertex_data_type ==
-               core::common::VertexDataType::kVertexDataTypeFloat) {
-      std::unique_ptr<core::data_structures::Serializable> serializable_graph =
-          std::make_unique<BlockCSRGraphFloat>(
-              graph_metadata_info_.GetBlockMetadataPtr(graph_id));
-    }
-    return graph_state_.GetSubgraph(graph_id);
+    graphs_.at(graph_id) = std::make_unique<BlockCSRGraph>(
+        graph_metadata_info_.GetBlockMetadataPtr(graph_id));
+    return graphs_.at(graph_id).get();
   }
 
   GraphID GetNextReadGraphInCurrentRound() const {
@@ -377,13 +385,6 @@ class PramScheduler {
     return true;
   }
 
-  void ReleaseAllGraph() {
-    for (int i = 0; i < graph_state_.num_blocks_; i++) {
-      if (graph_state_.subgraph_storage_state_.at(i) == GraphState::Serialized)
-        graph_state_.ReleaseSubgraphSerialized(i);
-    }
-  }
-
   void SetExecuteMessageMapFunction(ExecuteMessage* message) {
     switch (current_Map_type_) {
       case MapType::kMapVertex: {
@@ -422,14 +423,15 @@ class PramScheduler {
 
   void CheckMapFunctionFinish() {
     if (current_Map_type_ != MapType::kDefault)
-      LOGF_FATAL("Map type error when return from scheduler!", current_Map_type_);
+      LOGF_FATAL("Map type error when return from scheduler!",
+                 current_Map_type_);
     UnlockAndReleaseResult();
   }
 
   void SendWriteMessage(GraphID bid) {
     WriteMessage write_message;
     write_message.graph_id = bid;
-    write_message.graph = graph_state_.GetSubgraph(bid);
+    write_message.graph = GetBlock(bid);
     write_message.changed = graph_state_.IsBlockMutated(bid);
     graph_state_.SetGraphState(bid, GraphState::StorageStateType::Writing);
     message_hub_.get_writer_queue()->Push(write_message);
@@ -450,7 +452,7 @@ class PramScheduler {
   void SendExecuteMessage(GraphID bid) {
     ExecuteMessage execute_message;
     execute_message.graph_id = bid;
-    execute_message.graph = graph_state_.GetSubgraph(bid);
+    execute_message.graph = GetBlock(bid);
     execute_message.execute_type = ExecuteType::kCompute;
     execute_message.map_type = current_Map_type_;
     SetExecuteMessageMapFunction(&execute_message);
@@ -522,6 +524,9 @@ class PramScheduler {
   int need_read_graphs_ = 0;
 
   int test = 0;
+
+  // blocks
+  std::vector<std::unique_ptr<core::data_structures::Serializable>> graphs_;
 };
 
 }  // namespace sics::graph::nvme::scheduler

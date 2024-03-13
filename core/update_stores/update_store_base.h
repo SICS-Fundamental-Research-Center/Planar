@@ -10,7 +10,7 @@ class UpdateStoreBase {
   virtual bool IsActive() { return false; };
 
   // synchronize the data of global read and global write
-  virtual void Sync(){};
+  virtual void Sync(bool sync = false){};
 
   virtual size_t GetActiveCount() const { return 0; };
 

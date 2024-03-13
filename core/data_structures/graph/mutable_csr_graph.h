@@ -524,6 +524,9 @@ typedef MutableCSRGraph<common::Uint32VertexDataType,
 typedef MutableCSRGraph<common::Uint16VertexDataType,
                         common::DefaultEdgeDataType>
     MutableCSRGraphUInt16;
+typedef MutableCSRGraph<common::FloatVertexDataType,
+                        common::DefaultEdgeDataType>
+    MutableCSRGraphFloat;
 
 }  // namespace sics::graph::core::data_structures::graph
 
