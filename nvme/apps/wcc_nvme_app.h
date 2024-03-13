@@ -34,7 +34,6 @@ class WCCNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
   }
 
   void PointJump(VertexID src_id) {
-    std::cout << "thread id :" << nvme::components::thread_id << std::endl;
     VertexID parent_id = Read(src_id);
     if (parent_id == src_id) {
       return;
