@@ -73,8 +73,6 @@ class Executor : public Component {
             break;
           }
           case scheduler::ExecuteType::kCompute:
-            LOGF_INFO("Executor: Compute block {}, MapType: {}",
-                      message.graph_id, message.map_type);
             if (in_memory_time_) start_time_ = std::chrono::system_clock::now();
             if (message.map_type == scheduler::kMapVertex) {
               ParallelVertexDo(message.graph, *message.func_vertex);
@@ -87,6 +85,8 @@ class Executor : public Component {
               LOG_FATAL("Executor: Invalid map type");
             }
             if (in_memory_time_) end_time_ = std::chrono::system_clock::now();
+            LOGF_INFO("Executor: Compute block {}, MapType: {} finished!",
+                      message.graph_id, message.map_type);
             break;
           case scheduler::ExecuteType::kSerialize:
             //            LOGF_INFO("Executor: Serialized block {}",
