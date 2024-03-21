@@ -75,7 +75,14 @@ class GNNApp : public apis::BlockModel<float> {
     read_data_ = new float[gnn_l * num_];
     write_data_ = new float[gnn_l * num_];
   }
-  ~GNNApp() override = default;
+  ~GNNApp() override {
+    if (read_data_) {
+      delete[] read_data_;
+    }
+    if (write_data_) {
+      delete[] write_data_;
+    }
+  };
 
   void Init(VertexID id) {
     auto vdata = Write1(id);
@@ -173,8 +180,8 @@ class GNNApp : public apis::BlockModel<float> {
  private:
   std::vector<GNNWeightData> weights_;
   size_t num_;
-  float* read_data_;
-  float* write_data_;
+  float* read_data_ = nullptr;
+  float* write_data_ = nullptr;
   const uint32_t gnn_l;
   uint32_t gnn_k = 1;
   uint32_t k_ = 0;
