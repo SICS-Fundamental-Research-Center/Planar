@@ -161,6 +161,8 @@ class BlockModel : public BlockModelBase {
 
   VertexData Read(VertexID id) { return update_store_.Read(id); }
 
+  VertexData* WritePtr(VertexID id) { return update_store_.WritePtr(id); }
+
   void Write(VertexID id, VertexData vdata) { update_store_.Write(id, vdata); }
 
   void WriteMin(VertexID id, VertexData vdata) {

@@ -25,6 +25,7 @@ enum ApplicationType {
   MST,
   RandomWalk,
   PageRank,
+  GNN,
 };
 
 class Configurations {
@@ -68,6 +69,11 @@ class Configurations {
   uint32_t walk = 5;
   // for pagerank
   uint32_t pr_iter = 10;
+  // for GNN
+  uint32_t gnn_l = 4;  // gnn feature size
+  uint32_t gnn_k = 3;  // gnn layer size
+
+  uint32_t iter = 3;
 
   bool sync = true;
   bool no_data_need = false;

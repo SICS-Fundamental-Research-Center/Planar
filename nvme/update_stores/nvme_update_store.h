@@ -35,42 +35,46 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
     is_block_mode_ = core::common::Configurations::Get()->is_block_mode;
 
     if (!no_data_need_) {
-      read_data_ = new VertexData[vertex_count_];
-      write_data_ = new VertexData[vertex_count_];
-      switch (application_type_) {
-        case core::common::ApplicationType::WCC:
-        case core::common::ApplicationType::MST: {
-          for (uint32_t i = 0; i < vertex_count_; i++) {
-            read_data_[i] = i;
-            write_data_[i] = i;
+      if (core::common::Configurations::Get()->application ==
+          core::common::ApplicationType::GNN) {
+      } else {
+        read_data_ = new VertexData[vertex_count_];
+        write_data_ = new VertexData[vertex_count_];
+        switch (application_type_) {
+          case core::common::ApplicationType::WCC:
+          case core::common::ApplicationType::MST: {
+            for (uint32_t i = 0; i < vertex_count_; i++) {
+              read_data_[i] = i;
+              write_data_[i] = i;
+            }
+            edge_delete_map_.Init(edges_count_);
+            break;
           }
-          edge_delete_map_.Init(edges_count_);
-          break;
-        }
-        case core::common::ApplicationType::Coloring: {
-          for (uint32_t i = 0; i < vertex_count_; i++) {
-            read_data_[i] = 0;
-            write_data_[i] = 0;
+          case core::common::ApplicationType::Coloring: {
+            for (uint32_t i = 0; i < vertex_count_; i++) {
+              read_data_[i] = 0;
+              write_data_[i] = 0;
+            }
+            break;
           }
-          break;
-        }
-        case core::common::ApplicationType::Sssp: {
-          for (uint32_t i = 0; i < vertex_count_; i++) {
-            read_data_[i] = std::numeric_limits<VertexData>::max();
-            write_data_[i] = std::numeric_limits<VertexData>::max();
+          case core::common::ApplicationType::Sssp: {
+            for (uint32_t i = 0; i < vertex_count_; i++) {
+              read_data_[i] = std::numeric_limits<VertexData>::max();
+              write_data_[i] = std::numeric_limits<VertexData>::max();
+            }
+            break;
           }
-          break;
-        }
-        case core::common::ApplicationType::PageRank: {
-          //          for (uint32_t i = 0; i < vertex_count_; i++) {
-          //            read_data_[i] = 1.0;
-          //            write_data_[i] = 1.0;
-          //          }
-          break;
-        }
-        default: {
-          LOG_FATAL("Application type not supported");
-          break;
+          case core::common::ApplicationType::PageRank: {
+            //          for (uint32_t i = 0; i < vertex_count_; i++) {
+            //            read_data_[i] = 1.0;
+            //            write_data_[i] = 1.0;
+            //          }
+            break;
+          }
+          default: {
+            LOG_FATAL("Application type not supported");
+            break;
+          }
         }
       }
     }
@@ -96,6 +100,8 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
 
   // used for basic unsigned type
   VertexData Read(VertexID vid) { return read_data_[vid]; }
+
+  VertexData* WritePtr(VertexID id) { return write_data_ + id; }
 
   bool Write(VertexID vid, VertexData vdata_new) {
     write_data_[vid] = vdata_new;
