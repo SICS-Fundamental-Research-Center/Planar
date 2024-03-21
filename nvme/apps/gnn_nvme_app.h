@@ -20,6 +20,12 @@ struct GNNWeightData {
       m_[i] = new float[num];
     }
   }
+  ~GNNWeightData() {
+    for (uint32_t i = 0; i < l_; i++) {
+      delete[] m_[i];
+    }
+    delete[] m_;
+  }
   void Show() {
     LOG_INFO("weights info: ");
     for (int i = 0; i < l_; i++) {
