@@ -21,10 +21,14 @@ struct GNNWeightData {
     }
   }
   ~GNNWeightData() {
-    for (uint32_t i = 0; i < l_; i++) {
-      delete[] m_[i];
+    if (m_) {
+      for (uint32_t i = 0; i < l_; i++) {
+        if (m_[i]) {
+          delete[] m_[i];
+        }
+      }
+      delete[] m_;
     }
-    delete[] m_;
   }
   void Show() {
     LOG_INFO("weights info: ");
@@ -39,7 +43,7 @@ struct GNNWeightData {
 
  public:
   uint32_t l_;
-  float** m_;
+  float** m_ = nullptr;
 };
 
 template <int N>
