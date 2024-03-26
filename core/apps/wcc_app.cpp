@@ -20,31 +20,15 @@ void WCCApp::PEval() {
     this->Contract(src_id, dst_id, edge_index);
   };
   LOG_INFO("PEval begin");
-  //  update_store_->LogBorderVertexInfo();
-  //  graph_->LogGraphInfo();
-  //  graph_->LogEdges();
-  //  graph_->LogVertexData();
-  //  graph_->LogIndexInfo();
   ParallelVertexDo(init);
-  //  graph_->LogVertexData();
   LOG_INFO("init finished");
   while (graph_->GetOutEdgeNums() != 0) {
-    //    update_store_->LogGlobalMessage();
     ParallelEdgeDo(graft);
     LOG_INFO("graft finished");
-    //    graph_->LogVertexData();
-    //    update_store_->LogGlobalMessage();
-
     ParallelVertexDo(point_jump);
     LOG_INFO("pointjump finished");
-    //    graph_->LogVertexData();
-    //    update_store_->LogGlobalMessage();
-    //    graph_->LogEdges();
     ParallelEdgeMutateDo(contract);
     LOG_INFO("contract finished");
-    //    graph_->LogEdges();
-    //    graph_->LogGraphInfo();
-    //    graph_->LogVertexData();
   }
   LOG_INFO("PEval finished");
 }
@@ -54,21 +38,10 @@ void WCCApp::IncEval() {
   auto point_jump_inc_eval = [this](VertexID id) {
     this->PointJumpIncEval(id);
   };
-  //  graph_->LogGraphInfo();
-  //  graph_->LogVertexData();
-  //  update_store_->LogGlobalMessage();
-  //  graph_->LogIsIngraphInfo();
   ParallelVertexDo(message_passing);
   LOG_INFO("message passing finished");
-  //  graph_->LogVertexData();
-  //  update_store_->LogGlobalMessage();
-
   ParallelVertexDo(point_jump_inc_eval);
   LOG_INFO("point_jump increment finished");
-  //  graph_->LogVertexData();
-  //  update_store_->LogGlobalMessage();
-
-  graph_->set_status("IncEval");
 }
 
 void WCCApp::Assemble() { graph_->set_status("Assemble"); }
@@ -86,26 +59,6 @@ void WCCApp::Graft(VertexID src_id, VertexID dst_id) {
       update_store_->WriteMinBorderVertex(src_parent_id, dst_parent_id);
   }
 }
-
-// TODO: delete when test finished
-void WCCApp::Graft2(VertexID src_id, VertexID dst_id) {
-  VertexID src_parent_id =
-      graph_->vertex_data_read_base_[graph_->index_by_global_id_[src_id]];
-  VertexID dst_parent_id =
-      graph_->vertex_data_read_base_[graph_->index_by_global_id_[dst_id]];
-  if (src_parent_id < dst_parent_id) {
-    auto data_new = graph_->vertex_data_read_base_
-                        [graph_->index_by_global_id_[src_parent_id]];
-    if (graph_->WriteMinVertexDataByID(dst_parent_id, data_new))
-      update_store_->WriteMinBorderVertex(dst_parent_id, data_new);
-  } else if (src_parent_id > dst_parent_id) {
-    auto data_new = graph_->vertex_data_read_base_
-                        [graph_->index_by_global_id_[dst_parent_id]];
-    if (graph_->WriteMinVertexDataByID(src_parent_id, data_new))
-      update_store_->WriteMinBorderVertex(src_parent_id, data_new);
-  }
-}
-
 void WCCApp::PointJump(VertexID src_id) {
   VertexData parent_id = graph_->ReadLocalVertexDataByID(src_id);
   if (parent_id != graph_->ReadLocalVertexDataByID(parent_id)) {

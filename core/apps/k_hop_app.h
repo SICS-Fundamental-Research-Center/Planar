@@ -1,0 +1,8 @@
+//
+// Created by Yang Liu on 2024/3/26.
+//
+
+#ifndef GRAPH_SYSTEMS_CORE_APPS_K_HOP_APP_H_
+#define GRAPH_SYSTEMS_CORE_APPS_K_HOP_APP_H_
+
+#endif  // GRAPH_SYSTEMS_CORE_APPS_K_HOP_APP_H_
