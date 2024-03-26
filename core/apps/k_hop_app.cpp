@@ -1,3 +1,11 @@
-//
-// Created by Yang Liu on 2024/3/26.
-//
+#include "apps/k_hop_app.h"
+
+namespace sics::graph::core::apps {
+
+void KHopApp::PEval() {}
+
+void KHopApp::IncEval() {}
+
+void KHopApp::Assemble() {}
+
+}

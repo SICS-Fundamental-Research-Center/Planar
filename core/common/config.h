@@ -26,6 +26,7 @@ enum ApplicationType {
   RandomWalk,
   PageRank,
   GNN,
+  Khop,
 };
 
 class Configurations {
