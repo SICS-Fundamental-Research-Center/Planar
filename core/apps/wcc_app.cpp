@@ -38,10 +38,12 @@ void WCCApp::IncEval() {
   auto point_jump_inc_eval = [this](VertexID id) {
     this->PointJumpIncEval(id);
   };
+  LOG_INFO("IncEval begin");
   ParallelVertexDo(message_passing);
   LOG_INFO("message passing finished");
   ParallelVertexDo(point_jump_inc_eval);
   LOG_INFO("point_jump increment finished");
+  LOG_INFO("IncEval begin");
 }
 
 void WCCApp::Assemble() { graph_->set_status("Assemble"); }
