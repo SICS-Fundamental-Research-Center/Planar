@@ -42,11 +42,12 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->gnn_k = FLAGS_k;
   core::common::Configurations::GetMutable()->sync = false;
 
-  LOG_INFO("System begin");
   if (FLAGS_mode == "float") {
+    LOG_INFO("System begin GNN float");
     nvme::apps::GNNApp app(FLAGS_i);
     app.Run();
   } else if (FLAGS_mode == "int") {
+    LOG_INFO("System begin GNN int");
     nvme::apps::GNNIntApp app(FLAGS_i);
     app.Run();
   }
