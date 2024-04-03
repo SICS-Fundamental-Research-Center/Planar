@@ -97,7 +97,7 @@ if(NOT TBB_FOUND)
   ##################################
   # Check the build type
   ##################################
-  
+
   if(NOT DEFINED TBB_USE_DEBUG_BUILD)
     if(CMAKE_BUILD_TYPE MATCHES "(Debug|DEBUG|debug|RelWithDebInfo|RELWITHDEBINFO|relwithdebinfo)")
       set(TBB_BUILD_TYPE DEBUG)
@@ -109,14 +109,14 @@ if(NOT TBB_FOUND)
   else()
     set(TBB_BUILD_TYPE RELEASE)
   endif()
-  
+
   ##################################
   # Set the TBB search directories
   ##################################
-  
+
   # Define search paths based on user input and environment variables
   set(TBB_SEARCH_DIR ${TBB_ROOT_DIR} $ENV{TBB_INSTALL_DIR} $ENV{TBBROOT})
-  
+
   # Define the search directories based on the current platform
   if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(TBB_DEFAULT_SEARCH_DIR "C:/Program Files/Intel/TBB"
@@ -148,7 +148,7 @@ if(NOT TBB_FOUND)
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # OS X
     set(TBB_DEFAULT_SEARCH_DIR "/opt/intel/tbb")
-    
+
     # TODO: Check to see which C++ library is being used by the compiler.
     if(NOT ${CMAKE_SYSTEM_VERSION} VERSION_LESS 13.0)
       # The default C++ library on OS X 10.9 and later is libc++
@@ -159,7 +159,7 @@ if(NOT TBB_FOUND)
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # Linux
     set(TBB_DEFAULT_SEARCH_DIR "/opt/intel/tbb")
-    
+
     # TODO: Check compiler version to see the suffix should be <arch>/gcc4.1 or
     #       <arch>/gcc4.1. For now, assume that the compiler is more recent than
     #       gcc 4.4.x or later.
@@ -169,11 +169,11 @@ if(NOT TBB_FOUND)
       set(TBB_LIB_PATH_SUFFIX "lib/ia32/gcc4.4")
     endif()
   endif()
-  
+
   ##################################
   # Find the TBB include dir
   ##################################
-  
+
   find_path(TBB_INCLUDE_DIRS tbb/tbb.h
       HINTS ${TBB_INCLUDE_DIR} ${TBB_SEARCH_DIR}
       PATHS ${TBB_DEFAULT_SEARCH_DIR}
@@ -184,7 +184,7 @@ if(NOT TBB_FOUND)
   ##################################
 
   if(TBB_INCLUDE_DIRS)
-    file(READ "${TBB_INCLUDE_DIRS}/tbb/tbb_stddef.h" _tbb_version_file)
+#    file(READ "${TBB_INCLUDE_DIRS}/tbb/tbb_stddef.h" _tbb_version_file)
     string(REGEX REPLACE ".*#define TBB_VERSION_MAJOR ([0-9]+).*" "\\1"
         TBB_VERSION_MAJOR "${_tbb_version_file}")
     string(REGEX REPLACE ".*#define TBB_VERSION_MINOR ([0-9]+).*" "\\1"
@@ -249,7 +249,7 @@ if(NOT TBB_FOUND)
 
   set(TBB_DEFINITIONS_RELEASE "")
   set(TBB_DEFINITIONS_DEBUG "-DTBB_USE_DEBUG=1")
-    
+
   if(TBB_LIBRARIES_${TBB_BUILD_TYPE})
     set(TBB_DEFINITIONS "${TBB_DEFINITIONS_${TBB_BUILD_TYPE}}")
     set(TBB_LIBRARIES "${TBB_LIBRARIES_${TBB_BUILD_TYPE}}")
@@ -261,7 +261,7 @@ if(NOT TBB_FOUND)
     set(TBB_LIBRARIES "${TBB_LIBRARIES_DEBUG}")
   endif()
 
-  find_package_handle_standard_args(TBB 
+  find_package_handle_standard_args(TBB
       REQUIRED_VARS TBB_INCLUDE_DIRS TBB_LIBRARIES
       HANDLE_COMPONENTS
       VERSION_VAR TBB_VERSION)

@@ -3,6 +3,7 @@
 #include "core/common/config.h"
 #include "core/planar_system.h"
 #include "nvme/apps/gnn_nvme_app.h"
+#include "nvme/apps/gnn_nvme_int_app.h"
 
 DEFINE_string(i, "/testfile", "graph files root path");
 DEFINE_uint32(p, 1, "parallelism");
@@ -15,6 +16,7 @@ DEFINE_uint32(task_size, 500000, "task size");
 DEFINE_uint32(iter, 3, "pagerank iteration");
 DEFINE_uint32(l, 4, "pagerank iteration");
 DEFINE_uint32(k, 1, "pagerank iteration");
+DEFINE_string(mode, "float", "pagerank mode (float or int)");
 
 using namespace sics::graph;
 
@@ -41,8 +43,12 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->sync = false;
 
   LOG_INFO("System begin");
-  nvme::apps::GNNApp app(FLAGS_i);
-  app.Run();
-
+  if (FLAGS_mode == "float") {
+    nvme::apps::GNNApp app(FLAGS_i);
+    app.Run();
+  } else if (FLAGS_mode == "int") {
+    nvme::apps::GNNIntApp app(FLAGS_i);
+    app.Run();
+  }
   return 0;
 }
