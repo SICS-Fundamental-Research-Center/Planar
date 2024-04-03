@@ -132,7 +132,8 @@ class GNNIntApp : public apis::BlockModel<int> {
   }
 
   float rand_int() {
-    return static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2 - 1;
+    // generate random int number between -10 and 10
+    return rand() % 21 - 10;
   }
 
   void Spmv(int** m, int* v, int* res, int num) {
@@ -189,6 +190,5 @@ class GNNIntApp : public apis::BlockModel<int> {
 };
 
 }  // namespace sics::graph::nvme::apps
-
 
 #endif  // GRAPH_SYSTEMS_NVME_APPS_GNN_NVME_INT_APP_H_
