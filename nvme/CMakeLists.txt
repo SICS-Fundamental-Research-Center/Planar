@@ -32,6 +32,7 @@ file(GLOB NVME_HEADERS
         "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/apis/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/apps/*.h"
+        "${CMAME_CURRENT_SOURCE_DIR}/common/*.h"
         "${CMAME_CURRENT_SOURCE_DIR}/common/multithreading/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/components/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/io/*.h"
