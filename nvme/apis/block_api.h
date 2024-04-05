@@ -138,7 +138,7 @@ class BlockModel : public BlockModelBase {
     if (scheduler_.ReleaseResources()) {
       LockAndWaitResult();
     }
-    LOGF_INFO("Running finished!");
+    LOG_INFO("Running finished!");
   }
 
   void Stop() {
