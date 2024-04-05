@@ -273,7 +273,7 @@ class Executor : public Component {
   }
 
   size_t GetTaskSize(VertexID max_vid) const {
-    auto task_num = task_package_factor_;
+    auto task_num = parallelism_ * task_package_factor_;
     size_t task_size = ceil((double)max_vid / task_num);
     return task_size < 2 ? 2 : task_size;
   }
