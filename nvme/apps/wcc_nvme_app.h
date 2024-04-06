@@ -14,6 +14,11 @@ class WCCNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
   using EdgeIndex = core::common::EdgeIndex;
   using VertexID = core::common::VertexID;
 
+  using FuncVertex = core::common::FuncVertex;
+  using FuncEdge = core::common::FuncEdge;
+  using FuncEdgeAndMutate = core::common::FuncEdgeAndMutate;
+  using FuncEdgeMutate = core::common::FuncEdgeMutate;
+
  public:
   WCCNvmeApp() = default;
   WCCNvmeApp(const std::string& root_path) : BlockModel(root_path) {}
@@ -67,20 +72,7 @@ class WCCNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
   // delete pointer 'this' in anonymous namespace
   void Compute() override {
     LOG_INFO("WCCNvmeApp::Compute() begin");
-    std::function<void(VertexID)> init = [this](VertexID id) { Init(id); };
-    std::function<void(VertexID, VertexID)> graft =
-        [this](VertexID src_id, VertexID dst_id) { Graft(src_id, dst_id); };
-    std::function<void(VertexID)> point_jump = [this](VertexID src_id) {
-      PointJump(src_id);
-    };
-    std::function<void(VertexID, VertexID, EdgeIndex)> contract =
-        [this](VertexID src_id, VertexID dst_id, EdgeIndex idx) {
-          Contract(src_id, dst_id, idx);
-        };
-    std::function<bool(VertexID, VertexID)> contractEdge =
-        [this](VertexID src_id, VertexID dst_id) {
-          return ContractEdge(src_id, dst_id);
-        };
+
     //    update_store_->LogVertexData();
     //    MapVertex(&init);
     //    update_store_->LogVertexData();
@@ -111,6 +103,18 @@ class WCCNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
   }
 
  private:
+  FuncVertex init = [this](VertexID id) { Init(id); };
+  FuncEdge graft = [this](VertexID src_id, VertexID dst_id) {
+    Graft(src_id, dst_id);
+  };
+  FuncVertex point_jump = [this](VertexID src_id) { PointJump(src_id); };
+  FuncEdgeAndMutate contract = [this](VertexID src_id, VertexID dst_id,
+                                      EdgeIndex idx) {
+    Contract(src_id, dst_id, idx);
+  };
+  FuncEdgeMutate contractEdge = [this](VertexID src_id, VertexID dst_id) {
+    return ContractEdge(src_id, dst_id);
+  };
 };
 
 }  // namespace sics::graph::nvme::apps
