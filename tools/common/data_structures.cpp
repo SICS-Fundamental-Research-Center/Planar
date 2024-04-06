@@ -27,8 +27,7 @@ using TaskPackage = sics::graph::core::common::TaskPackage;
 
 void Edges::SortBySrc() {
 #ifdef TBB_FOUND
-  std::sort(std::execution::par, edges_ptr_,
-            edges_ptr_ + edgelist_metadata_.num_edges);
+
 #else
   std::sort(edges_ptr_, edges_ptr_ + edgelist_metadata_.num_edges);
 #endif
