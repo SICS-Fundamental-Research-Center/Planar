@@ -61,10 +61,12 @@ class BlockModel : public BlockModelBase {
   ~BlockModel() override {
     Stop();
     whole_end_time_ = std::chrono::system_clock::now();
-    LOGF_INFO(" =========== In memory time: {} s ===========",
-              std::chrono::duration<double>(common::end_time_in_memory -
-                                            common::start_time_in_memory)
-                  .count());
+    if (core::common::Configurations::Get()->in_memory) {
+      LOGF_INFO(" =========== In memory time: {} s ===========",
+                std::chrono::duration<double>(common::end_time_in_memory -
+                                              common::start_time_in_memory)
+                    .count());
+    }
     LOGF_INFO(
         " =========== Compute Runtime: {} s ===========",
         std::chrono::duration<double>(compute_end_time_ - begin_time_).count());
