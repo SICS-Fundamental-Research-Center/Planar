@@ -72,24 +72,11 @@ class WCCNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
   // delete pointer 'this' in anonymous namespace
   void Compute() override {
     LOG_INFO("WCCNvmeApp::Compute() begin");
-
-    //    update_store_->LogVertexData();
-    //    MapVertex(&init);
-    //    update_store_->LogVertexData();
     int round = 0;
     while (true) {
-      //      update_store_->LogVertexData();
       MapEdge(&graft);
-      //      update_store_->LogVertexData();
-
       MapVertex(&point_jump);
-      //      update_store_->LogVertexData();
-
-      //      update_store_->LogEdgeDelInfo();
       MapAndMutateEdgeBool(&contractEdge);
-      //      update_store_->LogVertexData();
-      //      update_store_->LogEdgeDelInfo();
-
       if (update_store_.GetLeftEdges() == 0) {
         LOGF_INFO("======= Round {} end, no edges left =======", round);
         break;
