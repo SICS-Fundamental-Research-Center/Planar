@@ -37,6 +37,7 @@ file(GLOB NVME_HEADERS
         "${CMAKE_CURRENT_SOURCE_DIR}/components/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/io/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/partition/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/precomputing/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/update_stores/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/scheduler/*.h"
         )
