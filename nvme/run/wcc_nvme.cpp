@@ -13,6 +13,7 @@ DEFINE_uint32(memory_size, 64, "memory size (GB)");
 DEFINE_uint32(limits, 0, "subgrah limits for pre read");
 DEFINE_bool(short_cut, false, "no short cut");
 DEFINE_uint32(task_size, 500000, "task size");
+DEFINE_bool(use_graft_vertex, false, "use graft vertex");
 DEFINE_string(mode, "normal", "mode for wcc");
 
 using namespace sics::graph;
@@ -33,6 +34,8 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->task_size = FLAGS_task_size;
   core::common::Configurations::GetMutable()->vertex_data_type =
       core::common::VertexDataType::kVertexDataTypeUInt32;
+  core::common::Configurations::GetMutable()->use_graft_vertex =
+      FLAGS_use_graft_vertex;
 
   if (FLAGS_mode == "normal") {
     LOG_INFO("System begin");

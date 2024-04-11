@@ -21,7 +21,12 @@ class WCCNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
 
  public:
   WCCNvmeApp() = default;
-  WCCNvmeApp(const std::string& root_path) : BlockModel(root_path) {}
+  WCCNvmeApp(const std::string& root_path) : BlockModel(root_path) {
+    use_graft_vertex_ = core::common::Configurations::Get()->use_graft_vertex;
+    if (use_graft_vertex_) {
+      LOG_INFO("Use vertex for graft operations");
+    }
+  }
   ~WCCNvmeApp() override = default;
 
   // actually, this is no use.
@@ -36,6 +41,22 @@ class WCCNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
     } else if (src_parent_id > dst_parent_id) {
       this->WriteMin(src_parent_id, dst_parent_id);
     }
+  }
+
+  VertexID min(VertexID a, VertexID b) { return a < b ? a : b; }
+  void GraftVertex(VertexID src_id) {
+    auto degree = GetOutDegree(src_id);
+    if (degree == 0) return;
+    auto neighbors = GetEdges(src_id);
+    VertexID src_parent_id = Read(src_id);
+    VertexID tmp = src_parent_id;
+    for (int i = 0; i < degree; i++) {
+      tmp = min(tmp, Read(neighbors[i]));
+    }
+    for (int i = 0; i < degree; i++) {
+      WriteMin(Read(neighbors[i]), tmp);
+    }
+    WriteMin(src_parent_id, tmp);
   }
 
   void PointJump(VertexID src_id) {
@@ -74,7 +95,11 @@ class WCCNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
     LOG_INFO("WCCNvmeApp::Compute() begin");
     int round = 0;
     while (true) {
-      MapEdge(&graft);
+      if (use_graft_vertex_) {
+        MapVertex(&graft_vertex);
+      } else {
+        MapEdge(&graft);
+      }
       MapVertex(&point_jump);
       MapAndMutateEdgeBool(&contractEdge);
       if (update_store_.GetLeftEdges() == 0) {
@@ -94,6 +119,7 @@ class WCCNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
   FuncEdge graft = [this](VertexID src_id, VertexID dst_id) {
     Graft(src_id, dst_id);
   };
+  FuncVertex graft_vertex = [this](VertexID src_id) { GraftVertex(src_id); };
   FuncVertex point_jump = [this](VertexID src_id) { PointJump(src_id); };
   FuncEdgeAndMutate contract = [this](VertexID src_id, VertexID dst_id,
                                       EdgeIndex idx) {
@@ -102,6 +128,8 @@ class WCCNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
   FuncEdgeMutate contractEdge = [this](VertexID src_id, VertexID dst_id) {
     return ContractEdge(src_id, dst_id);
   };
+
+  bool use_graft_vertex_ = false;
 };
 
 }  // namespace sics::graph::nvme::apps
