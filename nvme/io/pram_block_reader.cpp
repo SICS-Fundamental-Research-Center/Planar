@@ -21,6 +21,15 @@ void PramBlockReader::Read(scheduler::ReadMessage* message,
   ReadBlockInfo(path, message->num_vertices, &buffers);
 
   block_serialized->ReceiveBuffers(std::move(buffers));
+
+  if (message->read_two_hop) {
+    // Read two_hop info
+    std::vector<OwnedBuffer> two_hop_buffers;
+    ReadBlockInfo(
+        path + "precomputing/" + std::to_string(message->graph_id) + ".bin",
+        message->num_vertices, &two_hop_buffers);
+    block_serialized->ReceiveBuffers(std::move(two_hop_buffers));
+  }
 }
 
 void PramBlockReader::ReadBlockInfo(const std::string& path,

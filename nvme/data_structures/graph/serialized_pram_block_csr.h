@@ -23,6 +23,10 @@ class SerializedPramBlockCSRGraph : public Serialized {
 
   std::vector<OwnedBuffer>* GetCSRBuffer() { return &csr_buffer_.front(); }
 
+  std::vector<OwnedBuffer>* GetTwoHopBUffer() {
+    return &(*(csr_buffer_.begin()++));
+  }
+
  protected:
   std::list<std::vector<OwnedBuffer>> csr_buffer_;
 

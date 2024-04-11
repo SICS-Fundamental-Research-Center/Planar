@@ -25,6 +25,7 @@ struct ReadMessage {
   core::common::GraphID graph_id;
   core::common::VertexCount num_vertices;
   bool changed = false;
+  bool read_two_hop = false;
   core::data_structures::Serialized* serialized;  // initialized in scheduler
   core::data_structures::Serializable* graph;     // initialized in scheduler
   // Response fields.

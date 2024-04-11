@@ -3,6 +3,7 @@
 #include "core/common/config.h"
 #include "core/planar_system.h"
 #include "nvme/apps/wcc_nvme_app.h"
+#include "nvme/apps/wcc_nvme_precomputing_app.h"
 
 DEFINE_string(i, "/testfile", "graph files root path");
 DEFINE_uint32(p, 1, "parallelism");
@@ -12,6 +13,7 @@ DEFINE_uint32(memory_size, 64, "memory size (GB)");
 DEFINE_uint32(limits, 0, "subgrah limits for pre read");
 DEFINE_bool(short_cut, false, "no short cut");
 DEFINE_uint32(task_size, 500000, "task size");
+DEFINE_string(mode, "normal", "mode for wcc");
 
 using namespace sics::graph;
 
@@ -32,8 +34,14 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->vertex_data_type =
       core::common::VertexDataType::kVertexDataTypeUInt32;
 
-  LOG_INFO("System begin");
-  nvme::apps::WCCNvmeApp app(FLAGS_i);
-  app.Run();
+  if (FLAGS_mode == "normal") {
+    LOG_INFO("System begin");
+    nvme::apps::WCCNvmeApp app(FLAGS_i);
+    app.Run();
+  } else {
+    LOG_INFO("System begin for wcc vertex graft");
+    nvme::apps::WCCNvmePreComputingApp app(FLAGS_i);
+    app.Run();
+  }
   return 0;
 }

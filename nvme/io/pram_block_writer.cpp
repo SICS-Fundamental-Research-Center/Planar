@@ -12,10 +12,18 @@ void PramBlockWriter::Write(WriteMessage* message,
       auto a = message->serialized->PopNext();
       WriteBlockInfo(file_path, a);
     }
+    if (message->serialized->HasNext() &&
+        core::common::Configurations::Get()->use_two_hop) {
+      auto two_hop_infos = message->serialized->PopNext();
+      WriteBlockInfo(root_path_ + "precomputing/" +
+                         std::to_string(message->graph_id) + ".bin.new",
+                     two_hop_infos);
+    }
   } else {
     // if not changed, just release the OwnedBuffer and return.
     if (message->serialized->HasNext()) {
-      message->serialized->PopNext();
+      auto tmp = message->serialized->PopNext();
+      auto two_hop_tmp = message->serialized->PopNext();
     }
   }
 }
