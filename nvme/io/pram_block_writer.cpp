@@ -21,9 +21,8 @@ void PramBlockWriter::Write(WriteMessage* message,
     }
   } else {
     // if not changed, just release the OwnedBuffer and return.
-    if (message->serialized->HasNext()) {
+    while (message->serialized->HasNext()) {
       auto tmp = message->serialized->PopNext();
-      auto two_hop_tmp = message->serialized->PopNext();
     }
   }
 }
