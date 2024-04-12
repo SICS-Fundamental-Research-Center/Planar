@@ -40,10 +40,11 @@ struct Block {
     datafile.read(reinterpret_cast<char*>(edges_),
                   num_edges_ * sizeof(VertexID));
     // init two_hop_neighbors_
-    for (VertexID i = 0; i < num_vertices_; i++) {
-      two_hop_neighbors_[i] = std::set<VertexID>();
-      //      two_hop_neighbors_[i] = std::unordered_set<VertexID>();
-    }
+    two_hop_neighbors_.resize(num_vertices_);
+    //    for (VertexID i = 0; i < num_vertices_; i++) {
+    //      two_hop_neighbors_
+    //      two_hop_neighbors_[i] = std::unordered_set<VertexID>();
+    //    }
     isRead_ = true;
   }
   void WriteTwoHopInfo(const std::string& path,
@@ -156,7 +157,7 @@ struct Block {
   // two hop info
   EdgeIndex num_two_hop_edges_;
   //  std::unordered_map<VertexID, std::set<VertexID>> two_hop_neighbors_;
-  std::unordered_map<VertexID, std::set<VertexID>> two_hop_neighbors_;
+  std::vector<std::set<VertexID>> two_hop_neighbors_;
 };
 
 struct Blocks {
