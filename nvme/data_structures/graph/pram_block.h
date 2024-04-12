@@ -56,6 +56,10 @@ class PramBlock : public core::data_structures::Serializable {
     out_degree_base_ = nullptr;
     out_offset_base_ = nullptr;
     out_edges_base_ = nullptr;
+    // two hop potr
+    out_degree_base_two_hop_ = nullptr;
+    out_offset_base_two_hop_ = nullptr;
+    out_edges_base_two_hop_ = nullptr;
 
     if (core::common::Configurations::Get()->edge_mutate &&
         block_metadata_->num_outgoing_edges != 0) {
@@ -108,6 +112,15 @@ class PramBlock : public core::data_structures::Serializable {
       out_offset_base_new_ = nullptr;
       edge_delete_bitmap_.Init(0);
     }
+
+    // Two hop infos
+    auto tmp = graph_serialized_->GetTwoHopBuffer()->at(0).Get();
+    offset = 0;
+    out_degree_base_two_hop_ = (VertexID*)(tmp + offset);
+    offset += sizeof(VertexID) * block_metadata_->num_vertices;
+    out_offset_base_two_hop_ = (EdgeIndex*)(tmp + offset);
+    out_edges_base_two_hop_ =
+        (VertexID*)(graph_serialized_->GetTwoHopBuffer()->at(1).Get());
   }
 
   void UpdateOutOffsetBaseNew(core::common::TaskRunner* runner) {
@@ -278,6 +291,14 @@ class PramBlock : public core::data_structures::Serializable {
     return out_edges_base_ + out_offset_base_[GetIndex(id)];
   }
 
+  VertexDegree GetTwoHopOutDegreeByIndex(VertexIndex index) {
+    return out_degree_base_two_hop_[index];
+  }
+
+  VertexID* GetTwoHopOutEdgesByIndex(VertexIndex index) {
+    return out_edges_base_two_hop_ + out_offset_base_two_hop_[index];
+  }
+
   // log functions for lookup block info
   void LogBlockVertices() const {
     LOGF_INFO("block {} begin {} end {}: ==== ", block_metadata_->bid,
@@ -330,6 +351,11 @@ class PramBlock : public core::data_structures::Serializable {
   EdgeIndex* out_offset_base_new_;
   VertexID* out_edges_base_new_;
   core::common::Bitmap edge_delete_bitmap_;
+
+  // two hop
+  VertexDegree* out_degree_base_two_hop_;
+  EdgeIndex* out_offset_base_two_hop_;
+  VertexID* out_edges_base_two_hop_;
 
   // configs
   uint32_t parallelism_;

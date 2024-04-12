@@ -10,6 +10,6 @@ int main(int argc, char** argv) {
   auto root_path = FLAGS_i;
   auto parallelism = FLAGS_p;
 
-  sics::graph::nvme::precomputing::CountHop(root_path);
+  sics::graph::nvme::precomputing::CountHop2(root_path, parallelism);
   return 0;
 }

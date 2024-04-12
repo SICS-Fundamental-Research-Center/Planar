@@ -71,7 +71,11 @@ class Executor : public Component {
             if (message.map_type == scheduler::kMapVertex) {
               ParallelVertexDo(message.graph, *message.func_vertex);
             } else if (message.map_type == scheduler::kMapEdge) {
-              ParallelEdgeDo(message.graph, *message.func_edge);
+              if (message.use_two_hop) {
+                ParallelEdgeDoOnTwoHop(message.graph, *message.func_edge);
+              } else {
+                ParallelEdgeDo(message.graph, *message.func_edge);
+              }
             } else if (message.map_type == scheduler::kMapEdgeAndMutate) {
               ParallelEdgeAndMutateDo(message.graph,
                                       *message.func_edge_mutate_bool);
@@ -143,7 +147,7 @@ class Executor : public Component {
 
   void ParallelEdgeDo(core::data_structures::Serializable* graph,
                       const FuncEdge& edge_func) {
-    //    LOG_DEBUG("ParallelEdgeDelDo begins!");
+    //    LOG_DEBUG("ParallelEdgeDo begins!");
     //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
     auto block = static_cast<BLockCSR*>(graph);
     uint32_t task_size = GetTaskSize(block->GetVertexNums());
@@ -172,7 +176,7 @@ class Executor : public Component {
     }
     //    LOGF_INFO("task num: {}", tasks.size());
     task_runner_.SubmitSync(tasks);
-    //    LOG_DEBUG("ParallelEdgedelDo ends!");
+    //    LOG_DEBUG("ParallelEdgeDo ends!");
   }
 
   void ParallelEdgeDoWithMutate(core::data_structures::Serializable* graph,
@@ -259,6 +263,39 @@ class Executor : public Component {
 
     block->MutateGraphEdge(&task_runner_);
     //    LOG_INFO("ParallelEdgeAndMutateDo ends!");
+  }
+
+  // two hop info
+  void ParallelEdgeDoOnTwoHop(core::data_structures::Serializable* graph,
+                              const FuncEdge& edge_func) {
+    //    LOG_DEBUG("ParallelEdgeDoOnTwoHop begins!");
+    auto block = static_cast<BLockCSR*>(graph);
+    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+    core::common::TaskPackage tasks;
+    VertexIndex begin_index = 0, end_index = 0;
+    for (; begin_index < block->GetVertexNums();) {
+      end_index += task_size;
+      if (end_index > block->GetVertexNums()) {
+        end_index = block->GetVertexNums();
+      }
+      auto task = [&edge_func, block, begin_index, end_index]() {
+        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
+          auto degree = block->GetTwoHopOutDegreeByIndex(idx);
+          if (degree != 0) {
+            auto src_id = block->GetVertexID(idx);
+            VertexID* outEdges = block->GetTwoHopOutEdgesByIndex(idx);
+            for (VertexIndex j = 0; j < degree; j++) {
+              edge_func(src_id, outEdges[j]);
+            }
+          }
+        }
+      };
+      tasks.push_back(task);
+      begin_index = end_index;
+    }
+    //    LOGF_INFO("task num: {}", tasks.size());
+    task_runner_.SubmitSync(tasks);
+    //    LOG_DEBUG("ParallelEdgeDoOnTwoHop ends!");
   }
 
   size_t GetTaskSize(VertexID max_vid) const {

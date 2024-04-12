@@ -4,9 +4,9 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "core/data_structures/graph_metadata.h"
@@ -16,6 +16,7 @@ namespace sics::graph::nvme::precomputing {
 using sics::graph::core::common::BlockID;
 using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::common::GraphID;
+using sics::graph::core::common::VertexDegree;
 using sics::graph::core::common::VertexID;
 
 namespace fs = std::filesystem;
@@ -41,31 +42,56 @@ struct Block {
     // init two_hop_neighbors_
     for (VertexID i = 0; i < num_vertices_; i++) {
       two_hop_neighbors_[i] = std::set<VertexID>();
+      //      two_hop_neighbors_[i] = std::unordered_set<VertexID>();
     }
     isRead_ = true;
   }
-  void WriteTwoHopInfo(const std::string& path) {
+  void WriteTwoHopInfo(const std::string& path,
+                       core::common::ThreadPool* pool = nullptr) {
     std::ofstream two_hop_file(path, std::ios::binary);
     auto degree = new VertexID[num_vertices_];
     auto offset = new EdgeIndex[num_vertices_];
     offset[0] = 0;
     degree[0] = two_hop_neighbors_[0].size();
-    for (int i = 1; i < num_vertices_; i++) {
-      degree[i] = two_hop_neighbors_[i].size();
-      offset[i] = offset[i - 1] + degree[i - 1];
+
+    auto task_size =
+        (num_vertices_ + pool->GetParallelism() - 1) / pool->GetParallelism();
+    core::common::TaskPackage tasks;
+    VertexID b1 = 1, e1 = 1;
+    for (; b1 < num_vertices_;) {
+      e1 = b1 + task_size < num_vertices_ ? b1 + task_size : num_vertices_;
+      auto task = [degree, offset, this, b1, e1]() {
+        for (int i = b1; i < e1; i++) {
+          degree[i] = two_hop_neighbors_[i].size();
+          offset[i] = offset[i - 1] + degree[i - 1];
+        }
+      };
+      tasks.push_back(task);
+      b1 = e1;
     }
+    pool->SubmitSync(tasks);
+    LOG_INFO("Finish counting offset");
     num_two_hop_edges_ = offset[num_vertices_ - 1] + degree[num_vertices_ - 1];
     auto edges = new VertexID[num_two_hop_edges_];
-    // TODO: parallel do this
-
     // copy two_hop_neighbors_ to edges
-    for (VertexID i = 0; i < num_vertices_; i++) {
-      int idx = 0;
-      for (auto& neighbor : two_hop_neighbors_[i]) {
-        edges[offset[i] + idx] = neighbor;
-        idx++;
-      }
+    VertexID b = 0, e = 0;
+    tasks.clear();
+    for (; b < num_vertices_;) {
+      e = b + task_size < num_vertices_ ? b + task_size : num_vertices_;
+      auto task = [edges, offset, this, b, e]() {
+        for (int i = b; i < e; i++) {
+          int idx = 0;
+          for (auto& neighbor : two_hop_neighbors_[i]) {
+            edges[offset[i] + idx] = neighbor;
+            idx++;
+          }
+        }
+      };
+      tasks.push_back(task);
+      b = e;
     }
+    pool->SubmitSync(tasks);
+    LOG_INFO("Finish copy two_hop_neighbors_ to edges. Begin writing files");
 
     // write
     two_hop_file.write(reinterpret_cast<char*>(degree),
@@ -75,13 +101,12 @@ struct Block {
     two_hop_file.write(reinterpret_cast<char*>(edges),
                        num_two_hop_edges_ * sizeof(VertexID));
     two_hop_file.close();
+    LOG_INFO("Finish writing files.");
     delete[] degree;
     delete[] offset;
     delete[] edges;
     // clear two_hop_neighbors_
-    for (VertexID i = 0; i < num_vertices_; i++) {
-      two_hop_neighbors_[i].clear();
-    }
+    two_hop_neighbors_.clear();
   }
 
   void Release() {
@@ -106,6 +131,14 @@ struct Block {
   }
 
   VertexID* GetEdges(VertexID idx) { return edges_ + offset_[idx]; }
+  VertexID* GetEdgesByID(VertexID id) {
+    if (id < bid_ || id >= eid_) {
+      LOG_FATAL("id is not in the block");
+    }
+    return edges_ + offset_[id - bid_];
+  }
+  VertexDegree GetDegree(VertexID idx) { return degree_[idx]; }
+  VertexDegree GetDegreeByID(VertexID id) { return degree_[id - bid_]; }
 
   void AddNeighbor(VertexID id, VertexID neighbor) {
     two_hop_neighbors_[id].insert(neighbor);
@@ -122,6 +155,7 @@ struct Block {
   bool isRead_ = false;
   // two hop info
   EdgeIndex num_two_hop_edges_;
+  //  std::unordered_map<VertexID, std::set<VertexID>> two_hop_neighbors_;
   std::unordered_map<VertexID, std::set<VertexID>> two_hop_neighbors_;
 };
 
@@ -135,6 +169,17 @@ struct Blocks {
                           block.begin_id, block.end_id);
     }
   }
+
+  BlockID GetBlockID(VertexID id) {
+    for (VertexID i = 0; i < blocks.size(); i++) {
+      if (blocks[i].bid_ <= id && id < blocks[i].eid_) {
+        return i;
+      }
+    }
+    LOGF_INFO("Can't find block id for vertex {}", id);
+    return -1;
+  }
+
   std::vector<Block> blocks;
 };
 

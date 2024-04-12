@@ -14,7 +14,7 @@ DEFINE_uint32(limits, 0, "subgrah limits for pre read");
 DEFINE_bool(short_cut, false, "no short cut");
 DEFINE_uint32(task_size, 500000, "task size");
 DEFINE_bool(use_graft_vertex, false, "use graft vertex");
-DEFINE_string(mode, "normal", "mode for wcc");
+DEFINE_bool(use_two_hop, false, "use two hop info");
 
 using namespace sics::graph;
 
@@ -37,12 +37,13 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->use_graft_vertex =
       FLAGS_use_graft_vertex;
 
-  if (FLAGS_mode == "normal") {
+  if (!FLAGS_use_two_hop) {
     LOG_INFO("System begin");
     nvme::apps::WCCNvmeApp app(FLAGS_i);
     app.Run();
   } else {
-    LOG_INFO("System begin for wcc vertex graft");
+    LOG_INFO("System begin with two hop info");
+    core::common::Configurations::GetMutable()->use_two_hop = true;
     nvme::apps::WCCNvmePreComputingApp app(FLAGS_i);
     app.Run();
   }

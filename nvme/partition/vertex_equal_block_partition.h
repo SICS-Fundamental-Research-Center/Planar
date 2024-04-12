@@ -111,6 +111,7 @@ void VertexEqualBlockPartition(const std::string& root_path,
       auto edge_begin = edge_addr + offset_addr[bid];
       auto size_egde = offset_new[size - 1] + degree_addr[eid - 1];
       block_file.write((char*)edge_begin, sizeof(VertexID) * size_egde);
+      delete[] offset_new;
       block_file.close();
       // write back to disk
     };
@@ -128,6 +129,7 @@ void VertexEqualBlockPartition(const std::string& root_path,
     file_id++;
   }
   thread_pool.SubmitSync(tasks);
+  meta_file.close();
 
   // write meta file
   YAML::Node meta;

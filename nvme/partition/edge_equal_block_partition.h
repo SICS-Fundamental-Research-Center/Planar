@@ -142,11 +142,13 @@ void EdgeEqualBlockPartition(const std::string& root_path,
       // edges info
       auto edge_begin = edge_addr + offset_addr[bid];
       block_file.write((char*)edge_begin, sizeof(VertexID) * num_edge);
+      delete[] offset_new;
       block_file.close();
     };
     tasks.push_back(task);
   }
   pool.SubmitSync(tasks);
+  meta_file.close();
   LOG_INFO("Finish writing blocks info");
 
   // write meta file

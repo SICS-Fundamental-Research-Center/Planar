@@ -39,6 +39,11 @@ class BlockModel : public BlockModelBase {
   using EdgeIndex = core::common::EdgeIndex;
   using VertexDegree = core::common::VertexDegree;
 
+  using FuncVertex = core::common::FuncVertex;
+  using FuncEdge = core::common::FuncEdge;
+  using FuncEdgeAndMutate = core::common::FuncEdgeAndMutate;
+  using FuncEdgeMutate = core::common::FuncEdgeMutate;
+
   using ExecuteMessage = sics::graph::nvme::scheduler::ExecuteMessage;
   using ExecuteType = sics::graph::nvme::scheduler::ExecuteType;
   using MapType = sics::graph::nvme::scheduler::MapType;
@@ -104,6 +109,16 @@ class BlockModel : public BlockModelBase {
     scheduler_.RunMapExecute(message);
     LockAndWaitResult();
     LOG_INFO("MapEdge finishes");
+  }
+
+  void MapEdgeTwoHop(FuncEdge* func_edge) {
+    // all blocks should be executor the edge function
+    ExecuteMessage message;
+    message.map_type = MapType::kMapEdge;
+    message.func_edge = func_edge;
+    scheduler_.RunMapExecute(message, true);
+    LockAndWaitResult();
+    LOG_INFO("MapEdgeTwoHop finishes");
   }
 
   void MapAndMutateEdge(
@@ -197,6 +212,9 @@ class BlockModel : public BlockModelBase {
 
   // methods for graph
   size_t GetGraphEdges() const { return scheduler_.GetGraphEdges(); }
+
+  // two hop info
+  VertexDegree GetTwoHopOutDegree(VertexID id) { return 0; }
 
  protected:
   core::common::TaskRunner* exe_runner_ = nullptr;
