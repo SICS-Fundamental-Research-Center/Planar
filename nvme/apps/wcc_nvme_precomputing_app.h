@@ -40,7 +40,7 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
 
   VertexID min(VertexID a, VertexID b) { return a < b ? a : b; }
 
-  void Graft(VertexID src_id) {
+  void GraftVertex(VertexID src_id) {
     auto degree = GetOutDegree(src_id);
     if (degree == 0) return;
     auto neighbors = GetEdges(src_id);
@@ -53,6 +53,17 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
       WriteMin(Read(neighbors[i]), tmp);
     }
     WriteMin(src_parent_id, tmp);
+  }
+
+  void Graft(VertexID src_id, VertexID dst_id) {
+    VertexID src_parent_id = Read(src_id);
+    VertexID dst_parent_id = Read(dst_id);
+
+    if (src_parent_id < dst_parent_id) {
+      this->WriteMin(dst_parent_id, src_parent_id);
+    } else if (src_parent_id > dst_parent_id) {
+      this->WriteMin(src_parent_id, dst_parent_id);
+    }
   }
 
   void PointJump(VertexID src_id) {
@@ -88,17 +99,21 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
   // TODO:
   // delete pointer 'this' in anonymous namespace
   void Compute() override {
-    LOG_INFO("WCCNvmeApp::Compute() begin");
+    LOG_INFO("WCCNvmePreComputingApp::Compute() begin");
     int round = 0;
     MapEdgeTwoHop(&init_graft);
+    MapVertex(&graft_vertex);
     MapVertex(&point_jump);
     MapAndMutateEdgeBool(&contractEdge);
     if (update_store_.GetLeftEdges() == 0) {
       LOGF_INFO("======= Round {} end, no edges left =======", round);
       return;
     }
+    LOGF_INFO("======= Round {} end, left edges num: {} =======", round,
+              update_store_.GetLeftEdges());
+    round++;
     while (true) {
-      MapVertex(&graft);
+      MapVertex(&graft_vertex);
       MapVertex(&point_jump);
       MapAndMutateEdgeBool(&contractEdge);
       if (update_store_.GetLeftEdges() == 0) {
@@ -110,7 +125,7 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
       }
       round++;
     }
-    LOG_INFO("WCCNvmeApp::Compute() end");
+    LOG_INFO("WCCNvmePreComputingApp::Compute() end");
   }
 
  private:
@@ -118,7 +133,10 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
   FuncEdge init_graft = [this](VertexID src_id, VertexID dst_id) {
     InitWithTwoHop(src_id, dst_id);
   };
-  FuncVertex graft = [this](VertexID src_id) { Graft(src_id); };
+  FuncVertex graft_vertex = [this](VertexID src_id) { GraftVertex(src_id); };
+  FuncEdge graft = [this](VertexID src_id, VertexID dst_id) {
+    Graft(src_id, dst_id);
+  };
   FuncVertex point_jump = [this](VertexID src_id) { PointJump(src_id); };
   FuncEdgeAndMutate contract = [this](VertexID src_id, VertexID dst_id,
                                       EdgeIndex idx) {

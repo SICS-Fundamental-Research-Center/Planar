@@ -114,13 +114,15 @@ class PramBlock : public core::data_structures::Serializable {
     }
 
     // Two hop infos
-    auto tmp = graph_serialized_->GetTwoHopBuffer()->at(0).Get();
-    offset = 0;
-    out_degree_base_two_hop_ = (VertexID*)(tmp + offset);
-    offset += sizeof(VertexID) * block_metadata_->num_vertices;
-    out_offset_base_two_hop_ = (EdgeIndex*)(tmp + offset);
-    out_edges_base_two_hop_ =
-        (VertexID*)(graph_serialized_->GetTwoHopBuffer()->at(1).Get());
+    if (core::common::Configurations::Get()->use_two_hop) {
+      auto tmp = graph_serialized_->GetTwoHopBuffer()->at(0).Get();
+      offset = 0;
+      out_degree_base_two_hop_ = (VertexID*)(tmp + offset);
+      offset += sizeof(VertexID) * block_metadata_->num_vertices;
+      out_offset_base_two_hop_ = (EdgeIndex*)(tmp + offset);
+      out_edges_base_two_hop_ =
+          (VertexID*)(graph_serialized_->GetTwoHopBuffer()->at(1).Get());
+    }
   }
 
   void UpdateOutOffsetBaseNew(core::common::TaskRunner* runner) {

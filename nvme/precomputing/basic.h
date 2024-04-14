@@ -18,6 +18,7 @@ using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::VertexDegree;
 using sics::graph::core::common::VertexID;
+using sics::graph::core::common::VertexIndex;
 
 namespace fs = std::filesystem;
 
@@ -52,17 +53,21 @@ struct Block {
     std::ofstream two_hop_file(path, std::ios::binary);
     auto degree = new VertexID[num_vertices_];
     auto offset = new EdgeIndex[num_vertices_];
-    offset[0] = 0;
-    degree[0] = two_hop_neighbors_[0].size();
+    //    offset[0] = 0;
+    //    degree[0] = two_hop_neighbors_[0].size();
 
+    auto parallelism = pool->GetParallelism();
     auto task_size =
-        (num_vertices_ + pool->GetParallelism() - 1) / pool->GetParallelism();
+        (num_vertices_ + parallelism * 10 - 1) / (parallelism * 10);
     core::common::TaskPackage tasks;
-    VertexID b1 = 1, e1 = 1;
+    VertexID b1 = 0, e1 = 0;
+    // First, compute offset in partition, offset of every partition begins at 0
     for (; b1 < num_vertices_;) {
       e1 = b1 + task_size < num_vertices_ ? b1 + task_size : num_vertices_;
       auto task = [degree, offset, this, b1, e1]() {
-        for (int i = b1; i < e1; i++) {
+        degree[b1] = two_hop_neighbors_[b1].size();
+        offset[b1] = 0;
+        for (auto i = b1 + 1; i < e1; i++) {
           degree[i] = two_hop_neighbors_[i].size();
           offset[i] = offset[i - 1] + degree[i - 1];
         }
@@ -70,17 +75,45 @@ struct Block {
       tasks.push_back(task);
       b1 = e1;
     }
+    LOGF_INFO("task num: {}", tasks.size());
     pool->SubmitSync(tasks);
+
+    // Second, compute base offset in partition
+    EdgeIndex accumulate_base = 0;
+    for (VertexID i = 0; i < parallelism; i++) {
+      VertexIndex b = i * task_size;
+      VertexIndex e =
+          b + task_size < num_vertices_ ? b + task_size : num_vertices_;
+      offset[b] += accumulate_base;
+      accumulate_base += offset[e - 1];
+      accumulate_base += degree[e - 1];
+    }
+    tasks.clear();
+    b1 = 0;
+    e1 = 0;
+    for (; b1 < num_vertices_;) {
+      e1 = b1 + task_size < num_vertices_ ? b1 + task_size : num_vertices_;
+      auto task = [offset, b1, e1]() {
+        for (VertexID i = b1 + 1; i < e1; i++) {
+          offset[i] += offset[b1];
+        }
+      };
+      tasks.push_back(task);
+      b1 = e1;
+    }
+    LOGF_INFO("task num: {}", tasks.size());
+    pool->SubmitSync(tasks);
+
     LOG_INFO("Finish counting offset");
     num_two_hop_edges_ = offset[num_vertices_ - 1] + degree[num_vertices_ - 1];
     auto edges = new VertexID[num_two_hop_edges_];
     // copy two_hop_neighbors_ to edges
-    VertexID b = 0, e = 0;
+    VertexID b2 = 0, e2 = 0;
     tasks.clear();
-    for (; b < num_vertices_;) {
-      e = b + task_size < num_vertices_ ? b + task_size : num_vertices_;
-      auto task = [edges, offset, this, b, e]() {
-        for (int i = b; i < e; i++) {
+    for (; b2 < num_vertices_;) {
+      e2 = b2 + task_size < num_vertices_ ? b2 + task_size : num_vertices_;
+      auto task = [edges, offset, this, b2, e2]() {
+        for (VertexID i = b2; i < e2; i++) {
           int idx = 0;
           for (auto& neighbor : two_hop_neighbors_[i]) {
             edges[offset[i] + idx] = neighbor;
@@ -89,8 +122,9 @@ struct Block {
         }
       };
       tasks.push_back(task);
-      b = e;
+      b2 = e2;
     }
+    LOGF_INFO("task num: {}", tasks.size());
     pool->SubmitSync(tasks);
     LOG_INFO("Finish copy two_hop_neighbors_ to edges. Begin writing files");
 
