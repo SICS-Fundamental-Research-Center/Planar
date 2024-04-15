@@ -56,10 +56,10 @@ struct Block {
     //    offset[0] = 0;
     //    degree[0] = two_hop_neighbors_[0].size();
 
-    auto parallelism = pool->GetParallelism();
-    auto task_size =
-        (num_vertices_ + parallelism * 10 - 1) / (parallelism * 10);
+    auto parallelism = pool->GetParallelism() * 10;
+    auto task_size = (num_vertices_ + parallelism - 1) / parallelism;
     core::common::TaskPackage tasks;
+    uint32_t task_num = 0;
     VertexID b1 = 0, e1 = 0;
     // First, compute offset in partition, offset of every partition begins at 0
     for (; b1 < num_vertices_;) {
@@ -73,6 +73,7 @@ struct Block {
         }
       };
       tasks.push_back(task);
+      task_num++;
       b1 = e1;
     }
     LOGF_INFO("task num: {}", tasks.size());
@@ -80,7 +81,7 @@ struct Block {
 
     // Second, compute base offset in partition
     EdgeIndex accumulate_base = 0;
-    for (VertexID i = 0; i < parallelism; i++) {
+    for (VertexID i = 0; i < task_num; i++) {
       VertexIndex b = i * task_size;
       VertexIndex e =
           b + task_size < num_vertices_ ? b + task_size : num_vertices_;
@@ -191,7 +192,7 @@ struct Block {
   // two hop info
   EdgeIndex num_two_hop_edges_;
   //  std::unordered_map<VertexID, std::set<VertexID>> two_hop_neighbors_;
-  std::vector<std::set<VertexID>> two_hop_neighbors_;
+  std::vector<std::unordered_set<VertexID>> two_hop_neighbors_;
 };
 
 struct Blocks {
