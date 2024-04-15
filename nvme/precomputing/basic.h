@@ -41,108 +41,70 @@ struct Block {
     datafile.read(reinterpret_cast<char*>(edges_),
                   num_edges_ * sizeof(VertexID));
     // init two_hop_neighbors_
-    two_hop_neighbors_.resize(num_vertices_);
-    //    for (VertexID i = 0; i < num_vertices_; i++) {
-    //      two_hop_neighbors_
-    //      two_hop_neighbors_[i] = std::unordered_set<VertexID>();
-    //    }
+    min_one_hop_neighbor_ = new VertexID[num_vertices_];
+    max_one_hop_neighbor_ = new VertexID[num_vertices_];
+    min_two_hop_neighbor_ = new VertexID[num_vertices_];
+    max_two_hop_neighbor_ = new VertexID[num_vertices_];
+    has_two_hop_neighbor_.resize(num_vertices_);
+    for (auto i = 0; i < num_vertices_; i++) {
+      min_one_hop_neighbor_[i] = MAX_VERTEX_ID;
+      max_one_hop_neighbor_[i] = 0;
+      min_two_hop_neighbor_[i] = MAX_VERTEX_ID;
+      max_two_hop_neighbor_[i] = 0;
+      has_two_hop_neighbor_[i] = false;
+    }
     isRead_ = true;
   }
-  void WriteTwoHopInfo(const std::string& path,
-                       core::common::ThreadPool* pool = nullptr) {
-    std::ofstream two_hop_file(path, std::ios::binary);
-    auto degree = new VertexID[num_vertices_];
-    auto offset = new EdgeIndex[num_vertices_];
-    //    offset[0] = 0;
-    //    degree[0] = two_hop_neighbors_[0].size();
-
-    auto parallelism = pool->GetParallelism() * 5;
-    auto task_size = (num_vertices_ + parallelism - 1) / parallelism;
-    core::common::TaskPackage tasks;
-    uint32_t task_num = 0;
-    VertexID b1 = 0, e1 = 0;
-    // First, compute offset in partition, offset of every partition begins at 0
-    for (; b1 < num_vertices_;) {
-      e1 = b1 + task_size < num_vertices_ ? b1 + task_size : num_vertices_;
-      auto task = [degree, offset, this, b1, e1]() {
-        degree[b1] = two_hop_neighbors_[b1].size();
-        offset[b1] = 0;
-        for (auto i = b1 + 1; i < e1; i++) {
-          degree[i] = two_hop_neighbors_[i].size();
-          offset[i] = offset[i - 1] + degree[i - 1];
-        }
-      };
-      tasks.push_back(task);
-      task_num++;
-      b1 = e1;
+  void Write(const std::string& root_path,
+             core::common::ThreadPool* pool = nullptr) {
+    for (auto i = 0; i < num_vertices_; i++) {
+      if (GetDegree(i) == 0) {
+        min_one_hop_neighbor_[i] = i;
+        max_one_hop_neighbor_[i] = MAX_VERTEX_ID;
+      }
+      if (!has_two_hop_neighbor_[i]) {
+        min_two_hop_neighbor_[i] = i;
+        max_two_hop_neighbor_[i] = MAX_VERTEX_ID;
+      }
     }
-    LOGF_INFO("task num: {}", tasks.size());
-    pool->SubmitSync(tasks);
 
-    // Second, compute base offset in partition
-    EdgeIndex accumulate_base = 0;
-    for (VertexID i = 0; i < task_num; i++) {
-      VertexIndex b = i * task_size;
-      VertexIndex e =
-          b + task_size < num_vertices_ ? b + task_size : num_vertices_;
-      offset[b] += accumulate_base;
-      accumulate_base += offset[e - 1];
-      accumulate_base += degree[e - 1];
-    }
-    tasks.clear();
-    b1 = 0;
-    e1 = 0;
-    for (; b1 < num_vertices_;) {
-      e1 = b1 + task_size < num_vertices_ ? b1 + task_size : num_vertices_;
-      auto task = [offset, b1, e1]() {
-        for (VertexID i = b1 + 1; i < e1; i++) {
-          offset[i] += offset[b1];
-        }
-      };
-      tasks.push_back(task);
-      b1 = e1;
-    }
-    LOGF_INFO("task num: {}", tasks.size());
-    pool->SubmitSync(tasks);
+    std::ofstream min_one_hop_file(root_path + "precomputing/one_hop_min.bin",
+                                   std::ios::binary);
+    min_one_hop_file
+        .write(reinterpret_cast<char*>(min_one_hop_neighbor_),
+               num_vertices_ * sizeof(VertexID))
+        .flush();
+    min_one_hop_file.close();
+    std::ofstream max_one_hop_file(root_path + "precomputing/one_hop_max.bin",
+                                   std::ios::binary);
+    max_one_hop_file
+        .write(reinterpret_cast<char*>(max_one_hop_neighbor_),
+               num_vertices_ * sizeof(VertexID))
+        .flush();
+    max_one_hop_file.close();
+    std::ofstream min_two_hop_file(root_path + "precomputing/two_hop_min.bin",
+                                   std::ios::binary);
+    min_two_hop_file
+        .write(reinterpret_cast<char*>(min_two_hop_neighbor_),
+               num_vertices_ * sizeof(VertexID))
+        .flush();
+    min_two_hop_file.close();
+    std::ofstream max_two_hop_file(root_path + "precomputing/two_hop_max.bin",
+                                   std::ios::binary);
+    max_two_hop_file
+        .write(reinterpret_cast<char*>(max_two_hop_neighbor_),
+               num_vertices_ * sizeof(VertexID))
+        .flush();
+    max_two_hop_file.close();
 
-    LOG_INFO("Finish counting offset");
-    num_two_hop_edges_ = offset[num_vertices_ - 1] + degree[num_vertices_ - 1];
-    auto edges = new VertexID[num_two_hop_edges_];
-    // copy two_hop_neighbors_ to edges
-    VertexID b2 = 0, e2 = 0;
-    tasks.clear();
-    for (; b2 < num_vertices_;) {
-      e2 = b2 + task_size < num_vertices_ ? b2 + task_size : num_vertices_;
-      auto task = [edges, offset, this, b2, e2]() {
-        for (VertexID i = b2; i < e2; i++) {
-          int idx = 0;
-          for (auto& neighbor : two_hop_neighbors_[i]) {
-            edges[offset[i] + idx] = neighbor;
-            idx++;
-          }
-        }
-      };
-      tasks.push_back(task);
-      b2 = e2;
-    }
-    LOGF_INFO("task num: {}", tasks.size());
-    pool->SubmitSync(tasks);
-    LOG_INFO("Finish copy two_hop_neighbors_ to edges. Begin writing files");
-
-    // write
-    two_hop_file.write(reinterpret_cast<char*>(degree),
-                       num_vertices_ * sizeof(VertexID));
-    two_hop_file.write(reinterpret_cast<char*>(offset),
-                       num_vertices_ * sizeof(EdgeIndex));
-    two_hop_file.write(reinterpret_cast<char*>(edges),
-                       num_two_hop_edges_ * sizeof(VertexID));
-    two_hop_file.close();
-    LOG_INFO("Finish writing files.");
-    delete[] degree;
-    delete[] offset;
-    delete[] edges;
-    // clear two_hop_neighbors_
-    two_hop_neighbors_.clear();
+    delete[] min_one_hop_neighbor_;
+    min_one_hop_neighbor_ = nullptr;
+    delete[] max_one_hop_neighbor_;
+    max_one_hop_neighbor_ = nullptr;
+    delete[] min_two_hop_neighbor_;
+    min_two_hop_neighbor_ = nullptr;
+    delete[] max_two_hop_neighbor_;
+    max_two_hop_neighbor_ = nullptr;
   }
 
   void Release() {
@@ -164,6 +126,10 @@ struct Block {
     if (degree_) delete[] degree_;
     if (offset_) delete[] offset_;
     if (edges_) delete[] edges_;
+    if (min_one_hop_neighbor_) delete[] min_one_hop_neighbor_;
+    if (max_one_hop_neighbor_) delete[] max_one_hop_neighbor_;
+    if (min_two_hop_neighbor_) delete[] min_two_hop_neighbor_;
+    if (max_two_hop_neighbor_) delete[] max_two_hop_neighbor_;
   }
 
   VertexID* GetEdges(VertexID idx) { return edges_ + offset_[idx]; }
@@ -176,25 +142,33 @@ struct Block {
   VertexDegree GetDegree(VertexID idx) { return degree_[idx]; }
   VertexDegree GetDegreeByID(VertexID id) { return degree_[id - bid_]; }
 
-  void AddNeighbor(VertexID id, VertexID neighbor) {
-    if (neighbor == id) return;
-    // check if exist in two_hop_neighbors_
-    for (int i = 0; i < two_hop_neighbors_[id].size(); i++) {
-      if (two_hop_neighbors_[id][i] == neighbor) {
-        return;
-      }
+  void AddNeighbor(VertexID id, VertexID neighbor) {}
+
+  void UpdateOneHopInfo(VertexID id, VertexID one_hop_neighbor_id) {
+    min_one_hop_neighbor_[id] =
+        std::min(min_one_hop_neighbor_[id], one_hop_neighbor_id);
+    max_one_hop_neighbor_[id] =
+        std::max(max_one_hop_neighbor_[id], one_hop_neighbor_id);
+  }
+
+  void UpdateTwoHopInfo(VertexID id, VertexID two_hop_nerighbor_id) {
+    if (two_hop_nerighbor_id == id) return;
+    if (CheckIsOneHop(id, two_hop_nerighbor_id)) return;
+    min_two_hop_neighbor_[id] =
+        std::min(min_two_hop_neighbor_[id], two_hop_nerighbor_id);
+    max_two_hop_neighbor_[id] =
+        std::max(max_two_hop_neighbor_[id], two_hop_nerighbor_id);
+    has_two_hop_neighbor_[id] = true;
+  }
+
+  bool CheckIsOneHop(VertexID id, VertexID neighbor) {
+    auto degree = GetDegree(id);
+    if (degree == 0) return false;
+    auto edges = GetEdges(id);
+    for (auto i = 0; i < degree; i++) {
+      if (edges[i] == neighbor) return true;
     }
-    // check one hop neighbor
-    auto degree = GetDegreeByID(id);
-    if (degree == 0) return;
-    auto edges = GetEdgesByID(id);
-    for (VertexID i = 0; i < degree; i++) {
-      if (edges[i] == neighbor) {
-        return;
-      }
-    }
-    //    two_hop_neighbors_[id].insert(neighbor);
-    two_hop_neighbors_[id].push_back(neighbor);
+    return false;
   }
 
  public:
@@ -207,10 +181,11 @@ struct Block {
   VertexID eid_;
   bool isRead_ = false;
   // two hop info
-  EdgeIndex num_two_hop_edges_;
-  //  std::unordered_map<VertexID, std::set<VertexID>> two_hop_neighbors_;
-  //  std::vector<std::set<VertexID>> two_hop_neighbors_;
-  std::vector<std::vector<VertexID>> two_hop_neighbors_;
+  VertexID* min_one_hop_neighbor_ = nullptr;
+  VertexID* max_one_hop_neighbor_ = nullptr;
+  VertexID* min_two_hop_neighbor_ = nullptr;
+  VertexID* max_two_hop_neighbor_ = nullptr;
+  std::vector<bool> has_two_hop_neighbor_;
 };
 
 struct Blocks {

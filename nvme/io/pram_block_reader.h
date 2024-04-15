@@ -43,6 +43,9 @@ class PramBlockReader : public Reader {
                      core::common::VertexCount num_vertices,
                      std::vector<OwnedBuffer>* buffers);
 
+  void ReadNeighborInfo(const std::string& path,
+                        std::vector<OwnedBuffer>* buffers);
+
  private:
   const std::string root_path_;
   size_t read_size_ = 0;  // use MB

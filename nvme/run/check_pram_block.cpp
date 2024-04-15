@@ -87,10 +87,9 @@ int main(int argc, char** argv) {
   }
 
   // Show two hop neighbors infos
-  LOG_INFO(" \n============ Two Hop Infos =============");
 
+  LOG_INFO(" \n============ Precomputing Infos =============");
   // Read two hop info.
-  sics::graph::nvme::precomputing::TwoHopInfos two_hop_infos(root_path);
   if (show_two_hop) {
     size_t num_block = graph_metadata.get_num_blocks();
     for (auto i = 0; i < num_block; i++) {
@@ -99,46 +98,59 @@ int main(int argc, char** argv) {
       auto begin_id = block_metadata.begin_id;
       auto end_id = block_metadata.end_id;
       auto num_vertices = block_metadata.num_vertices;
-      auto num_edges = two_hop_infos.infos[i].num_two_hop_edges;
-      LOGF_INFO(
-          "bid: {}, begin_id: {}, end_id: {}, num_vertices: {}, "
-          "num_two_hop_edges: {}",
-          bid, begin_id, end_id, num_vertices, num_edges);
 
-      std::ifstream data_file(
-          root_path + "precomputing/" + std::to_string(bid) + ".bin",
-          std::ios::binary);
-      if (!data_file) {
-        LOG_FATAL("Error opening bin file: ",
-                  root_path + "precomputing/" + std::to_string(bid) + ".bin");
-      }
+      std::ifstream data_file(root_path + "precomputing/one_hop_min.bin",
+                              std::ios::binary);
       data_file.seekg(0, std::ios::end);
       size_t file_size = data_file.tellg();
       data_file.seekg(0, std::ios::beg);
       auto data_all = new char[file_size];
       data_file.read(data_all, file_size);
+      VertexID* min_one_hop_addr = (VertexID*)(data_all);
 
-      size_t size_degree = num_vertices * sizeof(VertexID);
-      size_t size_offset = num_vertices * sizeof(EdgeIndex);
+      std::ifstream data_file2(root_path + "precomputing/one_hop_max.bin",
+                               std::ios::binary);
+      data_file2.seekg(0, std::ios::end);
+      size_t file_size2 = data_file2.tellg();
+      data_file2.seekg(0, std::ios::beg);
+      auto data_all2 = new char[file_size2];
+      data_file2.read(data_all2, file_size2);
+      VertexID* max_one_hop_addr = (VertexID*)(data_all2);
 
-      VertexID* degree_addr = (VertexID*)(data_all);
-      EdgeIndex* offset_addr = (EdgeIndex*)(data_all + size_degree);
-      VertexID* edge_addr = (VertexID*)(data_all + size_degree + size_offset);
-
+      LOG_INFO("One Hop Infos =============");
       for (size_t idx = 0; idx < num_vertices; idx++) {
         auto id = idx + begin_id;
-        auto degree = degree_addr[idx];
-        auto offset = offset_addr[idx];
-        VertexID* addr = edge_addr + offset;
-        std::string edges_str = "";
-        for (size_t i = 0; i < degree; i++) {
-          auto neighbor_id = addr[i];
-          edges_str += std::to_string(neighbor_id) + " ";
-        }
-        LOGF_INFO(
-            "id: {}, idx: {}, degree: {}, offset: {} ==> two_hop_neighbor_id: "
-            "{}",
-            id, idx, degree, offset, edges_str);
+        auto min_one_hop = min_one_hop_addr[idx];
+        auto max_one_hop = max_one_hop_addr[idx];
+        LOGF_INFO("id: {}, idx: {}, min: {}, max: {}", id, idx, min_one_hop,
+                  max_one_hop);
+      }
+
+      LOG_INFO("two Hop Infos =============");
+      // read the file of two hop
+      std::ifstream data_file3(root_path + "precomputing/two_hop_min.bin",
+                               std::ios::binary);
+      data_file3.seekg(0, std::ios::end);
+      size_t file_size3 = data_file3.tellg();
+      data_file3.seekg(0, std::ios::beg);
+      auto data_all3 = new char[file_size3];
+      data_file3.read(data_all3, file_size3);
+      auto min_two_hop_addr = (VertexID*)(data_all3);
+
+      std::ifstream data_file4(root_path + "precomputing/two_hop_max.bin",
+                               std::ios::binary);
+      data_file4.seekg(0, std::ios::end);
+      size_t file_size4 = data_file4.tellg();
+      data_file4.seekg(0, std::ios::beg);
+      auto data_all4 = new char[file_size4];
+      data_file4.read(data_all4, file_size4);
+      auto max_two_hop_addr = (VertexID*)(data_all4);
+      for (auto idx = 0; idx < num_vertices; idx++) {
+        auto id = idx + begin_id;
+        auto min_two_hop = min_two_hop_addr[idx];
+        auto max_two_hop = max_two_hop_addr[idx];
+        LOGF_INFO("id: {}, idx: {}, min: {}, max: {}", id, idx, min_two_hop,
+                  max_two_hop);
       }
     }
   }

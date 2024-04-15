@@ -25,20 +25,15 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
       : BlockModel(root_path) {}
   ~WCCNvmePreComputingApp() override = default;
 
-  // actually, this is no use.
-  void Init(VertexID id) { this->Write(id, id); }
-
-  void InitWithTwoHop(VertexID src_id, VertexID dst_id) {
-    VertexID src_parent_id = Read(src_id);
-    VertexID dst_parent_id = Read(dst_id);
-    if (src_parent_id < dst_parent_id) {
-      this->WriteMin(dst_parent_id, src_parent_id);
-    } else if (src_parent_id > dst_parent_id) {
-      this->WriteMin(src_parent_id, dst_parent_id);
-    }
-  }
-
   VertexID min(VertexID a, VertexID b) { return a < b ? a : b; }
+
+  void Init(VertexID id) {
+    auto min_one_hop = GetMinOneHop(id);
+    auto min_two_hop = GetMinTwoHop(id);
+    auto root = std::min(min_one_hop, min_two_hop);
+    root = std::min(root, id);
+    this->Write(id, root);
+  }
 
   void GraftVertex(VertexID src_id) {
     auto degree = GetOutDegree(src_id);
@@ -101,17 +96,7 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
   void Compute() override {
     LOG_INFO("WCCNvmePreComputingApp::Compute() begin");
     int round = 0;
-    MapEdgeTwoHop(&init_graft);
-    MapVertex(&graft_vertex);
-    MapVertex(&point_jump);
-    MapAndMutateEdgeBool(&contractEdge);
-    if (update_store_.GetLeftEdges() == 0) {
-      LOGF_INFO("======= Round {} end, no edges left =======", round);
-      return;
-    }
-    LOGF_INFO("======= Round {} end, left edges num: {} =======", round,
-              update_store_.GetLeftEdges());
-    round++;
+    MapVertex(&init);
     while (true) {
       MapVertex(&graft_vertex);
       MapVertex(&point_jump);
@@ -130,9 +115,6 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
 
  private:
   FuncVertex init = [this](VertexID id) { Init(id); };
-  FuncEdge init_graft = [this](VertexID src_id, VertexID dst_id) {
-    InitWithTwoHop(src_id, dst_id);
-  };
   FuncVertex graft_vertex = [this](VertexID src_id) { GraftVertex(src_id); };
   FuncEdge graft = [this](VertexID src_id, VertexID dst_id) {
     Graft(src_id, dst_id);

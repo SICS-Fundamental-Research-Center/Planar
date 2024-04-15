@@ -111,16 +111,6 @@ class BlockModel : public BlockModelBase {
     LOG_INFO("MapEdge finishes");
   }
 
-  void MapEdgeTwoHop(FuncEdge* func_edge) {
-    // all blocks should be executor the edge function
-    ExecuteMessage message;
-    message.map_type = MapType::kMapEdge;
-    message.func_edge = func_edge;
-    scheduler_.RunMapExecute(message, true);
-    LockAndWaitResult();
-    LOG_INFO("MapEdgeTwoHop finishes");
-  }
-
   void MapAndMutateEdge(
       std::function<void(VertexID, VertexID, EdgeIndex)>* func_edge_del) {
     // all blocks should be executor the edge function
@@ -209,6 +199,11 @@ class BlockModel : public BlockModelBase {
   const VertexID* GetEdges(VertexID id) { return scheduler_.GetEdges(id); }
 
   VertexID GetNumVertices() { return scheduler_.GetVertexNumber(); }
+
+  VertexID GetMinOneHop(VertexID id) { return scheduler_.GetMinOneHop(id); }
+  VertexID GetMaxOneHop(VertexID id) { return scheduler_.GetMaxOneHop(id); }
+  VertexID GetMinTwoHop(VertexID id) { return scheduler_.GetMinTwoHop(id); }
+  VertexID GetMaxTwoHop(VertexID id) { return scheduler_.GetMaxTwoHop(id); }
 
   // methods for graph
   size_t GetGraphEdges() const { return scheduler_.GetGraphEdges(); }

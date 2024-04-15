@@ -1,5 +1,6 @@
 #include <gflags/gflags.h>
 
+#include "nvme/precomputing/neighbor_info.h"
 #include "nvme/precomputing/two_hop_neighbor.h"
 
 DEFINE_string(i, "/testfile", "graph files root path");
@@ -10,6 +11,6 @@ int main(int argc, char** argv) {
   auto root_path = FLAGS_i;
   auto parallelism = FLAGS_p;
 
-  sics::graph::nvme::precomputing::CountHop2(root_path, parallelism);
+  sics::graph::nvme::precomputing::ComputeNeighborInfo(root_path, parallelism);
   return 0;
 }

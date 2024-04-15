@@ -22,13 +22,17 @@ void PramBlockReader::Read(scheduler::ReadMessage* message,
 
   block_serialized->ReceiveBuffers(std::move(buffers));
 
-  if (message->use_two_hop) {
-    // Read two_hop info
-    std::vector<OwnedBuffer> two_hop_buffers;
-    ReadBlockInfo(root_path_ + "precomputing/" +
-                      std::to_string(message->graph_id) + ".bin",
-                  message->num_vertices, &two_hop_buffers);
-    block_serialized->ReceiveBuffers(std::move(two_hop_buffers));
+  if (core::common::Configurations::Get()->use_two_hop) {
+    std::vector<OwnedBuffer> neighbor_info_buffers;
+    ReadNeighborInfo(root_path_ + "precomputing/one_hop_min.bin",
+                     &neighbor_info_buffers);
+    ReadNeighborInfo(root_path_ + "precomputing/one_hop_max.bin",
+                     &neighbor_info_buffers);
+    ReadNeighborInfo(root_path_ + "precomputing/two_hop_min.bin",
+                     &neighbor_info_buffers);
+    ReadNeighborInfo(root_path_ + "precomputing/two_hop_max.bin",
+                     &neighbor_info_buffers);
+    block_serialized->ReceiveBuffers(std::move(neighbor_info_buffers));
   }
 }
 
@@ -59,6 +63,25 @@ void PramBlockReader::ReadBlockInfo(const std::string& path,
 
   buffers->emplace_back(edge_size);
   file.read((char*)(buffers->back().Get()), edge_size);
+  if (!file) {
+    LOG_FATAL("Error reading file edge info: ", path.c_str());
+  }
+  file.close();
+}
+
+void PramBlockReader::ReadNeighborInfo(const std::string& path,
+                                       std::vector<OwnedBuffer>* buffers) {
+  std::ifstream file(path, std::ios::binary);
+  if (!file) {
+    LOG_FATAL("Error opening bin file: ", path.c_str());
+  }
+
+  file.seekg(0, std::ios::end);
+  size_t file_size = file.tellg();
+  file.seekg(0, std::ios::beg);
+
+  buffers->emplace_back(file_size);
+  file.read((char*)(buffers->back().Get()), file_size);
   if (!file) {
     LOG_FATAL("Error reading file edge info: ", path.c_str());
   }

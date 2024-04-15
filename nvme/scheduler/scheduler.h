@@ -53,7 +53,6 @@ class PramScheduler {
     is_block_mode_ = core::common::Configurations::Get()->is_block_mode;
     memory_left_size_ = core::common::Configurations::Get()->memory_size;
     limits_ = core::common::Configurations::Get()->limits;
-    use_two_hop_ = core::common::Configurations::Get()->use_two_hop;
     use_limits_ = limits_ != 0;
     if (use_limits_) {
       LOGF_INFO(
@@ -149,11 +148,7 @@ class PramScheduler {
     return graph_metadata_info_.get_num_edges();
   }
 
-  void RunMapExecute(ExecuteMessage execute_msg, bool use_two_hop = false) {
-    if (use_two_hop)
-      current_use_two_hop_ = true;
-    else
-      current_use_two_hop_ = false;
+  void RunMapExecute(ExecuteMessage execute_msg) {
     message_hub_.get_response_queue()->Push(scheduler::Message(execute_msg));
   }
 
@@ -180,6 +175,30 @@ class PramScheduler {
     auto serializable = GetBlock(current_bid_);
     auto graph = static_cast<BlockCSRGraph*>(serializable);
     return graph->GetOutEdgesByID(id);
+  }
+
+  VertexID GetMinOneHop(VertexID id) {
+    auto serializable = GetBlock(current_bid_);
+    auto graph = static_cast<BlockCSRGraph*>(serializable);
+    return graph->GetMinOneHop(id);
+  }
+
+  VertexID GetMaxOneHop(VertexID id) {
+    auto serializable = GetBlock(current_bid_);
+    auto graph = static_cast<BlockCSRGraph*>(serializable);
+    return graph->GetMaxOneHop(id);
+  }
+
+  VertexID GetMinTwoHop(VertexID id) {
+    auto serializable = GetBlock(current_bid_);
+    auto graph = static_cast<BlockCSRGraph*>(serializable);
+    return graph->GetMinTwoHop(id);
+  }
+
+  VertexID GetMaxTwoHop(VertexID id) {
+    auto serializable = GetBlock(current_bid_);
+    auto graph = static_cast<BlockCSRGraph*>(serializable);
+    return graph->GetMaxTwoHop(id);
   }
 
  protected:
@@ -314,7 +333,6 @@ class PramScheduler {
     //  read_message.serialized = CreateSerialized(load_graph_id);
     read_message.graph = CreateSerializableGraph(load_graph_id);
     read_message.changed = graph_state_.IsBlockMutated(load_graph_id);
-    read_message.use_two_hop = use_two_hop_;
     graph_state_.SetOnDiskToReading(load_graph_id);
     message_hub_.get_reader_queue()->Push(read_message);
     return true;
@@ -463,7 +481,6 @@ class PramScheduler {
     execute_message.graph = GetBlock(bid);
     execute_message.execute_type = ExecuteType::kCompute;
     execute_message.map_type = current_Map_type_;
-    execute_message.use_two_hop = current_use_two_hop_;
     SetExecuteMessageMapFunction(&execute_message);
     current_bid_ = bid;
     is_executor_running_ = true;
@@ -507,7 +524,6 @@ class PramScheduler {
   std::unique_ptr<std::thread> thread_;
 
   MapType current_Map_type_ = MapType::kDefault;
-  bool current_use_two_hop_ = false;
   core::common::FuncVertex* func_vertex_ = nullptr;
   core::common::FuncEdge* func_edge_ = nullptr;
   core::common::FuncEdgeMutate* func_edge_mutate_bool_ = nullptr;
@@ -540,7 +556,6 @@ class PramScheduler {
   std::vector<std::unique_ptr<core::data_structures::Serializable>> graphs_;
 
   // configs
-  bool use_two_hop_ = false;
 };
 
 }  // namespace sics::graph::nvme::scheduler

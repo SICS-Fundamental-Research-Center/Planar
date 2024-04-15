@@ -107,10 +107,10 @@ void CountHop(const std::string& root_path, uint32_t parallelism = 1) {
     //    pool.SubmitSync(tasks);
     //    LOG_INFO("Begin write two-hop info to disk");
     // write two-hop info of block i to disk
-    block_i.WriteTwoHopInfo(
-        root_path + "precomputing/" + std::to_string(i) + ".bin", &pool);
-    two_hop_infos.infos[i].bid = i;
-    two_hop_infos.infos[i].num_two_hop_edges = block_i.num_two_hop_edges_;
+    //    block_i.WriteTwoHopInfo(
+    //        root_path + "precomputing/" + std::to_string(i) + ".bin", &pool);
+    //    two_hop_infos.infos[i].bid = i;
+    //    two_hop_infos.infos[i].num_two_hop_edges = block_i.num_two_hop_edges_;
   }
   LOG_INFO(" ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ");
   LOG_INFO("Begin write meta info of two-hop neighbors to disk.");
@@ -212,10 +212,10 @@ void CountHop2(const std::string& root_path, uint32_t parallelism = 1) {
     //    pool.SubmitSync(tasks);
     LOG_INFO("Begin write two-hop info to disk");
     // write two-hop info of block i to disk
-    block_i.WriteTwoHopInfo(
-        root_path + "precomputing/" + std::to_string(i) + ".bin", &pool);
-    two_hop_infos.infos[i].bid = i;
-    two_hop_infos.infos[i].num_two_hop_edges = block_i.num_two_hop_edges_;
+    //    block_i.WriteTwoHopInfo(
+    //        root_path + "precomputing/" + std::to_string(i) + ".bin", &pool);
+    //    two_hop_infos.infos[i].bid = i;
+    //    two_hop_infos.infos[i].num_two_hop_edges = block_i.num_two_hop_edges_;
   }
   LOG_INFO(" ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ");
   LOG_INFO("Begin write meta info of two-hop neighbors to disk.");
