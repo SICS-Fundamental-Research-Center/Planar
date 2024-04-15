@@ -177,7 +177,8 @@ struct Block {
   VertexDegree GetDegreeByID(VertexID id) { return degree_[id - bid_]; }
 
   void AddNeighbor(VertexID id, VertexID neighbor) {
-    two_hop_neighbors_[id].insert(neighbor);
+    //    two_hop_neighbors_[id].insert(neighbor);
+    two_hop_neighbors_[id].push_back(neighbor);
   }
 
  public:
@@ -192,7 +193,8 @@ struct Block {
   // two hop info
   EdgeIndex num_two_hop_edges_;
   //  std::unordered_map<VertexID, std::set<VertexID>> two_hop_neighbors_;
-  std::vector<std::unordered_set<VertexID>> two_hop_neighbors_;
+  //  std::vector<std::set<VertexID>> two_hop_neighbors_;
+  std::vector<std::vector<VertexID>> two_hop_neighbors_;
 };
 
 struct Blocks {
