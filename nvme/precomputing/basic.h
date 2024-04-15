@@ -56,7 +56,7 @@ struct Block {
     //    offset[0] = 0;
     //    degree[0] = two_hop_neighbors_[0].size();
 
-    auto parallelism = pool->GetParallelism() * 10;
+    auto parallelism = pool->GetParallelism() * 5;
     auto task_size = (num_vertices_ + parallelism - 1) / parallelism;
     core::common::TaskPackage tasks;
     uint32_t task_num = 0;
@@ -177,6 +177,22 @@ struct Block {
   VertexDegree GetDegreeByID(VertexID id) { return degree_[id - bid_]; }
 
   void AddNeighbor(VertexID id, VertexID neighbor) {
+    if (neighbor == id) return;
+    // check if exist in two_hop_neighbors_
+    for (int i = 0; i < two_hop_neighbors_[id].size(); i++) {
+      if (two_hop_neighbors_[id][i] == neighbor) {
+        return;
+      }
+    }
+    // check one hop neighbor
+    auto degree = GetDegreeByID(id);
+    if (degree == 0) return;
+    auto edges = GetEdgesByID(id);
+    for (VertexID i = 0; i < degree; i++) {
+      if (edges[i] == neighbor) {
+        return;
+      }
+    }
     //    two_hop_neighbors_[id].insert(neighbor);
     two_hop_neighbors_[id].push_back(neighbor);
   }

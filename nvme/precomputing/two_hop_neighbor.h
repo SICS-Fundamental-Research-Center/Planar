@@ -82,30 +82,30 @@ void CountHop(const std::string& root_path, uint32_t parallelism = 1) {
       }
       pool.SubmitSync(tasks);
     }
-    LOG_INFO("Begin delete self loop");
 
+    //    LOG_INFO("Begin delete self loop");
     // del self loop of s -> d -> s and one hop neighbor
-//    tasks.clear();
-//    VertexID b2 = 0, e2 = 0;
-//    auto task_size = (block_i.num_vertices_ + parallelism - 1) / parallelism;
-//    for (; b2 < block_i.num_vertices_;) {
-//      e2 = std::min(b2 + task_size, block_i.num_vertices_);
-//      auto task = [&block_i, b2, e2]() {
-//        for (auto k = b2; k < e2; k++) {
-//          block_i.two_hop_neighbors_[k].erase(k + block_i.bid_);
-//          auto degree = block_i.degree_[k];
-//          if (degree == 0) continue;
-//          auto edges = block_i.GetEdges(k);
-//          for (VertexID l = 0; l < degree; l++) {
-//            block_i.two_hop_neighbors_[k].erase(edges[l]);
-//          }
-//        }
-//      };
-//      tasks.push_back(task);
-//      b2 = e2;
-//    }
-//    pool.SubmitSync(tasks);
-//    LOG_INFO("Begin write two-hop info to disk");
+    //    tasks.clear();
+    //    VertexID b2 = 0, e2 = 0;
+    //    auto task_size = (block_i.num_vertices_ + parallelism - 1) /
+    //    parallelism; for (; b2 < block_i.num_vertices_;) {
+    //      e2 = std::min(b2 + task_size, block_i.num_vertices_);
+    //      auto task = [&block_i, b2, e2]() {
+    //        for (auto k = b2; k < e2; k++) {
+    //          block_i.two_hop_neighbors_[k].erase(k + block_i.bid_);
+    //          auto degree = block_i.degree_[k];
+    //          if (degree == 0) continue;
+    //          auto edges = block_i.GetEdges(k);
+    //          for (VertexID l = 0; l < degree; l++) {
+    //            block_i.two_hop_neighbors_[k].erase(edges[l]);
+    //          }
+    //        }
+    //      };
+    //      tasks.push_back(task);
+    //      b2 = e2;
+    //    }
+    //    pool.SubmitSync(tasks);
+    //    LOG_INFO("Begin write two-hop info to disk");
     // write two-hop info of block i to disk
     block_i.WriteTwoHopInfo(
         root_path + "precomputing/" + std::to_string(i) + ".bin", &pool);
@@ -189,8 +189,7 @@ void CountHop2(const std::string& root_path, uint32_t parallelism = 1) {
     }
     pool.SubmitSync(tasks);
 
-    LOG_INFO("Begin delete self loop");
-
+    //    LOG_INFO("Begin delete self loop");
     // del self loop of s -> d -> s and one hop neighbor
     //    tasks.clear();
     //    VertexID b2 = 0, e2 = 0;
