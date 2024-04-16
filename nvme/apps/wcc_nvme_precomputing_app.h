@@ -21,8 +21,12 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
 
  public:
   WCCNvmePreComputingApp() = default;
-  WCCNvmePreComputingApp(const std::string& root_path)
-      : BlockModel(root_path) {}
+  WCCNvmePreComputingApp(const std::string& root_path) : BlockModel(root_path) {
+    use_graft_vertex_ = core::common::Configurations::Get()->use_graft_vertex;
+    if (use_graft_vertex_) {
+      LOG_INFO("Use vertex for graft operations");
+    }
+  }
   ~WCCNvmePreComputingApp() override = default;
 
   VertexID min(VertexID a, VertexID b) { return a < b ? a : b; }
@@ -98,7 +102,11 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
     int round = 0;
     MapVertex(&init);
     while (true) {
-      MapVertex(&graft_vertex);
+      if (use_graft_vertex_) {
+        MapVertex(&graft_vertex);
+      } else {
+        MapEdge(&graft);
+      }
       MapVertex(&point_jump);
       MapAndMutateEdgeBool(&contractEdge);
       if (update_store_.GetLeftEdges() == 0) {
@@ -127,6 +135,8 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
   FuncEdgeMutate contractEdge = [this](VertexID src_id, VertexID dst_id) {
     return ContractEdge(src_id, dst_id);
   };
+
+  bool use_graft_vertex_ = false;
 };
 
 }  // namespace sics::graph::nvme::apps
