@@ -31,7 +31,7 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
 
   VertexID min(VertexID a, VertexID b) { return a < b ? a : b; }
 
-  void Init(VertexID id) {
+  void InitTwoHop(VertexID id) {
     auto min_one_hop = GetMinOneHop(id);
     auto min_two_hop = GetMinTwoHop(id);
     auto root = std::min(min_one_hop, min_two_hop);
@@ -100,7 +100,7 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
   void Compute() override {
     LOG_INFO("WCCNvmePreComputingApp::Compute() begin");
     int round = 0;
-    MapVertex(&init);
+    MapVertexWithPrecomputing(&init_two_hop);
     while (true) {
       if (use_graft_vertex_) {
         MapVertex(&graft_vertex);
@@ -122,7 +122,7 @@ class WCCNvmePreComputingApp : public apis::BlockModel<BlockGraph::VertexData> {
   }
 
  private:
-  FuncVertex init = [this](VertexID id) { Init(id); };
+  FuncVertex init_two_hop = [this](VertexID id) { InitTwoHop(id); };
   FuncVertex graft_vertex = [this](VertexID src_id) { GraftVertex(src_id); };
   FuncEdge graft = [this](VertexID src_id, VertexID dst_id) {
     Graft(src_id, dst_id);

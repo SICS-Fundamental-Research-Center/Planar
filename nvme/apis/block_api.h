@@ -17,6 +17,7 @@
 #include "nvme/components/executor.h"
 #include "nvme/components/loader.h"
 #include "nvme/data_structures/graph/pram_block.h"
+#include "nvme/data_structures/neighbor_hop.h"
 #include "nvme/io/pram_block_reader.h"
 #include "nvme/io/pram_block_writer.h"
 #include "nvme/scheduler/message_hub.h"
@@ -51,7 +52,11 @@ class BlockModel : public BlockModelBase {
  public:
   BlockModel() = default;
   BlockModel(const std::string& root_path)
-      : scheduler_(root_path), update_store_(scheduler_.GetGraphMetadata()) {
+      : root_path_(root_path),
+        scheduler_(root_path),
+        update_store_(scheduler_.GetGraphMetadata()) {
+    task_package_factor_ =
+        core::common::Configurations::Get()->task_package_factor;
     loader_ = std::make_unique<components::Loader<io::PramBlockReader>>(
         root_path, scheduler_.GetMessageHub());
     discharge_ = std::make_unique<components::Discharger<io::PramBlockWriter>>(
@@ -101,6 +106,11 @@ class BlockModel : public BlockModelBase {
     LOG_INFO("MapVertex finished");
   }
 
+  void MapVertexWithPrecomputing(FuncVertex* func_vertex) {
+    ParallelVertexDo(*func_vertex);
+    LOG_INFO("MapVertexWithPrecomputing finishes");
+  }
+
   void MapEdge(std::function<void(VertexID, VertexID)>* func_edge) {
     // all blocks should be executor the edge function
     ExecuteMessage message;
@@ -145,6 +155,9 @@ class BlockModel : public BlockModelBase {
     scheduler_.Start();
 
     LOG_INFO(" ================ Start Algorithm executing! ================= ");
+    if (core::common::Configurations::Get()->use_two_hop) {
+      neighbor_hop_info_.Init(root_path_);
+    }
     Compute();
     common::end_time_in_memory = std::chrono::system_clock::now();
     compute_end_time_ = std::chrono::system_clock::now();
@@ -200,10 +213,42 @@ class BlockModel : public BlockModelBase {
 
   VertexID GetNumVertices() { return scheduler_.GetVertexNumber(); }
 
-  VertexID GetMinOneHop(VertexID id) { return scheduler_.GetMinOneHop(id); }
-  VertexID GetMaxOneHop(VertexID id) { return scheduler_.GetMaxOneHop(id); }
-  VertexID GetMinTwoHop(VertexID id) { return scheduler_.GetMinTwoHop(id); }
-  VertexID GetMaxTwoHop(VertexID id) { return scheduler_.GetMaxTwoHop(id); }
+  VertexID GetMinOneHop(VertexID id) {
+    return neighbor_hop_info_.GetMinOneHop(id);
+  }
+  VertexID GetMaxOneHop(VertexID id) {
+    return neighbor_hop_info_.GetMaxOneHop(id);
+  }
+  VertexID GetMinTwoHop(VertexID id) {
+    return neighbor_hop_info_.GetMinTwoHop(id);
+  }
+  VertexID GetMaxTwoHop(VertexID id) {
+    return neighbor_hop_info_.GetMaxTwoHop(id);
+  }
+
+  void ParallelVertexDo(FuncVertex& vertex_func) {
+    auto num_vertices = scheduler_.GetVertexNumber();
+    auto task_num = parallelism_ * task_package_factor_;
+    uint32_t task_size = (num_vertices + task_num - 1) / task_num;
+    core::common::TaskPackage tasks;
+    //    tasks.reserve(ceil((double)block->GetVertexNums() / task_size));
+    VertexID begin_id = 0, end_id = 0;
+    for (; begin_id < num_vertices;) {
+      end_id += task_size;
+      if (end_id > num_vertices) {
+        end_id = num_vertices;
+      }
+      auto task = [&vertex_func, begin_id, end_id]() {
+        for (VertexID id = begin_id; id < end_id; id++) {
+          vertex_func(id);
+        }
+      };
+      tasks.push_back(task);
+      begin_id = end_id;
+    }
+    LOGF_INFO("Precomputing task num: {}", tasks.size());
+    executor_->GetTaskRunner()->SubmitSync(tasks);
+  }
 
   // methods for graph
   size_t GetGraphEdges() const { return scheduler_.GetGraphEdges(); }
@@ -221,6 +266,8 @@ class BlockModel : public BlockModelBase {
   std::unique_ptr<components::Executor<VertexData, EdgeData>> executor_;
   update_stores::PramNvmeUpdateStore<VertexData, EdgeData> update_store_;
 
+  data_structures::NeighborHopInfo neighbor_hop_info_;
+
   int round_ = 0;
 
   //  std::mutex pram_mtx_;
@@ -230,9 +277,11 @@ class BlockModel : public BlockModelBase {
   std::chrono::time_point<std::chrono::system_clock> compute_end_time_;
   std::chrono::time_point<std::chrono::system_clock> whole_end_time_;
 
+  std::string root_path_ = "";
+
   // configs
-  const uint32_t parallelism_ = 10;
-  const uint32_t task_package_factor_ = 10;
+  uint32_t parallelism_ = 10;
+  uint32_t task_package_factor_ = 50;
 };
 
 }  // namespace sics::graph::nvme::apis

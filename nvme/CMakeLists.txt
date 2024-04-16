@@ -35,6 +35,8 @@ file(GLOB NVME_HEADERS
         "${CMAME_CURRENT_SOURCE_DIR}/common/*.h"
         "${CMAME_CURRENT_SOURCE_DIR}/common/multithreading/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/components/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/data_structures/graph/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/data_structures/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/io/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/partition/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/precomputing/*.h"
