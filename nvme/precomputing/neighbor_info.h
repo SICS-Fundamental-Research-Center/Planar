@@ -8,6 +8,7 @@
 namespace sics::graph::nvme::precomputing {
 
 void ComputeNeighborInfo(const std::string& root_path,
+                         uint32_t task_package_factor = 10,
                          uint32_t parallelism = 1) {
   // make sure the precomputing directory exists
   std::string precomputing_dir = root_path + "/precomputing";
@@ -42,7 +43,7 @@ void ComputeNeighborInfo(const std::string& root_path,
     auto& block_i = blocks.blocks.at(i);
     core::common::TaskPackage tasks;
     // iter block j for the join of block i
-    auto task_num = parallelism * 10;
+    auto task_num = parallelism * task_package_factor;
     auto task_size =
         (block_i.num_vertices_ + task_num - 1) / task_num;
     // iter vertex in block i
