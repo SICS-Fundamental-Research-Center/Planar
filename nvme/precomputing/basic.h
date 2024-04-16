@@ -152,8 +152,8 @@ struct Block {
   }
 
   void UpdateTwoHopInfo(VertexID id, VertexID two_hop_nerighbor_id) {
-    if (two_hop_nerighbor_id == id) return;
-    if (CheckIsOneHop(id, two_hop_nerighbor_id)) return;
+    //    if (two_hop_nerighbor_id == id) return;
+    //    if (CheckIsOneHop(id, two_hop_nerighbor_id)) return;
     min_two_hop_neighbor_[id] =
         std::min(min_two_hop_neighbor_[id], two_hop_nerighbor_id);
     max_two_hop_neighbor_[id] =

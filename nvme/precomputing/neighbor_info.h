@@ -44,14 +44,15 @@ void ComputeNeighborInfo(const std::string& root_path,
     core::common::TaskPackage tasks;
     // iter block j for the join of block i
     auto task_num = parallelism * task_package_factor;
-    auto task_size =
-        (block_i.num_vertices_ + task_num - 1) / task_num;
+    auto task_size = (block_i.num_vertices_ + task_num - 1) / task_num;
+    LOGF_INFO("task size: {}", task_size);
     // iter vertex in block i
     VertexID k = 0;
     while (k < block_i.num_vertices_) {
       auto b_k = k;
       auto e_k = std::min(k + task_size, block_i.num_vertices_);
       auto task = [&blocks, &block_i, b_k, e_k]() {
+        auto idx = 0;
         for (auto k = b_k; k < e_k; k++) {
           auto degree_k = block_i.degree_[k];
           if (degree_k == 0) continue;
@@ -68,11 +69,16 @@ void ComputeNeighborInfo(const std::string& root_path,
               block_i.UpdateTwoHopInfo(k, two_hop_edges[m]);
             }
           }
+          idx++;
+          if (idx % 10000 == 0) {
+            LOGF_INFO("{}->{}: Processed {} vertices", b_k, e_k, idx);
+          }
         }
       };
       tasks.push_back(task);
       k = e_k;
     }
+    LOGF_INFO("Task num: {}", tasks.size());
     pool.SubmitSync(tasks);
 
     LOG_INFO("Begin write two-hop info to disk");
