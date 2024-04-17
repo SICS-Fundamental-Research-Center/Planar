@@ -108,6 +108,7 @@ class BlockModel : public BlockModelBase {
 
   void MapVertexWithPrecomputing(FuncVertex* func_vertex) {
     ParallelVertexDo(*func_vertex);
+    update_store_.Sync();
     LOG_INFO("MapVertexWithPrecomputing finishes");
   }
 
