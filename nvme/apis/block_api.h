@@ -156,7 +156,7 @@ class BlockModel : public BlockModelBase {
 
     LOG_INFO(" ================ Start Algorithm executing! ================= ");
     if (core::common::Configurations::Get()->use_two_hop) {
-      neighbor_hop_info_.Init(root_path_);
+      neighbor_hop_info_.Init(root_path_, scheduler_.GetGraphMetadata());
     }
     Compute();
     common::end_time_in_memory = std::chrono::system_clock::now();

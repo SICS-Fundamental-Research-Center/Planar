@@ -116,11 +116,6 @@ class PramBlock : public core::data_structures::Serializable {
 
     // Two hop infos
     if (core::common::Configurations::Get()->use_two_hop) {
-      auto tmp = graph_serialized_->GetNeighborInfos();
-      min_one_hop_ = (VertexID*)(tmp->at(0).Get());
-      max_one_hop_ = (VertexID*)(tmp->at(1).Get());
-      min_two_hop_ = (VertexID*)(tmp->at(2).Get());
-      max_two_hop_ = (VertexID*)(tmp->at(3).Get());
     }
   }
 

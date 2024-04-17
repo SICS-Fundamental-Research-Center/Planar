@@ -48,49 +48,53 @@ struct Block {
     has_two_hop_neighbor_.resize(num_vertices_);
     for (auto i = 0; i < num_vertices_; i++) {
       min_one_hop_neighbor_[i] = MAX_VERTEX_ID;
-      max_one_hop_neighbor_[i] = 0;
+      max_one_hop_neighbor_[i] = i + bid_;
       min_two_hop_neighbor_[i] = MAX_VERTEX_ID;
-      max_two_hop_neighbor_[i] = 0;
+      max_two_hop_neighbor_[i] = i + bid_;
       has_two_hop_neighbor_[i] = false;
     }
     isRead_ = true;
   }
-  void Write(const std::string& root_path,
+  void Write(const std::string& root_path, GraphID gid,
              core::common::ThreadPool* pool = nullptr) {
     for (auto i = 0; i < num_vertices_; i++) {
       if (GetDegree(i) == 0) {
-        min_one_hop_neighbor_[i] = i;
-        max_one_hop_neighbor_[i] = MAX_VERTEX_ID;
+        min_one_hop_neighbor_[i] = i + bid_;
+        max_one_hop_neighbor_[i] = i + bid_;
       }
       if (!has_two_hop_neighbor_[i]) {
-        min_two_hop_neighbor_[i] = i;
-        max_two_hop_neighbor_[i] = MAX_VERTEX_ID;
+        min_two_hop_neighbor_[i] = i + bid_;
+        max_two_hop_neighbor_[i] = i + bid_;
       }
     }
 
-    std::ofstream min_one_hop_file(root_path + "precomputing/one_hop_min.bin",
-                                   std::ios::binary);
+    std::ofstream min_one_hop_file(
+        root_path + "precomputing/" + std::to_string(gid) + "_min_one_hop.bin",
+        std::ios::binary);
     min_one_hop_file
         .write(reinterpret_cast<char*>(min_one_hop_neighbor_),
                num_vertices_ * sizeof(VertexID))
         .flush();
     min_one_hop_file.close();
-    std::ofstream max_one_hop_file(root_path + "precomputing/one_hop_max.bin",
-                                   std::ios::binary);
+    std::ofstream max_one_hop_file(
+        root_path + "precomputing/" + std::to_string(gid) + "_max_one_hop.bin",
+        std::ios::binary);
     max_one_hop_file
         .write(reinterpret_cast<char*>(max_one_hop_neighbor_),
                num_vertices_ * sizeof(VertexID))
         .flush();
     max_one_hop_file.close();
-    std::ofstream min_two_hop_file(root_path + "precomputing/two_hop_min.bin",
-                                   std::ios::binary);
+    std::ofstream min_two_hop_file(
+        root_path + "precomputing/" + std::to_string(gid) + "_min_two_hop.bin",
+        std::ios::binary);
     min_two_hop_file
         .write(reinterpret_cast<char*>(min_two_hop_neighbor_),
                num_vertices_ * sizeof(VertexID))
         .flush();
     min_two_hop_file.close();
-    std::ofstream max_two_hop_file(root_path + "precomputing/two_hop_max.bin",
-                                   std::ios::binary);
+    std::ofstream max_two_hop_file(
+        root_path + "precomputing/" + std::to_string(gid) + "_max_two_hop.bin",
+        std::ios::binary);
     max_two_hop_file
         .write(reinterpret_cast<char*>(max_two_hop_neighbor_),
                num_vertices_ * sizeof(VertexID))

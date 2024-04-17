@@ -83,7 +83,7 @@ void ComputeNeighborInfo(const std::string& root_path,
 
     LOG_INFO("Begin write two-hop info to disk");
     // write two-hop info of block i to disk
-    block_i.Write(root_path, &pool);
+    block_i.Write(root_path, i, &pool);
   }
   LOG_INFO("Two-hop neighbors are precomputed.");
 }

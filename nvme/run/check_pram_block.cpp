@@ -99,8 +99,9 @@ int main(int argc, char** argv) {
       auto end_id = block_metadata.end_id;
       auto num_vertices = block_metadata.num_vertices;
 
-      std::ifstream data_file(root_path + "precomputing/one_hop_min.bin",
-                              std::ios::binary);
+      std::ifstream data_file(
+          root_path + "precomputing/" + std::to_string(i) + "_min_one_hop.bin",
+          std::ios::binary);
       data_file.seekg(0, std::ios::end);
       size_t file_size = data_file.tellg();
       data_file.seekg(0, std::ios::beg);
@@ -108,8 +109,9 @@ int main(int argc, char** argv) {
       data_file.read(data_all, file_size);
       VertexID* min_one_hop_addr = (VertexID*)(data_all);
 
-      std::ifstream data_file2(root_path + "precomputing/one_hop_max.bin",
-                               std::ios::binary);
+      std::ifstream data_file2(
+          root_path + "precomputing/" + std::to_string(i) + "_max_one_hop.bin",
+          std::ios::binary);
       data_file2.seekg(0, std::ios::end);
       size_t file_size2 = data_file2.tellg();
       data_file2.seekg(0, std::ios::beg);
@@ -128,8 +130,9 @@ int main(int argc, char** argv) {
 
       LOG_INFO("two Hop Infos =============");
       // read the file of two hop
-      std::ifstream data_file3(root_path + "precomputing/two_hop_min.bin",
-                               std::ios::binary);
+      std::ifstream data_file3(
+          root_path + "precomputing/" + std::to_string(i) + "_min_two_hop.bin",
+          std::ios::binary);
       data_file3.seekg(0, std::ios::end);
       size_t file_size3 = data_file3.tellg();
       data_file3.seekg(0, std::ios::beg);
@@ -137,8 +140,9 @@ int main(int argc, char** argv) {
       data_file3.read(data_all3, file_size3);
       auto min_two_hop_addr = (VertexID*)(data_all3);
 
-      std::ifstream data_file4(root_path + "precomputing/two_hop_max.bin",
-                               std::ios::binary);
+      std::ifstream data_file4(
+          root_path + "precomputing/" + std::to_string(i) + "_max_two_hop.bin",
+          std::ios::binary);
       data_file4.seekg(0, std::ios::end);
       size_t file_size4 = data_file4.tellg();
       data_file4.seekg(0, std::ios::beg);

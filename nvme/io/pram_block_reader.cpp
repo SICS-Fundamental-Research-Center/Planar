@@ -21,19 +21,6 @@ void PramBlockReader::Read(scheduler::ReadMessage* message,
   ReadBlockInfo(path, message->num_vertices, &buffers);
 
   block_serialized->ReceiveBuffers(std::move(buffers));
-
-  if (core::common::Configurations::Get()->use_two_hop) {
-    std::vector<OwnedBuffer> neighbor_info_buffers;
-    ReadNeighborInfo(root_path_ + "precomputing/one_hop_min.bin",
-                     &neighbor_info_buffers);
-    ReadNeighborInfo(root_path_ + "precomputing/one_hop_max.bin",
-                     &neighbor_info_buffers);
-    ReadNeighborInfo(root_path_ + "precomputing/two_hop_min.bin",
-                     &neighbor_info_buffers);
-    ReadNeighborInfo(root_path_ + "precomputing/two_hop_max.bin",
-                     &neighbor_info_buffers);
-    block_serialized->ReceiveBuffers(std::move(neighbor_info_buffers));
-  }
 }
 
 void PramBlockReader::ReadBlockInfo(const std::string& path,
