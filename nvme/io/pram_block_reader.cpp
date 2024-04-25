@@ -22,6 +22,7 @@ void PramBlockReader::Read(ReadMessage* message,
 
   block_serialized->ReceiveBuffers(std::move(buffers));
   message->bytes_read = read_size_;
+  read_size_ = 0;
 }
 
 void PramBlockReader::ReadBlockInfo(const std::string& path,

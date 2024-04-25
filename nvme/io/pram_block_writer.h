@@ -35,7 +35,7 @@ class PramBlockWriter : public Writer {
 
  private:
   const std::string root_path_;
-  size_t write_size = 0;
+  size_t write_size_ = 0;
 };
 
 }  // namespace sics::graph::nvme::io

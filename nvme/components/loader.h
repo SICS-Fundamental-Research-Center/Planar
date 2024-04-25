@@ -54,7 +54,7 @@ class Loader : public Component {
         message.graph->Deserialize(
             occupied_pool_, std::unique_ptr<core::data_structures::Serialized>(
                                 serialized.release()));
-        LOGF_INFO("Loader completes reading block {}, size {}",
+        LOGF_INFO("Loader completes reading block {}, size {} MB",
                   message.graph_id, message.bytes_read);
         response_q_->Push(scheduler::Message(message));
       }
