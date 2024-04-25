@@ -4,7 +4,7 @@ namespace sics::graph::nvme::io {
 using SerializedPramBlockCSRGraph =
     data_structures::graph::SerializedPramBlockCSRGraph;
 
-void PramBlockReader::Read(scheduler::ReadMessage* message,
+void PramBlockReader::Read(ReadMessage* message,
                            core::common::TaskRunner* /* runner */) {
   // Init path.
   std::string path = "";
@@ -21,6 +21,7 @@ void PramBlockReader::Read(scheduler::ReadMessage* message,
   ReadBlockInfo(path, message->num_vertices, &buffers);
 
   block_serialized->ReceiveBuffers(std::move(buffers));
+  message->bytes_read = read_size_;
 }
 
 void PramBlockReader::ReadBlockInfo(const std::string& path,

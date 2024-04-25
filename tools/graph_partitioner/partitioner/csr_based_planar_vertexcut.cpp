@@ -515,11 +515,7 @@ std::vector<Edges> CSRBasedPlanarVertexCutPartitioner::ConvertListofEdge2Edges(
   size_t br_i = 0;
   for (const auto& branch : list_of_branches) {
 #ifdef TBB_FOUND
-    std::for_each(std::execution::par, branch.begin(), branch.end(),
-                  [&max_vid_per_edgelist, br_i](auto& e) {
-                    WriteMax(&max_vid_per_edgelist[br_i], e.src);
-                    WriteMax(&max_vid_per_edgelist[br_i], e.dst);
-                  });
+
 #else
     std::for_each(branch.begin(), branch.end(),
                   [&max_vid_per_edgelist, br_i](auto& e) {
@@ -562,11 +558,6 @@ std::vector<Edges> CSRBasedPlanarVertexCutPartitioner::ConvertListofEdge2Edges(
     size_t index = 0;
     auto buffer_edges = vec_edges[br_i].get_base_ptr();
 #ifdef TBB_FOUND
-    std::for_each(std::execution::par, branch.begin(), branch.end(),
-                  [&index, &buffer_edges, &br_i](auto& e) {
-                    auto local_index = __sync_fetch_and_add(&index, 1);
-                    buffer_edges[local_index] = e;
-                  });
 #else
     std::for_each(branch.begin(), branch.end(),
                   [&index, &buffer_edges, &br_i](auto& e) {

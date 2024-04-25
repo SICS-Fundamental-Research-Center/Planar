@@ -25,6 +25,7 @@ void PramBlockWriter::Write(WriteMessage* message,
       auto tmp = message->serialized->PopNext();
     }
   }
+  message->bytes_written = write_size;
 }
 
 void PramBlockWriter::WriteBlockInfo(const std::string& path,
@@ -38,10 +39,12 @@ void PramBlockWriter::WriteBlockInfo(const std::string& path,
   if (!file) {
     LOG_FATAL("Error writing meta data file: ", path.c_str());
   }
+  write_size += buffers.at(0).GetSize();
   file.write((char*)(buffers.at(1).Get()), buffers.at(1).GetSize());
   if (!file) {
     LOG_FATAL("Error writing label data file: ", path.c_str());
   }
+  write_size += buffers.at(1).GetSize();
   file.close();
 }
 

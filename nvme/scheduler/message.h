@@ -29,6 +29,7 @@ struct ReadMessage {
   core::data_structures::Serialized* serialized;  // initialized in scheduler
   core::data_structures::Serializable* graph;     // initialized in scheduler
   // Response fields.
+  size_t bytes_read = 0; // Use MB
 
   // Termination flag.
   bool terminated = false;
