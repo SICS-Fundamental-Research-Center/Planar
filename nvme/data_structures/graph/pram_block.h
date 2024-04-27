@@ -56,11 +56,6 @@ class PramBlock : public core::data_structures::Serializable {
     out_degree_base_ = nullptr;
     out_offset_base_ = nullptr;
     out_edges_base_ = nullptr;
-    // two hop potr
-    min_one_hop_ = nullptr;
-    max_one_hop_ = nullptr;
-    min_two_hop_ = nullptr;
-    max_two_hop_ = nullptr;
 
     if (core::common::Configurations::Get()->edge_mutate &&
         block_metadata_->num_outgoing_edges != 0) {
@@ -112,10 +107,6 @@ class PramBlock : public core::data_structures::Serializable {
       out_degree_base_new_ = nullptr;
       out_offset_base_new_ = nullptr;
       edge_delete_bitmap_.Init(0);
-    }
-
-    // Two hop infos
-    if (core::common::Configurations::Get()->use_two_hop) {
     }
   }
 
@@ -287,11 +278,6 @@ class PramBlock : public core::data_structures::Serializable {
     return out_edges_base_ + out_offset_base_[GetIndex(id)];
   }
 
-  VertexID GetMinOneHop(VertexID id) { return min_one_hop_[GetIndex(id)]; }
-  VertexID GetMaxOneHop(VertexID id) { return max_one_hop_[GetIndex(id)]; }
-  VertexID GetMinTwoHop(VertexID id) { return min_two_hop_[GetIndex(id)]; }
-  VertexID GetMaxTwoHop(VertexID id) { return max_two_hop_[GetIndex(id)]; }
-
   // log functions for lookup block info
   void LogBlockVertices() const {
     LOGF_INFO("block {} begin {} end {}: ==== ", block_metadata_->bid,
@@ -344,12 +330,6 @@ class PramBlock : public core::data_structures::Serializable {
   EdgeIndex* out_offset_base_new_;
   VertexID* out_edges_base_new_;
   core::common::Bitmap edge_delete_bitmap_;
-
-  // two hop
-  VertexID* min_one_hop_;
-  VertexID* max_one_hop_;
-  VertexID* min_two_hop_;
-  VertexID* max_two_hop_;
 
   // configs
   uint32_t parallelism_;

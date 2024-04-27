@@ -3,6 +3,7 @@
 #include "core/planar_system.h"
 #include "nvme/partition/edge_equal_block_partition.h"
 #include "nvme/partition/vertex_equal_block_partition.h"
+#include "nvme/precomputing/neighbor_info.h"
 #include "nvme/precomputing/two_hop_neighbor.h"
 
 DEFINE_string(i, "/testfile", "graph files root path");
@@ -13,6 +14,7 @@ DEFINE_string(mode, "vertex", "vertex or edge");
 DEFINE_uint32(step_v, 500000, "vertex step for block");
 DEFINE_uint32(step_e, 0, "vertex step for block");
 DEFINE_bool(precomputing, false, "precomputing mode");
+DEFINE_uint32(task_package_factor, 10, "task package factor");
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -22,6 +24,7 @@ int main(int argc, char** argv) {
   auto out_dir = FLAGS_o;
   auto step_e = FLAGS_step_e;
   auto num_partitions = FLAGS_n;
+  auto task_package_factor = FLAGS_task_package_factor;
 
   if (step_e != 0) {
     LOG_INFO(
@@ -43,7 +46,8 @@ int main(int argc, char** argv) {
 
   if (FLAGS_precomputing) {
     LOG_INFO("\n Precomputing for two hop infos.");
-    sics::graph::nvme::precomputing::CountHop(out_dir, parallelism);
+    sics::graph::nvme::precomputing::ComputeNeighborInfo(
+        root_path, task_package_factor, parallelism);
   }
 
   return 0;

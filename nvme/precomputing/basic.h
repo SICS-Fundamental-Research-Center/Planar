@@ -221,6 +221,7 @@ struct BlockTwoHopInfo {
   EdgeIndex num_two_hop_edges;
 };
 
+
 struct TwoHopInfos {
   TwoHopInfos() = default;
   TwoHopInfos(const std::string& root_path) {

@@ -14,7 +14,6 @@
 #include "core/data_structures/serialized.h"
 #include "nvme/data_structures/graph/pram_block.h"
 #include "nvme/io/pram_block_reader.h"
-#include "nvme/precomputing/basic.h"
 #include "nvme/scheduler/graph_state.h"
 #include "nvme/scheduler/message_hub.h"
 #include "nvme/update_stores/nvme_update_store.h"
@@ -48,7 +47,6 @@ class PramScheduler {
  public:
   PramScheduler(const std::string& root_path)
       : graph_metadata_info_(root_path),
-        two_hop_infos_(root_path),
         graph_state_(graph_metadata_info_.get_num_subgraphs()) {
     is_block_mode_ = core::common::Configurations::Get()->is_block_mode;
     memory_left_size_ = core::common::Configurations::Get()->memory_size;
@@ -175,30 +173,6 @@ class PramScheduler {
     auto serializable = GetBlock(current_bid_);
     auto graph = static_cast<BlockCSRGraph*>(serializable);
     return graph->GetOutEdgesByID(id);
-  }
-
-  VertexID GetMinOneHop(VertexID id) {
-    auto serializable = GetBlock(current_bid_);
-    auto graph = static_cast<BlockCSRGraph*>(serializable);
-    return graph->GetMinOneHop(id);
-  }
-
-  VertexID GetMaxOneHop(VertexID id) {
-    auto serializable = GetBlock(current_bid_);
-    auto graph = static_cast<BlockCSRGraph*>(serializable);
-    return graph->GetMaxOneHop(id);
-  }
-
-  VertexID GetMinTwoHop(VertexID id) {
-    auto serializable = GetBlock(current_bid_);
-    auto graph = static_cast<BlockCSRGraph*>(serializable);
-    return graph->GetMinTwoHop(id);
-  }
-
-  VertexID GetMaxTwoHop(VertexID id) {
-    auto serializable = GetBlock(current_bid_);
-    auto graph = static_cast<BlockCSRGraph*>(serializable);
-    return graph->GetMaxTwoHop(id);
   }
 
  protected:
@@ -499,7 +473,6 @@ class PramScheduler {
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
   core::data_structures::GraphMetadata graph_metadata_info_;
-  nvme::precomputing::TwoHopInfos two_hop_infos_;
   bool is_block_mode_ = false;
   GraphState graph_state_;
 
