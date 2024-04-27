@@ -16,12 +16,12 @@ struct ReadMessage {
   ReadMessage() = default;
   ReadMessage(const ReadMessage& message) = default;
   // Request fields.
-  common::GraphID graph_id;
-  common::VertexCount num_vertices;
-  int round;
+  common::GraphID graph_id = 0;
+  common::VertexCount num_vertices = 0;
+  int round = 0;
 
   // Response fields.
-  data_structures::Serialized* response_serialized;  // initialized in loader
+  data_structures::Serialized* response_serialized = nullptr;  // initialized in loader
 
   // Termination flag.
   bool terminated = false;
@@ -37,15 +37,15 @@ typedef enum {
 struct ExecuteMessage {
   ExecuteMessage() = default;
   // Request fields.
-  common::GraphID graph_id;
-  data_structures::Serialized* serialized;
+  common::GraphID graph_id = 0;
+  data_structures::Serialized* serialized = nullptr;
   ExecuteType execute_type = kPEval;
   // TODO: add subgraph metadata fields and API program objects.
-  data_structures::Serializable* graph;
-  apis::PIE* app;
+  data_structures::Serializable* graph = nullptr;
+  apis::PIE* app = nullptr;
 
   // Response fields.
-  data_structures::Serializable* response_serializable;
+  data_structures::Serializable* response_serializable = nullptr;
 
   // Termination flag.
   bool terminated = false;
@@ -54,13 +54,13 @@ struct ExecuteMessage {
 struct WriteMessage {
   WriteMessage() = default;
   // Request fields.
-  common::GraphID graph_id;
-  data_structures::Serializable* serializable;
-  data_structures::Serialized* serialized;
+  common::GraphID graph_id = 0;
+  data_structures::Serializable* serializable = nullptr;
+  data_structures::Serialized* serialized = nullptr;
   // TODO: add subgraph metadata fields.
 
   // Response fields.
-  size_t bytes_written;
+  size_t bytes_written = 0;
 
   // Termination flag.
   bool terminated = false;
@@ -137,6 +137,8 @@ struct fmt::formatter<sics::graph::core::scheduler::Message::Type> {
         return fmt::format_to(ctx.out(), "ExecuteMessage");
       case MessageType::kWrite:
         return fmt::format_to(ctx.out(), "WriteMessage");
+      default:
+        return fmt::format_to(ctx.out(), "UnknownMessageType");
     }
   }
 };

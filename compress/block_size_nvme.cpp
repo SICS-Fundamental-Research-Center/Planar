@@ -13,7 +13,10 @@
 #include "core/common/multithreading/thread_pool.h"
 #include "util/logging.h"
 
+#ifdef LZ4_MEMORY_USAGE
+#undef LZ4_MEMORY_USAGE
 #define LZ4_MEMORY_USAGE 20
+#endif
 
 DEFINE_uint32(type, 0, "normal read time mode");
 DEFINE_string(dir, "/Users/liuyang/sics/refactor/graph-systems/testfile/",
@@ -61,7 +64,7 @@ int main(int argc, char** argv) {
   std::vector<size_t> src_data_size(parallelism);
   std::vector<size_t> dst_data_size(parallelism);
   size_t step = ceil((double)file_size / parallelism);
-  for (int i = 0; i < parallelism; i++) {
+  for (uint32_t i = 0; i < parallelism; i++) {
     src_data_address[i] = src_data + i * step;
     src_data_size[i] = step;
     if (i == parallelism - 1) {
@@ -81,7 +84,7 @@ int main(int argc, char** argv) {
     thread_pool.SubmitSync([i, input_size, input_data, path, parallelism,
                             num_block, &dst_data_size, &pending_packages,
                             &finish_cv]() {
-      for (int idx = i; idx < num_block; idx += parallelism) {
+      for (size_t idx = i; idx < num_block; idx += parallelism) {
         // compress one split file
         size_t output_size = LZ4_compressBound(input_size);
         char* output_data = (char*)malloc(output_size);
@@ -108,7 +111,7 @@ int main(int argc, char** argv) {
   }
   finish_cv.wait(lck, [&] { return pending_packages.load() == 0; });
   size_t compress_file_size = 0;
-  for (int i = 0; i < parallelism; i++) {
+  for (uint32_t i = 0; i < parallelism; i++) {
     compress_file_size += dst_data_size[i];
   }
   LOGF_INFO("compress ratio: {}",

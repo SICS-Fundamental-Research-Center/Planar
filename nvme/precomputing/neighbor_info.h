@@ -20,8 +20,8 @@ void ComputeNeighborInfo(const std::string& root_path,
 
   // read GraphMetadata
   core::data_structures::GraphMetadata graph_metadata(root_path);
-  auto num_vertices = graph_metadata.get_num_vertices();
-  auto num_edges = graph_metadata.get_num_edges();
+  // auto num_vertices = graph_metadata.get_num_vertices();
+  // auto num_edges = graph_metadata.get_num_edges();
   auto num_block = graph_metadata.get_num_blocks();
 
   LOG_INFO("Begin counting two-hop neighbors");
@@ -32,7 +32,7 @@ void ComputeNeighborInfo(const std::string& root_path,
 
   core::common::ThreadPool pool(parallelism);
 
-  for (int i = 0; i < num_block; i++) {
+  for (GraphID i = 0; i < num_block; i++) {
     auto& block = blocks.blocks[i];
     block.Read(root_path + "blocks/" + std::to_string(i) + ".bin");
   }
@@ -65,7 +65,7 @@ void ComputeNeighborInfo(const std::string& root_path,
             auto degree_2 = block_j.GetDegreeByID(hop_1);
             if (degree_2 == 0) continue;
             auto two_hop_edges = block_j.GetEdgesByID(hop_1);
-            for (int m = 0; m < degree_2; m++) {
+            for (VertexDegree m = 0; m < degree_2; m++) {
               block_i.UpdateTwoHopInfo(k, two_hop_edges[m]);
             }
           }

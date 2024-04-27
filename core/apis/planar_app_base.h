@@ -176,11 +176,11 @@ class PlanarAppBase : public PIE {
   // Parallel execute vertex_func in task_size chunks.
   void ParallelVertexDoStep(const std::function<void(VertexID)>& vertex_func) {
     LOG_DEBUG("ParallelVertexDoStep begins");
-    auto task_size = GetTaskSize(graph_->GetVertexNums());
+    // auto task_size = GetTaskSize(graph_->GetVertexNums());
     common::TaskPackage tasks;
     tasks.reserve(parallelism_ * task_package_factor_);
     VertexIndex end = graph_->GetVertexNums();
-    for (int i = 0; i < parallelism_; i++) {
+    for (uint32_t i = 0; i < parallelism_; i++) {
       auto index = end - 1 - i;
       auto task = [&vertex_func, this, index]() {
         for (int idx = index; idx >= 0;) {

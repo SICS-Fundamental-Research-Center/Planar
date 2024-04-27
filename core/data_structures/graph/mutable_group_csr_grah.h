@@ -30,6 +30,7 @@ class MutableGroupCSRGraph : public Serializable {
   std::unique_ptr<Serialized> Serialize(
       const common::TaskRunner& runner) override {
     LOG_INFO("should not be called!");
+    return nullptr;
   }
 
   void Deserialize(const common::TaskRunner& runner,

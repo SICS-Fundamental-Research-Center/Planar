@@ -4,7 +4,8 @@ project(graph_systems)
 ###### Cmake options ######
 set(CMAKE_CXX_STANDARD 20)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -Wall -fno-strict-aliasing")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -Wall")
 # Set default cmake type to Debug
 if (NOT CMAKE_BUILD_TYPE)
     # cmake default flags with relwithdebinfo is -O2 -g

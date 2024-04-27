@@ -60,7 +60,7 @@ void CSRBasedPlanarVertexCutPartitioner::RunPartitioner(bool biggraph) {
   auto metadata = YAML::LoadFile(input_path_ + "meta.yaml");
   auto graph_metadata = metadata["GraphMetadata"].as<GraphMetadata>();
 
-  auto parallelism = std::thread::hardware_concurrency();
+  // auto parallelism = std::thread::hardware_concurrency();
   auto thread_pool = sics::graph::core::common::ThreadPool(1);
   auto task_package = TaskPackage();
 
@@ -283,7 +283,7 @@ CSRBasedPlanarVertexCutPartitioner::BigGraphSortBFSBranch(
   Bitmap vertex_visited(graph.get_num_vertices());
 
   std::list<std::list<Edge>> out;
-  size_t count = 0;
+  // size_t count = 0;
 
   // Bitmap no_empty_branch(n_branches);
 
@@ -399,7 +399,7 @@ CSRBasedPlanarVertexCutPartitioner::BigGraphSortBFSBranch(
   // Construct the new graph by merge the res of edges.
   LOG_INFO("Construct the new graph by merge the res of edges.  res edges: ",
            graph.get_num_outgoing_edges() - edge_visited.Count());
-  auto out_edges = graph.GetOutgoingEdgesBasePointer();
+  // auto out_edges = graph.GetOutgoingEdgesBasePointer();
   for (unsigned int tid = 0; tid < parallelism; tid++) {
     auto task = std::bind([&, tid]() {
       for (VertexID j = tid; j < graph.get_num_vertices(); j += parallelism) {

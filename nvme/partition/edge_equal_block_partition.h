@@ -19,6 +19,7 @@ using sics::graph::core::common::BlockID;
 using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::VertexID;
+using sics::graph::core::common::VertexIndex;
 
 namespace fs = std::filesystem;
 
@@ -117,7 +118,7 @@ void EdgeEqualBlockPartition(const std::string& root_path,
   core::common::ThreadPool pool(parallelism);
   core::common::TaskPackage tasks;
   LOG_INFO("Begin writing blocks info");
-  for (int i = 0; i < block_num; i++) {
+  for (GraphID i = 0; i < block_num; i++) {
     auto bid = block_bids.at(i);
     auto eid = block_eids.at(i);
     auto num_edge = block_num_edges.at(i);
@@ -132,7 +133,7 @@ void EdgeEqualBlockPartition(const std::string& root_path,
       }
 
       auto offset_new = new EdgeIndex[num_vertex];
-      for (int i = 0; i < num_vertex; i++) {
+      for (size_t i = 0; i < num_vertex; i++) {
         offset_new[i] = offset_addr[i + bid] - offset_addr[bid];
       }
       auto degree_begin = degree_addr + bid;

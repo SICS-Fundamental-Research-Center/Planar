@@ -129,7 +129,7 @@ void WCCEdgeCutApp::MessagePassing(VertexID id) {
     if (!graph_->IsInGraph(parent_id)) {
       WriteMinAuxiliary(parent_id, new_data);
     } else {
-      auto flag = graph_->WriteMinVertexDataByID(parent_id, new_data);
+      // auto flag = graph_->WriteMinVertexDataByID(parent_id, new_data);
       WriteEdgeCutAllBorderOut(parent_id, new_data);
     }
   }
@@ -141,13 +141,13 @@ void WCCEdgeCutApp::PointJumpIncEval(VertexID id) {
   if (!graph_->IsInGraph(parent_id)) {
     //    std::lock_guard<std::mutex> grd(mtx_);
     if (id_to_p_.find(parent_id) != id_to_p_.end()) {
-      auto flag = graph_->WriteMinVertexDataByID(id, id_to_p_[parent_id]);
+      // auto flag = graph_->WriteMinVertexDataByID(id, id_to_p_[parent_id]);
       WriteEdgeCutAllBorderOut(id, id_to_p_[parent_id]);
     }
   } else {
     auto tmp = graph_->ReadLocalVertexDataByID(parent_id);
     if (tmp != parent_id) {
-      auto flag = graph_->WriteMinVertexDataByID(id, tmp);
+      // auto flag = graph_->WriteMinVertexDataByID(id, tmp);
       WriteEdgeCutAllBorderOut(id, tmp);
     }
   }
@@ -166,7 +166,7 @@ void WCCEdgeCutApp::WriteMinAuxiliary(VertexID id, VertexData data) {
 
 void WCCEdgeCutApp::WriteEdgeCutAllBorderOut(VertexID id, VertexData data) {
   auto edges = graph_->GetOutEdgesByID(id);
-  for (int i = 0; i < graph_->GetOutDegreeByID(id); i++) {
+  for (VertexDegree i = 0; i < graph_->GetOutDegreeByID(id); i++) {
     if (!graph_->IsInGraph(edges[i])) {
       update_store_->WriteMinEdgeCutVertex(edges[i], data);
     }

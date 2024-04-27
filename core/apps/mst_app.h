@@ -15,6 +15,7 @@ using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 class MstApp : public apis::PlanarAppBase<CSRGraph> {
   using VertexID = common::VertexID;
   using EdgeIndex = common::EdgeIndex;
+  using VertexDegree = common::VertexDegree;
 
  public:
   using VertexData = CSRGraph::VertexData;
@@ -32,7 +33,7 @@ class MstApp : public apis::PlanarAppBase<CSRGraph> {
                    update_store) override {
     apis::PlanarAppBase<CSRGraph>::AppInit(runner, update_store);
     min_out_edge_id_ = new VertexData[update_store->GetMessageCount()];
-    for (int i = 0; i < update_store->GetMessageCount(); i++) {
+    for (uint32_t i = 0; i < update_store->GetMessageCount(); i++) {
       min_out_edge_id_[i] = MST_INVALID_VID;
     }
     find_min_edge_bitmap_.Init(update_store->GetMessageCount());

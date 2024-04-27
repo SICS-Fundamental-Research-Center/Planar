@@ -203,9 +203,9 @@ class PramBlock : public core::data_structures::Serializable {
         }
         auto task = std::bind([&, begin_index, end_index]() {
           EdgeIndex index = out_offset_base_new_[begin_index];
-          for (int i = begin_index; i < end_index; i++) {
+          for (VertexIndex i = begin_index; i < end_index; i++) {
             EdgeIndex offset = out_offset_base_[i];
-            for (int j = 0; j < out_degree_base_[i]; j++) {
+            for (VertexDegree j = 0; j < out_degree_base_[i]; j++) {
               if (!edge_delete_bitmap_.GetBit(offset + j)) {
                 out_edges_base_new_[index++] = out_edges_base_[offset + j];
               }

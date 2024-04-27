@@ -12,7 +12,11 @@
 #include "core/common/multithreading/task.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "util/logging.h"
+
+#ifdef LZ4_MEMORY_USAGE
+#undef LZ4_MEMORY_USAGE
 #define LZ4_MEMORY_USAGE 20
+#endif
 
 DEFINE_string(i, "0.bin", "compress file name");
 DEFINE_uint32(p, 8, "thread pool size");
@@ -35,8 +39,8 @@ size_t read_block(int i, char* buffer, size_t offset, size_t read_size,
   src_file.read(buffer + offset, read_size);
   thread_clock::time_point end = thread_clock::now();
   boost::chrono::nanoseconds duration = end - start;
-  boost::chrono::milliseconds milli =
-      boost::chrono::duration_cast<boost::chrono::milliseconds>(duration);
+  // boost::chrono::milliseconds milli =
+  //    boost::chrono::duration_cast<boost::chrono::milliseconds>(duration);
   //  LOGF_INFO("{} boost time used for nvme read: {} {}", i, milli.count(),
   //            duration.count());
   return duration.count();
@@ -74,16 +78,16 @@ size_t read_block_with_lz4decompress(int i, char* buffer, size_t step,
 size_t decompress_block(int i, char* buffer, char* dst, size_t offset,
                         size_t compress_size, size_t decompress_size) {
   thread_clock::time_point start = thread_clock::now();
-  auto ret =
-      LZ4_decompress_safe(buffer, dst + offset, compress_size, decompress_size);
+  
+  LZ4_decompress_safe(buffer, dst + offset, compress_size, decompress_size);
   //  LOGF_INFO("{} decompress success, before size {} M after size {} M -- {}
   //  ", i,
   //            compress_size, ret, decompress_size);
 
   thread_clock::time_point end = thread_clock::now();
   boost::chrono::nanoseconds duration = end - start;
-  boost::chrono::milliseconds milli =
-      boost::chrono::duration_cast<boost::chrono::milliseconds>(duration);
+  // boost::chrono::milliseconds milli =
+  //    boost::chrono::duration_cast<boost::chrono::milliseconds>(duration);
   //  LOGF_INFO("{} boost time used for nvme read: {} {}", i, milli.count(),
   //            duration.count());
   return duration.count();
@@ -127,7 +131,7 @@ int main(int argc, char** argv) {
     auto time_b = std::chrono::system_clock::now();
     size_t step = ceil((double)file_size / compress_p);
     std::vector<size_t> decompress_sizes(compress_p);
-    for (int i = 0; i < compress_p; i++) {
+    for (uint32_t i = 0; i < compress_p; i++) {
       decompress_sizes[i] = step;
       if (i == compress_p - 1) {
         decompress_sizes[i] = file_size - i * step;
@@ -137,7 +141,7 @@ int main(int argc, char** argv) {
     std::vector<boost::thread> threads;
     std::vector<boost::unique_future<size_t>> futs;
 
-    for (int i = 0; i < parallelism; i++) {
+    for (uint32_t i = 0; i < parallelism; i++) {
       auto decompress_size = decompress_sizes[i];
       boost::packaged_task<size_t> pt(
           boost::bind(read_block_with_lz4decompress, i, buffer, step,
@@ -166,7 +170,7 @@ int main(int argc, char** argv) {
     size_t time_load = 0;
     std::vector<char*> buffers(compress_p);
     std::vector<size_t> compress_sizes(compress_p);
-    for (int i = 0; i < compress_p; i++) {
+    for (uint32_t i = 0; i < compress_p; i++) {
       std::string file = dir + "compress/" + std::to_string(i) + ".lz4.bin";
       std::ifstream src_file(file, std::ios::binary);
       src_file.seekg(0, std::ios::end);
@@ -178,7 +182,7 @@ int main(int argc, char** argv) {
       std::vector<size_t> offsets(ssd_p);
       std::vector<size_t> sizes(ssd_p);
       size_t step = ceil((double)file_size / ssd_p);
-      for (int k = 0; k < ssd_p; k++) {
+      for (uint32_t k = 0; k < ssd_p; k++) {
         offsets[k] = k * step;
         sizes[k] = step;
         if (k == ssd_p - 1) {
@@ -189,7 +193,7 @@ int main(int argc, char** argv) {
       std::vector<boost::thread> threads;
       std::vector<boost::unique_future<size_t>> futs;
 
-      for (int j = 0; j < ssd_p; j++) {
+      for (uint32_t j = 0; j < ssd_p; j++) {
         auto offset = offsets[j];
         auto size = sizes[j];
         boost::packaged_task<size_t> pt(
@@ -223,7 +227,7 @@ int main(int argc, char** argv) {
     size_t step = ceil((double)graph_size / compress_p);
     std::vector<size_t> graph_offsets(compress_p);
     std::vector<size_t> graph_sizes(compress_p);
-    for (int i = 0; i < compress_p; i++) {
+    for (uint32_t i = 0; i < compress_p; i++) {
       graph_offsets[i] = i * step;
       graph_sizes[i] = step;
       if (i == compress_p - 1) {
@@ -234,7 +238,7 @@ int main(int argc, char** argv) {
     size_t time_decompress = 0;
     std::vector<boost::thread> threads;
     std::vector<boost::unique_future<size_t>> futs;
-    for (int i = 0; i < decompress_p; i++) {
+    for (uint32_t i = 0; i < decompress_p; i++) {
       auto buffer = buffers[i];
       auto compress_size = compress_sizes[i];
       auto decompress_offset = graph_offsets[i];
@@ -280,7 +284,7 @@ int main(int argc, char** argv) {
       if (parallelism != 1) {
         std::vector<std::thread> threads;
         size_t step = ceil((double)file_size / parallelism);
-        for (int i = 0; i < parallelism; i++) {
+        for (uint32_t i = 0; i < parallelism; i++) {
           auto offset = i * step;
           auto size = step;
           if (i == parallelism - 1) {
@@ -292,7 +296,7 @@ int main(int argc, char** argv) {
 //              buffer_new[0] = buffer[0];
 //              idx = 1;
 //            }
-            for (int i = idx; i < idx + size; i++) {
+            for (uint32_t i = idx; i < idx + size; i++) {
 //              buffer_new[i] = buffer[i - 1] ^ buffer[i];
               buffer_new[i] = buffer[i] + 10;
             }
@@ -303,7 +307,7 @@ int main(int argc, char** argv) {
         }
       } else {
         buffer_new[0] = buffer[0];
-        for (int i = 1; i < file_size; i++) {
+        for (size_t i = 1; i < file_size; i++) {
           buffer_new[i] = buffer[i - 1] ^ buffer[i];
         }
       }
@@ -314,14 +318,14 @@ int main(int argc, char** argv) {
         uint32_t* dst = (uint32_t*)buffer_new;
         std::vector<std::thread> threads;
         size_t step = ceil((double)int_size / parallelism);
-        for (int i = 0; i < parallelism; i++) {
+        for (uint32_t i = 0; i < parallelism; i++) {
           auto offset = i * step;
           auto size = step;
           if (i == parallelism - 1) {
             size = file_size - i * step;
           }
           threads.push_back(std::thread([src, dst, offset, size, int_size]() {
-            for (int i = offset; i < offset + size; i++) {
+            for (uint32_t i = offset; i < offset + size; i++) {
               auto a = src[i];
               char b = a;
               if (i + b < int_size) {
@@ -339,7 +343,7 @@ int main(int argc, char** argv) {
         auto size = file_size / 4;
         uint32_t* src = (uint32_t*)buffer;
         uint32_t* dst = (uint32_t*)buffer_new;
-        for (int i = 0; i < size; i++) {
+        for (uint32_t i = 0; i < size; i++) {
           auto a = src[i];
           char b = a;
           if (i + b < size) {
@@ -380,7 +384,7 @@ int main(int argc, char** argv) {
     std::vector<size_t> offsets(parallelism);
     std::vector<size_t> read_sizes(parallelism);
     size_t step = ceil((double)file_size / parallelism);
-    for (int i = 0; i < parallelism; i++) {
+    for (uint32_t i = 0; i < parallelism; i++) {
       offsets[i] = i * step;
       read_sizes[i] = step;
       if (i == parallelism - 1) {
@@ -391,7 +395,7 @@ int main(int argc, char** argv) {
     std::vector<boost::thread> threads;
     std::vector<boost::unique_future<size_t>> futs;
 
-    for (int i = 0; i < parallelism; i++) {
+    for (uint32_t i = 0; i < parallelism; i++) {
       auto offset = offsets[i];
       auto read_size = read_sizes[i];
 

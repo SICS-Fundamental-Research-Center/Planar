@@ -150,7 +150,7 @@ class PramScheduler {
     message_hub_.get_response_queue()->Push(scheduler::Message(execute_msg));
   }
 
-  size_t GetGraphEdges() const { graph_metadata_info_.get_num_edges(); }
+  size_t GetGraphEdges() const { return graph_metadata_info_.get_num_edges(); }
 
   const core::data_structures::GraphMetadata& GetGraphMetadata() {
     return graph_metadata_info_;
@@ -324,7 +324,8 @@ class PramScheduler {
   }
 
   GraphID GetNextReadGraphInCurrentRound() const {
-    for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+    for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs();
+         gid++) {
       if (graph_state_.current_round_pending_.at(gid) &&
           graph_state_.subgraph_storage_state_.at(gid) == GraphState::OnDisk) {
         return gid;
@@ -334,7 +335,8 @@ class PramScheduler {
   }
 
   GraphID GetNextExecuteGraph() const {
-    for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+    for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs();
+         gid++) {
       if (graph_state_.current_round_pending_.at(gid) &&
           graph_state_.subgraph_storage_state_.at(gid) ==
               GraphState::StorageStateType::Serialized) {
@@ -345,7 +347,8 @@ class PramScheduler {
   }
 
   GraphID GetNextExecuteGraphInMemory() const {
-    for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+    for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs();
+         gid++) {
       if (graph_state_.current_round_pending_.at(gid) &&
           graph_state_.subgraph_storage_state_.at(gid) ==
               GraphState::StorageStateType::Deserialized) {
@@ -357,7 +360,8 @@ class PramScheduler {
 
   size_t GetLeftPendingGraphNums() const {
     size_t res = 0;
-    for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+    for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs();
+         gid++) {
       if (graph_state_.current_round_pending_.at(gid)) {
         res++;
       }
@@ -366,7 +370,7 @@ class PramScheduler {
   }
 
   bool IsCurrentRoundFinish() const {
-    for (int i = 0; i < graph_metadata_info_.get_num_subgraphs(); i++) {
+    for (GraphID i = 0; i < graph_metadata_info_.get_num_subgraphs(); i++) {
       if (graph_state_.current_round_pending_.at(i)) {
         return false;
       }
@@ -376,7 +380,7 @@ class PramScheduler {
 
   // If current and next round both have no graph to read, system stop.
   bool IsSchedulerStop() const {
-    for (int i = 0; i < graph_metadata_info_.get_num_subgraphs(); i++) {
+    for (GraphID i = 0; i < graph_metadata_info_.get_num_subgraphs(); i++) {
       if (graph_state_.subgraph_storage_state_.at(i) !=
           GraphState::StorageStateType::OnDisk) {
         return false;
@@ -439,7 +443,7 @@ class PramScheduler {
 
   bool ReleaseInMemoryGraph() {
     bool flag = false;
-    for (int i = 0; i < graph_metadata_info_.get_num_subgraphs(); i++) {
+    for (GraphID i = 0; i < graph_metadata_info_.get_num_subgraphs(); i++) {
       if (graph_state_.GetSubgraphState(i) == GraphState::Deserialized) {
         LOGF_INFO("Release block: {} from memory", i);
         SendWriteMessage(i);

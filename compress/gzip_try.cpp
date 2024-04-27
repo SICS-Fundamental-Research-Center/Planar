@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
     std::vector<size_t> src_data_size(task_num);
     std::vector<size_t> dst_data_size(task_num);
     size_t step = ceil((double)file_size / task_num);
-    for (int i = 0; i < task_num; i++) {
+    for (uint32_t i = 0; i < task_num; i++) {
       src_data_address[i] = src_data + i * step;
       src_data_size[i] = step;
       if (i == task_num - 1) {
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
     }
     finish_cv.wait(lck, [&] { return pending_packages.load() == 0; });
     size_t compress_file_size = 0;
-    for (int i = 0; i < task_num; i++) {
+    for (uint32_t i = 0; i < task_num; i++) {
       compress_file_size += dst_data_size[i];
     }
     LOGF_INFO("compress ratio: {}",
@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
 
     std::vector<char*> output_datas(task_num);
     std::vector<size_t> output_sizes(task_num);
-    for (int i = 0; i < task_num; i++) {
+    for (uint32_t i = 0; i < task_num; i++) {
       std::ifstream file(path + std::to_string(i) + ".gzip.bin",
                          std::ios::binary);
       file.seekg(0, std::ios::end);

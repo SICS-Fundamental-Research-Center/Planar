@@ -18,11 +18,12 @@ using sics::graph::core::common::BlockID;
 using sics::graph::core::common::EdgeIndex;
 using sics::graph::core::common::GraphID;
 using sics::graph::core::common::VertexID;
+using sics::graph::core::common::VertexIndex;
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   std::string root_path = FLAGS_i;
-  auto one_bid = FLAGS_bid;
+  // auto one_bid = FLAGS_bid;
   auto all_bids = FLAGS_all;
   auto show_two_hop = FLAGS_two_hop;
 
@@ -35,7 +36,7 @@ int main(int argc, char** argv) {
   if (all_bids) {
     // output all block info
     size_t num_blocks = graph_metadata.get_num_subgraphs();
-    for (auto i = 0; i < num_blocks; i++) {
+    for (size_t i = 0; i < num_blocks; i++) {
       auto block_metadata = graph_metadata.GetBlockMetadata(i);
       auto bid = block_metadata.bid;
       auto begin_id = block_metadata.begin_id;
@@ -92,11 +93,11 @@ int main(int argc, char** argv) {
   // Read two hop info.
   if (show_two_hop) {
     size_t num_block = graph_metadata.get_num_blocks();
-    for (auto i = 0; i < num_block; i++) {
+    for (size_t i = 0; i < num_block; i++) {
       auto block_metadata = graph_metadata.GetBlockMetadata(i);
-      auto bid = block_metadata.bid;
+      // auto bid = block_metadata.bid;
       auto begin_id = block_metadata.begin_id;
-      auto end_id = block_metadata.end_id;
+      // auto end_id = block_metadata.end_id;
       auto num_vertices = block_metadata.num_vertices;
 
       std::ifstream data_file(
@@ -149,7 +150,7 @@ int main(int argc, char** argv) {
       auto data_all4 = new char[file_size4];
       data_file4.read(data_all4, file_size4);
       auto max_two_hop_addr = (VertexID*)(data_all4);
-      for (auto idx = 0; idx < num_vertices; idx++) {
+      for (VertexIndex idx = 0; idx < num_vertices; idx++) {
         auto id = idx + begin_id;
         auto min_two_hop = min_two_hop_addr[idx];
         auto max_two_hop = max_two_hop_addr[idx];

@@ -26,7 +26,7 @@ void RandomWalkApp::Assemble() {}
 
 void RandomWalkApp::Sample(VertexID id) {
   auto degree = graph_->GetOutDegreeByID(id);
-  for (int i = 0; i < walk_length_; i++) {
+  for (uint32_t i = 0; i < walk_length_; i++) {
     if (degree == 0) {
       GetRoad(id)[i] = id;
     } else {
@@ -37,7 +37,7 @@ void RandomWalkApp::Sample(VertexID id) {
 
 void RandomWalkApp::Walk(VertexID id) {
   auto tmp = id;
-  for (int i = 0; i < walk_length_; i++) {
+  for (uint32_t i = 0; i < walk_length_; i++) {
     tmp = GetRoad(tmp)[i];
   }
 }

@@ -39,7 +39,7 @@ void PageRankApp::IncEval() {
     //    update_store_->LogGlobalMessage();
   }
 
-  if (round_ == iter) {
+  if (round_ == int(iter)) {
     update_store_->UnsetActive();
   } else {
     update_store_->SetActive();
@@ -71,11 +71,11 @@ void PageRankApp::Pull(VertexID id) {
   if (degree != 0) {
     auto edges = graph_->GetOutEdgesByID(id);
     float sum = 0;
-    for (int i = 0; i < degree; i++) {
+    for (VertexDegree i = 0; i < degree; i++) {
       sum += graph_->ReadLocalVertexDataByID(edges[i]);
     }
     float pr_new = 0;
-    if (round_ == iter) {
+    if (round_ == int(iter)) {
       pr_new = kDampingFactor * sum;
     } else {
       pr_new = (kDampingFactor * sum) / id2degree_[id];

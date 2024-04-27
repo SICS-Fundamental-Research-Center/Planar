@@ -22,9 +22,9 @@ struct GNNWeightDataInt {
   }
   void Show() {
     LOG_INFO("weights info: ");
-    for (int i = 0; i < l_; i++) {
+    for (uint32_t i = 0; i < l_; i++) {
       std::string line = "";
-      for (int j = 0; j < l_; j++) {
+      for (uint32_t j = 0; j < l_; j++) {
         line += std::to_string(m_[i][j]) + " ";
       }
       LOG_INFO(line);
@@ -62,10 +62,10 @@ class GNNIntApp : public apis::BlockModel<int> {
         iter(core::common::Configurations::Get()->iter) {
     // init weights
     srand(0);
-    for (int i = 0; i < gnn_k; i++) {
+    for (uint32_t i = 0; i < gnn_k; i++) {
       weights_.emplace_back(GNNWeightDataInt(gnn_l));
-      for (int j = 0; j < gnn_l; j++) {
-        for (int k = 0; k < gnn_l; k++) {
+      for (uint32_t j = 0; j < gnn_l; j++) {
+        for (uint32_t k = 0; k < gnn_l; k++) {
           weights_[i].m_[j][k] = rand_int();
           //          weights_[i].m_[j][k] = 0.5;
         }
@@ -86,7 +86,7 @@ class GNNIntApp : public apis::BlockModel<int> {
 
   void Init(VertexID id) {
     auto vdata = Write1(id);
-    for (int i = 0; i < gnn_l; i++) {
+    for (uint32_t i = 0; i < gnn_l; i++) {
       vdata[i] = rand_int();
     }
   }
@@ -98,7 +98,7 @@ class GNNIntApp : public apis::BlockModel<int> {
     auto h_u_0 = Read1(id);
 
     int* tmp = new int[gnn_l];
-    for (int i = 0; i < degree; i++) {
+    for (uint32_t i = 0; i < degree; i++) {
       auto h_v_0 = Read1(edges[i]);
       Add(h_v_0, tmp, gnn_l);
     }
@@ -121,7 +121,7 @@ class GNNIntApp : public apis::BlockModel<int> {
     MapVertex(&init);
     sync();
     //    LogData();
-    for (int j = 0; j < iter; j++) {
+    for (uint32_t j = 0; j < iter; j++) {
       MapVertex(&forward);
       sync();
       //      LogData();
@@ -170,7 +170,7 @@ class GNNIntApp : public apis::BlockModel<int> {
     for (size_t i = 0; i < num_; i++) {
       std::string rline = "";
       std::string wline = "";
-      for (int j = 0; j < gnn_l; j++) {
+      for (uint32_t j = 0; j < gnn_l; j++) {
         rline += std::to_string(read_data_[i * gnn_l + j]) + ", ";
         wline += std::to_string(write_data_[i * gnn_l + j]) + ", ";
       }

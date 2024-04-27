@@ -17,6 +17,7 @@ class ColoringApp : public apis::PlanarAppBase<CSRGraph> {
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
   using VertexID = common::VertexID;
+  using VertexDegree = common::VertexDegree;
 
  public:
   using VertexData = CSRGraph::VertexData;
@@ -60,7 +61,7 @@ class ColoringApp : public apis::PlanarAppBase<CSRGraph> {
   int GetRandomNumber() const;
 
  private:
-  int active_ = 0;
+  int app_active_ = 0;
   //  common::Bitmap bitmap_;
   int round_ = 0;
   // configs

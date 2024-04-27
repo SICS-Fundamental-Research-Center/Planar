@@ -13,6 +13,7 @@ class WCCNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
   using VertexIndex = core::common::VertexIndex;
   using EdgeIndex = core::common::EdgeIndex;
   using VertexID = core::common::VertexID;
+  using VertexDegree = core::common::VertexDegree;
 
   using FuncVertex = core::common::FuncVertex;
   using FuncEdge = core::common::FuncEdge;
@@ -50,10 +51,10 @@ class WCCNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
     auto neighbors = GetEdges(src_id);
     VertexID src_parent_id = Read(src_id);
     VertexID tmp = src_parent_id;
-    for (int i = 0; i < degree; i++) {
+    for (VertexDegree i = 0; i < degree; i++) {
       tmp = min(tmp, Read(neighbors[i]));
     }
-    for (int i = 0; i < degree; i++) {
+    for (VertexDegree i = 0; i < degree; i++) {
       WriteMin(Read(neighbors[i]), tmp);
     }
     WriteMin(src_parent_id, tmp);

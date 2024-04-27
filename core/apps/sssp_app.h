@@ -16,6 +16,7 @@ using CSRGraph = data_structures::graph::MutableCSRGraphUInt32;
 // Vertex push the shorter distance to all neighbors.
 class SsspApp : public apis::PlanarAppBase<CSRGraph> {
   using VertexID = common::VertexID;
+  using VertexDegree = common::VertexDegree;
 
  public:
   using VertexData = CSRGraph::VertexData;

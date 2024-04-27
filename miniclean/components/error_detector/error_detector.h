@@ -137,8 +137,8 @@ class ErrorDetector {
   std::vector<std::vector<size_t>> vid_to_path_pattern_id_;
   std::vector<VertexID> active_vids_;
 
-  ThreadPool thread_pool_;
   unsigned int parallelism_;
+  ThreadPool thread_pool_;
   std::mutex path_indexing_mtx_;
 };
 

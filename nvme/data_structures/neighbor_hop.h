@@ -31,7 +31,7 @@ struct NeighborHopInfo {
             const core::data_structures::GraphMetadata& metadata) {
     min_one_hop_neighbor = new VertexID[metadata.get_num_vertices()];
     min_two_hop_neighbor = new VertexID[metadata.get_num_vertices()];
-    for (int i = 0; i < metadata.get_num_blocks(); i++) {
+    for (GraphID i = 0; i < metadata.get_num_blocks(); i++) {
       auto& block = metadata.GetBlockMetadata(i);
       Read(root_path + "precomputing/" + std::to_string(block.bid) +
                "_min_one_hop.bin",
@@ -50,7 +50,7 @@ struct NeighborHopInfo {
     file.seekg(0, std::ios::end);
     size_t size = file.tellg();
     file.seekg(0, std::ios::beg);
-    auto num_vertices = size / sizeof(VertexID);
+    // auto num_vertices = size / sizeof(VertexID);
     if (mode == 1) {
       file.read(reinterpret_cast<char*>(min_one_hop_neighbor + block_begin_id),
                 size);

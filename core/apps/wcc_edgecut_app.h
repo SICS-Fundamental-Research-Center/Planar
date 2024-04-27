@@ -14,6 +14,7 @@ class WCCEdgeCutApp : public apis::PlanarAppBase<CSRGraph> {
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
   using VertexID = common::VertexID;
+  using VertexDegree = common::VertexDegree;
 
  public:
   using VertexData = typename CSRGraph::VertexData;

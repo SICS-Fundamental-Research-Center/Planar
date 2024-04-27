@@ -90,7 +90,7 @@ void MstApp::FindMinEdge(VertexID id) {
   if (degree != 0) {
     auto edges = graph_->GetOutEdgesByID(id);
     VertexID dst_id = edges[0];
-    for (int i = 1; i < degree; i++) {
+    for (VertexDegree i = 1; i < degree; i++) {
       util::atomic::WriteMin(min_out_edge_id_ + edges[i], id);
       dst_id = edges[i] < dst_id ? edges[i] : dst_id;
     }
@@ -186,7 +186,7 @@ void MstApp::UpdateMinEdge(VertexID id) {
   if (degree != 0) {
     auto edges = graph_->GetOutEdgesByID(id);
     VertexID dst_id = edges[0];
-    for (int i = 1; i < degree; i++) {
+    for (VertexDegree i = 1; i < degree; i++) {
       util::atomic::WriteMin(min_out_edge_id_ + edges[i], id);
       dst_id = edges[i] < dst_id ? edges[i] : dst_id;
     }
@@ -213,7 +213,7 @@ void MstApp::PointJumpInc(VertexID id) {
 }
 
 void MstApp::LogMinOutEdgeId() const {
-  for (int i = 0; i < update_store_->GetMessageCount(); i++) {
+  for (uint32_t i = 0; i < update_store_->GetMessageCount(); i++) {
     LOGF_INFO("e(v) id: {} -> {}", i, min_out_edge_id_[i]);
   }
 }

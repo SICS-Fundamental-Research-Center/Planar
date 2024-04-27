@@ -22,14 +22,16 @@ struct ReadMessage {
   ReadMessage() = default;
   ReadMessage(const ReadMessage& message) = default;
   // Request fields.
-  core::common::GraphID graph_id;
-  core::common::VertexCount num_vertices;
+  core::common::GraphID graph_id = 0;
+  core::common::VertexCount num_vertices = 0;
   bool changed = false;
   bool use_two_hop = false;
-  core::data_structures::Serialized* serialized;  // initialized in scheduler
-  core::data_structures::Serializable* graph;     // initialized in scheduler
+  core::data_structures::Serialized* serialized =
+      nullptr;  // initialized in scheduler
+  core::data_structures::Serializable* graph =
+      nullptr;  // initialized in scheduler
   // Response fields.
-  size_t bytes_read = 0; // Use MB
+  size_t bytes_read = 0;  // Use MB
 
   // Termination flag.
   bool terminated = false;
@@ -105,21 +107,21 @@ struct ExecuteMessage {
   //  }
 
   // Request fields.
-  core::common::GraphID graph_id;
-  core::data_structures::Serialized* serialized;
+  core::common::GraphID graph_id = 0;
+  core::data_structures::Serialized* serialized = nullptr;
   ExecuteType execute_type = kCompute;
   MapType map_type = kDefault;
   // TODO: add subgraph metadata fields and API program objects.
-  core::data_structures::Serializable* graph;
+  core::data_structures::Serializable* graph = nullptr;
 
-  FuncVertex* func_vertex;
-  FuncEdge* func_edge;
-  FuncEdgeAndMutate* func_edge_mutate;
-  FuncEdgeMutate* func_edge_mutate_bool;
+  FuncVertex* func_vertex = nullptr;
+  FuncEdge* func_edge = nullptr;
+  FuncEdgeAndMutate* func_edge_mutate = nullptr;
+  FuncEdgeMutate* func_edge_mutate_bool = nullptr;
   bool use_two_hop = false;
 
   // Response fields.
-  core::data_structures::Serializable* response_serializable;
+  core::data_structures::Serializable* response_serializable = nullptr;
 
   // Termination flag.
   bool terminated = false;
@@ -128,13 +130,13 @@ struct ExecuteMessage {
 struct WriteMessage {
   WriteMessage() = default;
   // Request fields.
-  core::common::GraphID graph_id;
-  core::data_structures::Serializable* graph;
-  core::data_structures::Serialized* serialized;
+  core::common::GraphID graph_id = 0;
+  core::data_structures::Serializable* graph = nullptr;
+  core::data_structures::Serialized* serialized = nullptr;
   // TODO: add subgraph metadata fields.
   bool changed = false;
   // Response fields.
-  size_t bytes_written;
+  size_t bytes_written = 0;
 
   // Termination flag.
   bool terminated = false;
@@ -219,6 +221,8 @@ struct fmt::formatter<sics::graph::nvme::scheduler::Message::Type> {
         return fmt::format_to(ctx.out(), "ExecuteMessage");
       case MessageType::kWrite:
         return fmt::format_to(ctx.out(), "WriteMessage");
+      default:
+        return fmt::format_to(ctx.out(), "UnknownMessageType");
     }
   }
 };
@@ -243,6 +247,8 @@ struct fmt::formatter<sics::graph::nvme::scheduler::MapType> {
         return fmt::format_to(ctx.out(), "MapEdge");
       case MapType::kMapEdgeAndMutate:
         return fmt::format_to(ctx.out(), "MapEdgeAndMutate");
+      default:
+        return fmt::format_to(ctx.out(), "UnknownMapType");
     }
   }
 };

@@ -12,6 +12,7 @@
 namespace sics::graph::core::scheduler {
 
 struct GraphState {
+  using GraphID = common::GraphID;
  public:
   typedef enum {
     OnDisk = 1,
@@ -92,7 +93,7 @@ struct GraphState {
   }
 
   void SyncCurrentRoundPending() {
-    for (int i = 0; i < num_subgraphs_; i++) {
+    for (size_t i = 0; i < num_subgraphs_; i++) {
       current_round_pending_.at(i) = true;
     }
   }

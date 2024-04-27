@@ -31,7 +31,7 @@ void SsspAspApp::PEval() {
 }
 
 void SsspAspApp::IncEval() {
-  auto message_passing = [this](VertexID id) { this->MessagePassing(id); };
+  // auto message_passing = [this](VertexID id) { this->MessagePassing(id); };
   auto relax = [this](VertexID id) { this->Relax(id); };
   active_.Init(graph_->GetVertexNums());
   active_next_.Init(graph_->GetVertexNums());
@@ -46,7 +46,7 @@ void SsspAspApp::IncEval() {
   while (active_.Count() != 0) {
     ParallelVertexDoWithActive(relax);
     SyncActive();
-    auto active = active_.Count();
+    // auto active = active_.Count();
     LOGF_INFO("relax finished, active: {}", active_.Count());
     //    if (active <= 10) {
     //      //      LogActive();
@@ -82,7 +82,7 @@ void SsspAspApp::Relax(VertexID id) {
 
   auto edges = graph_->GetOutEdgesByID(id);
   auto degree = graph_->GetOutDegreeByID(id);
-  for (int i = 0; i < degree; i++) {
+  for (VertexDegree i = 0; i < degree; i++) {
     auto dst_id = edges[i];
     auto current_distance = update_store_->ReadWriteBuffer(id) + 1;
     //    auto data = graph_->ReadLocalVertexDataByID(dst_id);
@@ -106,12 +106,12 @@ void SsspAspApp::MessagePassing(VertexID id) {
 }
 
 void SsspAspApp::LogActive() {
-  for (int i = 0; i < active_.size(); i++) {
+  for (size_t i = 0; i < active_.size(); i++) {
     if (active_.GetBit(i)) {
       VertexData tmp = graph_->ReadLocalVertexDataByID(i);
       auto edges = graph_->GetOutEdgesByID(i);
       std::string edges_str = "";
-      for (int j = 0; j < graph_->GetOutDegreeByID(i); j++) {
+      for (VertexDegree j = 0; j < graph_->GetOutDegreeByID(i); j++) {
         //        auto edges2 = graph_->GetOutEdgesByID(edges[j]);
         //        std::string tmp2 = "";
         //        for (int k = 0; k < graph_->GetOutDegreeByID(edges[j]); k++) {

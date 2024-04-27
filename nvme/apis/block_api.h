@@ -258,6 +258,7 @@ class BlockModel : public BlockModelBase {
   VertexDegree GetTwoHopOutDegree(VertexID id) { return 0; }
 
  protected:
+  std::string root_path_ = "";
   core::common::TaskRunner* exe_runner_ = nullptr;
 
   // all blocks are stored in the GraphState of scheduler
@@ -278,7 +279,6 @@ class BlockModel : public BlockModelBase {
   std::chrono::time_point<std::chrono::system_clock> compute_end_time_;
   std::chrono::time_point<std::chrono::system_clock> whole_end_time_;
 
-  std::string root_path_ = "";
 
   // configs
   uint32_t parallelism_ = 10;

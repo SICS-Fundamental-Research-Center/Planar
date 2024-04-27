@@ -46,7 +46,7 @@ struct Block {
     min_two_hop_neighbor_ = new VertexID[num_vertices_];
     max_two_hop_neighbor_ = new VertexID[num_vertices_];
     has_two_hop_neighbor_.resize(num_vertices_);
-    for (auto i = 0; i < num_vertices_; i++) {
+    for (VertexIndex i = 0; i < num_vertices_; i++) {
       min_one_hop_neighbor_[i] = MAX_VERTEX_ID;
       max_one_hop_neighbor_[i] = i + bid_;
       min_two_hop_neighbor_[i] = MAX_VERTEX_ID;
@@ -57,7 +57,7 @@ struct Block {
   }
   void Write(const std::string& root_path, GraphID gid,
              core::common::ThreadPool* pool = nullptr) {
-    for (auto i = 0; i < num_vertices_; i++) {
+    for (VertexIndex i = 0; i < num_vertices_; i++) {
       if (GetDegree(i) == 0) {
         min_one_hop_neighbor_[i] = i + bid_;
         max_one_hop_neighbor_[i] = i + bid_;
@@ -169,7 +169,7 @@ struct Block {
     auto degree = GetDegree(id);
     if (degree == 0) return false;
     auto edges = GetEdges(id);
-    for (auto i = 0; i < degree; i++) {
+    for (VertexDegree i = 0; i < degree; i++) {
       if (edges[i] == neighbor) return true;
     }
     return false;
@@ -221,7 +221,6 @@ struct BlockTwoHopInfo {
   EdgeIndex num_two_hop_edges;
 };
 
-
 struct TwoHopInfos {
   TwoHopInfos() = default;
   TwoHopInfos(const std::string& root_path) {
@@ -229,7 +228,7 @@ struct TwoHopInfos {
     try {
       node = YAML::LoadFile(root_path + "precomputing/two_hop_info.yaml");
       *this = node["TwoHopInfos"].as<TwoHopInfos>();
-    } catch (YAML::BadFile e) {
+    } catch (YAML::BadFile& e) {
       LOG_ERROR("two_hop_info.yaml file read failed! ", e.msg);
     }
   }

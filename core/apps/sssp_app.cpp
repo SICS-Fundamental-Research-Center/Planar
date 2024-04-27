@@ -46,7 +46,6 @@ void SsspApp::IncEval() {
   while (active_.Count() != 0) {
     ParallelVertexDoWithActive(relax);
     SyncActive();
-    auto active = active_.Count();
     LOGF_INFO("relax finished, active: {}", active_.Count());
     //    if (active <= 10) {
     //      //      LogActive();
@@ -76,7 +75,7 @@ void SsspApp::Relax(VertexID id) {
   auto edges = graph_->GetOutEdgesByID(id);
   auto degree = graph_->GetOutDegreeByID(id);
   auto current_distance = graph_->ReadLocalVertexDataByID(id) + 1;
-  for (int i = 0; i < degree; i++) {
+  for (VertexDegree i = 0; i < degree; i++) {
     auto dst_id = edges[i];
     auto data = graph_->ReadLocalVertexDataByID(dst_id);
     if (current_distance < data) {
@@ -98,12 +97,12 @@ void SsspApp::MessagePassing(VertexID id) {
 }
 
 void SsspApp::LogActive() {
-  for (int i = 0; i < active_.size(); i++) {
+  for (size_t i = 0; i < active_.size(); i++) {
     if (active_.GetBit(i)) {
       VertexData tmp = graph_->ReadLocalVertexDataByID(i);
       auto edges = graph_->GetOutEdgesByID(i);
       std::string edges_str = "";
-      for (int j = 0; j < graph_->GetOutDegreeByID(i); j++) {
+      for (VertexDegree j = 0; j < graph_->GetOutDegreeByID(i); j++) {
         //        auto edges2 = graph_->GetOutEdgesByID(edges[j]);
         //        std::string tmp2 = "";
         //        for (int k = 0; k < graph_->GetOutDegreeByID(edges[j]); k++) {

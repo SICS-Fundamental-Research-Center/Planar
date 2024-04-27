@@ -4,7 +4,7 @@ namespace sics::graph::core::scheduler {
 
 void Scheduler::Start() {
   thread_ = std::make_unique<std::thread>([this]() {
-    auto update_store_size = update_store_->GetMemorySize();
+    // auto update_store_size = update_store_->GetMemorySize();
     //    memory_left_size_ -= update_store_size;
     LOGF_INFO("global memory size: {} MB", memory_left_size_);
     LOGF_INFO(" ============ Current Round: {} ============ ", current_round_);
@@ -141,7 +141,7 @@ bool Scheduler::ReadMessageResponseAndExecute(const ReadMessage& read_resp) {
           if (have_read_graphs_ >= group_num_) {
             GetNextExecuteGroupGraphs();
             is_executor_running_ = true;
-            for (int i = 0; i < group_num_; i++) {
+            for (size_t i = 0; i < group_num_; i++) {
               auto gid = group_graphs_.at(i);
               ExecuteMessage execute_message;
               execute_message.graph_id = gid;
@@ -225,7 +225,7 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
     case ExecuteType::kIncEval: {
       // TODO: decide a subgraph if it stays in memory
       if (group_mode_) {
-        for (int i = 0; i < group_num_; i++) {
+        for (size_t i = 0; i < group_num_; i++) {
           auto gid = group_graphs_.at(i);
           graph_state_.SetDeserializedToComputed(gid);
           ExecuteMessage execute_message;
@@ -339,7 +339,7 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
             if (group_mode_) {
               if (have_read_graphs_ >= group_num_) {
                 GetNextExecuteGroupGraphs();
-                for (int i = 0; i < group_num_; i++) {
+                for (size_t i = 0; i < group_num_; i++) {
                   auto gid = group_graphs_.at(i);
                   ExecuteMessage execute_message;
                   execute_message.graph_id = gid;
@@ -572,7 +572,7 @@ void Scheduler::CreateGroupSerializableGraph() {
 }
 
 void Scheduler::InitGroupSerializableGraph() {
-  for (int i = 0; i < group_num_; i++) {
+  for (size_t i = 0; i < group_num_; i++) {
     auto gid = group_graphs_.at(i);
     auto group_graph =
         (MutableGroupCSRGraphUInt32*)(group_serializable_graph_.get());
@@ -583,7 +583,7 @@ void Scheduler::InitGroupSerializableGraph() {
 
 // release all graphs in memory. not write back to disk. just release memory.
 void Scheduler::ReleaseAllGraph() {
-  for (int i = 0; i < graph_state_.num_subgraphs_; i++) {
+  for (size_t i = 0; i < graph_state_.num_subgraphs_; i++) {
     if (graph_state_.subgraph_storage_state_.at(i) == GraphState::Serialized)
       graph_state_.ReleaseSubgraphSerialized(i);
   }
@@ -661,7 +661,8 @@ common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
   //    }
   //  }
   if (is_block_mode_) {
-    for (int bid = 0; bid < graph_metadata_info_.get_num_subgraphs(); bid++) {
+    for (GraphID bid = 0; bid < graph_metadata_info_.get_num_subgraphs();
+         bid++) {
       if (graph_state_.current_round_pending_.at(bid) &&
           graph_state_.subgraph_storage_state_.at(bid) ==
               GraphState::StorageStateType::Serialized &&
@@ -671,7 +672,7 @@ common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
     }
     return INVALID_GRAPH_ID;
   }
-  for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+  for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) == GraphState::OnDisk) {
       return gid;
@@ -682,7 +683,7 @@ common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
 
 // TODO: Add logic to decide which graph is executed first.
 common::GraphID Scheduler::GetNextExecuteGraph() const {
-  for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+  for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
             GraphState::StorageStateType::Serialized &&
@@ -694,8 +695,8 @@ common::GraphID Scheduler::GetNextExecuteGraph() const {
 }
 
 void Scheduler::GetNextExecuteGroupGraphs() {
-  int count = 0;
-  for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+  size_t count = 0;
+  for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
             GraphState::StorageStateType::Serialized &&
@@ -712,7 +713,7 @@ void Scheduler::GetNextExecuteGroupGraphs() {
 }
 
 common::GraphID Scheduler::GetNextReadGraphInNextRound() const {
-  for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+  for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.next_round_pending_.at(gid) &&
         graph_state_.subgraph_storage_state_.at(gid) ==
             GraphState::StorageStateType::OnDisk) {
@@ -724,7 +725,7 @@ common::GraphID Scheduler::GetNextReadGraphInNextRound() const {
 
 size_t Scheduler::GetLeftPendingGraphNums() const {
   size_t res = 0;
-  for (int gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
+  for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
     if (graph_state_.current_round_pending_.at(gid)) {
       res++;
     }
@@ -733,7 +734,7 @@ size_t Scheduler::GetLeftPendingGraphNums() const {
 }
 
 bool Scheduler::IsCurrentRoundFinish() const {
-  for (int i = 0; i < graph_metadata_info_.get_num_subgraphs(); i++) {
+  for (GraphID i = 0; i < graph_metadata_info_.get_num_subgraphs(); i++) {
     if (graph_state_.current_round_pending_.at(i)) {
       return false;
     }

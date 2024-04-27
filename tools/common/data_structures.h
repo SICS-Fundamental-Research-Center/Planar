@@ -156,8 +156,8 @@ class Edges {
   };
 
  private:
-  Edge* edges_ptr_;
   EdgelistMetadata edgelist_metadata_;
+  Edge* edges_ptr_;
 };
 
 }  // namespace sics::graph::tools::common

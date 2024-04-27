@@ -33,12 +33,12 @@ class MutableCSRGraph : public Serializable {
   MutableCSRGraph() = default;
   explicit MutableCSRGraph(SubgraphMetadata* metadata, size_t num_all_vertices)
       : metadata_(metadata),
-        num_all_vertices_(num_all_vertices),
         graph_buf_base_(nullptr),
         vertex_id_by_local_index_(nullptr),
         out_degree_base_(nullptr),
         out_offset_base_(nullptr),
         out_edges_base_(nullptr),
+        num_all_vertices_(num_all_vertices),
         parallelism_(common::Configurations::Get()->parallelism),
         task_package_factor_(
             common::Configurations::Get()->task_package_factor) {}
@@ -243,9 +243,9 @@ class MutableCSRGraph : public Serializable {
         }
         auto task = std::bind([&, begin_index, end_index]() {
           EdgeIndex index = out_offset_base_new_[begin_index];
-          for (int i = begin_index; i < end_index; i++) {
+          for (VertexIndex i = begin_index; i < end_index; i++) {
             EdgeIndex offset = out_offset_base_[i];
-            for (int j = 0; j < out_degree_base_[i]; j++) {
+            for (VertexDegree j = 0; j < out_degree_base_[i]; j++) {
               if (!edge_delete_bitmap_.GetBit(offset + j)) {
                 out_edges_base_new_[index++] = out_edges_base_[offset + j];
               }

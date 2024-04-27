@@ -19,8 +19,8 @@ void CountHop(const std::string& root_path, uint32_t parallelism = 1) {
 
   // read GraphMetadata
   core::data_structures::GraphMetadata graph_metadata(root_path);
-  auto num_vertices = graph_metadata.get_num_vertices();
-  auto num_edges = graph_metadata.get_num_edges();
+  // auto num_vertices = graph_metadata.get_num_vertices();
+  // auto num_edges = graph_metadata.get_num_edges();
   auto num_block = graph_metadata.get_num_blocks();
 
   LOG_INFO("Begin counting two-hop neighbors");
@@ -31,7 +31,7 @@ void CountHop(const std::string& root_path, uint32_t parallelism = 1) {
 
   core::common::ThreadPool pool(parallelism);
 
-  for (int i = 0; i < num_block; i++) {
+  for (GraphID i = 0; i < num_block; i++) {
     auto& block = blocks.blocks[i];
     block.Read(root_path + "blocks/" + std::to_string(i) + ".bin");
   }
@@ -70,7 +70,7 @@ void CountHop(const std::string& root_path, uint32_t parallelism = 1) {
                 auto degree_1 = block_j.degree_[hop_1 - bid_j];
                 if (degree_1 == 0) continue;
                 auto two_hop_edges = block_j.GetEdges(hop_1 - bid_j);
-                for (int m = 0; m < degree_1; m++) {
+                for (VertexDegree m = 0; m < degree_1; m++) {
                   block_i.AddNeighbor(k, two_hop_edges[m]);
                 }
               }
@@ -133,8 +133,8 @@ void CountHop2(const std::string& root_path, uint32_t parallelism = 1) {
 
   // read GraphMetadata
   core::data_structures::GraphMetadata graph_metadata(root_path);
-  auto num_vertices = graph_metadata.get_num_vertices();
-  auto num_edges = graph_metadata.get_num_edges();
+  // auto num_vertices = graph_metadata.get_num_vertices();
+  // auto num_edges = graph_metadata.get_num_edges();
   auto num_block = graph_metadata.get_num_blocks();
 
   LOG_INFO("Begin counting two-hop neighbors");
@@ -145,7 +145,7 @@ void CountHop2(const std::string& root_path, uint32_t parallelism = 1) {
 
   core::common::ThreadPool pool(parallelism);
 
-  for (int i = 0; i < num_block; i++) {
+  for (GraphID i = 0; i < num_block; i++) {
     auto& block = blocks.blocks[i];
     block.Read(root_path + "blocks/" + std::to_string(i) + ".bin");
   }
@@ -178,7 +178,7 @@ void CountHop2(const std::string& root_path, uint32_t parallelism = 1) {
             auto degree_2 = block_j.GetDegreeByID(hop_1);
             if (degree_2 == 0) continue;
             auto two_hop_edges = block_j.GetEdgesByID(hop_1);
-            for (int m = 0; m < degree_2; m++) {
+            for (VertexDegree m = 0; m < degree_2; m++) {
               block_i.AddNeighbor(k, two_hop_edges[m]);
             }
           }

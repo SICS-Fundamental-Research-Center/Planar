@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 
   auto subgraph = graph_metadata.GetSubgraphMetadata(0);
   auto num_vertices = subgraph.num_vertices;
-  auto num_edges = subgraph.num_outgoing_edges;
+  // auto num_edges = subgraph.num_outgoing_edges;
 
   std::ifstream meta_file(root_path + "graphs/0.bin", std::ios::binary);
   if (!meta_file) {
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
       auto size = eid - bid;
       auto offset_new = new EdgeIndex[size];
       auto offset_begin = offset_addr[bid];
-      for (int i = 0; i < size; i++) {
+      for (uint32_t i = 0; i < size; i++) {
         offset_new[i] = offset_addr[bid + i] - offset_begin;
       }
 

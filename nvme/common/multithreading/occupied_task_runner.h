@@ -29,7 +29,7 @@ class OccupiedPool final : public core::common::TaskRunner {
   // It is useful for task submitters to estimate the currently allowed
   // concurrency, and to batch tiny tasks into larger serial ones while
   // making no compromise on utilization of allocated resources.
-  [[nodiscard]] size_t GetParallelism() const {}
+  [[nodiscard]] size_t GetParallelism() const { return 0; }
 };
 
 }  // namespace sics::graph::nvme::common

@@ -18,7 +18,7 @@ int main(int argc, char** argv) {
 
   core::data_structures::GraphMetadata graph_metadata(root_path);
 
-  for (int i = 0; i < graph_metadata.get_num_subgraphs(); i++) {
+  for (uint32_t i = 0; i < graph_metadata.get_num_subgraphs(); i++) {
     auto subgraph = graph_metadata.GetSubgraphMetadata(i);
     // generate is_in_graph bitmap
     std::string meta_path = root_path + "graphs/" + std::to_string(i) + ".bin";

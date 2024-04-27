@@ -29,6 +29,7 @@ class Scheduler {
       data_structures::graph::MutableGroupCSRGraphUInt32;
   using MutableGroupCSRGraphUInt16 =
       data_structures::graph::MutableGroupCSRGraphUInt16;
+  using GraphID = common::GraphID;
 
  public:
   Scheduler(const std::string& root_path)
@@ -122,9 +123,9 @@ class Scheduler {
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
   data_structures::GraphMetadata graph_metadata_info_;
   bool is_block_mode_ = false;
-  GraphState graph_state_;
-
   int current_round_ = 0;
+
+  GraphState graph_state_;
 
   // message hub
   MessageHub message_hub_;
@@ -149,15 +150,15 @@ class Scheduler {
 
   // group mode
   bool group_mode_ = false;
-  int group_num_ = 0;
-  int group_serialized_num_ = 0;
-  int group_deserialized_num_ = 0;
+  size_t group_num_ = 0;
+  size_t group_serialized_num_ = 0;
+  size_t group_deserialized_num_ = 0;
   std::vector<common::GraphID> group_graphs_;
   std::unique_ptr<data_structures::Serializable> group_serializable_graph_;
 
-  int to_read_graphs_ = 0;
-  int have_read_graphs_ = 0;
-  int need_read_graphs_ = 0;
+  size_t to_read_graphs_ = 0;
+  size_t have_read_graphs_ = 0;
+  size_t need_read_graphs_ = 0;
 
   int test = 0;
 };

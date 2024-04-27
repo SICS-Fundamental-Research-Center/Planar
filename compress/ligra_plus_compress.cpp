@@ -26,8 +26,8 @@ using Bitmap = sics::graph::core::common::Bitmap;
 
 EdgeIndex compressFirstEdge(char* base, EdgeIndex offset, VertexID first,
                             VertexID second) {
-  char* saveStart = base;
-  long saveOffset = offset;
+  // char* saveStart = base;
+  // long saveOffset = offset;
 
   int bytesUsed = 0;
   char firstByte = 0;
@@ -156,7 +156,7 @@ int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   auto dir = FLAGS_dir;
   auto file = FLAGS_file;
-  auto task_num = FLAGS_p;
+  // auto task_num = FLAGS_p;
 
   //  int arr[] = {5, 3, 7, 1, 9};
   auto arr = (int*)malloc(5 * sizeof(int));

@@ -13,6 +13,7 @@ class PageRankVCApp
   using VertexIndex = core::common::VertexIndex;
   using EdgeIndex = core::common::EdgeIndex;
   using VertexID = core::common::VertexID;
+  using VertexDegree = core::common::VertexDegree;
 
   using FuncVertex = core::common::FuncVertex;
   using FuncEdge = core::common::FuncEdge;
@@ -39,7 +40,7 @@ class PageRankVCApp
     if (degree != 0) {
       float sum = 0;
       auto edges = this->GetEdges(src_id);
-      for (int i = 0; i < degree; i++) {
+      for (VertexDegree i = 0; i < degree; i++) {
         sum += Read(edges[i]);
       }
       float pr_new = 0;
@@ -73,7 +74,7 @@ class PageRankVCApp
   const float kDampingFactor = 0.85;
   const float kLambda = 0.15;
   const float kEpsilon = 1e-6;
-  int step = 0;
+  uint32_t step = 0;
   const uint32_t iter = 10;
 };
 
