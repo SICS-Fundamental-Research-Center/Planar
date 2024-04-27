@@ -35,8 +35,6 @@ typedef std::function<bool(VertexID, VertexID)> FuncEdgeMutate;
 #define INVALID_VERTEX_INDEX \
   std::numeric_limits<sics::graph::core::common::VertexIndex>::max()
 
-static int subgraph_limits = 1;  // used only for test.
-
 }  // namespace sics::graph::core::common
 
 #endif  // CORE_COMMON_TYPES_H_
