@@ -61,6 +61,10 @@ class GNNApp : public apis::PlanarAppBase<CSRGraph> {
     return static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2 - 1;
   }
 
+  int rand_num_egdes(uint32_t degree) {
+    return rand() % degree;
+  }
+
   bool if_take() {
     return static_cast<float>(rand()) / static_cast<float>(RAND_MAX) < 0.6;
   }
