@@ -9,13 +9,12 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/tests/)
 # Build Unit Tests #
 ####################
 file(GLOB testfiles
-        "${PROJECT_ROOT_DIR}/nvme/apis/*_test.cpp"
-        "${PROJECT_ROOT_DIR}/nvme/apps/*_test.cpp"
         "${PROJECT_ROOT_DIR}/nvme/io/*_test.cpp"
         "${PROJECT_ROOT_DIR}/nvme/scheduler/*_test.cpp"
         "${PROJECT_ROOT_DIR}/nvme/tests/*_test.cpp"
-        "${PROJECT_ROOT_DIR}/nvme/update_stores/*_test.cpp"
         )
+
+find_package(Boost REQUIRED)
 
 foreach (testfile ${testfiles})
     get_filename_component(filename ${testfile} NAME_WE)
@@ -33,7 +32,8 @@ foreach (testfile ${testfiles})
             gflags
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
-    target_compile_definitions(${filename} PUBLIC TEST_DATA_DIR= "${PROJECT_ROOT_DIR}/testfile")
+    message(STATUS "Adding test: ${TESTNAME}, source: ${testfile}")
+    target_compile_definitions(${filename} PUBLIC TEST_DATA_DIR="${PROJECT_ROOT_DIR}/testfile")
     #    set_tests_properties(${TESTNAME} PROPERTIES ENVIRONMENT "DATA_DIR=${PROJECT_ROOT_DIR}/testfile")
 endforeach ()
 

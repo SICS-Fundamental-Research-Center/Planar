@@ -52,6 +52,7 @@ class BspUpdateStore : public UpdateStoreBase {
           }
           break;
         }
+        case common::ApplicationType::GNN:
         case common::ApplicationType::PageRank: {
           for (uint32_t i = 0; i < vertex_num; i++) {
             read_data_[i] = 0;
