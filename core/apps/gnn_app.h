@@ -65,8 +65,14 @@ class GNNApp : public apis::PlanarAppBase<CSRGraph> {
     return degree == 0 ? 0 : rand() % degree;
   }
 
-  bool if_take() {
-    return static_cast<float>(rand()) / static_cast<float>(RAND_MAX) < 0.6;
+  bool if_take(VertexID id) {
+    std::hash<VertexID> fn;
+    auto tmp = fn(id);
+    if (tmp % 2 == 0) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   void LogDegree() {

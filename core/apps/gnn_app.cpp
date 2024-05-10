@@ -59,12 +59,14 @@ void GNNApp::Init(VertexID id) {
 void GNNApp::Forward(VertexID id) {
   // w*u + B*v
   auto degree = graph_->GetOutDegreeByID(id);
-  auto num = rand_num_egdes(degree);
-  if (num != 0) {
+  if (degree != 0) {
     auto edges = graph_->GetOutEdgesByID(id);
     float u = 0;
-    for (VertexDegree i = 0; i < num; i++) {
-      u += graph_->ReadLocalVertexDataByID(edges[i]);
+    for (VertexDegree i = 0; i < degree; i++) {
+      auto dst = edges[i];
+      if (if_take(dst)) {
+        u += graph_->ReadLocalVertexDataByID(dst);
+      }
     }
     float tmp = spmv(w, u);
     float v_new = sigmod(tmp / id2degree_[id]);
