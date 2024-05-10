@@ -62,7 +62,7 @@ class GNNApp : public apis::PlanarAppBase<CSRGraph> {
   }
 
   int rand_num_egdes(uint32_t degree) {
-    return rand() % degree;
+    return degree == 0 ? 0 : rand() % degree;
   }
 
   bool if_take() {
