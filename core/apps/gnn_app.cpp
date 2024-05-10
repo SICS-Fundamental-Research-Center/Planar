@@ -68,8 +68,8 @@ void GNNApp::Forward(VertexID id) {
       }
     }
     float tmp = spmv(w, u);
-    float v_new = sigmod(tmp / id2degree_[id]);
-    //    float v_new = tmp / id2degree_[id];
+    //    float v_new = sigmod(tmp / id2degree_[id]);
+    float v_new = tmp / id2degree_[id];
     graph_->WriteVertexDataByID(id, v_new);
     update_store_->WriteAdd(id, v_new);
   }
