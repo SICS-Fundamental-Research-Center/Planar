@@ -17,6 +17,7 @@ void PageRankApp::PEval() {
       } else {
         ParallelVertexDo(pull_im);
       }
+      LOGF_INFO("PR iter: {}", i);
     }
     update_store_->UnsetActive();
   } else {
