@@ -38,6 +38,7 @@ class PageRankApp : public apis::PlanarAppBase<CSRGraph> {
     iter = core::common::Configurations::Get()->pr_iter;
     vertexNum_ = update_store->GetMessageCount();
     id2degree_ = new VertexDegree[vertexNum_];
+    in_memory_ = core::common::Configurations::Get()->in_memory;
   }
 
   void PEval() final;
@@ -53,6 +54,8 @@ class PageRankApp : public apis::PlanarAppBase<CSRGraph> {
 
   void MessagePassing(VertexID id);
 
+  void Pull_im(VertexID id);
+
   void LogDegree() {
     for (VertexID id = 0; id < vertexNum_; id++) {
       LOGF_INFO("Degree of vertex {} is {}", id, id2degree_[id]);
@@ -65,6 +68,8 @@ class PageRankApp : public apis::PlanarAppBase<CSRGraph> {
   const float kEpsilon = 1e-6;
   int step = 0;
   uint32_t iter = 10;
+
+  bool in_memory_ = false;
 
   VertexID vertexNum_;
   VertexDegree* id2degree_;

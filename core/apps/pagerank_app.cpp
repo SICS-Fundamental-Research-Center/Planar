@@ -5,9 +5,23 @@ namespace sics::graph::core::apps {
 void PageRankApp::PEval() {
   LOG_INFO("PEval begins!");
   auto count_degree = [this](VertexID id) { CountDegree(id); };
+  auto init = [this](VertexID id) { Init(id); };
+  auto pull_im = [this](VertexID id) { Pull_im(id); };
 
   ParallelVertexDo(count_degree);
-  update_store_->SetActive();
+  if (in_memory_) {
+    for (uint32_t i = 0; i < iter; i++) {
+      if (i == 0) {
+        ParallelVertexDo(init);
+        ParallelVertexDo(pull_im);
+      } else {
+        ParallelVertexDo(pull_im);
+      }
+    }
+    update_store_->UnsetActive();
+  } else {
+    update_store_->SetActive();
+  }
   LOG_INFO("PEval finished!");
 }
 
@@ -92,6 +106,20 @@ void PageRankApp::MessagePassing(VertexID id) {
   } else {
     auto pr = graph_->ReadLocalVertexDataByID(id) + kLambda;
     graph_->WriteVertexDataByID(id, pr);
+  }
+}
+
+void PageRankApp::Pull_im(VertexID id) {
+  auto degree = graph_->GetOutDegreeByID(id);
+  if (degree != 0) {
+    auto edges = graph_->GetOutEdgesByID(id);
+    float sum = 0;
+    for (VertexDegree i = 0; i < degree; i++) {
+      sum += graph_->ReadLocalVertexDataByID(edges[i]);
+    }
+    float pr_new = 0;
+    pr_new = (kDampingFactor * sum) / id2degree_[id];
+    graph_->WriteVertexDataByID(id, pr_new);
   }
 }
 
