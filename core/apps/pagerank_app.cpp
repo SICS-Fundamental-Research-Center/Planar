@@ -7,11 +7,12 @@ void PageRankApp::PEval() {
   auto count_degree = [this](VertexID id) { CountDegree(id); };
   auto init = [this](VertexID id) { Init(id); };
   auto pull_im = [this](VertexID id) { Pull_im(id); };
+  auto init_im = [this](VertexID id) { Init_im(id); };
 
   if (in_memory_) {
     for (uint32_t i = 0; i < iter; i++) {
       if (i == 0) {
-        ParallelVertexDo(init);
+        ParallelVertexDo(init_im);
         ParallelVertexDo(pull_im);
       } else {
         ParallelVertexDo(pull_im);
@@ -78,6 +79,15 @@ void PageRankApp::Init(VertexID id) {
   } else {
     graph_->WriteVertexDataByID(id, 1.0 / vertexNum_);
     //    update_store_->Write(id, 1.0 / vertexNum_);
+  }
+}
+
+void PageRankApp::Init_im(VertexID id) {
+  auto degree = graph_->GetOutDegreeByID(id);
+  if (degree != 0) {
+    graph_->WriteVertexDataByID(id, 1.0 / degree);
+  } else {
+    graph_->WriteVertexDataByID(id, 1.0 / vertexNum_);
   }
 }
 

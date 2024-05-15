@@ -56,6 +56,8 @@ class PageRankApp : public apis::PlanarAppBase<CSRGraph> {
 
   void Pull_im(VertexID id);
 
+  void Init_im(VertexID id);
+
   void LogDegree() {
     for (VertexID id = 0; id < vertexNum_; id++) {
       LOGF_INFO("Degree of vertex {} is {}", id, id2degree_[id]);
