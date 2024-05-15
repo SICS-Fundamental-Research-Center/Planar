@@ -128,10 +128,8 @@ void PageRankApp::Pull_im(VertexID id) {
   float sum = 0;
   for (VertexDegree i = 0; i < degree; i++) {
     sum += graph_->ReadLocalVertexDataByID(edges[i]);
-    //    sum += graph_->ReadLocalVertexDataByID(id);
   }
-  float pr_new = 0;
-  pr_new = (kDampingFactor * sum) / degree;
+  float pr_new = (kDampingFactor * sum) / degree;
   graph_->WriteVertexDataByID(id, pr_new);
 }
 

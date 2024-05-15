@@ -345,6 +345,9 @@ class MutableCSRGraph : public Serializable {
   // this will be used when VertexData is basic num type
   VertexData ReadLocalVertexDataByID(VertexID id) const {
     auto index = index_by_global_id_[id];
+    if (index != id) {
+      LOGF_INFO("Error in ReadLocalVertexDataByID: {} {}", id, index);
+    }
     return vertex_data_read_base_[index];
   }
 
