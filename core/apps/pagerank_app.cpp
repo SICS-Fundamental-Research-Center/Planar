@@ -8,7 +8,6 @@ void PageRankApp::PEval() {
   auto init = [this](VertexID id) { Init(id); };
   auto pull_im = [this](VertexID id) { Pull_im(id); };
 
-  ParallelVertexDo(count_degree);
   if (in_memory_) {
     for (uint32_t i = 0; i < iter; i++) {
       if (i == 0) {
@@ -21,6 +20,7 @@ void PageRankApp::PEval() {
     }
     update_store_->UnsetActive();
   } else {
+    ParallelVertexDo(count_degree);
     update_store_->SetActive();
   }
   LOG_INFO("PEval finished!");
@@ -119,7 +119,7 @@ void PageRankApp::Pull_im(VertexID id) {
       sum += graph_->ReadLocalVertexDataByID(edges[i]);
     }
     float pr_new = 0;
-    pr_new = (kDampingFactor * sum) / id2degree_[id];
+    pr_new = (kDampingFactor * sum) / degree;
     graph_->WriteVertexDataByID(id, pr_new);
   }
 }
