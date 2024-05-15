@@ -129,9 +129,9 @@ void PageRankApp::Pull_im(VertexID id) {
   for (VertexDegree i = 0; i < degree; i++) {
     sum += graph_->ReadLocalVertexDataByID(edges[i]);
   }
-  float pr_new = 0;
-  pr_new = (kDampingFactor * sum) / degree;
-  graph_->WriteVertexDataByID(id, pr_new);
+  //  float pr_new = 0;
+  //  pr_new = (kDampingFactor * sum) / degree;
+  graph_->WriteVertexDataByID(id, sum);
 }
 
 }  // namespace sics::graph::core::apps
