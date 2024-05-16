@@ -39,7 +39,7 @@ class TestApp : public apis::PlanarAppBase<CSRGraph> {
   void PEval() {
     LOG_INFO("TestApp PEval begins!\n");
 
-    for (VertexID id = 0; id < 100; id++) {
+    for (VertexID id = 0; id < graph_->GetVertexNums(); id++) {
       //      std::string info = "VertexID: " + std::to_string(id) + " ";
       auto degree = graph_->GetOutDegreeByID(id);
       //      info += "Degree: " + std::to_string(degree) + " Edges:";
