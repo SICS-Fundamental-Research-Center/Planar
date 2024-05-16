@@ -40,17 +40,18 @@ class TestApp : public apis::PlanarAppBase<CSRGraph> {
     LOG_INFO("TestApp PEval begins!\n");
 
     for (VertexID id = 0; id < 100; id++) {
-      std::string info = "VertexID: " + std::to_string(id) + " ";
+      //      std::string info = "VertexID: " + std::to_string(id) + " ";
       auto degree = graph_->GetOutDegreeByID(id);
-      info += "Degree: " + std::to_string(degree) + " Edges:";
+      //      info += "Degree: " + std::to_string(degree) + " Edges:";
       auto edges = graph_->GetOutEdgesByID(id);
       for (int i = 0; i < degree; i++) {
-        info += std::to_string(edges[i]) + " ";
+        if (id == edges[i]) {
+          LOGF_INFO("{} has self-loop!", id);
+        }
       }
       update_store_->UnsetActive();
-      LOG_INFO(info.c_str());
+      //      LOG_INFO(info.c_str());
     }
-
     LOG_INFO("TestApp PEval finished!\n");
   }
   void IncEval() {}

@@ -310,6 +310,7 @@ void ConvertEdgelistBin2CSRBin(const std::string& input_path,
   Edges edges(edgelist_metadata, buffer_edges);
   edges.SortBySrc();
 
+  //  for()
   GraphMetadata graph_metadata;
   graph_metadata.set_num_vertices(edgelist_metadata.num_vertices);
   graph_metadata.set_num_edges(edgelist_metadata.num_edges);
