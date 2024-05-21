@@ -68,6 +68,9 @@ class Scheduler {
     auto size = global_size + graphs_size;
     LOGF_INFO("size of memory use: {}, graphs: {}, global: {}", size,
               graphs_size, global_size);
+    if (size < memory_left_size_) {
+      memory_enough_ = true;
+    }
   }
 
   int GetCurrentRound() const { return current_round_; }

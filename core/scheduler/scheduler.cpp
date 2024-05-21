@@ -316,17 +316,35 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
             message_hub_.get_executor_queue()->Push(execute_message);
           } else {
             is_executor_running_ = false;
-            WriteMessage write_message;
-            write_message.graph_id = execute_resp.graph_id;
-            write_message.serialized = execute_resp.serialized;
-            message_hub_.get_writer_queue()->Push(write_message);
+            if (!memory_enough_) {
+              WriteMessage write_message;
+              write_message.graph_id = execute_resp.graph_id;
+              write_message.serialized = execute_resp.serialized;
+              message_hub_.get_writer_queue()->Push(write_message);
+            }
           }
         }
       } else {
         // Write back to disk or save in memory.
         // TODO: Check if graph can stay in memory.
-        if (false) {
+        if (memory_enough_) {
+          graph_state_.SetComputedSerializedToReadSerialized(
+              execute_resp.graph_id);
           // stay in memory with StorageStateType::Deserialized
+          auto next_execute_gid = GetNextExecuteGraph();
+          if (next_execute_gid != INVALID_GRAPH_ID) {
+            ExecuteMessage execute_message;
+            execute_message.graph_id = next_execute_gid;
+            execute_message.serialized =
+                graph_state_.GetSubgraphSerialized(next_execute_gid);
+            CreateSerializableGraph(next_execute_gid);
+            execute_message.graph = graph_state_.GetSubgraph(next_execute_gid);
+            execute_message.execute_type = ExecuteType::kDeserialize;
+            is_executor_running_ = true;
+            message_hub_.get_executor_queue()->Push(execute_message);
+          } else {
+            is_executor_running_ = false;
+          }
         } else {
           // first write back to disk
           WriteMessage write_message;
@@ -484,44 +502,45 @@ bool Scheduler::TryReadNextGraph(bool sync) {
     } else {
       // TODO: fix this if branch
       // check next round graph which can be read, if not just skip
-      if (sync) {
-        current_round_++;
-      }
-      auto next_gid_next_round = GetNextReadGraphInNextRound();
-      if (next_gid_next_round != INVALID_GRAPH_ID) {
-        if (threefour_mode_) {
-          LOG_INFO("load on more graph");
-        } else {
-          if (use_limits_) {
-            limits_--;
-            LOGF_INFO("Read on graph. now limits is {}", limits_);
-          } else {
-            auto read_size =
-                graph_metadata_info_.GetSubgraphSize(next_gid_next_round);
-            if (memory_left_size_ < read_size) {
-              return false;
-            }
-            LOGF_INFO(
-                "To read subgraph {}. *** Memory size now: {}, after read: "
-                "{} "
-                "***",
-                next_gid_next_round, memory_left_size_,
-                memory_left_size_ - read_size);
-            memory_left_size_ -= read_size;
-          }
-        }
-        read_message.graph_id = next_gid_next_round;
-        read_message.num_vertices =
-            graph_metadata_info_.GetSubgraphNumVertices(read_message.graph_id);
-        read_message.round =
-            graph_state_.GetSubgraphRound(read_message.graph_id);
-        read_message.response_serialized =
-            CreateSerialized(next_gid_next_round);
-        message_hub_.get_reader_queue()->Push(read_message);
-      } else {
-        // no graph can be read, terminate system
-        return false;
-      }
+      //      if (sync) {
+      //        current_round_++;
+      //      }
+      //      auto next_gid_next_round = GetNextReadGraphInNextRound();
+      //      if (next_gid_next_round != INVALID_GRAPH_ID) {
+      //        if (threefour_mode_) {
+      //          LOG_INFO("load on more graph");
+      //        } else {
+      //          if (use_limits_) {
+      //            limits_--;
+      //            LOGF_INFO("Read on graph. now limits is {}", limits_);
+      //          } else {
+      //            auto read_size =
+      //                graph_metadata_info_.GetSubgraphSize(next_gid_next_round);
+      //            if (memory_left_size_ < read_size) {
+      //              return false;
+      //            }
+      //            LOGF_INFO(
+      //                "To read subgraph {}. *** Memory size now: {}, after
+      //                read: "
+      //                "{} "
+      //                "***",
+      //                next_gid_next_round, memory_left_size_,
+      //                memory_left_size_ - read_size);
+      //            memory_left_size_ -= read_size;
+      //          }
+      //        }
+      //        read_message.graph_id = next_gid_next_round;
+      //        read_message.num_vertices =
+      //            graph_metadata_info_.GetSubgraphNumVertices(read_message.graph_id);
+      //        read_message.round =
+      //            graph_state_.GetSubgraphRound(read_message.graph_id);
+      //        read_message.response_serialized =
+      //            CreateSerialized(next_gid_next_round);
+      //        message_hub_.get_reader_queue()->Push(read_message);
+      //      } else {
+      //        // no graph can be read, terminate system
+      //        return false;
+      //      }
     }
     graph_state_.subgraph_limits_--;
   }
