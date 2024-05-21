@@ -62,6 +62,12 @@ class Scheduler {
     executor_task_runner_ = task_runner;
     app_ = app;
     loader_ = loader;
+
+    auto global_size = update_store_->GetMemorySize();
+    auto graphs_size = graph_metadata_info_.GetGraphsSize();
+    auto size = global_size + graphs_size;
+    LOGF_INFO("size of memory use: {}, graphs: {}, global: {}", size,
+              graphs_size, global_size);
   }
 
   int GetCurrentRound() const { return current_round_; }
@@ -159,6 +165,8 @@ class Scheduler {
   size_t to_read_graphs_ = 0;
   size_t have_read_graphs_ = 0;
   size_t need_read_graphs_ = 0;
+
+  bool memory_enough_ = false;
 
   int test = 0;
 };
