@@ -11,6 +11,7 @@ DEFINE_bool(in_memory, false, "in memory mode");
 DEFINE_uint32(memory_size, 64, "memory size (GB)");
 DEFINE_uint32(source, 0, "source vertex id");
 DEFINE_bool(ASP, false, "debug mode");
+DEFINE_bool(radical, false, "radical");
 
 using namespace sics::graph;
 
@@ -29,6 +30,7 @@ int main(int argc, char** argv) {
       FLAGS_memory_size * 1024;
   core::common::Configurations::GetMutable()->source = FLAGS_source;
   core::common::Configurations::GetMutable()->ASP = FLAGS_ASP;
+  core::common::Configurations::GetMutable()->radical = FLAGS_radical;
 
   if (FLAGS_ASP) {
     LOG_INFO("use asp sssp");

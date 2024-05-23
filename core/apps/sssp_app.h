@@ -35,6 +35,11 @@ class SsspApp : public apis::PlanarAppBase<CSRGraph> {
     //    active_.Init(update_store->GetMessageCount());
     //    active_next_.Init(update_store->GetMessageCount());
     source_ = common::Configurations::Get()->source;
+    in_memory_ = common::Configurations::Get()->in_memory;
+    radical_ = common::Configurations::Get()->radical;
+    if (radical_) {
+      in_memory_ = true;
+    }
   }
 
   ~SsspApp() override = default;
@@ -46,7 +51,11 @@ class SsspApp : public apis::PlanarAppBase<CSRGraph> {
  private:
   void Init(VertexID id);
 
+  void Init_im(VertexID id);
+
   void Relax(VertexID id);
+
+  void Relax_im(VertexID id);
 
   void MessagePassing(VertexID id);
 
@@ -58,6 +67,8 @@ class SsspApp : public apis::PlanarAppBase<CSRGraph> {
   //  common::Bitmap active_next_round_;
   VertexID source_ = 0;
   bool flag = false;
+  bool in_memory_ = false;
+  bool radical_ = false;
 };
 
 }  // namespace sics::graph::core::apps
