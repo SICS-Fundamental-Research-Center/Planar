@@ -86,10 +86,13 @@ class MutableCSRGraph : public Serializable {
     graph_buf_base_ = graph_serialized_->GetCSRBuffer()->at(0).Get();
 
     // set the pointer to base address
+    bool radical = common::Configurations::Get()->radical;
     if (metadata_->num_incoming_edges == 0) {
       size_t offset = 0;
-      vertex_id_by_local_index_ = (VertexID*)(graph_buf_base_ + offset);
-      offset += sizeof(VertexID) * metadata_->num_vertices;
+      if (!radical) {
+        vertex_id_by_local_index_ = (VertexID*)(graph_buf_base_ + offset);
+        offset += sizeof(VertexID) * metadata_->num_vertices;
+      }
       out_degree_base_ = (VertexDegree*)(graph_buf_base_ + offset);
       offset += sizeof(VertexDegree) * metadata_->num_vertices;
       out_offset_base_ = (EdgeIndex*)(graph_buf_base_ + offset);
@@ -105,13 +108,15 @@ class MutableCSRGraph : public Serializable {
     vertex_data_write_base_ = new VertexData[metadata_->num_vertices];
     memcpy(vertex_data_write_base_, vertex_data_read_base_,
            sizeof(VertexData) * metadata_->num_vertices);
-    // bitmap
-    is_in_graph_bitmap_.Init(
-        num_all_vertices_,
-        (uint64_t*)(graph_serialized_->GetCSRBuffer()->at(3).Get()));
-    vertex_src_or_dst_bitmap_.Init(
-        metadata_->num_vertices,
-        (uint64_t*)(graph_serialized_->GetCSRBuffer()->at(4).Get()));
+    if (!radical) {
+      // bitmap
+      is_in_graph_bitmap_.Init(
+          num_all_vertices_,
+          (uint64_t*)(graph_serialized_->GetCSRBuffer()->at(3).Get()));
+      vertex_src_or_dst_bitmap_.Init(
+          metadata_->num_vertices,
+          (uint64_t*)(graph_serialized_->GetCSRBuffer()->at(4).Get()));
+    }
     // If graph is mutable, malloc corresponding structure used in computing.
     if (common::Configurations::Get()->edge_mutate &&
         metadata_->num_outgoing_edges != 0) {
@@ -128,9 +133,11 @@ class MutableCSRGraph : public Serializable {
       out_degree_base_new_ = nullptr;
       out_edges_base_new_ = nullptr;
     }
-    // If partition type is vertex cut, get index_by_global_id_.
-    index_by_global_id_ =
-        (VertexIndex*)(graph_serialized_->GetCSRBuffer()->at(5).Get());
+    if (!radical) {
+      // If partition type is vertex cut, get index_by_global_id_.
+      index_by_global_id_ =
+          (VertexIndex*)(graph_serialized_->GetCSRBuffer()->at(5).Get());
+    }
   }
 
   common::GraphID GetGraphID() const override { return metadata_->gid; }
@@ -297,15 +304,26 @@ class MutableCSRGraph : public Serializable {
   size_t GetOutEdgeNums() const { return metadata_->num_outgoing_edges; }
 
   VertexID GetVertexIDByIndex(VertexIndex index) const {
-    return vertex_id_by_local_index_[index];
+    if (vertex_id_by_local_index_) {
+      return vertex_id_by_local_index_[index];
+    } else {
+      return index;
+    }
   }
 
   VertexIndex GetVertexIndexByID(VertexID id) const {
+    if (!index_by_global_id_) {
+      LOG_FATAL("Index by global id is not initialized!");
+    }
     return index_by_global_id_[id];
   }
 
   VertexDegree GetOutDegreeByIndex(VertexIndex index) const {
     return out_degree_base_[index];
+  }
+
+  VertexDegree GetOutDegreeDirect(VertexID id) const {
+    return out_degree_base_[id];
   }
 
   VertexDegree GetOutDegreeByID(VertexID id) const {
@@ -332,6 +350,10 @@ class MutableCSRGraph : public Serializable {
     return out_edges_base_ + out_offset_base_[index];
   }
 
+  VertexID* GetOutEdgesDirect(VertexID id) {
+    return out_edges_base_ + out_offset_base_[id];
+  }
+
   VertexData* GetVertxDataByIndex(VertexIndex index) const {
     return vertex_data_read_base_ + index;
   }
@@ -346,6 +368,10 @@ class MutableCSRGraph : public Serializable {
   VertexData ReadLocalVertexDataByID(VertexID id) const {
     auto index = index_by_global_id_[id];
     return vertex_data_read_base_[index];
+  }
+
+  VertexData ReadVertexDataDirect(VertexID id) const {
+    return vertex_data_read_base_[id];
   }
 
   VertexData ReadLocalVertexDataByIndex(VertexIndex index) const {
@@ -378,6 +404,11 @@ class MutableCSRGraph : public Serializable {
     return true;
   }
 
+  bool WriteVertexDataDirect(VertexID id, VertexData data_new) {
+    vertex_data_write_base_[id] = data_new;
+    return true;
+  }
+
   // write new data into read and write buffer both
   bool WriteMinBothByID(VertexID id, VertexData data_new) {
     auto index = index_by_global_id_[id];
@@ -398,7 +429,12 @@ class MutableCSRGraph : public Serializable {
   void DeleteEdge(VertexID id, EdgeIndex edge_index) {
     //    std::lock_guard<std::mutex> lock(mtx);
     edge_delete_bitmap_.SetBit(edge_index);
-    auto index = index_by_global_id_[id];
+    VertexIndex index = 0;
+    if (index_by_global_id_) {
+      index = index_by_global_id_[id];
+    } else {
+      index = id;
+    }
     util::atomic::WriteMin(&out_degree_base_new_[index],
                            out_degree_base_new_[index] - 1);
   }

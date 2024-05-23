@@ -11,6 +11,7 @@ DEFINE_uint32(memory_size, 64, "memory size (GB)");
 DEFINE_uint32(limits, 0, "subgrah limits for pre read");
 DEFINE_bool(no_short_cut, false, "no short cut");
 DEFINE_uint32(iter, 10, "iteration");
+DEFINE_bool(radical, false, "radical");
 
 using namespace sics::graph;
 
@@ -31,6 +32,7 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->memory_size =
       FLAGS_memory_size * 1024;
   core::common::Configurations::GetMutable()->pr_iter = FLAGS_iter;
+  core::common::Configurations::GetMutable()->radical = FLAGS_radical;
 
   LOG_INFO("System begin");
   core::planar_system::Planar<core::apps::PageRankApp> system(

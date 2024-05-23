@@ -89,6 +89,8 @@ class Configurations {
   bool is_block_mode = false;
   bool use_two_hop = false;
 
+  bool radical = false;
+
   // for nvme
   uint32_t task_size = 500000;
 

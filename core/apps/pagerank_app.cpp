@@ -83,11 +83,11 @@ void PageRankApp::Init(VertexID id) {
 }
 
 void PageRankApp::Init_im(VertexID id) {
-  auto degree = graph_->GetOutDegreeByID(id);
+  auto degree = graph_->GetOutDegreeDirect(id);
   if (degree != 0) {
-    graph_->WriteVertexDataByID(id, 1.0 / degree);
+    graph_->WriteVertexDataDirect(id, 1.0 / degree);
   } else {
-    graph_->WriteVertexDataByID(id, 1.0 / vertexNum_);
+    graph_->WriteVertexDataDirect(id, 1.0 / vertexNum_);
   }
 }
 
@@ -121,16 +121,16 @@ void PageRankApp::MessagePassing(VertexID id) {
 }
 
 void PageRankApp::Pull_im(VertexID id) {
-  auto degree = graph_->GetOutDegreeByID(id);
+  auto degree = graph_->GetOutDegreeDirect(id);
   if (degree == 0) return;
 
-  auto edges = graph_->GetOutEdgesByID(id);
+  auto edges = graph_->GetOutEdgesDirect(id);
   float sum = 0;
   for (VertexDegree i = 0; i < degree; i++) {
-    sum += graph_->ReadLocalVertexDataByID(edges[i]);
+    sum += graph_->ReadVertexDataDirect(edges[i]);
   }
   float pr_new = (kDampingFactor * sum) / degree;
-  graph_->WriteVertexDataByID(id, pr_new);
+  graph_->WriteVertexDataDirect(id, pr_new);
 }
 
 }  // namespace sics::graph::core::apps

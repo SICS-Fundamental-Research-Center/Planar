@@ -36,10 +36,11 @@ void MutableCSRReader::Read(scheduler::ReadMessage* message,
   buffers.reserve(6);
   ReadMetaInfoFromBin(file_path, message->num_vertices, &buffers);
   ReadSingleBufferFromBin(label_path, &buffers);
-  ReadSingleBufferFromBin(in_graph_bitmap_path, &buffers);
-  ReadSingleBufferFromBin(src_bitmap_path, &buffers);
-  ReadSingleBufferFromBin(index_path, &buffers);
-
+  if (!common::Configurations::Get()->radical) {
+    ReadSingleBufferFromBin(in_graph_bitmap_path, &buffers);
+    ReadSingleBufferFromBin(src_bitmap_path, &buffers);
+    ReadSingleBufferFromBin(index_path, &buffers);
+  }
   graph_serialized->ReceiveBuffers(std::move(buffers));
 }
 
@@ -51,14 +52,29 @@ void MutableCSRReader::ReadMetaInfoFromBin(const std::string& path,
     LOG_FATAL("Error opening bin file: ", path.c_str());
   }
 
+  //  file.seekg(0, std::ios::end);
+  //  size_t file_size = file.tellg();
+  //  file.seekg(0, std::ios::beg);
+  //  read_size_ += (file_size >> 20);
+
+  size_t index_size = num_vertices * sizeof(common::VertexID);
+  size_t degree_size = num_vertices * sizeof(common::VertexID);
+  size_t offset_size = num_vertices * sizeof(common::EdgeIndex);
+  size_t meta_size = 0;
+
   file.seekg(0, std::ios::end);
   size_t file_size = file.tellg();
-  file.seekg(0, std::ios::beg);
-  read_size_ += (file_size >> 20);
+  if (common::Configurations::Get()->radical) {
+    file.seekg(index_size, std::ios::beg);
+    read_size_ += ((file_size - index_size) >> 20);
+    meta_size = degree_size + offset_size;
+  } else {
+    file.seekg(0, std::ios::beg);
+    read_size_ += (file_size >> 20);
+    meta_size = index_size + degree_size + offset_size;
+  }
 
-  size_t meta_size = num_vertices * sizeof(common::VertexID) * 2 +
-                     num_vertices * sizeof(common::EdgeIndex);
-  size_t edge_size = file_size - meta_size;
+  size_t edge_size = file_size - index_size - degree_size - offset_size;
 
   // split the buffer into two parts
   buffers->emplace_back(meta_size);

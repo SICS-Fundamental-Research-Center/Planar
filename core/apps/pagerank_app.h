@@ -39,6 +39,9 @@ class PageRankApp : public apis::PlanarAppBase<CSRGraph> {
     vertexNum_ = update_store->GetMessageCount();
     id2degree_ = new VertexDegree[vertexNum_];
     in_memory_ = core::common::Configurations::Get()->in_memory;
+    if (core::common::Configurations::Get()->radical) {
+      in_memory_ = true;
+    }
   }
 
   void PEval() final;
