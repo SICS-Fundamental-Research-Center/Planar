@@ -45,6 +45,7 @@ class PlanarAppBase : public PIE {
         app_type_(common::Configurations::Get()->application) {
     use_readdata_only_ = app_type_ == common::Coloring;
     LOGF_INFO("vertex data sync: {}", !use_readdata_only_);
+    LOGF_INFO("use read data only: {}", use_readdata_only_);
   }
   // TODO: add UpdateStore as a parameter, so that PEval, IncEval and Assemble
   //  can access global messages in it.
@@ -61,6 +62,7 @@ class PlanarAppBase : public PIE {
         app_type_(common::Configurations::Get()->application) {
     use_readdata_only_ = app_type_ == common::Coloring;
     LOGF_INFO("vertex data sync: {}", !use_readdata_only_);
+    LOGF_INFO("use read data only: {}", use_readdata_only_);
   }
 
   ~PlanarAppBase() override = default;
@@ -102,8 +104,9 @@ class PlanarAppBase : public PIE {
     //              tasks.size());
     runner_->SubmitSync(tasks);
     // TODO: sync of update_store and graph_ vertex data
+    LOG_INFO("task finished");
     graph_->SyncVertexData(use_readdata_only_);
-    LOG_DEBUG("ParallelVertexDo is done");
+    LOG_INFO("ParallelVertexDo is done");
   }
 
   void ParallelVertexDoByIndex(

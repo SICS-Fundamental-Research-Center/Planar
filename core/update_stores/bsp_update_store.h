@@ -25,6 +25,11 @@ class BspUpdateStore : public UpdateStoreBase {
       : message_count_(vertex_num) {
     application_type_ = common::Configurations::Get()->application;
     no_data_need_ = common::Configurations::Get()->no_data_need;
+    radical_ = common::Configurations::Get()->radical;
+
+    if (radical_) {
+      no_data_need_ = true;
+    }
 
     if (!no_data_need_) {
       read_data_ = new VertexData[message_count_];
@@ -52,6 +57,7 @@ class BspUpdateStore : public UpdateStoreBase {
           }
           break;
         }
+        case common::ApplicationType::GNN:
         case common::ApplicationType::PageRank: {
           for (uint32_t i = 0; i < vertex_num; i++) {
             read_data_[i] = 0;
@@ -66,8 +72,12 @@ class BspUpdateStore : public UpdateStoreBase {
       }
     }
 
-    ReadBorderVertexBitmap(root_path);
-    InitMemorySize();
+    if (!radical_) {
+      ReadBorderVertexBitmap(root_path);
+      InitMemorySize();
+    } else {
+      memory_size_ = 0;
+    }
   }
 
   ~BspUpdateStore() {
@@ -252,6 +262,7 @@ class BspUpdateStore : public UpdateStoreBase {
   size_t active_count_ = 0;
 
   size_t memory_size_ = 0;
+  bool radical_ = false;
 
   // configs
   common::ApplicationType application_type_;

@@ -1,6 +1,6 @@
 #include <gflags/gflags.h>
 
-#include "core/apps/pagerank_app.h"
+#include "core/apps/gnn_app.h"
 #include "core/planar_system.h"
 
 DEFINE_string(i, "/testfile", "graph files root path");
@@ -10,8 +10,7 @@ DEFINE_bool(in_memory, false, "in memory mode");
 DEFINE_uint32(memory_size, 64, "memory size (GB)");
 DEFINE_uint32(limits, 0, "subgrah limits for pre read");
 DEFINE_bool(no_short_cut, false, "no short cut");
-DEFINE_uint32(iter, 10, "iteration");
-DEFINE_bool(radical, false, "radical");
+DEFINE_uint32(iter, 3, "iteration");
 
 using namespace sics::graph;
 
@@ -28,14 +27,13 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->vertex_data_type =
       core::common::VertexDataType::kVertexDataTypeFloat;
   core::common::Configurations::GetMutable()->application =
-      core::common::ApplicationType::PageRank;
+      core::common::ApplicationType::GNN;
   core::common::Configurations::GetMutable()->memory_size =
       FLAGS_memory_size * 1024;
   core::common::Configurations::GetMutable()->pr_iter = FLAGS_iter;
-  core::common::Configurations::GetMutable()->radical = FLAGS_radical;
 
   LOG_INFO("System begin");
-  core::planar_system::Planar<core::apps::PageRankApp> system(
+  core::planar_system::Planar<core::apps::GNNApp> system(
       core::common::Configurations::Get()->root_path);
   system.Start();
   return 0;

@@ -159,6 +159,14 @@ class GraphMetadata {
     return subgraph_size_.at(gid);
   }
 
+  size_t GetGraphsSize() const {
+    auto size = 0;
+    for (uint32_t i = 0; i < num_subgraphs_; i++) {
+      size += subgraph_size_.at(i);
+    }
+    return size;
+  }
+
   void UpdateBlockSize(common::GraphID bid) {
     auto& block = block_metadata_vec_.at(bid);
 
