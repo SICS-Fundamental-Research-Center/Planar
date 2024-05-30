@@ -22,8 +22,12 @@ void PageRankApp::PEval() {
     update_store_->UnsetActive();
   } else {
     ParallelVertexDo(count_degree);
+
     update_store_->SetActive();
   }
+  update_store_->LogBorderVertexInfo();
+  graph_->LogGraphInfo();
+  graph_->LogEdges();
   LOG_INFO("PEval finished!");
 }
 
