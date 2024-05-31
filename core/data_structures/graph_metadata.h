@@ -41,7 +41,8 @@ struct SubgraphMetadata {
 // work for sub-graph
 // sub-graph is split to blocks
 // one block have less edge, which will not over uint32_t
-struct Block {
+struct SubBlock {
+  BlockID id;
   VertexID begin_id;
   VertexID end_id;
   uint32_t num_edges;
@@ -55,7 +56,7 @@ struct Blocks {
   uint32_t num_vertices_;
   uint32_t offset_ratio_ = 64;
   uint32_t vertex_offset_;
-  std::vector<Block> blocks_;
+  std::vector<SubBlock> blocks_;
 
   Blocks() = default;
   Blocks(const std::string& root_path) {
@@ -341,8 +342,8 @@ using VertexID = sics::graph::core::common::VertexID;
 using EdgeIndex = sics::graph::core::common::EdgeIndex;
 
 template <>
-struct convert<sics::graph::core::data_structures::Block> {
-  static Node encode(const sics::graph::core::data_structures::Block& block) {
+struct convert<sics::graph::core::data_structures::SubBlock> {
+  static Node encode(const sics::graph::core::data_structures::SubBlock& block) {
     Node node;
     node["begin_id"] = block.begin_id;
     node["end_id"] = block.end_id;
@@ -351,7 +352,7 @@ struct convert<sics::graph::core::data_structures::Block> {
     return node;
   }
   static bool decode(const Node& node,
-                     sics::graph::core::data_structures::Block& block) {
+                     sics::graph::core::data_structures::SubBlock& block) {
     block.begin_id = node["begin_id"].as<VertexID>();
     block.end_id = node["end_id"].as<VertexID>();
     block.num_edges = node["num_edges"].as<uint32_t>();
@@ -369,7 +370,7 @@ struct convert<sics::graph::core::data_structures::Blocks> {
     node["num_vertices"] = blocks.num_vertices_;
     node["offset_ratio"] = blocks.offset_ratio_;
     node["vertex_offset"] = blocks.vertex_offset_;
-    node["blocks"] = blocks.blocks_;
+    node["SubBlocks"] = blocks.blocks_;
     return node;
   }
   static bool decode(const Node& node,
@@ -380,8 +381,8 @@ struct convert<sics::graph::core::data_structures::Blocks> {
     blocks.offset_ratio_ = node["offset_ratio"].as<uint32_t>();
     blocks.vertex_offset_ = node["vertex_offset"].as<uint32_t>();
     blocks.blocks_ =
-        node["blocks"]
-            .as<std::vector<sics::graph::core::data_structures::Block>>();
+        node["SubBlocks"]
+            .as<std::vector<sics::graph::core::data_structures::SubBlock>>();
     return true;
   }
 };

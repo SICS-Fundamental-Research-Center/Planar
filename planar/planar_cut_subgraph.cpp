@@ -103,10 +103,10 @@ int main(int argc, char** argv) {
     index_file.close();
     delete[] offset_new;
 
-    std::vector<core::data_structures::Block> blks(p);
+    std::vector<core::data_structures::SubBlock> blks(p);
     auto bid = block_metadata.begin_id;
     auto eid = block_metadata.end_id;
-    for (int i = 0; i < p; i++) {
+    for (uint32_t i = 0; i < p; i++) {
       auto begin_id = i * size;
       auto end_id = (i + 1) * size;
       auto num_edge = 0;
@@ -116,6 +116,7 @@ int main(int argc, char** argv) {
       } else {
         num_edge = offset[end_id] - offset[begin_id];
       }
+      blks.at(i).id = i;
       blks.at(i).begin_id = begin_id + bid;
       blks.at(i).end_id = end_id + bid;
       blks.at(i).num_edges = num_edge;

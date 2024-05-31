@@ -1,6 +1,8 @@
 #ifndef GRAPH_SYSTEMS_CORE_IO_MUTABLE_CSR_READER_H_
 #define GRAPH_SYSTEMS_CORE_IO_MUTABLE_CSR_READER_H_
 
+#include <liburing.h>
+
 #include <filesystem>
 #include <fstream>
 #include <list>
@@ -8,6 +10,7 @@
 #include <string>
 #include <utility>
 
+#include "common/blocking_queue.h"
 #include "common/config.h"
 #include "data_structures/buffer.h"
 #include "data_structures/graph/serialized_mutable_csr_graph.h"

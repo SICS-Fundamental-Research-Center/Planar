@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "apis/planar_app_base.h"
+#include "common/blocking_queue.h"
 #include "common/types.h"
 #include "components/discharger.h"
 #include "components/executor.h"
