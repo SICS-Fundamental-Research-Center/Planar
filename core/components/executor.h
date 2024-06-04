@@ -23,6 +23,10 @@ class Executor : public Component {
         task_runner_(common::Configurations::Get()->parallelism) {
     in_memory_time_ = common::Configurations::Get()->in_memory;
   }
+  void Init(scheduler::MessageHub* hub) {
+    execute_q_ = hub->get_executor_queue();
+    response_q_ = hub->get_response_queue();
+  }
   ~Executor() final = default;
 
   void Start() override;

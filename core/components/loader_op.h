@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_LOADER_H
-#define GRAPH_SYSTEMS_LOADER_H
+#ifndef GRAPH_SYSTEMS_CORE_COMPONENTS_LOADER_OP_H_
+#define GRAPH_SYSTEMS_CORE_COMPONENTS_LOADER_OP_H_
 
 #include <memory>
 #include <thread>
@@ -8,6 +8,8 @@
 
 #include "components/component.h"
 #include "data_structures/graph/mutable_block_csr_graph.h"
+#include "io/csr_edge_block_reader.h"
+#include "io/mutable_csr_reader.h"
 #include "io/reader_writer.h"
 #include "scheduler/message_hub.h"
 #include "util/logging.h"
@@ -16,19 +18,15 @@ namespace sics::graph::core::components {
 
 // An adapter class that adapts a ReaderInterface to Loader that works
 // against a MessageHub.
-template <typename ReaderType>
-class Loader : public Component {
- protected:
-  static_assert(std::is_base_of<io::Reader, ReaderType>::value,
-                "ReaderType must be a subclass of Reader");
-
+class LoaderOp {
  public:
-  Loader(const std::string& root_path, scheduler::MessageHub* hub)
+  LoaderOp() = default;
+  LoaderOp(const std::string& root_path, scheduler::MessageHub* hub)
       : reader_(root_path),
         reader_q_(hub->get_reader_queue()),
         response_q_(hub->get_response_queue()) {}
 
-  ~Loader() final = default;
+  ~LoaderOp() = default;
 
   void Init(const std::string& root_path, scheduler::MessageHub* hub) {
     reader_.Init(root_path);
@@ -36,7 +34,7 @@ class Loader : public Component {
     response_q_ = hub->get_response_queue();
   }
 
-  void Start() override {
+  void Start() {
     thread_ = std::make_unique<std::thread>([this]() {
       while (true) {
         for (int i = 0; i < to_read_blocks_id_.size(); i++) {
@@ -58,21 +56,21 @@ class Loader : public Component {
         LOGF_INFO("Loader starts reading subgraph {}", message.graph_id);
         // Get batch read edge blocks.
 
-        reader_.Read(&message);
+        //        reader_.Read();
         LOGF_INFO("Loader completes reading subgraph {}", message.graph_id);
         response_q_->Push(scheduler::Message(message));
       }
     });
   }
 
-  void StopAndJoin() override {
+  void StopAndJoin() {
     scheduler::ReadMessage message;
     message.terminated = true;
     reader_q_->Push(message);
     thread_->join();
   }
 
-  ReaderType* GetReader() { return &reader_; }
+  io::CSREdgeBlockReader* GetReader() { return &reader_; }
 
   std::vector<common::BlockID> GetReadBlocks() {
     return reader_.GetReadBlocks();
@@ -83,7 +81,7 @@ class Loader : public Component {
   }
 
  private:
-  ReaderType reader_;
+  io::CSREdgeBlockReader reader_;
 
   std::vector<common::VertexID> to_read_blocks_id_;
 
@@ -95,4 +93,4 @@ class Loader : public Component {
 
 }  // namespace sics::graph::core::components
 
-#endif  // GRAPH_SYSTEMS_LOADER_H
+#endif  // GRAPH_SYSTEMS_CORE_COMPONENTS_LOADER_OP_H_

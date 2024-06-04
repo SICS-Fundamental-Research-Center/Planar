@@ -49,25 +49,36 @@ struct SubBlock {
   uint32_t num_vertices;
 };
 
-struct Blocks {
+struct Block {
  public:
-  uint32_t num_blocks_;
+  BlockID id;
+  uint32_t num_sub_blocks_;
   uint64_t num_edges_;
   uint32_t num_vertices_;
   uint32_t offset_ratio_ = 64;
   uint32_t vertex_offset_;
-  std::vector<SubBlock> blocks_;
+  std::vector<SubBlock> sub_blocks_;
+};
 
-  Blocks() = default;
-  Blocks(const std::string& root_path) {
+// One graph is split to blocks
+// One Block is split to SubBlocks
+struct TwoDMetadata {
+  TwoDMetadata() = default;
+  TwoDMetadata(const std::string& root_path) {
     YAML::Node blocks_info;
     try {
-      blocks_info = YAML::LoadFile(root_path);
-      *this = blocks_info["Blocks"].as<Blocks>();
+      blocks_info = YAML::LoadFile(root_path + "/graphs/blocks_meta.yaml");
+      *this = blocks_info["GraphMetadata"].as<TwoDMetadata>();
     } catch (YAML::BadFile& e) {
       LOGF_ERROR("Error reading blocks info: {}", e.what());
     }
   }
+
+  VertexID num_vertices_;
+  EdgeIndex num_edges_;
+
+  uint32_t num_blocks_;
+  std::vector<Block> blocks_;
 };
 
 // TODO: change class to struct
@@ -343,46 +354,75 @@ using EdgeIndex = sics::graph::core::common::EdgeIndex;
 
 template <>
 struct convert<sics::graph::core::data_structures::SubBlock> {
-  static Node encode(const sics::graph::core::data_structures::SubBlock& block) {
+  static Node encode(
+      const sics::graph::core::data_structures::SubBlock& block) {
     Node node;
+    node["id"] = block.id;
     node["begin_id"] = block.begin_id;
     node["end_id"] = block.end_id;
-    node["num_edges"] = block.num_edges;
     node["num_vertices"] = block.num_vertices;
+    node["num_edges"] = block.num_edges;
     return node;
   }
   static bool decode(const Node& node,
                      sics::graph::core::data_structures::SubBlock& block) {
+    block.id = node["id"].as<BlockID>();
     block.begin_id = node["begin_id"].as<VertexID>();
     block.end_id = node["end_id"].as<VertexID>();
-    block.num_edges = node["num_edges"].as<uint32_t>();
     block.num_vertices = node["num_vertices"].as<uint32_t>();
+    block.num_edges = node["num_edges"].as<uint32_t>();
     return true;
   }
 };
 
 template <>
-struct convert<sics::graph::core::data_structures::Blocks> {
-  static Node encode(const sics::graph::core::data_structures::Blocks& blocks) {
+struct convert<sics::graph::core::data_structures::Block> {
+  static Node encode(const sics::graph::core::data_structures::Block& block) {
     Node node;
-    node["num_blocks"] = blocks.num_blocks_;
-    node["num_edges"] = blocks.num_edges_;
-    node["num_vertices"] = blocks.num_vertices_;
-    node["offset_ratio"] = blocks.offset_ratio_;
-    node["vertex_offset"] = blocks.vertex_offset_;
-    node["SubBlocks"] = blocks.blocks_;
+    node["id"] = block.id;
+    node["num_sub_blocks"] = block.num_sub_blocks_;
+    node["num_vertices"] = block.num_vertices_;
+    node["num_edges"] = block.num_edges_;
+    node["offset_ratio"] = block.offset_ratio_;
+    node["vertex_offset"] = block.vertex_offset_;
+    node["sub_blocks"] = block.sub_blocks_;
     return node;
   }
   static bool decode(const Node& node,
-                     sics::graph::core::data_structures::Blocks& blocks) {
-    blocks.num_blocks_ = node["num_blocks"].as<uint32_t>();
-    blocks.num_edges_ = node["num_edges"].as<uint64_t>();
-    blocks.num_vertices_ = node["num_vertices"].as<uint32_t>();
-    blocks.offset_ratio_ = node["offset_ratio"].as<uint32_t>();
-    blocks.vertex_offset_ = node["vertex_offset"].as<uint32_t>();
-    blocks.blocks_ =
-        node["SubBlocks"]
+                     sics::graph::core::data_structures::Block& block) {
+    block.id = node["id"].as<BlockID>();
+    block.num_sub_blocks_ = node["num_sub_blocks"].as<uint32_t>();
+    block.num_vertices_ = node["num_vertices"].as<uint32_t>();
+    block.num_edges_ = node["num_edges"].as<uint64_t>();
+    block.offset_ratio_ = node["offset_ratio"].as<uint32_t>();
+    block.vertex_offset_ = node["vertex_offset"].as<uint32_t>();
+    block.sub_blocks_ =
+        node["sub_blocks"]
             .as<std::vector<sics::graph::core::data_structures::SubBlock>>();
+    return true;
+  }
+};
+
+template <>
+struct convert<sics::graph::core::data_structures::TwoDMetadata> {
+  static Node encode(
+      const sics::graph::core::data_structures::TwoDMetadata& metadata) {
+    Node node;
+    node["num_vertices"] = metadata.num_vertices_;
+    node["num_edges"] = metadata.num_edges_;
+    node["num_blocks"] = metadata.num_blocks_;
+    node["blocks"] = metadata.blocks_;
+    return node;
+  }
+  static bool decode(
+      const Node& node,
+      sics::graph::core::data_structures::TwoDMetadata& metadata) {
+    metadata.num_vertices_ = node["num_vertices"].as<VertexID>();
+    metadata.num_edges_ = node["num_edges"].as<EdgeIndex>();
+    metadata.num_blocks_ = node["num_blocks"].as<uint32_t>();
+    metadata.blocks_ =
+        node["blocks"]
+            .as<std::vector<sics::graph::core::data_structures::Block>>();
     return true;
   }
 };

@@ -1,8 +1,6 @@
 #ifndef GRAPH_SYSTEMS_CORE_IO_MUTABLE_CSR_READER_H_
 #define GRAPH_SYSTEMS_CORE_IO_MUTABLE_CSR_READER_H_
 
-#include <liburing.h>
-
 #include <filesystem>
 #include <fstream>
 #include <list>
@@ -34,11 +32,23 @@ class MutableCSRReader : public Reader {
 
  public:
   MutableCSRReader(const std::string& root_path) : root_path_(root_path) {}
+  void Init(const std::string& root_path) {
+    // copy the root path
+    root_path_ = root_path;
+  }
 
   void Read(ReadMessage* message,
             common::TaskRunner* runner = nullptr) override;
 
   size_t SizeOfReadNow() override { return read_size_; }
+
+  // TODO: use queue to replace vector?
+  std::vector<common::VertexID> GetReadBlocks() {
+    std::lock_guard<std::mutex> lock(mtx_);
+    std::vector<common::VertexID> read_blocks = read_blocks_;
+    read_blocks_.clear();
+    return read_blocks;
+  }
 
  private:
   void ReadMetaInfoFromBin(const std::string& path,
@@ -49,8 +59,11 @@ class MutableCSRReader : public Reader {
                                std::vector<OwnedBuffer>* buffers);
 
  private:
-  const std::string root_path_;
+  std::string root_path_;
   size_t read_size_ = 0;  // use MB
+
+  std::vector<common::VertexID> read_blocks_;
+  std::mutex mtx_;
 };
 
 }  // namespace sics::graph::core::io

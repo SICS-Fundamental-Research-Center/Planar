@@ -61,6 +61,10 @@ int main(int argc, char** argv) {
   // read subgraph info
   core::data_structures::GraphMetadata graph_metadata(root_path);
   auto block_num = graph_metadata.get_num_blocks();
+  core::data_structures::TwoDMetadata metadata;
+  metadata.num_vertices_ = graph_metadata.get_num_vertices();
+  metadata.num_edges_ = graph_metadata.get_num_edges();
+  metadata.num_blocks_ = block_num;
   for (BlockID gid = 0; gid < block_num; gid++) {
     auto block_metadata = graph_metadata.GetBlockMetadata(gid);
     std::string file_path =
@@ -133,19 +137,21 @@ int main(int argc, char** argv) {
     delete[] offset;
     delete[] edges;
 
-    sics::graph::core::data_structures::Blocks blocks;
-    blocks.blocks_ = blks;
-    blocks.num_blocks_ = p;
-    blocks.num_edges_ = num_edges;
-    blocks.num_vertices_ = num_vertices;
-    blocks.offset_ratio_ = ratio;
-    blocks.vertex_offset_ = size;
-    YAML::Node meta;
-    meta["Blocks"] = blocks;
-    std::ofstream meta_file(dir.string() + "/blocks.yaml");
-    meta_file << meta;
-    meta_file.close();
-    LOG_INFO("Finish writing blocks info!");
+    sics::graph::core::data_structures::Block block;
+    block.sub_blocks_ = blks;
+    block.num_sub_blocks_ = p;
+    block.num_edges_ = num_edges;
+    block.num_vertices_ = num_vertices;
+    block.offset_ratio_ = ratio;
+    block.vertex_offset_ = size;
+    metadata.blocks_.push_back(block);
   }
+
+  YAML::Node meta;
+  meta["GraphMetadata"] = metadata;
+  std::ofstream meta_file(root_path + "graphs/blocks_meta.yaml");
+  meta_file << meta;
+  meta_file.close();
+  LOG_INFO("Finish writing blocks info!");
   return 0;
 }

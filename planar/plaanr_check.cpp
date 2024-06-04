@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
       auto dir = root_path + "graphs/" + std::to_string(i) + "_blocks/";
       auto block_meta_file = dir + "blocks.yaml";
       sics::graph::core::data_structures::Blocks blocks_meta(block_meta_file);
-      auto num_blocks = blocks_meta.num_blocks_;
+      auto num_blocks = blocks_meta.num_sub_blocks_;
       auto num_vertices = blocks_meta.num_vertices_;
       auto num_edges = blocks_meta.num_edges_;
 
