@@ -21,6 +21,8 @@ file(GLOB testfiles
         "${PROJECT_ROOT_DIR}/core/util/*_test.cpp"
         )
 
+set(LIBURING_PATH "/usr/lib")
+
 foreach (testfile ${testfiles})
     get_filename_component(filename ${testfile} NAME_WE)
     string(REPLACE "_test"
@@ -35,6 +37,7 @@ foreach (testfile ${testfiles})
             ${FOLLY_LIBRARIES}
             yaml-cpp::yaml-cpp
             gflags
+            ${LIBURING_PATH}/liburing.a
             )
     add_test(NAME "${TESTNAME}" COMMAND "${filename}")
     message(STATUS "Adding test: ${TESTNAME}, source: ${testfile}")
