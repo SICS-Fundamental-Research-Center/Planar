@@ -44,13 +44,13 @@ void ComputeNeighborInfo(const std::string& root_path,
     core::common::TaskPackage tasks;
     // iter block j for the join of block i
     auto task_num = parallelism * task_package_factor;
-    auto task_size = (block_i.num_vertices_ + task_num - 1) / task_num;
+    auto task_size = (block_i.num_vertices + task_num - 1) / task_num;
     LOGF_INFO("task size: {}", task_size);
     // iter vertex in block i
     VertexID k = 0;
-    while (k < block_i.num_vertices_) {
+    while (k < block_i.num_vertices) {
       auto b_k = k;
-      auto e_k = std::min(k + task_size, block_i.num_vertices_);
+      auto e_k = std::min(k + task_size, block_i.num_vertices);
       auto task = [&blocks, &block_i, b_k, e_k]() {
         auto idx = 0;
         for (auto k = b_k; k < e_k; k++) {

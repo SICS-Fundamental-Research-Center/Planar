@@ -31,9 +31,6 @@ namespace sics::graph::core::apis {
 // - Assemble: the final assembly phase.
 template <typename GraphType>
 class PlanarAppOpBase : public PIE {
-  static_assert(
-      std::is_base_of<data_structures::Serializable, GraphType>::value,
-      "GraphType must be a subclass of Serializable");
   using VertexData = typename GraphType::VertexData;
   using EdgeData = typename GraphType::EdgeData;
 
@@ -65,7 +62,7 @@ class PlanarAppOpBase : public PIE {
   PlanarAppOpBase(
       common::TaskRunner* runner,
       update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
-      data_structures::Serializable* graph)
+      data_structures::graph::MutableBlockCSRGraph<float, unsigned char>* graph)
       : graph_(static_cast<GraphType*>(graph)),
         parallelism_(common::Configurations::Get()->parallelism),
         task_package_factor_(
@@ -122,13 +119,13 @@ class PlanarAppOpBase : public PIE {
   void ParallelVertexDoWithEdges(
       const std::function<void(VertexID)>& vertex_func) {
     LOG_DEBUG("ParallelVertexDoWithEdges begins!");
-    for (uint32_t gid = 0; gid < metadata_.num_blocks_; gid++) {
+    for (uint32_t gid = 0; gid < metadata_.num_blocks; gid++) {
       active_edge_blocks_.at(gid).Fill();  // Now active all blocks.
       CheckActiveEdgeBLocksInfo();
       // First, edge block current in memory.
       common::TaskPackage tasks;
       for (unsigned int sub_block_id : blocks_in_memory_) {
-        auto sub_block = metadata_.blocks_.at(gid).sub_blocks_.at(sub_block_id);
+        auto sub_block = metadata_.blocks.at(gid).sub_blocks.at(sub_block_id);
         tasks.push_back([sub_block, vertex_func]() {
           auto begin_id = sub_block.begin_id;
           auto end_id = sub_block.end_id;
@@ -153,7 +150,7 @@ class PlanarAppOpBase : public PIE {
         for (int j = 0; j < read_resp.read_block_size_; j++) {
           auto sub_block_id = read_edge_block_id[j];
           auto sub_block =
-              metadata_.blocks_.at(gid).sub_blocks_.at(sub_block_id);
+              metadata_.blocks.at(gid).sub_blocks.at(sub_block_id);
           tasks.push_back([sub_block, vertex_func]() {
             auto begin_id = sub_block.begin_id;
             auto end_id = sub_block.end_id;
@@ -379,6 +376,8 @@ class PlanarAppOpBase : public PIE {
       }
     }
   }
+
+  // Read and Write functions.
 
  protected:
   GraphType* graph_;

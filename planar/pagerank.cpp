@@ -1,6 +1,7 @@
 #include <gflags/gflags.h>
 
 #include "core/apps/pagerank_app.h"
+#include "core/apps/pagerank_app_op.h"
 #include "core/planar_system.h"
 
 DEFINE_string(i, "/testfile", "graph files root path");

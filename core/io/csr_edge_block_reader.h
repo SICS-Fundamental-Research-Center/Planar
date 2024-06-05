@@ -52,9 +52,9 @@ class CSREdgeBlockReader {
     if (ret < 0) {
       LOGF_FATAL("queue_init: {}", ret);
     }
-    blocks_addr_.resize(metadata.num_blocks_);
-    for (uint32_t i = 0; i < metadata.num_blocks_; i++) {
-      auto num = metadata.blocks_.at(i).num_sub_blocks_;
+    blocks_addr_.resize(metadata.num_blocks);
+    for (uint32_t i = 0; i < metadata.num_blocks; i++) {
+      auto num = metadata.blocks.at(i).num_sub_blocks;
       blocks_addr_.at(i).resize(num, nullptr);
     }
   }

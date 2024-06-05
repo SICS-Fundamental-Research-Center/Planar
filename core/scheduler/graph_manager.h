@@ -22,17 +22,17 @@ struct GraphManager {
   GraphManager() = default;
   GraphManager(const std::string& root_path, scheduler::MessageHub* hub)
       : metadata_(root_path) {
-    auto num_subgraphs = metadata_.num_blocks_;
+    auto num_subgraphs = metadata_.num_blocks;
     graphs_.resize(num_subgraphs);
-    read_data_ = new VertexData[metadata_.num_vertices_];
-    write_data_ = new VertexData[metadata_.num_vertices_];
+    read_data_ = new VertexData[metadata_.num_vertices];
+    write_data_ = new VertexData[metadata_.num_vertices];
     // Init info for scheduling.
     active_edge_blocks_.resize(num_subgraphs);
     is_in_memory_.resize(num_subgraphs);
     for (uint32_t i = 0; i < num_subgraphs; i++) {
-      auto block = metadata_.blocks_.at(i);
-      active_edge_blocks_.at(i).Init(block.num_sub_blocks_);
-      is_in_memory_.at(i).resize(block.num_sub_blocks_, false);
+      auto block = metadata_.blocks.at(i);
+      active_edge_blocks_.at(i).Init(block.num_sub_blocks);
+      is_in_memory_.at(i).resize(block.num_sub_blocks, false);
     }
   }
   ~GraphManager() {
@@ -45,7 +45,7 @@ struct GraphManager {
   void Sync(bool read_only = false) {
     if (!read_only) {
       memcpy(read_data_, write_data_,
-             metadata_.num_vertices_ * sizeof(VertexData));
+             metadata_.num_vertices * sizeof(VertexData));
     }
   }
 
@@ -53,7 +53,7 @@ struct GraphManager {
     return &active_edge_blocks_.at(gid);
   }
 
-  const uint32_t GetNumBlock() { return metadata_.num_blocks_; }
+  const uint32_t GetNumBlock() { return metadata_.num_blocks; }
 
   const std::vector<VertexID>& GetActiveEdgeBlockInMemory(common::GraphID gid) {
 
@@ -61,7 +61,7 @@ struct GraphManager {
 
   const data_structures::SubBlock& GetBlockInfo(common::GraphID gid,
                                                 common::BlockID sub_id) {
-    return metadata_.blocks_.at(gid).sub_blocks_.at(sub_id);
+    return metadata_.blocks.at(gid).sub_blocks.at(sub_id);
   }
 
   // Active edge block for executing.

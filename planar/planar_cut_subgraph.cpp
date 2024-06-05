@@ -62,9 +62,9 @@ int main(int argc, char** argv) {
   core::data_structures::GraphMetadata graph_metadata(root_path);
   auto block_num = graph_metadata.get_num_blocks();
   core::data_structures::TwoDMetadata metadata;
-  metadata.num_vertices_ = graph_metadata.get_num_vertices();
-  metadata.num_edges_ = graph_metadata.get_num_edges();
-  metadata.num_blocks_ = block_num;
+  metadata.num_vertices = graph_metadata.get_num_vertices();
+  metadata.num_edges = graph_metadata.get_num_edges();
+  metadata.num_blocks = block_num;
   for (BlockID gid = 0; gid < block_num; gid++) {
     auto block_metadata = graph_metadata.GetBlockMetadata(gid);
     std::string file_path =
@@ -125,6 +125,7 @@ int main(int argc, char** argv) {
       blks.at(i).end_id = end_id + bid;
       blks.at(i).num_edges = num_edge;
       blks.at(i).num_vertices = end_id - begin_id;
+      blks.at(i).begin_offset = offset[begin_id];
       // cut edges
       std::ofstream out_file(dir.string() + "/" + std::to_string(i) + ".bin",
                              std::ios::binary);
@@ -138,13 +139,16 @@ int main(int argc, char** argv) {
     delete[] edges;
 
     sics::graph::core::data_structures::Block block;
-    block.sub_blocks_ = blks;
-    block.num_sub_blocks_ = p;
-    block.num_edges_ = num_edges;
-    block.num_vertices_ = num_vertices;
-    block.offset_ratio_ = ratio;
-    block.vertex_offset_ = size;
-    metadata.blocks_.push_back(block);
+    block.id = gid;
+    block.num_sub_blocks = p;
+    block.num_vertices = num_vertices;
+    block.num_edges = num_edges;
+    block.offset_ratio = ratio;
+    block.begin_id = bid;
+    block.end_id = eid;
+    block.vertex_offset = size;
+    block.sub_blocks = blks;
+    metadata.blocks.push_back(block);
   }
 
   YAML::Node meta;

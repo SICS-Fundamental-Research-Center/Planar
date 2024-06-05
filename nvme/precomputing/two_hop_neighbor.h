@@ -52,13 +52,13 @@ void CountHop(const std::string& root_path, uint32_t parallelism = 1) {
       auto bid_j = block_j.bid_;
       auto eid_j = block_j.eid_;
 
-      auto task_size = (block_i.num_vertices_ + parallelism - 1) / parallelism;
+      auto task_size = (block_i.num_vertices + parallelism - 1) / parallelism;
 
       // iter vertex in block i
       VertexID k = 0;
-      while (k < block_i.num_vertices_) {
+      while (k < block_i.num_vertices) {
         auto b_k = k;
-        auto e_k = std::min(k + task_size, block_i.num_vertices_);
+        auto e_k = std::min(k + task_size, block_i.num_vertices);
         auto task = [&block_i, &block_j, bid_j, eid_j, b_k, e_k]() {
           for (auto k = b_k; k < e_k; k++) {
             auto degree_k = block_i.degree_[k];
@@ -159,13 +159,13 @@ void CountHop2(const std::string& root_path, uint32_t parallelism = 1) {
     // iter block j for the join of block i
 
     auto task_size =
-        (block_i.num_vertices_ + parallelism * 10 - 1) / (parallelism * 10);
+        (block_i.num_vertices + parallelism * 10 - 1) / (parallelism * 10);
 
     // iter vertex in block i
     VertexID k = 0;
-    while (k < block_i.num_vertices_) {
+    while (k < block_i.num_vertices) {
       auto b_k = k;
-      auto e_k = std::min(k + task_size, block_i.num_vertices_);
+      auto e_k = std::min(k + task_size, block_i.num_vertices);
       auto task = [&blocks, &block_i, b_k, e_k]() {
         for (auto k = b_k; k < e_k; k++) {
           auto degree_k = block_i.degree_[k];

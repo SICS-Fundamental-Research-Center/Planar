@@ -9,11 +9,8 @@
 
 namespace sics::graph::core::apps {
 
-using CSRGraph =
-    data_structures::graph::MutableCSRGraph<float,
-                                            core::common::DefaultEdgeDataType>;
-
-class PageRankApp : public apis::PlanarAppOpBase<CSRGraph> {
+class PageRankOpApp : public apis::PlanarAppOpBase<
+                          data_structures::graph::MutableBlockCSRGraphFloat> {
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
   using VertexID = common::VertexID;
@@ -23,48 +20,33 @@ class PageRankApp : public apis::PlanarAppOpBase<CSRGraph> {
   using VertexData = CSRGraph::VertexData;
   using EdgeData = CSRGraph::EdgeData;
 
-  PageRankApp() = default;
-  explicit PageRankApp(
-      common::TaskRunner* runner,
-      update_stores::BspUpdateStore<VertexData, EdgeData>* update_store,
-      data_structures::Serializable* graph)
-      : apis::PlanarAppOpBase<CSRGraph>(runner, update_store, graph),
-        iter(core::common::Configurations::Get()->pr_iter) {}
-  ~PageRankApp() override = default;
+  PageRankOpApp() = default;
+  ~PageRankOpApp() override = default;
 
-  void AppInit(common::TaskRunner* runner,
-               update_stores::BspUpdateStore<VertexData, EdgeData>*
-                   update_store) override {
-    apis::PlanarAppOpBase<CSRGraph>::AppInit(runner, update_store);
+  void AppInit(const std::string& root_path) {
     iter = core::common::Configurations::Get()->pr_iter;
-    vertexNum_ = update_store->GetMessageCount();
-    id2degree_ = new VertexDegree[vertexNum_];
     in_memory_ = core::common::Configurations::Get()->in_memory;
-    if (core::common::Configurations::Get()->radical) {
-      in_memory_ = true;
-    }
   }
 
-  void PEval() final;
-  void IncEval() final;
-  void Assemble() final;
+  void PEval(){
+
+  };
+
+  void IncEval(){
+
+  };
+
+  void Assemble(){
+
+  };
 
  private:
-  void CountDegree(VertexID id) {}
+  void Init(VertexID id) {
+    auto degree = 0;
 
-  void Init(VertexID id) {}
+  }
 
   void Pull(VertexID id) {}
-
-  void Pull_im(VertexID id) {}
-
-  void Init_im(VertexID id) {}
-
-  void LogDegree() {
-    for (VertexID id = 0; id < vertexNum_; id++) {
-      LOGF_INFO("Degree of vertex {} is {}", id, id2degree_[id]);
-    }
-  }
 
  private:
   const float kDampingFactor = 0.85;
@@ -74,9 +56,6 @@ class PageRankApp : public apis::PlanarAppOpBase<CSRGraph> {
   uint32_t iter = 10;
 
   bool in_memory_ = false;
-
-  VertexID vertexNum_;
-  VertexDegree* id2degree_;
 };
 
 }  // namespace sics::graph::core::apps
