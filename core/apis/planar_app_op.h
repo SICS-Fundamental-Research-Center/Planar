@@ -18,6 +18,7 @@
 #include "io/mutable_csr_writer.h"
 #include "scheduler/graph_manager.h"
 #include "update_stores/bsp_update_store.h"
+#include "util/atomic.h"
 #include "util/logging.h"
 
 namespace sics::graph::core::apis {
@@ -39,6 +40,8 @@ class PlanarAppOpBase : public PIE {
   using VertexID = common::VertexID;
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
+  using EdgeIndexS = common::EdgeIndexS;
+  using VertexDegree = common::VertexDegree;
 
  public:
   PlanarAppOpBase() = default;
@@ -90,28 +93,29 @@ class PlanarAppOpBase : public PIE {
   // Parallel execute vertex_func in task_size chunks.
   void ParallelVertexDo(const std::function<void(VertexID)>& vertex_func) {
     LOG_DEBUG("ParallelVertexDo is begin");
-    uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
-    common::TaskPackage tasks;
-    tasks.reserve(parallelism_ * task_package_factor_);
-    VertexIndex begin_index = 0, end_index = 0;
-    for (; begin_index < graph_->GetVertexNums();) {
-      end_index += task_size;
-      if (end_index > graph_->GetVertexNums())
-        end_index = graph_->GetVertexNums();
-      auto task = [&vertex_func, this, begin_index, end_index]() {
-        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
-          vertex_func(graph_->GetVertexIDByIndex(idx));
-        }
-      };
-      tasks.push_back(task);
-      begin_index = end_index;
+    for (common::GraphID gid = 0; gid < metadata_.num_blocks; gid++) {
+      uint32_t task_size = GetTaskSize(metadata_.num_vertices);
+      common::TaskPackage tasks;
+      tasks.reserve(parallelism_ * task_package_factor_);
+      VertexID begin_id = 0, end_id = 0;
+      for (; begin_id < metadata_.num_vertices;) {
+        end_id += task_size;
+        if (end_id > metadata_.num_vertices) end_id = metadata_.num_vertices;
+        auto task = [&vertex_func, begin_id, end_id]() {
+          for (VertexID id = begin_id; id < end_id; id++) {
+            vertex_func(id);
+          }
+        };
+        tasks.push_back(task);
+        begin_id = end_id;
+      }
+      //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}",
+      //    task_size,
+      //              tasks.size());
+      executer_.GetTaskRunner()->SubmitSync(tasks);
+      LOG_INFO("task finished");
     }
-    //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}", task_size,
-    //              tasks.size());
-    executer_.GetTaskRunner()->SubmitSync(tasks);
-    // TODO: sync of update_store and graph_ vertex data
-    LOG_INFO("task finished");
-    graph_->SyncVertexData(use_readdata_only_);
+    SyncVertexState(use_readdata_only_);
     LOG_INFO("ParallelVertexDo is done");
   }
 
@@ -121,12 +125,12 @@ class PlanarAppOpBase : public PIE {
     LOG_DEBUG("ParallelVertexDoWithEdges begins!");
     for (uint32_t gid = 0; gid < metadata_.num_blocks; gid++) {
       active_edge_blocks_.at(gid).Fill();  // Now active all blocks.
-      CheckActiveEdgeBLocksInfo();
+      CheckActiveEdgeBLocksInfo(gid);
       // First, edge block current in memory.
       common::TaskPackage tasks;
       for (unsigned int sub_block_id : blocks_in_memory_) {
         auto sub_block = metadata_.blocks.at(gid).sub_blocks.at(sub_block_id);
-        tasks.push_back([sub_block, vertex_func]() {
+        tasks.push_back([&vertex_func, sub_block]() {
           auto begin_id = sub_block.begin_id;
           auto end_id = sub_block.end_id;
           for (VertexID id = begin_id; id < end_id; id++) {
@@ -149,8 +153,7 @@ class PlanarAppOpBase : public PIE {
         auto read_edge_block_id = loader_.GetReadBlocks();
         for (int j = 0; j < read_resp.read_block_size_; j++) {
           auto sub_block_id = read_edge_block_id[j];
-          auto sub_block =
-              metadata_.blocks.at(gid).sub_blocks.at(sub_block_id);
+          auto sub_block = metadata_.blocks.at(gid).sub_blocks.at(sub_block_id);
           tasks.push_back([sub_block, vertex_func]() {
             auto begin_id = sub_block.begin_id;
             auto end_id = sub_block.end_id;
@@ -378,6 +381,56 @@ class PlanarAppOpBase : public PIE {
   }
 
   // Read and Write functions.
+
+  VertexData Read(VertexID id) { return read_data_[id]; }
+
+  void Write(VertexID id, VertexData vdata) { write_data_[id] = vdata; }
+
+  void WriteMin(VertexID id, VertexData vdata) {
+    core::util::atomic::WriteMin(&write_data_[id], vdata);
+  }
+
+  void WriteMax(VertexID id, VertexData vdata) {
+    core::util::atomic::WriteMax(&write_data_[id], vdata);
+  }
+
+  void WriteAdd(VertexID id, VertexData vdata) {
+    core::util::atomic::WriteAdd(&write_data_[id], vdata);
+  }
+
+  // Graph info functions.
+
+  size_t GetVertexNum() { return metadata_.num_vertices; }
+
+  size_t GetEdgeNum() { return metadata_.num_edges; }
+
+  VertexDegree GetOutDegree(VertexID id) {
+    auto block_id = GetBlockID(id);
+    return graphs_.at(block_id).GetOutDegree(id);
+  }
+
+  VertexID* GetOutEdges(VertexID id) {
+    auto block_id = GetBlockID(id);
+    return graphs_.at(block_id).GetOutEdges(id);
+  }
+
+ private:
+  BlockID GetBlockID(VertexID id) {
+    for (int i = 0; i < metadata_.num_blocks; i++) {
+      if (id < metadata_.blocks.at(i).end_id) {
+        return i;
+      }
+    }
+    LOG_FATAL("VertexID: ", id, " is out of range!");
+  }
+
+  // Sync functions.
+  void SyncVertexState(bool read_only) {
+    if (!read_only) {
+      memcpy(read_data_, write_data_,
+             sizeof(VertexData) * metadata_.num_vertices);
+    }
+  }
 
  protected:
   GraphType* graph_;

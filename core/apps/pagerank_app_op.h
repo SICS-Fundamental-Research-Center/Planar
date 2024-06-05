@@ -17,9 +17,6 @@ class PageRankOpApp : public apis::PlanarAppOpBase<
   using VertexDegree = common::VertexDegree;
 
  public:
-  using VertexData = CSRGraph::VertexData;
-  using EdgeData = CSRGraph::EdgeData;
-
   PageRankOpApp() = default;
   ~PageRankOpApp() override = default;
 
@@ -28,25 +25,52 @@ class PageRankOpApp : public apis::PlanarAppOpBase<
     in_memory_ = core::common::Configurations::Get()->in_memory;
   }
 
-  void PEval(){
+  void PEval() {
+    LOG_INFO("PEval start");
+    auto init = [this](VertexID id) { Init(id); };
+    auto pull = [this](VertexID id) { Pull(id); };
 
+    ParallelVertexDo(init);
+
+    ParallelVertexDoWithEdges(pull);
+
+    LOG_INFO("PEval end");
   };
 
-  void IncEval(){
-
+  void IncEval() {
+    LOG_INFO("IncEval start");
+    ParallelVertexDoWithEdges([this](VertexID id) { Pull(id); });
+    LOG_INFO("IncEval end");
   };
 
-  void Assemble(){
-
-  };
+  void Assemble(){};
 
  private:
   void Init(VertexID id) {
-    auto degree = 0;
-
+    auto degree = GetOutDegree(id);
+    if (degree == 0) {
+      Write(id, 1.0 / GetVertexNum());
+    } else {
+      Write(id, 1.0 / degree);
+    }
   }
 
-  void Pull(VertexID id) {}
+  void Pull(VertexID id) {
+    auto degree = GetOutDegree(id);
+    if (degree == 0) return;
+    auto edges = GetOutEdges(id);
+    float sum = 0;
+    for (uint32_t i = 0; i < degree; i++) {
+      sum += Read(edges[i]);
+    }
+    float pr_new = 0;
+    if (round_ == int(iter)) {
+      pr_new = kDampingFactor * sum;
+    } else {
+      pr_new = (kDampingFactor * sum) / degree;
+    }
+    WriteAdd(id, pr_new);
+  }
 
  private:
   const float kDampingFactor = 0.85;
