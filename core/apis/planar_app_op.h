@@ -17,6 +17,7 @@
 #include "data_structures/serializable.h"
 #include "io/mutable_csr_reader.h"
 #include "io/mutable_csr_writer.h"
+#include "scheduler/edge_buffer.h"
 #include "scheduler/graph_manager.h"
 #include "update_stores/bsp_update_store.h"
 #include "util/atomic.h"
@@ -40,9 +41,7 @@ class PlanarAppOpBase : public PIE {
   using EdgeIndex = common::EdgeIndex;
   using EdgeIndexS = common::EdgeIndexS;
   using VertexDegree = common::VertexDegree;
-  using GraphType =
-      data_structures::graph::MutableBlockCSRGraph<VertexData,
-                                                   common::DefaultEdgeDataType>;
+  using CSRBlockGraph = data_structures::graph::MutableBlockCSRGraph;
 
  public:
   PlanarAppOpBase() = default;
@@ -277,15 +276,13 @@ class PlanarAppOpBase : public PIE {
   std::vector<common::Bitmap> active_edge_blocks_;
   // Keep the edge block in memory.
   // Or write back to disk for memory space release.
-  std::vector<std::vector<bool>> is_in_memory_;
-  std::vector<std::vector<bool>> is_finished_;
   std::vector<BlockID> blocks_in_memory_;
   std::vector<BlockID> blocks_to_read_;
 
   // Graph index and edges structure. Init at beginning.
-  std::vector<GraphType> graphs_;
+  std::vector<CSRBlockGraph> graphs_;
   // Buffer size management.
-  size_t buffer_size_;
+  scheduler::EdgeBuffer edge_buffer_;
   // --------
 
   scheduler::MessageHub hub;

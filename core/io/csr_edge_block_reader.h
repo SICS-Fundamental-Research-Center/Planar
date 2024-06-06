@@ -38,23 +38,18 @@ class CSREdgeBlockReader {
 
  public:
   CSREdgeBlockReader() = default;
-  CSREdgeBlockReader(const std::string& root_path) : root_path_(root_path) {
-    auto ret = io_uring_queue_init(QD, &ring_, 0);
-    if (ret < 0) {
-      LOGF_FATAL("queue_init: {}", ret);
-    }
-  }
+
   void Init(const std::string& root_path,
-            data_structures::TwoDMetadata& metadata) {
+            data_structures::TwoDMetadata* metadata) {
     // copy the root path
     root_path_ = root_path;
     auto ret = io_uring_queue_init(QD, &ring_, 0);
     if (ret < 0) {
       LOGF_FATAL("queue_init: {}", ret);
     }
-    blocks_addr_.resize(metadata.num_blocks);
-    for (uint32_t i = 0; i < metadata.num_blocks; i++) {
-      auto num = metadata.blocks.at(i).num_sub_blocks;
+    blocks_addr_.resize(metadata->num_blocks);
+    for (uint32_t i = 0; i < metadata->num_blocks; i++) {
+      auto num = metadata->blocks.at(i).num_sub_blocks;
       blocks_addr_.at(i).resize(num, nullptr);
     }
   }

@@ -22,14 +22,14 @@ class LoaderOp {
  public:
   LoaderOp() = default;
   LoaderOp(const std::string& root_path, scheduler::MessageHub* hub)
-      : reader_(root_path),
-        reader_q_(hub->get_reader_queue()),
+      : reader_q_(hub->get_reader_queue()),
         response_q_(hub->get_response_queue()) {}
 
   ~LoaderOp() = default;
 
-  void Init(const std::string& root_path, scheduler::MessageHub* hub) {
-    reader_.Init(root_path);
+  void Init(const std::string& root_path, scheduler::MessageHub* hub,
+            data_structures::TwoDMetadata* metadata) {
+    reader_.Init(root_path, metadata);
     reader_q_ = hub->get_reader_queue();
     response_q_ = hub->get_response_queue();
   }
@@ -39,6 +39,8 @@ class LoaderOp {
       while (true) {
         for (int i = 0; i < to_read_blocks_id_.size(); i++) {
           // Decide number of edge blocks to read, at least DEPTH.
+
+
 
           // wait memory buffer to be available.
 

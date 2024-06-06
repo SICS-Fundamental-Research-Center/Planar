@@ -39,7 +39,6 @@ struct SubBlockImpl {
 };
 
 // TV : type of vertexData; TE : type of EdgeData
-template <typename TV, typename TE>
 class MutableBlockCSRGraph {
   using GraphID = common::GraphID;
   using VertexID = common::VertexID;
@@ -48,8 +47,6 @@ class MutableBlockCSRGraph {
   using VertexDegree = common::VertexDegree;
 
  public:
-  using VertexData = TV;
-  using EdgeData = TE;
   MutableBlockCSRGraph() = default;
   explicit MutableBlockCSRGraph(const std::string& root_path,
                                 Block* block_meta) {
@@ -148,10 +145,6 @@ class MutableBlockCSRGraph {
   std::vector<SubBlockImpl> sub_blocks_;
   std::vector<bool> is_in_memory_;  // Indicate if the sub_block is in memory.
 
-  // init by ptr in constructor
-  VertexData* vertex_data_read_base_;
-  VertexData* vertex_data_write_base_;
-
   // bitmap read from disk, have no ownership of data
   //  common::BitmapNoOwnerShip vertex_src_or_dst_bitmap_;
   //  common::BitmapNoOwnerShip is_in_graph_bitmap_;
@@ -168,16 +161,6 @@ class MutableBlockCSRGraph {
 
   std::mutex mtx;
 };
-
-typedef MutableBlockCSRGraph<common::Uint32VertexDataType,
-                             common::DefaultEdgeDataType>
-    MutableBlockCSRGraphUInt32;
-typedef MutableBlockCSRGraph<common::Uint16VertexDataType,
-                             common::DefaultEdgeDataType>
-    MutableBlockCSRGraphUInt16;
-typedef MutableBlockCSRGraph<common::FloatVertexDataType,
-                             common::DefaultEdgeDataType>
-    MutableBlockCSRGraphFloat;
 
 }  // namespace sics::graph::core::data_structures::graph
 
