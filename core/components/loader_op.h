@@ -80,6 +80,16 @@ class LoaderOp {
     to_read_blocks_id_ = std::move(to_read_blocks_id);
   }
 
+  // Get the edge block address.
+  common::VertexID* GetBlockAddr(common::GraphID gid, common::BlockID bid) {
+    return reader_.GetBlockAddr(gid, bid);
+  }
+
+  // Release the edge block address when no need.
+  void ReleaseBlockAddr(common::GraphID gid, common::BlockID bid) {
+    reader_.ReleaseBlockAddr(gid, bid);
+  }
+
  private:
   io::CSREdgeBlockReader reader_;
 

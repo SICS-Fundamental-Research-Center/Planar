@@ -128,6 +128,16 @@ class CSREdgeBlockReader {
   // TODO: use queue to replace vector?
   std::vector<common::BlockID> GetReadBlocks() {}
 
+  // Get the block address for iterate edges.
+  common::VertexID* GetBlockAddr(common::GraphID gid, common::BlockID bid) {
+    return blocks_addr_.at(gid).at(bid);
+  }
+
+  // Release the block address after using.
+  void ReleaseBlockAddr(common::GraphID gid, common::BlockID bid) {
+    blocks_addr_.at(gid).at(bid) = nullptr;
+  }
+
  private:
   struct io_uring ring_;
   std::string root_path_;
