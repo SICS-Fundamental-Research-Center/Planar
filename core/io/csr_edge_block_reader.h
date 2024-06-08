@@ -19,8 +19,6 @@
 #include "data_structures/serialized.h"
 #include "io/reader_writer.h"
 
-#define QD 8
-
 namespace sics::graph::core::io {
 
 struct io_data {

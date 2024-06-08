@@ -9,8 +9,7 @@
 
 namespace sics::graph::core::apps {
 
-class PageRankOpApp : public apis::PlanarAppOpBase<
-                          data_structures::graph::MutableBlockCSRGraphFloat> {
+class PageRankOpApp : public apis::PlanarAppOpBase<float> {
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
   using VertexID = common::VertexID;
@@ -18,6 +17,10 @@ class PageRankOpApp : public apis::PlanarAppOpBase<
 
  public:
   PageRankOpApp() = default;
+  PageRankOpApp(const std::string& root_path)
+      : apis::PlanarAppOpBase<float>(root_path) {
+    AppInit(root_path);
+  }
   ~PageRankOpApp() override = default;
 
   void AppInit(const std::string& root_path) {

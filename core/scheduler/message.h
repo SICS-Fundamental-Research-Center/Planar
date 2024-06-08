@@ -21,7 +21,7 @@ struct ReadMessage {
   int round = 0;
 
   size_t read_block_size_ = 0;
-
+  size_t num_edge_blocks;
   // Response fields.
   data_structures::Serialized* response_serialized = nullptr;  // initialized in loader
 

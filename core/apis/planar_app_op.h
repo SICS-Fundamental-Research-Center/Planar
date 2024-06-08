@@ -52,7 +52,6 @@ class PlanarAppOpBase : public PIE {
             common::Configurations::Get()->task_package_factor),
         app_type_(common::Configurations::Get()->application) {
     loader_.Init(root_path, &hub);
-    //    discharger_.Init(root_path, &hub);
     executer_.Init(&hub);
 
     use_readdata_only_ = app_type_ == common::Coloring;
@@ -73,7 +72,7 @@ class PlanarAppOpBase : public PIE {
 
   ~PlanarAppOpBase() override = default;
 
-  virtual void AppInit() {
+  void AppInit(const std::string& root_path) {
     //    active_.Init(update_store->GetMessageCount());
     //    active_next_.Init(update_store->GetMessageCount());
   }
@@ -116,10 +115,10 @@ class PlanarAppOpBase : public PIE {
     LOG_DEBUG("ParallelVertexDoWithEdges begins!");
     for (uint32_t gid = 0; gid < metadata_.num_blocks; gid++) {
       active_edge_blocks_.at(gid).Fill();  // Now active all blocks.
-      CheckActiveEdgeBLocksInfo(gid);
       // First, edge block current in memory.
       common::TaskPackage tasks;
-      for (unsigned int sub_block_id : blocks_in_memory_) {
+      auto blocks_in_memory = edge_buffer_.GetBlocksInMemory(gid);
+      for (unsigned int sub_block_id : blocks_in_memory) {
         auto sub_block = metadata_.blocks.at(gid).sub_blocks.at(sub_block_id);
         tasks.push_back([&vertex_func, sub_block]() {
           auto begin_id = sub_block.begin_id;
@@ -129,10 +128,13 @@ class PlanarAppOpBase : public PIE {
           }
         });
       }
+      // TODO: async submit!
       executer_.GetTaskRunner()->SubmitSync(tasks);
       // Secondly, Wait for io load left edg block.
       // TODO: Block when no edge block is ready!
       bool flag = false;
+      auto blocks_to_read = edge_buffer_.GetBlocksToRead(gid);
+      loader_.SetToReadBlocksID(gid, &blocks_to_read);  // Trigger load.
       while (true) {
         tasks.clear();
         auto blocks = loader_.GetReadBlocks();
@@ -185,21 +187,6 @@ class PlanarAppOpBase : public PIE {
       res.push_back(active_queue_->PopOrWait());
     }
     return res;
-  }
-
-  // Check if active edge blocks are in memory and add to in_memory list.
-  // If not add to read list.
-  void CheckActiveEdgeBLocksInfo(common::GraphID gid) {
-    auto& active = active_edge_blocks_.at(gid);
-    for (int i = 0; i < active.size(); i++) {
-      if (active.GetBit(i)) {
-        if (is_in_memory_.at(gid).at(i)) {
-          blocks_in_memory_.push_back(i);
-        } else {
-          blocks_to_read_.push_back(i);
-        }
-      }
-    }
   }
 
   // Read and Write functions.
@@ -257,11 +244,9 @@ class PlanarAppOpBase : public PIE {
  protected:
   common::BlockingQueue<VertexID>* active_queue_;
 
-  common::Bitmap in_;
-  common::Bitmap out_;
-
   int round_ = 0;
 
+  // Active for vertex in each round.
   common::Bitmap active_;
   common::Bitmap active_next_;
 
@@ -274,10 +259,6 @@ class PlanarAppOpBase : public PIE {
 
   common::GraphID active_gid_ = 0;
   std::vector<common::Bitmap> active_edge_blocks_;
-  // Keep the edge block in memory.
-  // Or write back to disk for memory space release.
-  std::vector<BlockID> blocks_in_memory_;
-  std::vector<BlockID> blocks_to_read_;
 
   // Graph index and edges structure. Init at beginning.
   std::vector<CSRBlockGraph> graphs_;
@@ -288,13 +269,12 @@ class PlanarAppOpBase : public PIE {
   scheduler::MessageHub hub;
 
   components::LoaderOp loader_;
-  //  components::Discharger<io::MutableCSRWriter> discharger_;
   components::ExecutorOp executer_;
 
   // configs
-  const uint32_t parallelism_;
-  const uint32_t task_package_factor_;
-  const common::ApplicationType app_type_;
+  uint32_t parallelism_;
+  uint32_t task_package_factor_;
+  common::ApplicationType app_type_;
   bool use_readdata_only_ = true;
   // TODO: add UpdateStore as a member here.
 };
