@@ -32,48 +32,56 @@ class LoaderOp {
             data_structures::TwoDMetadata* metadata,
             scheduler::EdgeBuffer* buffer,
             std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs) {
-    reader_.Init(root_path, metadata);
+    reader_.Init(root_path, metadata, buffer);
     reader_q_ = hub->get_reader_queue();
     response_q_ = hub->get_response_queue();
     buffer_ = buffer;
     graphs_ = graphs;
   }
 
+  int SubmitReadRequest(int begin) {
+    if (begin >= to_read_blocks_id_->size()) return begin;
+    std::vector<common::BlockID> reqs;
+    while (true) {
+      if (begin >= QD || begin >= to_read_blocks_id_->size()) break;
+
+      auto bid = to_read_blocks_id_->at(begin);
+      if (buffer_->IsBufferNotEnough(current_gid_, bid)) break;
+      reqs.push_back(bid);
+      begin++;
+    }
+    reader_.Read(current_gid_, reqs);
+    return begin;
+  }
+
+  size_t CheckIOEntry() {
+    auto loaded = reader_.GetBlockReady();
+    receive_ += loaded;
+    return loaded;
+  }
+
   void Start() {
     thread_ = std::make_unique<std::thread>([this]() {
       while (true) {
         scheduler::ReadMessage message = reader_q_->PopOrWait();
-        for (int i = 0; i < to_read_blocks_id_->size(); i++) {
-          // Decide number of edge blocks to read, at least DEPTH.
-          std::vector<common::BlockID> reads_;
-          for (int j = 0; j < QD; j++) {
-            // Block when buffer is not available.
-            buffer_->ApplyBuffer(current_gid_, to_read_blocks_id_->at(i));
+        if (message.terminated) break;
+        // TODO: block or poll?
+        int begin = 0;
+        while (receive_ < to_read_blocks_id_->size()) {
+          // Send QD requests per Read operation.
+          begin = SubmitReadRequest(begin);
+          auto load = CheckIOEntry();
+          if (load) {
+            // Check loaded blocks and give back to scheduler(app).
+            scheduler::ReadMessage response;
+            response.num_edge_blocks = load;
+            response_q_->Push(scheduler::Message(response));
           }
-          // Send read message to reader.
-          reader_.Read(current_gid_, reads_);
-          // Check loaded blocks and give back to scheduler(app).
-          reader_.GetBlockReady();
-          scheduler::ReadMessage response;
-          response.num_edge_blocks = 0;
-          response_q_->Push(scheduler::Message(response));
         }
-
-        while (true) {
-        }
-
-        if (message.terminated) {
-          LOGF_INFO("Read size all: {}", reader_.SizeOfReadNow());
-          LOG_INFO("*** Loader is signaled termination ***");
-          break;
-        }
-
-        LOGF_INFO("Loader starts reading subgraph {}", message.graph_id);
-        // Get batch read edge blocks.
-
-        //        reader_.Read();
-        LOGF_INFO("Loader completes reading subgraph {}", message.graph_id);
-        response_q_->Push(scheduler::Message(message));
+        // One subgraph finished, terminate the executor for next one.
+        scheduler::ReadMessage m_end;
+        m_end.terminated = true;
+        response_q_->Push(scheduler::Message(m_end));
       }
     });
   }
@@ -116,6 +124,10 @@ class LoaderOp {
 
   common::GraphID current_gid_;
   std::vector<common::VertexID>* to_read_blocks_id_;
+
+  size_t queue_;
+  size_t receive_;
+  size_t send_;
 
   scheduler::ReaderQueue* reader_q_;
   scheduler::ResponseQueue* response_q_;

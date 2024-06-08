@@ -36,7 +36,8 @@ typedef std::function<bool(VertexID, VertexID)> FuncEdgeMutate;
 #define INVALID_VERTEX_INDEX \
   std::numeric_limits<sics::graph::core::common::VertexIndex>::max()
 
-#define QD 8
+#define QD 128  // queue depth for io_uring
+#define RD 8    // read request depth once for io_uring submit
 
 }  // namespace sics::graph::core::common
 

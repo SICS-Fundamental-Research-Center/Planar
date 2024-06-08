@@ -57,6 +57,10 @@ class EdgeBuffer {
     is_reading_.at(gid).at(bid) = true;
   }
 
+  bool IsBufferNotEnough(GraphID gid, BlockID bid) {
+    return buffer_size_ < edge_block_size_.at(gid).at(bid);
+  }
+
   // Blocking when no edge block can be release.
   void ReleaseUsedBuffer() {
     // TODO: Get on used edge block.
@@ -66,6 +70,22 @@ class EdgeBuffer {
 
   void ReleaseBuffer(GraphID gid, BlockID bid) {
     graphs_->at(gid).Release(bid);
+  }
+
+  // TODO: useful??
+  void SetBlockReading(GraphID gid, BlockID bid) {
+    is_reading_.at(gid).at(bid);
+  }
+
+  void PushOneEdgeBlock(GraphID gid, BlockID bid) {
+    loaded_blocks_.emplace(gid, bid);
+    is_in_memory_.at(gid).at(bid) = true;
+  }
+
+  std::pair<GraphID, BlockID> PopOneEdgeBlock() {
+    auto res = loaded_blocks_.front();
+    loaded_blocks_.pop();
+    return res;
   }
 
   // Check state for blocks.
@@ -115,6 +135,7 @@ class EdgeBuffer {
   std::vector<std::vector<bool>> is_finished_;
 
   common::BlockingQueue<std::pair<GraphID, BlockID>> used_edge_blocks_;
+  std::queue<std::pair<GraphID, BlockID>> loaded_blocks_;
   std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs_;
 };
 

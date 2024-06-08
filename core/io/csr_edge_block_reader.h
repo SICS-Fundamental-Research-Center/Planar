@@ -15,9 +15,11 @@
 #include "common/blocking_queue.h"
 #include "common/config.h"
 #include "data_structures/buffer.h"
+#include "data_structures/graph/mutable_block_csr_graph.h"
 #include "data_structures/graph_metadata.h"
 #include "data_structures/serialized.h"
 #include "io/reader_writer.h"
+#include "scheduler/edge_buffer.h"
 
 namespace sics::graph::core::io {
 
@@ -38,9 +40,11 @@ class CSREdgeBlockReader {
   CSREdgeBlockReader() = default;
 
   void Init(const std::string& root_path,
-            data_structures::TwoDMetadata* metadata) {
+            data_structures::TwoDMetadata* metadata,
+            scheduler::EdgeBuffer* buffer) {
     // copy the root path
     root_path_ = root_path;
+    buffer_ = buffer;
     auto ret = io_uring_queue_init(QD, &ring_, 0);
     if (ret < 0) {
       LOGF_FATAL("queue_init: {}", ret);
@@ -97,9 +101,9 @@ class CSREdgeBlockReader {
     }
   }
 
-  std::vector<common::BlockID> GetBlockReady() {
+  size_t GetBlockReady() {
     struct io_uring_cqe* cqe;
-    std::vector<common::BlockID> block_ready;
+    size_t num_cqe = 0;
     while (true) {
       auto ret = io_uring_peek_cqe(&ring_, &cqe);
       if (ret != 0) {
@@ -109,11 +113,13 @@ class CSREdgeBlockReader {
       if (cqe->res != data->size * 4) {
         LOG_FATAL("Read error in edge block, size is not fit!");
       }
-      block_ready.push_back(data->block_id);
-      // address
-      blocks_addr_.at(data->gid).at(data->block_id) = data->addr;
+      // Set address and <gid, bid> entry for notification.
+      graphs_->at(data->gid).SetSubBlock(data->block_id, data->addr);
+      buffer_->PushOneEdgeBlock(data->gid, data->block_id);
+      io_uring_cqe_seen(&ring_, cqe);
+      num_cqe++;
     }
-    return block_ready;
+    return num_cqe;
   }
 
   size_t SizeOfReadNow() { return read_size_; }
@@ -131,11 +137,16 @@ class CSREdgeBlockReader {
     blocks_addr_.at(gid).at(bid) = nullptr;
   }
 
+  bool IsFinish() { return !io_uring_cq_has_overflow(&ring_); }
+
  private:
   struct io_uring ring_;
   std::string root_path_;
 
-  std::vector<std::vector<common::VertexID*>> blocks_addr_;
+  scheduler::EdgeBuffer* buffer_;
+  std::vector<std::vector<common::VertexID*>> blocks_addr_;  // to delete.
+  std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs_;
+
   size_t read_size_ = 0;  // use MB
 };
 

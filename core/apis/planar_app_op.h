@@ -51,7 +51,7 @@ class PlanarAppOpBase : public PIE {
         task_package_factor_(
             common::Configurations::Get()->task_package_factor),
         app_type_(common::Configurations::Get()->application) {
-    loader_.Init(root_path, &hub);
+    loader_.Init(root_path, &hub, &metadata_, &edge_buffer_, &graphs_);
     executer_.Init(&hub);
 
     use_readdata_only_ = app_type_ == common::Coloring;
@@ -118,51 +118,63 @@ class PlanarAppOpBase : public PIE {
       // First, edge block current in memory.
       common::TaskPackage tasks;
       auto blocks_in_memory = edge_buffer_.GetBlocksInMemory(gid);
+      auto blocks_to_read = edge_buffer_.GetBlocksToRead(gid);
+      auto size_sum = blocks_in_memory.size() + blocks_to_read.size();
+      mtx_;
       for (unsigned int sub_block_id : blocks_in_memory) {
         auto sub_block = metadata_.blocks.at(gid).sub_blocks.at(sub_block_id);
-        tasks.push_back([&vertex_func, sub_block]() {
+        tasks.push_back([this, &size_sum, &vertex_func, sub_block]() {
           auto begin_id = sub_block.begin_id;
           auto end_id = sub_block.end_id;
           for (VertexID id = begin_id; id < end_id; id++) {
             vertex_func(id);
           }
+          std::lock_guard<std::mutex> lock(mtx_);
+          size_sum -= 1;
+          cv_.notify_all();
         });
       }
       // TODO: async submit!
       executer_.GetTaskRunner()->SubmitSync(tasks);
       // Secondly, Wait for io load left edg block.
       // TODO: Block when no edge block is ready!
-      bool flag = false;
-      auto blocks_to_read = edge_buffer_.GetBlocksToRead(gid);
+      size_t size_read = blocks_to_read.size();
       loader_.SetToReadBlocksID(gid, &blocks_to_read);  // Trigger load.
       while (true) {
         tasks.clear();
-        auto blocks = loader_.GetReadBlocks();
-
+        // TODO: use edge_buffer to block.
         auto resp = hub.get_response_queue()->PopOrWait();
         scheduler::ReadMessage read_resp;
         resp.Get(&read_resp);
-        flag = read_resp.terminated;
+        if (read_resp.terminated) break;
+        auto num_read = read_resp.num_edge_blocks;
+
+        auto blocks = loader_.GetReadBlocks();
         auto read_edge_block_id = loader_.GetReadBlocks();
         for (int j = 0; j < read_resp.read_block_size_; j++) {
           auto sub_block_id = read_edge_block_id[j];
           auto sub_block = metadata_.blocks.at(gid).sub_blocks.at(sub_block_id);
-          tasks.push_back([sub_block, vertex_func]() {
+          tasks.push_back([this, &size_sum, &vertex_func, sub_block]() {
             auto begin_id = sub_block.begin_id;
             auto end_id = sub_block.end_id;
             for (VertexID id = begin_id; id < end_id; id++) {
               vertex_func(id);
             }
+            std::lock_guard<std::mutex> lock(mtx_);
+            size_sum -= 1;
+            cv_.notify_all();
           });
         }
         executer_.GetTaskRunner()->SubmitSync(tasks);
         // Decide if release edge block for load other block.
-
-        // Check all activated edge blocks are executed.
-        if (flag) {
-          break;
-        }
       }
+
+      // Block when any edge_block has not finished.
+      std::lock_guard<std::mutex> lock(mtx_);
+      if (size_sum != 0) {
+        cv_.wait([&size_sum]() { return size_sum == 0; });
+      }
+      LOGF_INFO("SubGraph: {} finish!", gid);
     }
     LOG_DEBUG("ParallelVertexDoWithEdges is done!");
   }
@@ -241,6 +253,14 @@ class PlanarAppOpBase : public PIE {
     }
   }
 
+  std::vector<BlockID> GetLoadBlocksID(size_t num) {
+    std::vector<BlockID> res;
+    while (num--) {
+      auto entry = edge_buffer_->
+      res.push_back()
+    }
+  }
+
  protected:
   common::BlockingQueue<VertexID>* active_queue_;
 
@@ -270,6 +290,9 @@ class PlanarAppOpBase : public PIE {
 
   components::LoaderOp loader_;
   components::ExecutorOp executer_;
+
+  std::mutex mtx_;
+  std::condition_variable cv_;
 
   // configs
   uint32_t parallelism_;
