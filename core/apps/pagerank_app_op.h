@@ -33,7 +33,9 @@ class PageRankOpApp : public apis::PlanarAppOpBase<float> {
     auto init = [this](VertexID id) { Init(id); };
     auto pull = [this](VertexID id) { Pull(id); };
 
+    LogVertexState();
     ParallelVertexDo(init);
+    LogVertexState();
 
     ParallelVertexDoWithEdges(pull);
 

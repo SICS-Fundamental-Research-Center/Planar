@@ -15,8 +15,7 @@ template <typename TV, typename TE>
 struct GraphManager {
   using VertexData = TV;
   using EdgeData = TE;
-  using Graph =
-      data_structures::graph::MutableBlockCSRGraph<VertexData, EdgeData>;
+  using Graph = data_structures::graph::MutableBlockCSRGraph;
   using VertexID = common::VertexID;
 
   GraphManager() = default;

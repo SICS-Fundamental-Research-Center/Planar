@@ -43,12 +43,13 @@ class LoaderOp {
     if (begin >= to_read_blocks_id_->size()) return begin;
     std::vector<common::BlockID> reqs;
     while (true) {
-      if (begin >= QD || begin >= to_read_blocks_id_->size()) break;
-
+      if (queue_ >= QD || begin >= to_read_blocks_id_->size())
+        break;
       auto bid = to_read_blocks_id_->at(begin);
       if (buffer_->IsBufferNotEnough(current_gid_, bid)) break;
       reqs.push_back(bid);
       begin++;
+      queue_++;
     }
     reader_.Read(current_gid_, reqs);
     return begin;
@@ -57,6 +58,7 @@ class LoaderOp {
   size_t CheckIOEntry() {
     auto loaded = reader_.GetBlockReady();
     receive_ += loaded;
+    queue_ -= loaded;
     return loaded;
   }
 
@@ -82,6 +84,10 @@ class LoaderOp {
         scheduler::ReadMessage m_end;
         m_end.terminated = true;
         response_q_->Push(scheduler::Message(m_end));
+
+        receive_ = 0;
+        queue_ = 0;
+        send_;
       }
     });
   }

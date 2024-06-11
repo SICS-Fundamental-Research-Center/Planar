@@ -47,11 +47,13 @@ class MutableBlockCSRGraph {
   using VertexDegree = common::VertexDegree;
 
  public:
-  MutableBlockCSRGraph() = default;
-  explicit MutableBlockCSRGraph(const std::string& root_path,
+  MutableBlockCSRGraph() {};
+  MutableBlockCSRGraph(const std::string& root_path,
                                 Block* block_meta) {
     Init(root_path, block_meta);
   }
+
+  MutableBlockCSRGraph(MutableBlockCSRGraph&& graph) {}
 
   void Init(const std::string& root_path, Block* block_meta) {
     metadata_block_ = block_meta;
@@ -136,7 +138,7 @@ class MutableBlockCSRGraph {
   }
 
  public:
-  Block* metadata_block_;
+  Block* metadata_block_ = nullptr;
 
   EdgeIndexS* out_offset_reduce_ = nullptr;
   VertexDegree* out_degree_ = nullptr;

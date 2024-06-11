@@ -1,7 +1,9 @@
 #ifndef GRAPH_SYSTEMS_CORE_APIS_PLANAR_APP_OP_H_
 #define GRAPH_SYSTEMS_CORE_APIS_PLANAR_APP_OP_H_
 
+#include <condition_variable>
 #include <functional>
+#include <mutex>
 #include <type_traits>
 #include <vector>
 
@@ -51,12 +53,18 @@ class PlanarAppOpBase : public PIE {
         task_package_factor_(
             common::Configurations::Get()->task_package_factor),
         app_type_(common::Configurations::Get()->application) {
+    graphs_.resize(metadata_.num_blocks);
+    for (int i = 0; i < metadata_.num_blocks; i++) {
+      graphs_.at(i).Init(root_path, &metadata_.blocks.at(i));
+    }
+    edge_buffer_.Init(&metadata_, &graphs_);
     loader_.Init(root_path, &hub, &metadata_, &edge_buffer_, &graphs_);
     executer_.Init(&hub);
 
     use_readdata_only_ = app_type_ == common::Coloring;
     LOGF_INFO("vertex data sync: {}", !use_readdata_only_);
     LOGF_INFO("use read data only: {}", use_readdata_only_);
+    Init();
   }
   // TODO: add UpdateStore as a parameter, so that PEval, IncEval and Assemble
   //  can access global messages in it.
@@ -70,12 +78,15 @@ class PlanarAppOpBase : public PIE {
   //    LOGF_INFO("use read data only: {}", use_readdata_only_);
   //  }
 
-  ~PlanarAppOpBase() override = default;
-
-  void AppInit(const std::string& root_path) {
-    //    active_.Init(update_store->GetMessageCount());
-    //    active_next_.Init(update_store->GetMessageCount());
+  void Init() {
+    read_data_ = new VertexData[metadata_.num_vertices];
+    write_data_ = new VertexData[metadata_.num_vertices];
   }
+
+  ~PlanarAppOpBase() override {
+    delete[] read_data_;
+    delete[] write_data_;
+  };
 
   virtual void SetRound(int round) { round_ = round; }
 
@@ -135,7 +146,7 @@ class PlanarAppOpBase : public PIE {
         });
       }
       // TODO: async submit!
-      executer_.GetTaskRunner()->SubmitSync(tasks);
+      executer_.GetTaskRunner()->SubmitAsync(tasks);
       // Secondly, Wait for io load left edg block.
       // TODO: Block when no edge block is ready!
       size_t size_read = blocks_to_read.size();
@@ -148,9 +159,7 @@ class PlanarAppOpBase : public PIE {
         resp.Get(&read_resp);
         if (read_resp.terminated) break;
         auto num_read = read_resp.num_edge_blocks;
-
-        auto blocks = loader_.GetReadBlocks();
-        auto read_edge_block_id = loader_.GetReadBlocks();
+        auto read_edge_block_id = GetLoadBlocksID(num_read);
         for (int j = 0; j < read_resp.read_block_size_; j++) {
           auto sub_block_id = read_edge_block_id[j];
           auto sub_block = metadata_.blocks.at(gid).sub_blocks.at(sub_block_id);
@@ -165,14 +174,14 @@ class PlanarAppOpBase : public PIE {
             cv_.notify_all();
           });
         }
-        executer_.GetTaskRunner()->SubmitSync(tasks);
+        executer_.GetTaskRunner()->SubmitAsync(tasks);
         // Decide if release edge block for load other block.
       }
 
       // Block when any edge_block has not finished.
-      std::lock_guard<std::mutex> lock(mtx_);
+      std::unique_lock<std::mutex> lock(mtx_);
       if (size_sum != 0) {
-        cv_.wait([&size_sum]() { return size_sum == 0; });
+        cv_.wait(lock, [&size_sum]() { return size_sum == 0; });
       }
       LOGF_INFO("SubGraph: {} finish!", gid);
     }
@@ -235,6 +244,14 @@ class PlanarAppOpBase : public PIE {
     return graphs_.at(block_id).GetOutEdges(id);
   }
 
+  // Log functions.
+  void LogVertexState() {
+    for (VertexID id = 0; id < metadata_.num_vertices; id++) {
+      LOGF_INFO("Vertex: {}, read: {} write: {}", id, read_data_[id],
+                write_data_[id]);
+    }
+  }
+
  private:
   BlockID GetBlockID(VertexID id) {
     for (int i = 0; i < metadata_.num_blocks; i++) {
@@ -256,8 +273,8 @@ class PlanarAppOpBase : public PIE {
   std::vector<BlockID> GetLoadBlocksID(size_t num) {
     std::vector<BlockID> res;
     while (num--) {
-      auto entry = edge_buffer_->
-      res.push_back()
+      auto entry = edge_buffer_.PopOneEdgeBlock();
+      res.push_back(entry.second);
     }
   }
 

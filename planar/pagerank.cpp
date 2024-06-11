@@ -43,8 +43,7 @@ int main(int argc, char** argv) {
     system.Start();
   } else {
     LOG_INFO("Planar System begin");
-    core::apps::PageRankOpApp app;
-    app.AppInit(FLAGS_i);
+    core::apps::PageRankOpApp app(FLAGS_i);
 
     for (int i = 0; i < FLAGS_iter; i++) {
       if (i == 0) {
