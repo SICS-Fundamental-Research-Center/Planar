@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
     }
   } else {
     core::data_structures::TwoDMetadata metadata(root_path);
-    std::vector<core::data_structures::graph::MutableBlockCSRGraphUInt32>
+    std::vector<core::data_structures::graph::MutableBlockCSRGraph>
         blocks(metadata.num_blocks);
     for (int i = 0; i < metadata.num_blocks; i++) {
       blocks.at(i).Init(root_path, &metadata.blocks.at(i));
