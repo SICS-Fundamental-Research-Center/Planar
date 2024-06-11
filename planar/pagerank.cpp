@@ -51,6 +51,7 @@ int main(int argc, char** argv) {
       } else {
         app.IncEval();
       }
+      LOGF_INFO("iter {} finish!", i);
     }
   }
   return 0;

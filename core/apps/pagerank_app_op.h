@@ -33,9 +33,9 @@ class PageRankOpApp : public apis::PlanarAppOpBase<float> {
     auto init = [this](VertexID id) { Init(id); };
     auto pull = [this](VertexID id) { Pull(id); };
 
-    LogVertexState();
+    //    LogVertexState();
     ParallelVertexDo(init);
-    LogVertexState();
+    //    LogVertexState();
 
     ParallelVertexDoWithEdges(pull);
 
@@ -44,7 +44,8 @@ class PageRankOpApp : public apis::PlanarAppOpBase<float> {
 
   void IncEval() {
     LOG_INFO("IncEval start");
-    ParallelVertexDoWithEdges([this](VertexID id) { Pull(id); });
+    auto pull = [this](VertexID id) { Pull(id); };
+    ParallelVertexDoWithEdges(pull);
     LOG_INFO("IncEval end");
   };
 
@@ -74,7 +75,7 @@ class PageRankOpApp : public apis::PlanarAppOpBase<float> {
     } else {
       pr_new = (kDampingFactor * sum) / degree;
     }
-    WriteAdd(id, pr_new);
+    Write(id, pr_new);
   }
 
  private:

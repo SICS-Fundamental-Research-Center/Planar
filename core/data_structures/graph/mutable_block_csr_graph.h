@@ -26,11 +26,11 @@ struct SubBlockImpl {
     out_edges_base_ = out_edges_base;
   }
   ~SubBlockImpl() {
-    delete[] out_edges_base_;
+    free(out_edges_base_);
     out_edges_base_ = nullptr;
   }
   void Release() {
-    delete[] out_edges_base_;
+    free(out_edges_base_);
     out_edges_base_ = nullptr;
   }
 
@@ -135,6 +135,10 @@ class MutableBlockCSRGraph {
       }
       LOGF_INFO("{}", tmp);
     }
+  }
+
+  void LogEdgeBlockInfo(BlockID bid) {
+    LOG_INFO("Edge Block {} Info: ", bid);
   }
 
  public:

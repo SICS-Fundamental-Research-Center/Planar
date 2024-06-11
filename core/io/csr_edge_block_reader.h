@@ -41,10 +41,12 @@ class CSREdgeBlockReader {
 
   void Init(const std::string& root_path,
             data_structures::TwoDMetadata* metadata,
-            scheduler::EdgeBuffer* buffer) {
+            scheduler::EdgeBuffer* buffer,
+            std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs) {
     // copy the root path
     root_path_ = root_path;
     buffer_ = buffer;
+    graphs_ = graphs;
     auto ret = io_uring_queue_init(QD, &ring_, 0);
     if (ret < 0) {
       LOGF_FATAL("queue_init: {}", ret);
@@ -74,21 +76,22 @@ class CSREdgeBlockReader {
 
   void Read(common::GraphID gid, std::vector<common::BlockID> blocks_to_read) {
     for (int i = 0; i < blocks_to_read.size(); i++) {
-      auto path = root_path_ + "/graphs/" + std::to_string(gid) + "_blocks" +
+      auto path = root_path_ + "graphs/" + std::to_string(gid) + "_blocks/" +
                   std::to_string(blocks_to_read.at(i)) + ".bin";
       auto fd = open(path.c_str(), O_RDONLY);
       struct stat sb;
       if (fstat(fd, &sb) < 0) {
         LOG_FATAL("Error at fstat");
       }
-      io_data* data = (io_data*)malloc(sb.st_size + sizeof(io_data));
+      io_data* data = (io_data*)malloc(sizeof(io_data));
       data->size = sb.st_size;
       data->gid = gid;
       data->block_id = blocks_to_read.at(i);
-      data->addr = (uint32_t*)data + 1;
+      data->addr = (uint32_t*)malloc(sb.st_size);
       struct io_uring_sqe* sqe;
       sqe = io_uring_get_sqe(&ring_);
       if (!sqe) {
+        free(data->addr);
         free(data);
         LOG_FATAL("Error at get sqe");
       }
@@ -110,13 +113,15 @@ class CSREdgeBlockReader {
         break;
       }
       io_data* data = (io_data*)io_uring_cqe_get_data(cqe);
-      if (cqe->res != data->size * 4) {
+      if (cqe->res != data->size) {
         LOG_FATAL("Read error in edge block, size is not fit!");
       }
       // Set address and <gid, bid> entry for notification.
       graphs_->at(data->gid).SetSubBlock(data->block_id, data->addr);
       buffer_->PushOneEdgeBlock(data->gid, data->block_id);
       io_uring_cqe_seen(&ring_, cqe);
+      LOGF_INFO("Read edge block: {} - {}", data->gid, data->block_id);
+      free(data);
       num_cqe++;
     }
     return num_cqe;

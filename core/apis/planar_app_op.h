@@ -79,13 +79,21 @@ class PlanarAppOpBase : public PIE {
   //  }
 
   void Init() {
+    active_edge_blocks_.resize(metadata_.num_blocks);
+    for (uint32_t i = 0; i < metadata_.num_blocks; i++) {
+      active_edge_blocks_.at(i).Init(metadata_.blocks.at(i).num_sub_blocks);
+    }
     read_data_ = new VertexData[metadata_.num_vertices];
     write_data_ = new VertexData[metadata_.num_vertices];
+
+    loader_.Start();
   }
 
   ~PlanarAppOpBase() override {
     delete[] read_data_;
     delete[] write_data_;
+
+    loader_.StopAndJoin();
   };
 
   virtual void SetRound(int round) { round_ = round; }
@@ -131,7 +139,6 @@ class PlanarAppOpBase : public PIE {
       auto blocks_in_memory = edge_buffer_.GetBlocksInMemory(gid);
       auto blocks_to_read = edge_buffer_.GetBlocksToRead(gid);
       auto size_sum = blocks_in_memory.size() + blocks_to_read.size();
-      mtx_;
       for (unsigned int sub_block_id : blocks_in_memory) {
         auto sub_block = metadata_.blocks.at(gid).sub_blocks.at(sub_block_id);
         tasks.push_back([this, &size_sum, &vertex_func, sub_block]() {
@@ -149,33 +156,35 @@ class PlanarAppOpBase : public PIE {
       executer_.GetTaskRunner()->SubmitAsync(tasks);
       // Secondly, Wait for io load left edg block.
       // TODO: Block when no edge block is ready!
-      size_t size_read = blocks_to_read.size();
-      loader_.SetToReadBlocksID(gid, &blocks_to_read);  // Trigger load.
-      while (true) {
-        tasks.clear();
-        // TODO: use edge_buffer to block.
-        auto resp = hub.get_response_queue()->PopOrWait();
-        scheduler::ReadMessage read_resp;
-        resp.Get(&read_resp);
-        if (read_resp.terminated) break;
-        auto num_read = read_resp.num_edge_blocks;
-        auto read_edge_block_id = GetLoadBlocksID(num_read);
-        for (int j = 0; j < read_resp.read_block_size_; j++) {
-          auto sub_block_id = read_edge_block_id[j];
-          auto sub_block = metadata_.blocks.at(gid).sub_blocks.at(sub_block_id);
-          tasks.push_back([this, &size_sum, &vertex_func, sub_block]() {
-            auto begin_id = sub_block.begin_id;
-            auto end_id = sub_block.end_id;
-            for (VertexID id = begin_id; id < end_id; id++) {
-              vertex_func(id);
-            }
-            std::lock_guard<std::mutex> lock(mtx_);
-            size_sum -= 1;
-            cv_.notify_all();
-          });
+      if (blocks_to_read.size() != 0) {
+        loader_.SetToReadBlocksID(gid, &blocks_to_read);  // Trigger load.
+        while (true) {
+          tasks.clear();
+          // TODO: use edge_buffer to block.
+          auto resp = hub.get_response_queue()->PopOrWait();
+          scheduler::ReadMessage read_resp;
+          resp.Get(&read_resp);
+          if (read_resp.terminated) break;
+          auto num_read = read_resp.num_edge_blocks;
+          auto read_edge_block_id = GetLoadBlocksID(num_read);
+          for (int j = 0; j < read_edge_block_id.size(); j++) {
+            auto sub_block_id = read_edge_block_id[j];
+            auto sub_block =
+                metadata_.blocks.at(gid).sub_blocks.at(sub_block_id);
+            tasks.push_back([this, &size_sum, &vertex_func, sub_block]() {
+              auto begin_id = sub_block.begin_id;
+              auto end_id = sub_block.end_id;
+              for (VertexID id = begin_id; id < end_id; id++) {
+                vertex_func(id);
+              }
+              std::lock_guard<std::mutex> lock(mtx_);
+              size_sum -= 1;
+              cv_.notify_all();
+            });
+          }
+          executer_.GetTaskRunner()->SubmitAsync(tasks);
+          // Decide if release edge block for load other block.
         }
-        executer_.GetTaskRunner()->SubmitAsync(tasks);
-        // Decide if release edge block for load other block.
       }
 
       // Block when any edge_block has not finished.
@@ -276,6 +285,7 @@ class PlanarAppOpBase : public PIE {
       auto entry = edge_buffer_.PopOneEdgeBlock();
       res.push_back(entry.second);
     }
+    return res;
   }
 
  protected:

@@ -32,7 +32,7 @@ class LoaderOp {
             data_structures::TwoDMetadata* metadata,
             scheduler::EdgeBuffer* buffer,
             std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs) {
-    reader_.Init(root_path, metadata, buffer);
+    reader_.Init(root_path, metadata, buffer, graphs);
     reader_q_ = hub->get_reader_queue();
     response_q_ = hub->get_response_queue();
     buffer_ = buffer;
@@ -63,6 +63,9 @@ class LoaderOp {
   }
 
   void Start() {
+    queue_ = 0;
+    receive_ = 0;
+    send_ = 0;
     thread_ = std::make_unique<std::thread>([this]() {
       while (true) {
         scheduler::ReadMessage message = reader_q_->PopOrWait();

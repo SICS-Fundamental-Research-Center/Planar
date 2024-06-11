@@ -32,6 +32,7 @@ class EdgeBuffer {
     buffer_size_ = common::Configurations::Get()->edge_buffer_size;
     graphs_ = graphs;
     edge_block_size_.resize(meta->num_blocks);
+    is_active_.resize(meta->num_blocks);
     is_reading_.resize(meta->num_blocks);
     is_in_memory_.resize(meta->num_blocks);
     is_finished_.resize(meta->num_blocks);
@@ -42,6 +43,7 @@ class EdgeBuffer {
         max_block_size_ = std::max(max_block_size_, size);
         edge_block_size_.at(i).push_back(size);
       }
+      is_active_.at(i).resize(block_meta.num_sub_blocks, true);
       is_reading_.at(i).resize(block_meta.num_sub_blocks, false);
       is_in_memory_.at(i).resize(block_meta.num_sub_blocks, false);
       is_finished_.at(i).resize(block_meta.num_sub_blocks, false);
