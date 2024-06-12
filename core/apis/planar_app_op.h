@@ -122,7 +122,7 @@ class PlanarAppOpBase : public PIE {
       //    task_size,
       //              tasks.size());
       executer_.GetTaskRunner()->SubmitSync(tasks);
-      LOG_INFO("task finished");
+      LOGF_INFO("Subgraph {} task finished", gid);
     }
     SyncVertexState(use_readdata_only_);
     LOG_INFO("ParallelVertexDo is done");
@@ -133,6 +133,7 @@ class PlanarAppOpBase : public PIE {
       const std::function<void(VertexID)>& vertex_func) {
     LOG_DEBUG("ParallelVertexDoWithEdges begins!");
     for (uint32_t gid = 0; gid < metadata_.num_blocks; gid++) {
+      current_gid = gid;
       active_edge_blocks_.at(gid).Fill();  // Now active all blocks.
       // First, edge block current in memory.
       common::TaskPackage tasks;
@@ -147,6 +148,7 @@ class PlanarAppOpBase : public PIE {
           for (VertexID id = begin_id; id < end_id; id++) {
             vertex_func(id);
           }
+          edge_buffer_.FinishOneEdgeBlock(current_gid, sub_block.id);
           std::lock_guard<std::mutex> lock(mtx_);
           size_sum -= 1;
           cv_.notify_all();
@@ -177,12 +179,14 @@ class PlanarAppOpBase : public PIE {
               for (VertexID id = begin_id; id < end_id; id++) {
                 vertex_func(id);
               }
+              edge_buffer_.FinishOneEdgeBlock(current_gid, sub_block.id);
               std::lock_guard<std::mutex> lock(mtx_);
               size_sum -= 1;
               cv_.notify_all();
             });
           }
           executer_.GetTaskRunner()->SubmitAsync(tasks);
+          LOGF_INFO("submit edge blocks: {}", GetIds(read_edge_block_id));
           // Decide if release edge block for load other block.
         }
       }
@@ -194,7 +198,16 @@ class PlanarAppOpBase : public PIE {
       }
       LOGF_INFO("SubGraph: {} finish!", gid);
     }
+    edge_buffer_.Reset();
     LOG_DEBUG("ParallelVertexDoWithEdges is done!");
+  }
+
+  std::string GetIds(std::vector<BlockID>& ids) {
+    std::string res = "";
+    for (auto id : ids) {
+      res += std::to_string(id) + " ";
+    }
+    return res;
   }
 
   void ParallelEdgeDo2(
@@ -288,6 +301,10 @@ class PlanarAppOpBase : public PIE {
     return res;
   }
 
+  void ReleaseEdgeBlock(BlockID bid) {
+    edge_buffer_.ReleaseBuffer(current_gid, bid);
+  }
+
  protected:
   common::BlockingQueue<VertexID>* active_queue_;
 
@@ -308,6 +325,7 @@ class PlanarAppOpBase : public PIE {
   std::vector<common::Bitmap> active_edge_blocks_;
 
   // Graph index and edges structure. Init at beginning.
+  GraphID current_gid;
   std::vector<CSRBlockGraph> graphs_;
   // Buffer size management.
   scheduler::EdgeBuffer edge_buffer_;

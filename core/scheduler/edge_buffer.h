@@ -51,7 +51,17 @@ class EdgeBuffer {
   }
 
  public:
-  void ApplyBuffer(GraphID gid, BlockID bid) {
+  void Reset() {
+    auto num_blocks = is_in_memory_.size();
+    for (int i = 0; i < num_blocks; i++) {
+      auto num_sub_blocks = is_in_memory_.at(i).size();
+      is_in_memory_.at(i).resize(num_sub_blocks, false);
+      is_reading_.at(i).resize(num_sub_blocks, false);
+      is_finished_.at(i).resize(num_sub_blocks, false);
+    }
+  }
+
+  void ApplyBufferBlock(GraphID gid, BlockID bid) {
     std::lock_guard<std::mutex> lock(mtx_);
     auto size = edge_block_size_.at(gid).at(bid);
     while (size > buffer_size_) ReleaseUsedBuffer();
@@ -59,8 +69,19 @@ class EdgeBuffer {
     is_reading_.at(gid).at(bid) = true;
   }
 
+  void ApplyBuffer(GraphID gid, BlockID bid) {
+    std::lock_guard<std::mutex> lock(mtx_);
+    buffer_size_ -= edge_block_size_.at(gid).at(bid);
+    is_reading_.at(gid).at(bid) = true;
+  }
+
   bool IsBufferNotEnough(GraphID gid, BlockID bid) {
     return buffer_size_ < edge_block_size_.at(gid).at(bid);
+  }
+
+  void WaitForBufferRelease() {
+    std::unique_lock<std::mutex> lock(mtx_);
+    cv_.wait(lock, [this]() { return !buffer_block_; });
   }
 
   // Blocking when no edge block can be release.
@@ -71,7 +92,10 @@ class EdgeBuffer {
   }
 
   void ReleaseBuffer(GraphID gid, BlockID bid) {
+    std::lock_guard<std::mutex> lock(mtx_);
     graphs_->at(gid).Release(bid);
+    is_in_memory_.at(gid).at(bid) = false;
+    buffer_size_ += edge_block_size_.at(gid).at(bid);
   }
 
   // TODO: useful??
@@ -100,9 +124,17 @@ class EdgeBuffer {
     return is_finished_.at(gid).at(bid);
   }
 
-  void UseOneEdgeBlock(GraphID gid, BlockID bid) {
+  void FinishOneEdgeBlock(GraphID gid, BlockID bid) {
+    std::lock_guard<std::mutex> lock(mtx_);
     is_finished_.at(gid).at(bid) = true;
-    used_edge_blocks_.Push(std::pair<GraphID, BlockID>(gid, bid));
+    //    used_edge_blocks_.Push(std::pair<GraphID, BlockID>(gid, bid));
+    // Now, when finish one just release it.
+    graphs_->at(gid).Release(bid);
+    is_in_memory_.at(gid).at(bid) = false;
+    buffer_size_ += edge_block_size_.at(gid).at(bid);
+    //    std::unique_lock<std::mutex> lock(mtx_);
+    //    buffer_block_ = false;
+    //    cv_.notify_all();
   }
 
   std::vector<BlockID> GetBlocksInMemory(GraphID gid) {
@@ -123,9 +155,16 @@ class EdgeBuffer {
     return res;
   }
 
+  void SetBufferBlock() {
+    std::lock_guard<std::mutex> lck(mtx_);
+    buffer_block_ = true;
+  }
+
  private:
   std::mutex mtx_;
   std::condition_variable cv_;
+
+  bool buffer_block_ = false;
 
   size_t max_block_size_ = 0;
   size_t buffer_size_;

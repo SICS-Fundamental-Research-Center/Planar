@@ -43,10 +43,13 @@ class LoaderOp {
     if (begin >= to_read_blocks_id_->size()) return begin;
     std::vector<common::BlockID> reqs;
     while (true) {
-      if (queue_ >= QD || begin >= to_read_blocks_id_->size())
-        break;
+      if (queue_ >= QD || begin >= to_read_blocks_id_->size()) break;
       auto bid = to_read_blocks_id_->at(begin);
-      if (buffer_->IsBufferNotEnough(current_gid_, bid)) break;
+      if (buffer_->IsBufferNotEnough(current_gid_, bid)) {
+        //        buffer_->SetBufferBlock();
+        break;
+      }
+      buffer_->ApplyBuffer(current_gid_, bid);
       reqs.push_back(bid);
       begin++;
       queue_++;
@@ -70,7 +73,6 @@ class LoaderOp {
       while (true) {
         scheduler::ReadMessage message = reader_q_->PopOrWait();
         if (message.terminated) break;
-        // TODO: block or poll?
         int begin = 0;
         while (receive_ < to_read_blocks_id_->size()) {
           // Send QD requests per Read operation.
@@ -82,6 +84,7 @@ class LoaderOp {
             response.num_edge_blocks = load;
             response_q_->Push(scheduler::Message(response));
           }
+          // TODO: Judge if to block for buffer release.
         }
         // One subgraph finished, terminate the executor for next one.
         scheduler::ReadMessage m_end;
@@ -133,6 +136,8 @@ class LoaderOp {
 
   common::GraphID current_gid_;
   std::vector<common::VertexID>* to_read_blocks_id_;
+
+  bool block_ = false;
 
   size_t queue_;
   size_t receive_;

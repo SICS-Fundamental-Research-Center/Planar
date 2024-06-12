@@ -107,6 +107,7 @@ class CSREdgeBlockReader {
   size_t GetBlockReady() {
     struct io_uring_cqe* cqe;
     size_t num_cqe = 0;
+    std::string ids= "";
     while (true) {
       auto ret = io_uring_peek_cqe(&ring_, &cqe);
       if (ret != 0) {
@@ -120,9 +121,12 @@ class CSREdgeBlockReader {
       graphs_->at(data->gid).SetSubBlock(data->block_id, data->addr);
       buffer_->PushOneEdgeBlock(data->gid, data->block_id);
       io_uring_cqe_seen(&ring_, cqe);
-      LOGF_INFO("Read edge block: {} - {}", data->gid, data->block_id);
+      ids += std::to_string(data->block_id) + " ";
       free(data);
       num_cqe++;
+    }
+    if (ids != "") {
+      LOGF_INFO("Read blocks: {}", ids);
     }
     return num_cqe;
   }
