@@ -22,15 +22,24 @@ struct SubBlockImpl {
   SubBlockImpl(common::EdgeIndex num_edges) {
     out_edges_base_ = new common::VertexID[num_edges];
   }
+
+  void Init(common::EdgeIndex num_edges) {
+    out_edges_base_ = new common::VertexID[num_edges];
+  }
   void Init(common::VertexID* out_edges_base) {
     out_edges_base_ = out_edges_base;
   }
+  common::VertexID* GetBlockAddr() {
+    return out_edges_base_;
+  }
   ~SubBlockImpl() {
-    free(out_edges_base_);
+    //    free(out_edges_base_);
+    delete[] out_edges_base_;
     out_edges_base_ = nullptr;
   }
   void Release() {
-    free(out_edges_base_);
+    //    free(out_edges_base_);
+    delete[] out_edges_base_;
     out_edges_base_ = nullptr;
   }
 
@@ -47,9 +56,8 @@ class MutableBlockCSRGraph {
   using VertexDegree = common::VertexDegree;
 
  public:
-  MutableBlockCSRGraph() {};
-  MutableBlockCSRGraph(const std::string& root_path,
-                                Block* block_meta) {
+  MutableBlockCSRGraph(){};
+  MutableBlockCSRGraph(const std::string& root_path, Block* block_meta) {
     Init(root_path, block_meta);
   }
 
@@ -121,6 +129,11 @@ class MutableBlockCSRGraph {
            (offset - metadata_block_->sub_blocks.at(subBlock_id).begin_offset);
   }
 
+  VertexID* ApplySubBlockBuffer(BlockID bid) {
+    sub_blocks_.at(bid).Init(metadata_block_->sub_blocks.at(bid).num_edges);
+    return sub_blocks_.at(bid).out_edges_base_;
+  }
+
   void LogGraphInfo() {
     for (VertexID id = metadata_block_->begin_id; id < metadata_block_->end_id;
          id++) {
@@ -137,9 +150,7 @@ class MutableBlockCSRGraph {
     }
   }
 
-  void LogEdgeBlockInfo(BlockID bid) {
-    LOG_INFO("Edge Block {} Info: ", bid);
-  }
+  void LogEdgeBlockInfo(BlockID bid) { LOG_INFO("Edge Block {} Info: ", bid); }
 
  public:
   Block* metadata_block_ = nullptr;

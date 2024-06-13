@@ -27,8 +27,10 @@ struct io_data {
   common::GraphID gid;
   common::BlockID block_id;
   size_t size;
-  uint32_t* addr;
+  char* addr;
 };
+
+std::vector<std::vector<int>> Fds;
 
 // io_uring to read
 class CSREdgeBlockReader {
@@ -38,6 +40,9 @@ class CSREdgeBlockReader {
 
  public:
   CSREdgeBlockReader() = default;
+  ~CSREdgeBlockReader() {
+    io_uring_queue_exit(&ring_);
+  }
 
   void Init(const std::string& root_path,
             data_structures::TwoDMetadata* metadata,
@@ -52,9 +57,11 @@ class CSREdgeBlockReader {
       LOGF_FATAL("queue_init: {}", ret);
     }
     blocks_addr_.resize(metadata->num_blocks);
+    Fds.resize(metadata->num_blocks);
     for (uint32_t i = 0; i < metadata->num_blocks; i++) {
       auto num = metadata->blocks.at(i).num_sub_blocks;
       blocks_addr_.at(i).resize(num, nullptr);
+      Fds.at(i).resize(num, 0);
     }
   }
 
@@ -76,9 +83,11 @@ class CSREdgeBlockReader {
 
   void Read(common::GraphID gid, std::vector<common::BlockID> blocks_to_read) {
     for (int i = 0; i < blocks_to_read.size(); i++) {
+      auto bid = blocks_to_read.at(i);
       auto path = root_path_ + "graphs/" + std::to_string(gid) + "_blocks/" +
-                  std::to_string(blocks_to_read.at(i)) + ".bin";
-      auto fd = open(path.c_str(), O_RDONLY);
+                  std::to_string(bid) + ".bin";
+      Fds[gid][bid] = open(path.c_str(), O_RDONLY);
+      auto fd = Fds[gid][bid];
       struct stat sb;
       if (fstat(fd, &sb) < 0) {
         LOG_FATAL("Error at fstat");
@@ -86,13 +95,13 @@ class CSREdgeBlockReader {
       io_data* data = (io_data*)malloc(sizeof(io_data));
       data->size = sb.st_size;
       data->gid = gid;
-      data->block_id = blocks_to_read.at(i);
-      data->addr = (uint32_t*)malloc(sb.st_size);
+      data->block_id = bid;
+      data->addr = (char*)graphs_->at(gid).ApplySubBlockBuffer(bid);
       struct io_uring_sqe* sqe;
       sqe = io_uring_get_sqe(&ring_);
       if (!sqe) {
-        free(data->addr);
         free(data);
+        graphs_->at(gid).Release(bid);
         LOG_FATAL("Error at get sqe");
       }
       io_uring_prep_read(sqe, fd, data->addr, data->size, 0);
@@ -114,14 +123,16 @@ class CSREdgeBlockReader {
         break;
       }
       io_data* data = (io_data*)io_uring_cqe_get_data(cqe);
+      auto size = cqe->res;
       if (cqe->res != data->size) {
-        LOG_FATAL("Read error in edge block, size is not fit!");
+        LOGF_FATAL("Read error in edge block, size is not fit! error code {}", cqe->res);
       }
       // Set address and <gid, bid> entry for notification.
-      graphs_->at(data->gid).SetSubBlock(data->block_id, data->addr);
+      //      graphs_->at(data->gid).SetSubBlock(data->block_id, (uint32_t*)data->addr);
       buffer_->PushOneEdgeBlock(data->gid, data->block_id);
       io_uring_cqe_seen(&ring_, cqe);
       ids += std::to_string(data->block_id) + " ";
+      close(Fds[data->gid][data->block_id]);
       free(data);
       num_cqe++;
     }
