@@ -28,6 +28,12 @@ class Discharger : public Component {
 
   ~Discharger() final = default;
 
+  void Init(const std::string& root_path, scheduler::MessageHub* hub) {
+    writer_.Init(root_path);
+    writer_q_ = hub->get_writer_queue();
+    response_q_ = hub->get_response_queue();
+  }
+
   void Start() override {
     thread_ = std::make_unique<std::thread>([this]() {
       while (true) {

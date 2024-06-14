@@ -17,6 +17,7 @@ typedef uint32_t VertexLabel;
 typedef uint32_t VertexDegree;
 typedef uint32_t VertexCount;
 typedef uint64_t EdgeIndex;
+typedef uint32_t EdgeIndexS;  // for small edge index, used only in Block
 typedef uint32_t BlockID;
 
 typedef uint8_t DefaultEdgeDataType;  // used for position
@@ -34,6 +35,9 @@ typedef std::function<bool(VertexID, VertexID)> FuncEdgeMutate;
   std::numeric_limits<sics::graph::core::common::GraphID>::max()
 #define INVALID_VERTEX_INDEX \
   std::numeric_limits<sics::graph::core::common::VertexIndex>::max()
+
+#define QD 32  // queue depth for io_uring
+#define RD 32    // read request depth once for io_uring submit
 
 }  // namespace sics::graph::core::common
 

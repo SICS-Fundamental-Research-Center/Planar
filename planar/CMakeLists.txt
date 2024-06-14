@@ -11,6 +11,7 @@ include_directories(
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/planar)
 
+set(LIBURING_PATH "/usr/lib")
 #########################
 # Artifacts
 #########################
@@ -24,5 +25,6 @@ foreach (PLANAR_APP_SOURCE ${PLANAR_APP_SOURCES})
             yaml-cpp
             gflags
             ${FOLLY_LIBRARIES}
+            ${LIBURING_PATH}/liburing.a
             )
 endforeach ()

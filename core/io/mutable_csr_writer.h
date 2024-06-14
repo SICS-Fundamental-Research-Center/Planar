@@ -25,6 +25,11 @@ class MutableCSRWriter : public Writer {
  public:
   MutableCSRWriter(const std::string& root_path) : root_path_(root_path) {}
 
+  void Init(const std::string& root_path) {
+    // copy the root path
+    root_path_ = root_path;
+  }
+
   void Write(WriteMessage* message,
              common::TaskRunner* runner = nullptr) override;
 
@@ -36,7 +41,7 @@ class MutableCSRWriter : public Writer {
                            const std::vector<OwnedBUffer>& buffers);
 
  private:
-  const std::string root_path_;
+  std::string root_path_;
 };
 
 }  // namespace sics::graph::core::io
