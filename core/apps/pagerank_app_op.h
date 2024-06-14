@@ -49,7 +49,10 @@ class PageRankOpApp : public apis::PlanarAppOpBase<float> {
     LOG_INFO("IncEval end");
   };
 
-  void Assemble(){};
+  void Assemble() {
+    auto log = [this](VertexID id) { LogVertexPr(id); };
+    ParallelVertexDo(log);
+  };
 
  private:
   void Init(VertexID id) {
@@ -76,6 +79,12 @@ class PageRankOpApp : public apis::PlanarAppOpBase<float> {
       pr_new = (kDampingFactor * sum) / degree;
     }
     Write(id, pr_new);
+  }
+
+  void LogVertexPr(VertexID id) {
+    if (id % 1000000 == 0) {
+      LOGF_INFO("VertexID {}, pagerank: {}", id, Read(id));
+    }
   }
 
  private:

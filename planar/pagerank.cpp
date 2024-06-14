@@ -80,6 +80,8 @@ int main(int argc, char** argv) {
     auto end_time = std::chrono::system_clock::now();
     LOGF_INFO(" =========== whole Runtime: {} s ===========",
               std::chrono::duration<double>(end_time - begin_time).count());
+
+    app.Assemble();
   }
   return 0;
 }

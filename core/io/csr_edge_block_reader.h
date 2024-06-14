@@ -27,6 +27,7 @@ struct io_data {
   common::GraphID gid;
   common::BlockID block_id;
   size_t size;
+  size_t offset;
   char* addr;
 };
 
@@ -97,6 +98,7 @@ class CSREdgeBlockReader {
       data->gid = gid;
       data->block_id = bid;
       data->addr = (char*)graphs_->at(gid).ApplySubBlockBuffer(bid);
+      data->offset = 0;
       struct io_uring_sqe* sqe;
       sqe = io_uring_get_sqe(&ring_);
       if (!sqe) {
@@ -104,12 +106,28 @@ class CSREdgeBlockReader {
         graphs_->at(gid).Release(bid);
         LOG_FATAL("Error at get sqe");
       }
-      io_uring_prep_read(sqe, fd, data->addr, data->size, 0);
+      io_uring_prep_read(sqe, fd, data->addr, data->size, data->offset);
       io_uring_sqe_set_data(sqe, data);
     }
     auto ret = io_uring_submit(&ring_);
     if (ret < 0) {
       LOG_FATAL("Error at submit sqes");
+    }
+  }
+
+  void Read(io_data* data) {
+    auto fd = Fds[data->gid][data->block_id];
+    struct io_uring_sqe* sqe;
+    sqe = io_uring_get_sqe(&ring_);
+    if (!sqe) {
+      free(data);
+      LOG_FATAL("Error at get sqe");
+    }
+    io_uring_prep_read(sqe, fd, data->addr, data->size, data->offset);
+    io_uring_sqe_set_data(sqe, data);
+    auto ret = io_uring_submit(&ring_);
+    if (ret < 0) {
+      LOG_FATAL("Error at submit sqes for read short");
     }
   }
 
@@ -123,9 +141,21 @@ class CSREdgeBlockReader {
         break;
       }
       io_data* data = (io_data*)io_uring_cqe_get_data(cqe);
-      auto size = cqe->res;
       if (cqe->res != data->size) {
-        LOGF_FATAL("Read error in edge block, size is not fit! error code {}", cqe->res);
+        auto size = cqe->res;
+        if (cqe->res > 0) {
+          data->addr = data->addr + size;
+          data->size = data->size - size;
+          if (data->size < 0) {
+            LOG_FATAL("size less 0");
+          }
+          data->offset = data->offset + cqe->res;
+          io_uring_cqe_seen(&ring_, cqe);
+          Read(data);
+          continue;
+        } else {
+          LOGF_FATAL("Read error in edge block, size is not fit! error code {}, blockID {}", cqe->res, data->block_id);
+        }
       }
       // Set address and <gid, bid> entry for notification.
       //      graphs_->at(data->gid).SetSubBlock(data->block_id, (uint32_t*)data->addr);
@@ -162,6 +192,9 @@ class CSREdgeBlockReader {
  private:
   struct io_uring ring_;
   std::string root_path_;
+
+  common::GraphID current_gid_;
+  std::queue<io_data*> reload_ids_;
 
   scheduler::EdgeBuffer* buffer_;
   std::vector<std::vector<common::VertexID*>> blocks_addr_;  // to delete.

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "apis/pie.h"
+#include "common/blocking_queue.h"
 #include "common/config.h"
 #include "common/multithreading/task_runner.h"
 #include "data_structures/serializable.h"
@@ -300,6 +301,8 @@ class PlanarAppBase : public PIE {
 
   common::Bitmap active_;
   common::Bitmap active_next_;
+
+  common::BlockingQueue<common::BlockID> queue_;
 
   // configs
   const uint32_t parallelism_;

@@ -131,7 +131,7 @@ class PlanarAppOpBase : public PIE {
   // Users will use edges of block, so we need to load edge block first.
   void ParallelVertexDoWithEdges(
       const std::function<void(VertexID)>& vertex_func) {
-    LOG_DEBUG("ParallelVertexDoWithEdges begins!");
+    LOG_INFO("ParallelVertexDoWithEdges begins!");
     for (uint32_t gid = 0; gid < metadata_.num_blocks; gid++) {
       current_gid = gid;
       active_edge_blocks_.at(gid).Fill();  // Now active all blocks.
@@ -199,7 +199,7 @@ class PlanarAppOpBase : public PIE {
       LOGF_INFO("SubGraph: {} finish!", gid);
     }
     edge_buffer_.Reset();
-    LOG_DEBUG("ParallelVertexDoWithEdges is done!");
+    LOG_INFO("ParallelVertexDoWithEdges is done!");
   }
 
   std::string GetIds(std::vector<BlockID>& ids) {
