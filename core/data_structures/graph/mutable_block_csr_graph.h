@@ -129,6 +129,10 @@ class MutableBlockCSRGraph {
            (offset - metadata_block_->sub_blocks.at(subBlock_id).begin_offset);
   }
 
+  VertexID* GetAllEdges(BlockID bid) {
+    return sub_blocks_.at(bid).out_edges_base_;
+  }
+
   VertexID* ApplySubBlockBuffer(BlockID bid) {
     sub_blocks_.at(bid).Init(metadata_block_->sub_blocks.at(bid).num_edges);
     return sub_blocks_.at(bid).out_edges_base_;

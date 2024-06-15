@@ -8,8 +8,13 @@
 #include "components/discharger.h"
 #include "components/executor.h"
 #include "components/loader.h"
+#include "components/loader_op2.h"
+#include "data_structures/graph/mutable_block_csr_graph.h"
+#include "data_structures/graph_metadata.h"
+#include "io/csr_edge_block_reader.h"
 #include "io/mutable_csr_reader.h"
 #include "io/mutable_csr_writer.h"
+#include "scheduler/edge_buffer2.h"
 #include "scheduler/scheduler.h"
 #include "update_stores/bsp_update_store.h"
 
@@ -25,23 +30,27 @@ class Planar {
  public:
   Planar() = default;
   Planar(const std::string& root_path)
-      : scheduler_(std::make_unique<scheduler::Scheduler>(root_path)) {
+      : meta_(root_path),
+        scheduler_(std::make_unique<scheduler::Scheduler>(root_path)) {
     update_store_ =
         std::make_unique<update_stores::BspUpdateStore<VertexData, EdgeData>>(
             root_path, scheduler_->GetVertexNumber());
 
+    graphs_.resize(meta_.num_blocks);
+    for (int i = 0; i < meta_.num_blocks; i++) {
+      graphs_.at(i).Init(root_path, &meta_.blocks.at(i));
+    }
+
+    edge_buffer.Init(&meta_, &graphs_);
     // components for reader, writer and executor
-    loader_ = std::make_unique<components::Loader<io::MutableCSRReader>>(
-        root_path, scheduler_->GetMessageHub());
-    discharger_ =
-        std::make_unique<components::Discharger<io::MutableCSRWriter>>(
-            root_path, scheduler_->GetMessageHub());
+    loader2_.Init(root_path, scheduler_->GetMessageHub(), &meta_, &edge_buffer,
+                  &graphs_, &queue_);
     executer_ =
         std::make_unique<components::Executor>(scheduler_->GetMessageHub());
 
     // set scheduler info
     scheduler_->Init(update_store_.get(), executer_->GetTaskRunner(), &app_,
-                     loader_->GetReader());
+                     &meta_);
 
     app_.AppInit(executer_->GetTaskRunner(), update_store_.get());
   }
@@ -51,8 +60,7 @@ class Planar {
   void Start() {
     LOG_INFO("start components!");
     start_time_ = std::chrono::system_clock::now();
-    loader_->Start();
-    discharger_->Start();
+    loader2_.Start();
     executer_->Start();
     scheduler_->Start();
 
@@ -64,21 +72,28 @@ class Planar {
   }
 
   void Stop() {
-    loader_->StopAndJoin();
-    discharger_->StopAndJoin();
+    loader2_.StopAndJoin();
     executer_->StopAndJoin();
   }
 
  private:
+  data_structures::TwoDMetadata meta_;
+
   std::unique_ptr<scheduler::Scheduler> scheduler_;
   std::unique_ptr<update_stores::BspUpdateStore<VertexData, EdgeData>>
       update_store_;
 
   AppType app_;
 
+  scheduler::EdgeBuffer2 edge_buffer;
+  common::BlockingQueue<common::BlockID> queue_;
+
+  components::LoaderOp2 loader2_;
+
   std::unique_ptr<components::Loader<io::MutableCSRReader>> loader_;
-  std::unique_ptr<components::Discharger<io::MutableCSRWriter>> discharger_;
   std::unique_ptr<components::Executor> executer_;
+
+  std::vector<data_structures::graph::MutableBlockCSRGraph> graphs_;
 
   // time
   std::chrono::time_point<std::chrono::system_clock> start_time_;

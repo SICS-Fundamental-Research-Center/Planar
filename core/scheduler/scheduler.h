@@ -14,7 +14,7 @@
 #include "data_structures/graph/mutable_group_csr_grah.h"
 #include "data_structures/graph_metadata.h"
 #include "data_structures/serializable.h"
-#include "io/mutable_csr_reader.h"
+#include "scheduler/edge_buffer2.h"
 #include "scheduler/graph_state.h"
 #include "scheduler/message_hub.h"
 #include "update_stores/update_store_base.h"
@@ -57,11 +57,11 @@ class Scheduler {
 
   void Init(update_stores::UpdateStoreBase* update_store,
             common::TaskRunner* task_runner, apis::PIE* app,
-            io::MutableCSRReader* loader) {
+            data_structures::TwoDMetadata* meta) {
+    metadata_ = meta;
     update_store_ = update_store;
     executor_task_runner_ = task_runner;
     app_ = app;
-    loader_ = loader;
 
     auto global_size = update_store_->GetMemorySize();
     auto graphs_size = graph_metadata_info_.GetGraphsSize();
@@ -131,6 +131,7 @@ class Scheduler {
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
   data_structures::GraphMetadata graph_metadata_info_;
+  data_structures::TwoDMetadata* metadata_;
   bool is_block_mode_ = false;
   int current_round_ = 0;
 
@@ -143,9 +144,6 @@ class Scheduler {
   update_stores::UpdateStoreBase* update_store_;
   common::TaskRunner* executor_task_runner_;
   apis::PIE* app_;
-
-  // Loader
-  io::MutableCSRReader* loader_ = nullptr;
 
   // mark if the executor is running
   bool is_executor_running_ = false;
@@ -170,6 +168,9 @@ class Scheduler {
   size_t need_read_graphs_ = 0;
 
   bool memory_enough_ = false;
+
+  // Buffer managements.
+  EdgeBuffer2 buffer_;
 
   int test = 0;
 };
