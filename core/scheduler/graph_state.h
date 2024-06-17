@@ -13,12 +13,14 @@ namespace sics::graph::core::scheduler {
 
 struct GraphState {
   using GraphID = common::GraphID;
+
  public:
   typedef enum {
     OnDisk = 1,
     Reading,
     Serialized,
     Deserialized,
+    InMemory,
     Computed,
   } StorageStateType;
 
@@ -80,6 +82,10 @@ struct GraphState {
     current_round_pending_.at(gid) = false;
   }
 
+  void SetGraphCurrentRoundFinish(common::GraphID gid) {
+    current_round_pending_.at(gid) = false;
+  }
+
   void SetGraphState(common::GraphID gid, StorageStateType type) {
     subgraph_storage_state_.at(gid) = type;
   }
@@ -88,7 +94,7 @@ struct GraphState {
     return subgraph_round_.at(gid);
   }
 
-  void SetSubgraphRound(common::GraphID gid) {
+  void AddGraphRound(common::GraphID gid) {
     subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
   }
 

@@ -1,6 +1,7 @@
 #include <gflags/gflags.h>
 
 #include "core/apps/wcc_app.h"
+#include "core/apps/wcc_app_op.h"
 #include "core/apps/wcc_asp_app.h"
 #include "core/apps/wcc_edgecut_app.h"
 #include "core/apps/wcc_group.h"
@@ -15,10 +16,8 @@ DEFINE_uint32(memory_size, 64, "memory size (GB)");
 DEFINE_uint32(partition, 1,
               "partition type (hashvertex, edgecut, planarcut, 2Dcut)");
 DEFINE_uint32(limits, 0, "subgrah limits for pre read");
-DEFINE_bool(no_short_cut, false, "no short cut");
-DEFINE_bool(threefour, false, "3/4 partition mode");
-DEFINE_bool(group, false, "group mode");
-DEFINE_uint32(group_num, 2, "group num");
+DEFINE_bool(short_cut, false, "no short cut");
+DEFINE_string(buffer_size, "32G", "buffer size for edge blocks");
 
 using namespace sics::graph;
 
@@ -37,30 +36,14 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->memory_size =
       FLAGS_memory_size * 1024;
   core::common::Configurations::GetMutable()->limits = FLAGS_limits;
-  core::common::Configurations::GetMutable()->short_cut = !FLAGS_no_short_cut;
-  core::common::Configurations::GetMutable()->threefour_mode = FLAGS_threefour;
-  core::common::Configurations::GetMutable()->group = FLAGS_group;
-  core::common::Configurations::GetMutable()->group_num = FLAGS_group_num;
+  core::common::Configurations::GetMutable()->short_cut = FLAGS_short_cut;
+  core::common::Configurations::GetMutable()->edge_buffer_size =
+      core::common::GetBufferSize(FLAGS_buffer_size);
 
-  if (FLAGS_partition == core::common::PartitionType::EdgeCut) {
-    core::common::Configurations::GetMutable()->partition_type =
-        core::common::PartitionType::EdgeCut;
-    LOG_INFO("System begin, EdgeCut WCC");
-    core::planar_system::Planar<core::apps::WCCEdgeCutApp> system(
-        core::common::Configurations::Get()->root_path);
-    system.Start();
-  } else {
-    if (FLAGS_group) {
-      LOG_INFO("System begin, group mode of WCC !!");
-      core::planar_system::Planar<core::apps::WCCGroupApp> system(
-          core::common::Configurations::Get()->root_path);
-      system.Start();
-    } else {
-      LOG_INFO("System begin");
-      core::planar_system::Planar<core::apps::WCCApp> system(
-          core::common::Configurations::Get()->root_path);
-      system.Start();
-    }
-  }
+  LOG_INFO("System begin");
+  core::planar_system::Planar<core::apps::WCCAppOp> system(
+      core::common::Configurations::Get()->root_path);
+  system.Start();
+
   return 0;
 }

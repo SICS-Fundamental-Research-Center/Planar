@@ -92,6 +92,16 @@ class EdgeBuffer2 {
     ReleaseBuffer(entry.first, entry.second);
   }
 
+  void ReleaseBuffer(GraphID gid) {
+    std::lock_guard<std::mutex> lock(mtx_);
+    for (int i = 0; i < meta_->blocks.at(gid).num_sub_blocks; i++) {
+      graphs_->at(gid).Release(i);
+      is_in_memory_.at(gid).at(i) = false;
+      buffer_size_ += edge_block_size_.at(gid).at(i);
+    }
+    graphs_->at(gid).SetSubBlocksRelease();
+  }
+
   void ReleaseBuffer(GraphID gid, BlockID bid) {
     std::lock_guard<std::mutex> lock(mtx_);
     graphs_->at(gid).Release(bid);
@@ -107,16 +117,14 @@ class EdgeBuffer2 {
     }
   }
 
+  void Push(BlockID bid) { queue_.Push(bid); }
+
   void PushOneEdgeBlock(GraphID gid, BlockID bid) {
-    loaded_blocks_.emplace(gid, bid);
+    queue_.Push(bid);
     is_in_memory_.at(gid).at(bid) = true;
   }
 
-  std::pair<GraphID, BlockID> PopOneEdgeBlock() {
-    auto res = loaded_blocks_.front();
-    loaded_blocks_.pop();
-    return res;
-  }
+  common::BlockingQueue<common::BlockID>* GetQueue() { return &queue_; }
 
   // Check state for blocks.
 
@@ -164,6 +172,8 @@ class EdgeBuffer2 {
     buffer_block_ = true;
   }
 
+  size_t GetBufferSize() { return buffer_size_ / 1024 / 1024; }
+
  private:
   std::mutex mtx_;
   std::condition_variable cv_;
@@ -182,7 +192,8 @@ class EdgeBuffer2 {
   std::vector<std::vector<bool>> is_finished_;
 
   common::BlockingQueue<std::pair<GraphID, BlockID>> used_edge_blocks_;
-  std::queue<std::pair<GraphID, BlockID>> loaded_blocks_;
+
+  common::BlockingQueue<common::BlockID> queue_;
   std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs_;
 };
 

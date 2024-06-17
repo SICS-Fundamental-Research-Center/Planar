@@ -30,14 +30,15 @@ typedef std::function<void(VertexID, VertexID)> FuncEdge;
 typedef std::function<void(VertexID, VertexID, EdgeIndex)> FuncEdgeAndMutate;
 typedef std::function<bool(VertexID, VertexID)> FuncEdgeMutate;
 
-#define MAX_VERTEX_ID std::numeric_limits<VertexID>::max()
+#define MAX_VERTEX_ID \
+  std::numeric_limits<sics::graph::core::common::VertexID>::max()
 #define INVALID_GRAPH_ID \
   std::numeric_limits<sics::graph::core::common::GraphID>::max()
 #define INVALID_VERTEX_INDEX \
   std::numeric_limits<sics::graph::core::common::VertexIndex>::max()
 
 #define QD 32  // queue depth for io_uring
-#define RD 32    // read request depth once for io_uring submit
+#define RD 32  // read request depth once for io_uring submit
 
 }  // namespace sics::graph::core::common
 

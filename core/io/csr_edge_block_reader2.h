@@ -18,20 +18,13 @@
 #include "data_structures/graph/mutable_block_csr_graph.h"
 #include "data_structures/graph_metadata.h"
 #include "data_structures/serialized.h"
+#include "io/csr_edge_block_reader.h"
 #include "io/reader_writer.h"
 #include "scheduler/edge_buffer2.h"
 
 namespace sics::graph::core::io {
 
-struct io_data {
-  common::GraphID gid;
-  common::BlockID block_id;
-  size_t size;
-  size_t offset;
-  char* addr;
-};
-
-std::vector<std::vector<int>> Fds;
+std::vector<std::vector<int>> Fds2;
 
 // io_uring to read
 class CSREdgeBlockReader2 {
@@ -56,11 +49,11 @@ class CSREdgeBlockReader2 {
       LOGF_FATAL("queue_init: {}", ret);
     }
     blocks_addr_.resize(metadata->num_blocks);
-    Fds.resize(metadata->num_blocks);
+    Fds2.resize(metadata->num_blocks);
     for (uint32_t i = 0; i < metadata->num_blocks; i++) {
       auto num = metadata->blocks.at(i).num_sub_blocks;
       blocks_addr_.at(i).resize(num, nullptr);
-      Fds.at(i).resize(num, 0);
+      Fds2.at(i).resize(num, 0);
     }
   }
 
@@ -85,8 +78,8 @@ class CSREdgeBlockReader2 {
       auto bid = blocks_to_read.at(i);
       auto path = root_path_ + "graphs/" + std::to_string(gid) + "_blocks/" +
                   std::to_string(bid) + ".bin";
-      Fds[gid][bid] = open(path.c_str(), O_RDONLY);
-      auto fd = Fds[gid][bid];
+      Fds2[gid][bid] = open(path.c_str(), O_RDONLY);
+      auto fd = Fds2[gid][bid];
       struct stat sb;
       if (fstat(fd, &sb) < 0) {
         LOG_FATAL("Error at fstat");
@@ -114,7 +107,7 @@ class CSREdgeBlockReader2 {
   }
 
   void Read(io_data* data) {
-    auto fd = Fds[data->gid][data->block_id];
+    auto fd = Fds2[data->gid][data->block_id];
     struct io_uring_sqe* sqe;
     sqe = io_uring_get_sqe(&ring_);
     if (!sqe) {
@@ -164,7 +157,7 @@ class CSREdgeBlockReader2 {
       buffer_->PushOneEdgeBlock(data->gid, data->block_id);
       io_uring_cqe_seen(&ring_, cqe);
       ids += std::to_string(data->block_id) + " ";
-      close(Fds[data->gid][data->block_id]);
+      close(Fds2[data->gid][data->block_id]);
       free(data);
       num_cqe++;
     }

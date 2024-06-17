@@ -32,15 +32,13 @@ class LoaderOp2 {
   void Init(const std::string& root_path, scheduler::MessageHub* hub,
             data_structures::TwoDMetadata* metadata,
             scheduler::EdgeBuffer2* buffer,
-            std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs,
-            common::BlockingQueue<common::BlockID>* queue) {
+            std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs) {
     meta_ = metadata;
     reader_.Init(root_path, metadata, buffer, graphs);
     reader_q_ = hub->get_reader_queue();
     response_q_ = hub->get_response_queue();
     buffer_ = buffer;
     graphs_ = graphs;
-    edge_block_queue_ = queue;
   }
 
   int SubmitReadRequest(int begin) {
@@ -84,20 +82,15 @@ class LoaderOp2 {
           // Send QD requests per Read operation.
           begin = SubmitReadRequest(begin);
           auto load = CheckIOEntry();
-          if (load) {
-            auto ids = GetReadBlocks();
-            // TODO: Will this queue be bottleneck?
-            for (auto id : ids) {
-              edge_block_queue_->Push(id);
-            }
-          }
           // TODO: Judge if to block for buffer release.
         }
-        edge_block_queue_->Push(4294967295);  // Stop current subgraph executing.
+        buffer_->Push(4294967295);
         // One subgraph finished, terminate the executor for next one.
-        scheduler::ReadMessage read_finish;
-        read_finish.graph_id = current_gid_;
-        response_q_->Push(scheduler::Message(read_finish));
+        //        scheduler::ReadMessage read_finish;
+        //        read_finish.graph_id = current_gid_;
+        //        response_q_->Push(scheduler::Message(read_finish));
+        graphs_->at(current_gid_).SetEdgeLoaded(true);
+        LOGF_INFO("Loading subgraph {} finish", current_gid_);
 
         receive_ = 0;
         queue_ = 0;
@@ -160,8 +153,6 @@ class LoaderOp2 {
   size_t queue_;
   size_t receive_;
   size_t send_;
-
-  common::BlockingQueue<common::BlockID>* edge_block_queue_;
 
   scheduler::ReaderQueue* reader_q_;
   scheduler::ResponseQueue* response_q_;
