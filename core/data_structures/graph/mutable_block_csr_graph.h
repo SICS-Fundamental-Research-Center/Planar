@@ -136,6 +136,12 @@ class MutableBlockCSRGraph {
     return idx / metadata_block_->vertex_offset;
   }
 
+  EdgeIndexS GetInitOffset(VertexID id) {
+    auto offset = GetOutOffset(id);
+    auto subBlock_id = GetSubBlockID(id);
+    return offset - metadata_block_->sub_blocks.at(subBlock_id).begin_offset;
+  }
+
   VertexID* GetOutEdges(VertexID id) {
     auto offset = GetOutOffset(id);
     auto subBlock_id = GetSubBlockID(id);
@@ -163,9 +169,34 @@ class MutableBlockCSRGraph {
     num_edges_.at(subBlock_id) = num_edges_.at(subBlock_id) - 1;
   }
 
+  bool IsEdgeDelete(VertexID id, EdgeIndex idx) {}
+
   bool IsEdgesLoaded() { return edge_loaded; }
 
   void SetEdgeLoaded(bool load) { edge_loaded = load; }
+
+  VertexID GetNeiMinId(VertexID id) {
+    auto degree = GetOutDegree(id);
+    auto edges = GetOutEdges(id);
+    if (degree != 0) {
+      VertexID res = edges[0];
+      if (mutate) {
+        auto offset = GetInitOffset(id);
+        auto sub_block_id = GetSubBlockID(id);
+        auto& bitmap = edge_delete_bitmaps_.at(sub_block_id);
+        for (int i = 0; i < degree; i++) {
+          if (bitmap.GetBit(offset + i)) continue;
+          res = edges[i] < res ? edges[i] : res;
+        }
+      } else {
+        for (int i = 0; i < degree; i++) {
+          res = edges[i] < res ? edges[i] : res;
+        }
+      }
+      return res;
+    }
+    return MAX_VERTEX_ID;
+  }
 
   size_t GetNumEdges() {
     if (mutate) {

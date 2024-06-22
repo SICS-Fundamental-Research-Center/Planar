@@ -468,6 +468,11 @@ class PlanarAppBaseOp : public PIE {
     }
   }
 
+  VertexID GetNeiMinId(VertexID id) {
+    auto block_id = GetBlockID(id);
+    return graphs_->at(block_id).GetNeiMinId(id);
+  }
+
   VertexDegree GetOutDegree(VertexID id) {
     auto block_id = GetBlockID(id);
     return graphs_->at(block_id).GetOutDegree(id);
