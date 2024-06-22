@@ -114,7 +114,8 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
           // This sync maybe replaced by borderVertex check.
           graph_state_.SyncCurrentRoundPending();
           current_round_++;
-          LOGF_INFO(" ============ Current Round: {} Finish ============ ",
+          app_->SetInActive();
+              LOGF_INFO(" ============ Current Round: {} Finish ============ ",
                     current_round_);
 
           if (short_cut_) {

@@ -20,6 +20,8 @@ class PIE {
 
   virtual size_t IsActive() = 0;
 
+  virtual void SetInActive() = 0;
+
   virtual void SetRound(int round) = 0;
 };
 

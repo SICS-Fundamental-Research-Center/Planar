@@ -58,6 +58,7 @@ class SampleApp : public apis::PlanarAppBase<DummyGraph> {
   void SetCurrentGid(common::GraphID gid) final {}
   size_t IsActive() final {}
   void SetRound(int round) final {}
+  void SetInActive() {}
 
   // Note: all Planar apps must implement this static method.
   // PlanarAppFactory will use this method to create an app instance.

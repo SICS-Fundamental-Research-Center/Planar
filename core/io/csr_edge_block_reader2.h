@@ -161,9 +161,9 @@ class CSREdgeBlockReader2 {
       free(data);
       num_cqe++;
     }
-    if (ids != "") {
-      LOGF_INFO("Read blocks: {}", ids);
-    }
+    //    if (ids != "") {
+    //      LOGF_INFO("Read blocks: {}", ids);
+    //    }
     return num_cqe;
   }
 

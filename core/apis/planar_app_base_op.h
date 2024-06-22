@@ -102,6 +102,32 @@ class PlanarAppBaseOp : public PIE {
     LOG_INFO("ParallelVertexDo is done");
   }
 
+  void ParallelAllVertexDo(const std::function<void(VertexID)>& vertex_func) {
+    LOG_INFO("ParallelAllVertexDo is begin");
+    uint32_t task_size = GetTaskSize(meta_->num_vertices);
+    common::TaskPackage tasks;
+    tasks.reserve(parallelism_ * task_package_factor_);
+    VertexID begin_id = 0, end_id = 0;
+    for (; begin_id < meta_->num_vertices;) {
+      end_id += task_size;
+      if (end_id > meta_->num_vertices) end_id = meta_->num_vertices;
+      auto task = [&vertex_func, begin_id, end_id]() {
+        for (VertexID id = begin_id; id < end_id; id++) {
+          vertex_func(id);
+        }
+      };
+      tasks.push_back(task);
+      begin_id = end_id;
+    }
+    //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}", task_size,
+    //              tasks.size());
+    runner_->SubmitSync(tasks);
+    // TODO: sync of update_store and graph_ vertex data
+    LOG_INFO("task finished");
+    Sync(use_readdata_only_);
+    LOG_INFO("ParallelAllVertexDo is done");
+  }
+
   void ParallelVertexInitDo(const std::function<void(VertexID)>& vertex_func) {
     if (!data_init_) {
       LOG_INFO("ParallelVertexInitDo is begin");
@@ -183,103 +209,6 @@ class PlanarAppBaseOp : public PIE {
     Sync(use_readdata_only_);
     LOG_INFO("ParallelVertexDoWithEdges is done");
   }
-
-  //  void ParallelVertexDoByIndex(
-  //      const std::function<void(VertexID)>& vertex_func) {
-  //    LOG_DEBUG("ParallelVertexDoByIndex is begin");
-  //    uint32_t task_size = GetTaskSize(graph_->GetVertexNums());
-  //    common::TaskPackage tasks;
-  //    tasks.reserve(parallelism_ * task_package_factor_);
-  //    VertexIndex begin_index = 0, end_index = 0;
-  //    for (; begin_index < graph_->GetVertexNums();) {
-  //      end_index += task_size;
-  //      if (end_index > graph_->GetVertexNums())
-  //        end_index = graph_->GetVertexNums();
-  //      auto task = [&vertex_func, begin_index, end_index]() {
-  //        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
-  //          vertex_func(idx);
-  //        }
-  //      };
-  //      tasks.push_back(task);
-  //      begin_index = end_index;
-  //    }
-  //    //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}",
-  //    task_size,
-  //    //              tasks.size());
-  //    runner_->SubmitSync(tasks);
-  //    // TODO: sync of update_store and graph_ vertex data
-  //    graph_->SyncVertexData(use_readdata_only_);
-  //    LOG_DEBUG("ParallelVertexDoByIndex is done");
-  //  }
-
-  //  void ParallelVertexDoWithActive(
-  //      const std::function<void(VertexID)>& vertex_func) {
-  //    LOG_DEBUG("ParallelVertexDoWithActive is begin");
-  //    uint32_t task_size = 64 * 100;
-  //
-  //    common::TaskPackage tasks;
-  //    tasks.reserve((graph_->GetVertexNums() / 64 / 100) + 1);
-  //    VertexIndex begin_index = 0, end_index = 0;
-  //    for (; begin_index < graph_->GetVertexNums();) {
-  //      end_index += task_size;
-  //      if (end_index > graph_->GetVertexNums())
-  //        end_index = graph_->GetVertexNums();
-  //      auto task = [&vertex_func, this, begin_index, end_index]() {
-  //        for (VertexIndex idx = begin_index; idx < end_index;) {
-  //          if (active_.GetBit64(idx)) {
-  //            for (int j = 0; j < 64 && (idx + j) < end_index; j++) {
-  //              if (active_.GetBit(idx + j))
-  //                vertex_func(graph_->GetVertexIDByIndex(idx + j));
-  //            }
-  //          }
-  //          idx += 64;
-  //        }
-  //        //        for (VertexIndex idx = begin_index; idx < end_index;
-  //        idx++) {
-  //        //          auto id = graph_->GetVertexIDByIndex(idx);
-  //        //          if (active_.GetBit(idx)) {
-  //        //            vertex_func(id);
-  //        //          }
-  //        //        }
-  //      };
-  //      tasks.push_back(task);
-  //      begin_index = end_index;
-  //    }
-  //    //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}",
-  //    task_size,
-  //    //              tasks.size());
-  //    runner_->SubmitSync(tasks);
-  //    // TODO: sync of update_store and graph_ vertex data
-  //    graph_->SyncVertexData(use_readdata_only_);
-  //    LOG_DEBUG("ParallelVertexDoWithActive is done");
-  //  }
-
-  //  // Parallel execute vertex_func in task_size chunks.
-  //  void ParallelVertexDoStep(const std::function<void(VertexID)>&
-  //  vertex_func) {
-  //    LOG_DEBUG("ParallelVertexDoStep begins");
-  //    // auto task_size = GetTaskSize(graph_->GetVertexNums());
-  //    common::TaskPackage tasks;
-  //    tasks.reserve(parallelism_ * task_package_factor_);
-  //    VertexIndex end = graph_->GetVertexNums();
-  //    for (uint32_t i = 0; i < parallelism_; i++) {
-  //      auto index = end - 1 - i;
-  //      auto task = [&vertex_func, this, index]() {
-  //        for (int idx = index; idx >= 0;) {
-  //          vertex_func(graph_->GetVertexIDByIndex(idx));
-  //          idx -= parallelism_;
-  //        }
-  //      };
-  //      tasks.push_back(task);
-  //    }
-  //    //    LOGF_INFO("ParallelVertexDoStep task_size: {}, num tasks: {}",
-  //    //    task_size,
-  //    //              tasks.size());
-  //    runner_->SubmitSync(tasks);
-  //    // TODO: sync of update_store and graph_ vertex data
-  //    graph_->SyncVertexData(use_readdata_only_);
-  //    LOG_DEBUG("ParallelVertexDoStep done");
-  //  }
 
   // Parallel execute edge_func in task_size chunks.
   void ParallelEdgeDo(
@@ -368,7 +297,7 @@ class PlanarAppBaseOp : public PIE {
           cv_.notify_all();
         };
         runner_->SubmitAsync(task);
-        LOGF_INFO("submit task {}", bid);
+        //        LOGF_INFO("submit task {}", bid);
       }
       std::unique_lock<std::mutex> lock(mtx_);
       if (size_num != 0) {
@@ -455,7 +384,7 @@ class PlanarAppBaseOp : public PIE {
           cv_.notify_all();
         };
         runner_->SubmitAsync(task);
-        LOGF_INFO("submit task {}", bid);
+        //        LOGF_INFO("submit task {}", bid);
       }
       std::unique_lock<std::mutex> lock(mtx_);
       if (size_num != 0) {
@@ -563,6 +492,8 @@ class PlanarAppBaseOp : public PIE {
   void UnsetActive() { active = 0; }
 
   size_t IsActive() override { return active; }
+
+  void SetInActive() override { active = 0; }
 
   // Log functions.
   void LogVertexState() {

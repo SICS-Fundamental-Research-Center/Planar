@@ -37,63 +37,30 @@ class WCCAppOp : public apis::PlanarAppBaseOp<uint32_t> {
     };
 
     ParallelVertexInitDo(init);
-    LogVertexState();
+    //    LogVertexState();
 
     LOG_INFO("PEval begins");
     auto size = GetSubGraphNumEdges();
-    auto last_size = size;
-    while (true) {
+    while (size != 0) {
       ParallelEdgeMutateDo(graft);
       LOG_INFO("Graft finishes");
-      LogVertexState();
-      ParallelVertexDo(pointer_jump);
+      //      LogVertexState();
+      ParallelAllVertexDo(pointer_jump);
       LOG_INFO("Pointer jump finishes");
-      LogVertexState();
+      //      LogVertexState();
       ParallelEdgeMutateDo(contract);
-      LOG_INFO("Contract finishes!");
       size = GetSubGraphNumEdges();
-      LogCurrentGraphVertexState();
-      LogCurrentGraphDelInfo();
-      if (size == last_size) {
-        break;
-      } else {
-        last_size = size;
-      }
+      LOGF_INFO("Contract finishes! left edges: {}", size);
+      //      LogCurrentGraphVertexState();
+      //      LogCurrentGraphDelInfo();
     }
     LOG_INFO("PEval finishes");
   }
 
   void IncEval() final {
-    auto graft = [this](VertexID src_id, VertexID dst_id) {
-      Graft(src_id, dst_id);
-    };
     auto pointer_jump = [this](VertexID id) { PointJump(id); };
-    auto contract = [this](VertexID src_id, VertexID dst_id, EdgeIndex idx) {
-      Contract(src_id, dst_id, idx);
-    };
     LOG_INFO("IncEval begins");
-    auto size = GetSubGraphNumEdges();
-    if (size == 0) {
-      ParallelVertexDo(pointer_jump);
-    } else {
-      auto last_size = size;
-      while (true) {
-        ParallelEdgeMutateDo(graft);
-        LOG_INFO("Graft finishes");
-        LogVertexState();
-        ParallelVertexDo(pointer_jump);
-        LOG_INFO("Pointer jump finishes");
-        LogVertexState();
-        ParallelEdgeMutateDo(contract);
-        LOG_INFO("Contract finishes!");
-        size = GetSubGraphNumEdges();
-        if (size == last_size) {
-          break;
-        } else {
-          last_size = size;
-        }
-      }
-    }
+    ParallelAllVertexDo(pointer_jump);
     LOG_INFO("IncEval finishes");
   }
 
