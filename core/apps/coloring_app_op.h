@@ -28,41 +28,93 @@ class ColoringAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs,
       scheduler::MessageHub* hub) override {
     apis::PlanarAppBaseOp<uint32_t>::AppInit(runner, meta, buffer, graphs, hub);
+    srand(0);
+    max_round_ = common::Configurations::Get()->rand_max;
+    LOGF_INFO("random: {}", max_round_);
   }
 
   void PEval() final {
+    LOG_INFO("PEval finished!");
+    auto init = [this](VertexID id) { Init(id); };
+    auto color_vertex = [this](VertexID id) { ColorVertex(id); };
+
+    ParallelVertexInitDo(init);
+
+    app_active_ = 1;
+    while (app_active_) {
+      app_active_ = 0;
+      ParallelVertexDoWithEdges(color_vertex);
+      LOGF_INFO("coloring finished, active: {}", app_active_);
+    }
 
   }
+
   void IncEval() final {
+    LOG_INFO("IncEval finished!");
+    auto color_vertex = [this](VertexID id) { ColorVertex(id); };
 
+    app_active_ = 1;
+    while (app_active_ != 0) {
+      app_active_ = 0;
+      ParallelVertexDo(color_vertex);
+      LOGF_INFO("coloring finished, active: {}", app_active_);
+    }
   }
-  void Assemble() final {
 
-  }
+  void Assemble() final {}
 
  private:
-  void Init(VertexID id);
+  void Init(VertexID id) { Write(id, 0); }
 
-  void FindConflictsVertex(VertexID src_id, VertexID dst_id);
+  void ColorVertex(VertexID id) {
+    auto degree = GetOutDegree(id);
+    if (degree != 0) {
+      auto edges = GetOutEdges(id);
+      for (VertexDegree i = 0; i < degree; i++) {
+        auto dst_id = edges[i];
+        if (id < dst_id) {
+          auto src_color = Read(id);
+          auto dst_color = Read(dst_id);
+          if (src_color == dst_color) {
+            WriteOneBuffer(id, src_color + GetRandomNumber());
+            util::atomic::WriteAdd(&app_active_, 1);
+          }
+        }
+      }
+    }
+  }
 
-  void FindConflictsColor(VertexID src_id, VertexID dst_id);
+  void ColorVertex2(VertexID id) {
+    auto degree = GetOutDegree(id);
+    if (degree != 0) {
+      auto edges = GetOutEdges(id);
+      uint32_t new_color = Read(id);
+      for (VertexDegree i = 0; i < degree; i++) {
+        auto dst_id = edges[i];
+        auto dst_color = Read(dst_id);
+        if (id < dst_id && Read(id) == dst_color) {
 
-  void Color(VertexID id);
+        }
+        if (id < dst_id) {
+          auto src_color = Read(id);
+          auto dst_color = Read(dst_id);
+          if (src_color == dst_color) {
+            WriteOneBuffer(id, src_color + 1);
+            util::atomic::WriteAdd(&app_active_, 1);
+          }
+        }
+      }
+    }
+  }
 
-  void MessagePassing(VertexID id);
-
-  void ColorEdge(VertexID src_id, VertexID dst_id);
-
-  void ColorVertex(VertexID id);
-
-  int GetRandomNumber() const;
+  inline int GetRandomNumber() const { return rand() % max_round_ + 1; }
 
  private:
   int app_active_ = 0;
   //  common::Bitmap bitmap_;
   int round_ = 0;
   // configs
-  uint32_t max_round_ = 10000;
+  uint32_t max_round_ = 10;
 };
 
 }  // namespace sics::graph::core::apps

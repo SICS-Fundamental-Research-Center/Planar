@@ -40,6 +40,8 @@ typedef std::function<bool(VertexID, VertexID)> FuncEdgeMutate;
 #define QD 32  // queue depth for io_uring
 #define RD 32  // read request depth once for io_uring submit
 
+#define SSSP_INFINITY 0xffffffff
+
 }  // namespace sics::graph::core::common
 
 #endif  // CORE_COMMON_TYPES_H_

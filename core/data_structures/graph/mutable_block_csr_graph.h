@@ -169,11 +169,19 @@ class MutableBlockCSRGraph {
     num_edges_.at(subBlock_id) = num_edges_.at(subBlock_id) - 1;
   }
 
-  bool IsEdgeDelete(VertexID id, EdgeIndex idx) {}
+  bool IsEdgeDelete(VertexID id, EdgeIndexS idx) {
+    auto sub_block_id = GetSubBlockID(id);
+    auto offset = GetInitOffset(id);
+    return edge_delete_bitmaps_.at(sub_block_id).GetBit(offset + idx);
+  }
 
   bool IsEdgesLoaded() { return edge_loaded; }
 
   void SetEdgeLoaded(bool load) { edge_loaded = load; }
+
+  VertexIndex GetVertexIDIndex(VertexID id) {
+    return id - metadata_block_->begin_id;
+  }
 
   VertexID GetNeiMinId(VertexID id) {
     auto degree = GetOutDegree(id);

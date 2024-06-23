@@ -70,7 +70,7 @@ class Configurations {
   bool edge_mutate = false;
   bool in_memory = false;
   int limits = 0;
-  bool short_cut = true;
+  bool short_cut = false;
   uint32_t vertex_data_size = 4;
   size_t memory_size = 64 * 1024;
   size_t edge_buffer_size = 32 * 1024 * 1024 * 1024;

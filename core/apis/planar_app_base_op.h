@@ -67,15 +67,55 @@ class PlanarAppBaseOp : public PIE {
     graphs_ = graphs;
     hub_ = hub;
     buffer_ = buffer;
+    app_type_ = common::Configurations::Get()->application;
+    use_data_ = app_type_ != common::RandomWalk;
     //    active_.Init(update_store->GetMessageCount());
     //    active_next_.Init(update_store->GetMessageCount());
-    read_ = new VertexData[meta_->num_vertices];
-    write_ = new VertexData[meta_->num_vertices];
+    if (app_type_ != common::RandomWalk) {
+      read_ = new VertexData[meta_->num_vertices];
+      write_ = new VertexData[meta_->num_vertices];
+    }
+
+    if (app_type_ == common::Sssp) {
+      for (int i = 0; i < meta->num_blocks; i++) {
+        auto block_meta = meta->blocks.at(i);
+        actives_.emplace_back(block_meta.num_vertices);
+        next_actives_.emplace_back(block_meta.num_vertices);
+      }
+    }
   }
 
  protected:
   // Parallel execute vertex_func in task_size chunks.
   void ParallelVertexDo(const std::function<void(VertexID)>& vertex_func) {
+    LOG_INFO("ParallelVertexDo is begin");
+    auto block_meta = meta_->blocks.at(current_gid_);
+    uint32_t task_size = GetTaskSize(block_meta.num_vertices);
+    common::TaskPackage tasks;
+    tasks.reserve(parallelism_ * task_package_factor_);
+    VertexID begin_id = 0, end_id = 0;
+    for (; begin_id < block_meta.num_vertices;) {
+      end_id += task_size;
+      if (end_id > block_meta.num_vertices) end_id = block_meta.num_vertices;
+      auto task = [&vertex_func, begin_id, end_id]() {
+        for (VertexID id = begin_id; id < end_id; id++) {
+          vertex_func(id);
+        }
+      };
+      tasks.push_back(task);
+      begin_id = end_id;
+    }
+    //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}", task_size,
+    //              tasks.size());
+    runner_->SubmitSync(tasks);
+    // TODO: sync of update_store and graph_ vertex data
+    LOG_INFO("task finished");
+    Sync(use_readdata_only_);
+    LOG_INFO("ParallelVertexDo is done");
+  }
+
+  void ParallelVertexDoWithActive(
+      const std::function<void(VertexID)>& vertex_func) {
     LOG_INFO("ParallelVertexDo is begin");
     auto block_meta = meta_->blocks.at(current_gid_);
     uint32_t task_size = GetTaskSize(block_meta.num_vertices);
@@ -438,9 +478,33 @@ class PlanarAppBaseOp : public PIE {
     active_next_.Clear();
   }
 
+  void InitVertexActive(VertexID id) {
+    auto block_id = GetBlockID(id);
+    auto idx = id - meta_->blocks.at(block_id).begin_id;
+    actives_.at(block_id).SetBit(idx);
+  }
+
+  void SetVertexActive(VertexID id) {
+    auto block_id = GetBlockID(id);
+    auto idx = id - meta_->blocks.at(block_id).begin_id;
+    next_actives_.at(block_id).SetBit(idx);
+  }
+
+  void SyncSubGraphActive() {
+    std::swap(actives_.at(current_gid_), next_actives_.at(current_gid_));
+    next_actives_.at(current_gid_).Clear();
+  }
+
+  size_t GetActiveNum() {
+    auto& bitmap = actives_.at(current_gid_);
+    return bitmap.Count();
+  }
+
   void Sync(bool read_only = false) {
-    if (!read_only) {
-      memcpy(read_, write_, sizeof(VertexData) * meta_->num_vertices);
+    if (use_data_) {
+      if (!read_only) {
+        memcpy(read_, write_, sizeof(VertexData) * meta_->num_vertices);
+      }
     }
   }
 
@@ -468,6 +532,13 @@ class PlanarAppBaseOp : public PIE {
     }
   }
 
+  void WriteOneBuffer(VertexID id, VertexData vdata) { read_[id] = vdata; }
+
+  VertexIndex GetIndexByID(VertexID id) {
+    auto block_id = GetBlockID(id);
+    return graphs_->at(block_id).GetVertexIndex(id);
+  }
+
   VertexID GetNeiMinId(VertexID id) {
     auto block_id = GetBlockID(id);
     return graphs_->at(block_id).GetNeiMinId(id);
@@ -486,6 +557,11 @@ class PlanarAppBaseOp : public PIE {
   void DeleteEdge(VertexID id, EdgeIndexS idx) {
     auto block_id = GetBlockID(id);
     graphs_->at(block_id).DeleteEdge(id, idx);
+  }
+
+  bool IsEdgeDelete(VertexID id, EdgeIndexS idx) {
+    auto block_id = GetBlockID(id);
+    graphs_->at(block_id).IsEdgeDelete(id, idx);
   }
 
   void SetRound(int round) override { round_ = round; }
@@ -541,6 +617,9 @@ class PlanarAppBaseOp : public PIE {
 
   size_t active = 0;
 
+  std::vector<common::Bitmap> actives_;
+  std::vector<common::Bitmap> next_actives_;
+
   common::Bitmap active_;
   common::Bitmap active_next_;
 
@@ -549,8 +628,8 @@ class PlanarAppBaseOp : public PIE {
   scheduler::MessageHub* hub_;
 
   bool data_init_ = false;
-  VertexData* read_;
-  VertexData* write_;
+  VertexData* read_ = nullptr;
+  VertexData* write_ = nullptr;
 
   GraphID current_gid_;
   std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs_;
@@ -562,7 +641,8 @@ class PlanarAppBaseOp : public PIE {
   uint32_t parallelism_;
   uint32_t task_package_factor_;
   common::ApplicationType app_type_;
-  bool use_readdata_only_ = true;
+  bool use_readdata_only_ = false;
+  bool use_data_ = true;
   // TODO: add UpdateStore as a member here.
 };
 

@@ -2,10 +2,6 @@
 
 #include "core/apps/wcc_app.h"
 #include "core/apps/wcc_app_op.h"
-#include "core/apps/wcc_asp_app.h"
-#include "core/apps/wcc_edgecut_app.h"
-#include "core/apps/wcc_group.h"
-#include "core/common/types.h"
 #include "core/planar_system.h"
 
 DEFINE_string(i, "/testfile", "graph files root path");

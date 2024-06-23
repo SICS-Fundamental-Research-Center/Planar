@@ -80,13 +80,16 @@ class WCCAppOp : public apis::PlanarAppBaseOp<uint32_t> {
   }
 
   void PointJump(VertexID src_id) {
-    auto parent_id = Read(src_id);
+    auto prev_parent_id = Read(src_id);
+    auto parent_id = prev_parent_id;
     if (parent_id != Read(parent_id)) {
       while (parent_id != Read(parent_id)) {
         parent_id = Read(parent_id);
       }
     }
-    Write(src_id, parent_id);
+    if (prev_parent_id != parent_id) {
+      Write(src_id, parent_id);
+    }
   }
 
   void Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {

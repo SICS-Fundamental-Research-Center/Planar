@@ -33,8 +33,8 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->pr_iter = FLAGS_iter;
 
   LOG_INFO("System begin");
-  core::planar_system::Planar<core::apps::TestApp> system(
-      core::common::Configurations::Get()->root_path);
-  system.Start();
+//  core::planar_system::Planar<core::apps::TestApp> system(
+//      core::common::Configurations::Get()->root_path);
+//  system.Start();
   return 0;
 }

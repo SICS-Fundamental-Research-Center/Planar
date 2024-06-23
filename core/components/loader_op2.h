@@ -49,6 +49,7 @@ class LoaderOp2 {
       auto bid = to_read_blocks_id_.at(begin);
       if (buffer_->IsBufferNotEnough(current_gid_, bid)) {
         //        buffer_->SetBufferBlock();
+        LOG_INFO("Buffer space is not enough, waiting for space release!");
         break;
       }
       buffer_->ApplyBuffer(current_gid_, bid);
