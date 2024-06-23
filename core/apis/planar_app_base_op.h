@@ -514,6 +514,11 @@ class PlanarAppBaseOp : public PIE {
 
   void Write(VertexID id, VertexData vdata) { write_[id] = vdata; }
 
+  void WriteActive(VertexID id, VertexData vdata) {
+    write_[id] = vdata;
+    active++;
+  }
+
   void WriteMin(VertexID id, VertexData vdata) {
     if (core::util::atomic::WriteMin(&write_[id], vdata)) {
       active++;

@@ -88,7 +88,7 @@ class WCCAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       }
     }
     if (prev_parent_id != parent_id) {
-      Write(src_id, parent_id);
+      WriteActive(src_id, parent_id);
     }
   }
 
