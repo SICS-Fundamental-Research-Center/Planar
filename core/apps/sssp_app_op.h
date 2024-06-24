@@ -24,6 +24,7 @@ class SsspAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs,
       scheduler::MessageHub* hub) override {
     apis::PlanarAppBaseOp<uint32_t>::AppInit(runner, meta, buffer, graphs, hub);
+    source_ = common::Configurations::Get()->source;
     active_.Init(meta->num_vertices);
     active_next_.Init(meta->num_vertices);
   }

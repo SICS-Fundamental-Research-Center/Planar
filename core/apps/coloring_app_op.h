@@ -46,7 +46,7 @@ class ColoringAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       ParallelVertexDoWithEdges(color_vertex);
       LOGF_INFO("coloring finished, active: {}", app_active_);
     }
-
+    UnsetActive();
   }
 
   void IncEval() final {
@@ -56,7 +56,7 @@ class ColoringAppOp : public apis::PlanarAppBaseOp<uint32_t> {
     app_active_ = 1;
     while (app_active_ != 0) {
       app_active_ = 0;
-      ParallelVertexDo(color_vertex);
+      ParallelVertexDoWithEdges(color_vertex);
       LOGF_INFO("coloring finished, active: {}", app_active_);
     }
   }

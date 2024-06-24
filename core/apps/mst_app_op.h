@@ -45,7 +45,7 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
     };
 
     ParallelVertexInitDo(init);
-    LOG_INFO("init finished！");
+    LOG_INFO("init finished!");
     while (GetSubGraphNumEdges() != 0) {
       ParallelVertexDoWithEdges(find_min_edge);
       LOG_INFO("find min edge finished!");
