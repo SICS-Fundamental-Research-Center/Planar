@@ -50,7 +50,7 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       ParallelVertexDoWithEdges(find_min_edge);
       LOG_INFO("find min edge finished!");
 
-      ParallelVertexDo(graft);
+      ParallelAllVertexDo(graft);
       LOG_INFO("graft finished!");
 
       ParallelAllVertexDo(pointer_jump);
@@ -66,6 +66,7 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
     auto pointer_jump = [this](VertexID id) { PointJump(id); };
     ParallelAllVertexDo(pointer_jump);
     if (mst_active_) {
+      mst_active_ = false;
       SetActive();
     } else {
       UnsetActive();
