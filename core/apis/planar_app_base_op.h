@@ -566,7 +566,7 @@ class PlanarAppBaseOp : public PIE {
 
   bool IsEdgeDelete(VertexID id, EdgeIndexS idx) {
     auto block_id = GetBlockID(id);
-    graphs_->at(block_id).IsEdgeDelete(id, idx);
+    return graphs_->at(block_id).IsEdgeDelete(id, idx);
   }
 
   void SetRound(int round) override { round_ = round; }

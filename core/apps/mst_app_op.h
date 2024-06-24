@@ -17,7 +17,9 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
 
  public:
   MstAppOp() : apis::PlanarAppBaseOp<uint32_t>() {}
-  ~MstAppOp() override = default;
+  ~MstAppOp() override {
+      delete[] min_out_edge_id_;
+  };
 
   void AppInit(
       common::TaskRunner* runner, data_structures::TwoDMetadata* meta,
@@ -122,7 +124,7 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
   void UpdateMinEdge(VertexID id) { min_out_edge_id_[id] = GetNeiMinId(id); }
 
  private:
-  uint32_t* min_out_edge_id_;
+  uint32_t* min_out_edge_id_ = nullptr;
   bool mst_active_ = false;
   // configs
   bool fast_ = false;
