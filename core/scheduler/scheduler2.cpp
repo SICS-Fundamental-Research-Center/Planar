@@ -108,6 +108,9 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
           current_round_++;
           LOGF_INFO(" ============ Current Round: {} Finish ============ ",
                     current_round_);
+          auto size_read = buffer_->GetAccumulateSize();
+          LOGF_INFO(" accumulate read size: {} GB",
+                    (double)size_read / 1024 / 1024 / 1024);
           return false;
         } else {
           // TODO: sync after all sub_graphs are written back.
@@ -115,8 +118,11 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
           graph_state_.SyncCurrentRoundPending();
           current_round_++;
           app_->SetInActive();
-              LOGF_INFO(" ============ Current Round: {} Finish ============ ",
+          LOGF_INFO(" ============ Current Round: {} Finish ============ ",
                     current_round_);
+          auto size_read = buffer_->GetAccumulateSize();
+          LOGF_INFO(" accumulate read size: {} GB",
+                    (double)size_read / 1024 / 1024 / 1024);
 
           if (short_cut_) {
             //            // Keep the last graph in memory and execute first in

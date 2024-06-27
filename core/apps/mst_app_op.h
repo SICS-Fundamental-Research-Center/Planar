@@ -1,6 +1,8 @@
 #ifndef GRAPH_SYSTEMS_CORE_APPS_MST_APP_OP_H
 #define GRAPH_SYSTEMS_CORE_APPS_MST_APP_OP_H
 
+#include <mutex>
+
 #include "apis/planar_app_base.h"
 #include "apis/planar_app_base_op.h"
 #include "common/types.h"
@@ -10,6 +12,8 @@
 
 namespace sics::graph::core::apps {
 
+#define MST_INVALID_ID 10000000
+
 class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
   using VertexID = common::VertexID;
   using EdgeIndex = common::EdgeIndex;
@@ -17,8 +21,8 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
 
  public:
   MstAppOp() : apis::PlanarAppBaseOp<uint32_t>() {}
-  ~MstAppOp() override {
-      delete[] min_out_edge_id_;
+  ~MstAppOp() {
+//    delete[] min_out_edge_id_;
   };
 
   void AppInit(
@@ -28,10 +32,11 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       scheduler::MessageHub* hub) override {
     apis::PlanarAppBaseOp<uint32_t>::AppInit(runner, meta, buffer, graphs, hub);
 
-    min_out_edge_id_ = new uint32_t[meta->num_vertices];
-    for (uint32_t i = 0; i < meta->num_vertices; i++) {
-      min_out_edge_id_[i] = MAX_VERTEX_ID;
-    }
+    min_out_edge_id_.resize(meta->num_vertices, MST_INVALID_ID);
+//    min_out_edge_id_ = new uint32_t[meta->num_vertices];
+//    for (uint32_t i = 0; i < meta->num_vertices; i++) {
+//      min_out_edge_id_[i] = MST_INVALID_ID;
+//    }
   }
 
   void PEval() final {
@@ -45,13 +50,28 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
     };
 
     ParallelVertexInitDo(init);
+    //    LogVertexState();
     LOG_INFO("init finished!");
+    num3 = 100;
     while (GetSubGraphNumEdges() != 0) {
+      num_ = 0;
       ParallelVertexDoWithEdges(find_min_edge);
-      LOG_INFO("find min edge finished!");
+      LOGF_INFO("find min edge finished! edges: {}", num_);
+      num3 = num_;
 
+      if (num3 < 10) {
+        LOGF_INFO("id {}, min {}", 76198, min_out_edge_id_[76198]);
+        LOGF_INFO("id {}, min {}", 76208, min_out_edge_id_[76208]);
+        LOGF_INFO("id {}, min {}", 76237, min_out_edge_id_[76237]);
+        LOGF_INFO("id {}, min {}", 76243, min_out_edge_id_[76243]);
+        LOGF_INFO("id {}, min {}", 76244, min_out_edge_id_[76244]);
+        LOGF_INFO("id {}, min {}", 76255, min_out_edge_id_[76255]);
+        LOGF_INFO("id {}, min {}", 76297, min_out_edge_id_[76297]);
+      }
+
+      num2 = 0;
       ParallelAllVertexDo(graft);
-      LOG_INFO("graft finished!");
+      LOGF_INFO("graft finished! equal num: {}", num2);
 
       ParallelAllVertexDo(pointer_jump);
       LOG_INFO("pointer jump finished!");
@@ -81,27 +101,59 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
     auto degree = GetOutDegree(id);
     if (degree != 0) {
       auto edges = GetOutEdges(id);
-      VertexID min_id = MAX_VERTEX_ID;
+      VertexID min_id = MST_INVALID_ID;
       for (VertexDegree i = 0; i < degree; i++) {
         if (IsEdgeDelete(id, i)) continue;
         auto dst = edges[i];
-        util::atomic::WriteMin(min_out_edge_id_ + dst, id);
+//        auto flag = util::atomic::WriteMin(&min_out_edge_id_[dst], id);
+        auto flag = WriteMinSelf(dst, id);
         min_id = dst < min_id ? dst : min_id;
+        {
+          std::lock_guard<std::mutex> lock(mtx);
+          num_++;
+        }
+        if (num3 < 10) {
+          LOGF_INFO("src {} -> dst {}, min {} success: {}", id, dst, min_out_edge_id_[dst], flag);
+        }
       }
       min_out_edge_id_[id] = min_id;
+    }
+    if (num3 < 10 && id == 76297) {
+      LOGF_INFO(" Id {} min {}", id, min_out_edge_id_[id]);
     }
   }
 
   void Graft(VertexID src_id) {
     auto dst_id = min_out_edge_id_[src_id];
-    if (dst_id != MAX_VERTEX_ID) {
+    if (num3 < 10 && src_id == 76198) {
+      LOGF_INFO("id {}, min {}", src_id, dst_id);
+    }
+    if (num3 < 10 && src_id == 76208) {
+      LOGF_INFO("id {}, min {}", src_id, dst_id);
+    }
+    if (num3 < 10 && src_id == 76237) {
+      LOGF_INFO("id {}, min {}", src_id, dst_id);
+    }
+    if (num3 < 10 && src_id == 76243) {
+      LOGF_INFO("id {}, min {}", src_id, dst_id);
+    }
+
+    if (dst_id != MST_INVALID_ID) {
       auto src_parent_id = Read(src_id);
       auto dst_parent_id = Read(dst_id);
+      if (num3 < 10) {
+        LOGF_INFO("graft: {}({}) -> {}({})", src_id, src_parent_id, dst_id,
+                  dst_parent_id);
+      }
       if (src_parent_id < dst_parent_id) {
         WriteMin(dst_parent_id, src_parent_id);
       } else if (src_parent_id > dst_parent_id) {
         WriteMin(src_parent_id, dst_parent_id);
+      } else {
+        std::lock_guard<std::mutex> lock(mtx);
+        num2++;
       }
+      min_out_edge_id_[src_id] = MST_INVALID_ID;
     }
   }
 
@@ -124,9 +176,27 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
 
   void UpdateMinEdge(VertexID id) { min_out_edge_id_[id] = GetNeiMinId(id); }
 
+  void Log() {
+    for (VertexID id = 0; id < meta_->num_vertices; id++) {
+      LOGF_INFO("Vertex {} min nei is {}", id, min_out_edge_id_[id]);
+    }
+  }
+
+  bool WriteMinSelf(VertexID id, uint32_t vdata) {
+    std::lock_guard<std::mutex> lock(mtx);
+    if (min_out_edge_id_[id] <= vdata) return false;
+    min_out_edge_id_[id] = vdata;
+    return true;
+  }
+
  private:
-  uint32_t* min_out_edge_id_ = nullptr;
+  std::vector<uint32_t> min_out_edge_id_;
+//  uint32_t* min_out_edge_id_ = nullptr;
   bool mst_active_ = false;
+  std::mutex mtx;
+  size_t num_ = 0;
+  size_t num3 = 0;
+  size_t num2 = 0;
   // configs
   bool fast_ = false;
 };

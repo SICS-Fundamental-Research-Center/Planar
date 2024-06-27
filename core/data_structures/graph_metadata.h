@@ -17,7 +17,6 @@ using VertexID = common::VertexID;
 using GraphID = common::GraphID;
 using BlockID = common::BlockID;
 using EdgeIndex = common::EdgeIndex;
-using EdgeIndexS = common::EdgeIndexS;
 
 struct BlockMetadata {
   // Block Metadata
@@ -48,7 +47,7 @@ struct SubBlock {
   VertexID end_id;
   uint32_t num_edges;
   uint32_t num_vertices;
-  EdgeIndexS begin_offset;
+  EdgeIndex begin_offset;
 };
 
 struct Block {
@@ -354,7 +353,6 @@ using GraphID = sics::graph::core::common::GraphID;
 using BlockID = sics::graph::core::common::BlockID;
 using VertexID = sics::graph::core::common::VertexID;
 using EdgeIndex = sics::graph::core::common::EdgeIndex;
-using EdgeIndexS = sics::graph::core::common::EdgeIndexS;
 
 template <>
 struct convert<sics::graph::core::data_structures::SubBlock> {
@@ -376,7 +374,7 @@ struct convert<sics::graph::core::data_structures::SubBlock> {
     block.end_id = node["end_id"].as<VertexID>();
     block.num_vertices = node["num_vertices"].as<uint32_t>();
     block.num_edges = node["num_edges"].as<uint32_t>();
-    block.begin_offset = node["begin_offset"].as<EdgeIndexS>();
+    block.begin_offset = node["begin_offset"].as<EdgeIndex>();
     return true;
   }
 };

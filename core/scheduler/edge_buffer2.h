@@ -174,6 +174,14 @@ class EdgeBuffer2 {
 
   size_t GetBufferSize() { return buffer_size_ / 1024 / 1024; }
 
+  void AccumulateRead(size_t size) {
+    size_read_ += size;
+  }
+
+  size_t GetAccumulateSize() {
+    return size_read_;
+  }
+
  private:
   std::mutex mtx_;
   std::condition_variable cv_;
@@ -181,6 +189,8 @@ class EdgeBuffer2 {
   data_structures::TwoDMetadata* meta_;
 
   bool buffer_block_ = false;
+
+  size_t size_read_ = 0;
 
   size_t max_block_size_ = 0;
   size_t buffer_size_;

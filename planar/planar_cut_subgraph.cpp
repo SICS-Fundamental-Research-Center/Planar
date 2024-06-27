@@ -16,7 +16,6 @@ namespace fs = std::filesystem;
 using namespace sics::graph;
 using core::common::BlockID;
 using core::common::EdgeIndex;
-using core::common::EdgeIndexS;
 using core::common::GraphID;
 using core::common::VertexDegree;
 using core::common::VertexID;
@@ -95,14 +94,14 @@ int main(int argc, char** argv) {
     }
 
     auto num_offsets = ((num_vertices - 1) / ratio) + 1;
-    auto offset_new = new EdgeIndexS[num_offsets];
+    auto offset_new = new EdgeIndex[num_offsets];
     for (uint32_t i = 0; i < num_offsets; i++) {
       auto index = i * ratio;
       offset_new[i] = offset[index];
     }
 
     std::ofstream index_file(dir.string() + "/index.bin", std::ios::binary);
-    index_file.write((char*)offset_new, num_offsets * sizeof(EdgeIndexS));
+    index_file.write((char*)offset_new, num_offsets * sizeof(EdgeIndex));
     index_file.write((char*)degree, num_vertices * sizeof(VertexDegree));
     index_file.close();
     delete[] offset_new;

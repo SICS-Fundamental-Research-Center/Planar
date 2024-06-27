@@ -35,7 +35,6 @@ class PlanarAppBaseOp : public PIE {
   using VertexDegree = common::VertexDegree;
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
-  using EdgeIndexS = common::EdgeIndexS;
 
  public:
   PlanarAppBaseOp()
@@ -271,7 +270,7 @@ class PlanarAppBaseOp : public PIE {
           id++;
           degree = block.GetOutDegree(id);
         }
-        for (EdgeIndexS i = 0; i < num_edges; i++) {
+        for (EdgeIndex i = 0; i < num_edges; i++) {
           edge_func(id, edges[i]);
           degree--;
           while (degree == 0) {
@@ -318,7 +317,7 @@ class PlanarAppBaseOp : public PIE {
             id++;
             degree = block.GetOutDegree(id);
           }
-          for (EdgeIndexS i = 0; i < num_edges; i++) {
+          for (EdgeIndex i = 0; i < num_edges; i++) {
             if (!bitmap->GetBit(i)) {
               edge_func(id, edges[i]);
             }
@@ -329,7 +328,7 @@ class PlanarAppBaseOp : public PIE {
             }
           }
           if (id != sub_block_meta.end_id) {
-            LOGF_FATAL("Error executing edge parallel do! {}",
+            LOGF_FATAL("Error executing edge parallel do! {} != {}", id,
                        sub_block_meta.id);
           }
           std::lock_guard<std::mutex> lock(mtx_);
@@ -358,7 +357,7 @@ class PlanarAppBaseOp : public PIE {
             id++;
             degree = block.GetOutDegree(id);
           }
-          for (EdgeIndexS i = 0; i < num_edges; i++) {
+          for (EdgeIndex i = 0; i < num_edges; i++) {
             if (!bitmap->GetBit(i)) {
               edge_func(id, edges[i]);
             }
@@ -406,7 +405,7 @@ class PlanarAppBaseOp : public PIE {
             id++;
             degree = block.GetOutDegree(id);
           }
-          for (EdgeIndexS i = 0; i < num_edges; i++) {
+          for (EdgeIndex i = 0; i < num_edges; i++) {
             if (!bitmap->GetBit(i)) {
               edge_del_func(id, edges[i], i);
             }
@@ -445,7 +444,7 @@ class PlanarAppBaseOp : public PIE {
             id++;
             degree = block.GetOutDegree(id);
           }
-          for (EdgeIndexS i = 0; i < num_edges; i++) {
+          for (EdgeIndex i = 0; i < num_edges; i++) {
             if (!bitmap->GetBit(i)) {
               edge_del_func(id, edges[i], i);
             }
@@ -537,7 +536,10 @@ class PlanarAppBaseOp : public PIE {
     }
   }
 
-  void WriteOneBuffer(VertexID id, VertexData vdata) { read_[id] = vdata; }
+  void WriteOneBuffer(VertexID id, VertexData vdata) {
+    active++;
+    read_[id] = vdata;
+  }
 
   VertexIndex GetIndexByID(VertexID id) {
     auto block_id = GetBlockID(id);
@@ -559,12 +561,12 @@ class PlanarAppBaseOp : public PIE {
     return graphs_->at(block_id).GetOutEdges(id);
   }
 
-  void DeleteEdge(VertexID id, EdgeIndexS idx) {
+  void DeleteEdge(VertexID id, EdgeIndex idx) {
     auto block_id = GetBlockID(id);
     graphs_->at(block_id).DeleteEdge(id, idx);
   }
 
-  bool IsEdgeDelete(VertexID id, EdgeIndexS idx) {
+  bool IsEdgeDelete(VertexID id, EdgeIndex idx) {
     auto block_id = GetBlockID(id);
     return graphs_->at(block_id).IsEdgeDelete(id, idx);
   }

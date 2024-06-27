@@ -29,6 +29,7 @@ struct io_data {
   size_t size;
   size_t offset;
   char* addr;
+  bool segment = false;
 };
 
 std::vector<std::vector<int>> Fds;

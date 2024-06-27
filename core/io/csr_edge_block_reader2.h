@@ -132,29 +132,35 @@ class CSREdgeBlockReader2 {
         break;
       }
       io_data* data = (io_data*)io_uring_cqe_get_data(cqe);
-      if (cqe->res != data->size) {
+      auto size_to = data->size;
+      if (size_to > 2747483647) {
         auto size = cqe->res;
-        if (cqe->res > 0) {
-          data->addr = data->addr + size;
-          data->size = data->size - size;
-          if (data->size < 0) {
-            LOG_FATAL("size less 0");
+      } else {
+        auto size = cqe->res;
+        if (size != data->size) {
+          if (cqe->res > 0) {
+            data->addr = data->addr + size;
+            data->size = data->size - size;
+            if (data->size < 0) {
+              LOG_FATAL("size less 0");
+            }
+            data->offset = data->offset + cqe->res;
+            io_uring_cqe_seen(&ring_, cqe);
+            Read(data);
+            continue;
+          } else {
+            LOGF_FATAL(
+                "Read error in edge block, size is not fit! error code {}, "
+                "sub_blockID {}, subgraphID {}",
+                cqe->res, data->block_id, data->gid);
           }
-          data->offset = data->offset + cqe->res;
-          io_uring_cqe_seen(&ring_, cqe);
-          Read(data);
-          continue;
-        } else {
-          LOGF_FATAL(
-              "Read error in edge block, size is not fit! error code {}, "
-              "blockID {}",
-              cqe->res, data->block_id);
         }
       }
       // Set address and <gid, bid> entry for notification.
       //      graphs_->at(data->gid).SetSubBlock(data->block_id,
       //      (uint32_t*)data->addr);
       buffer_->PushOneEdgeBlock(data->gid, data->block_id);
+      buffer_->AccumulateRead(data->size);
       io_uring_cqe_seen(&ring_, cqe);
       ids += std::to_string(data->block_id) + " ";
       close(Fds2[data->gid][data->block_id]);

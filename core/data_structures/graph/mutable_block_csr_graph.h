@@ -52,7 +52,6 @@ class MutableBlockCSRGraph {
   using VertexID = common::VertexID;
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
-  using EdgeIndexS = common::EdgeIndexS;
   using VertexDegree = common::VertexDegree;
 
  public:
@@ -76,11 +75,16 @@ class MutableBlockCSRGraph {
     if (!file) {
       LOG_FATAL("Error opening bin file: ", path);
     }
+    file.seekg(0, std::ios::end);
+    size_t size = file.tellg();
+    LOGF_INFO("SubGraph {} index file size: {} GB", block_meta->id,
+              (double)size / 1024 / 1024 / 1024);
+    file.seekg(0, std::ios::beg);
     auto num_offsets =
         ((block_meta->num_vertices - 1) / block_meta->offset_ratio) + 1;
-    out_offset_reduce_ = new EdgeIndexS[num_offsets];
+    out_offset_reduce_ = new EdgeIndex[num_offsets];
     out_degree_ = new VertexDegree[block_meta->num_vertices];
-    file.read((char*)(out_offset_reduce_), num_offsets * sizeof(EdgeIndexS));
+    file.read((char*)(out_offset_reduce_), num_offsets * sizeof(EdgeIndex));
     file.read((char*)(out_degree_),
               block_meta->num_vertices * sizeof(VertexDegree));
     file.close();
@@ -136,7 +140,7 @@ class MutableBlockCSRGraph {
     return idx / metadata_block_->vertex_offset;
   }
 
-  EdgeIndexS GetInitOffset(VertexID id) {
+  EdgeIndex GetInitOffset(VertexID id) {
     auto offset = GetOutOffset(id);
     auto subBlock_id = GetSubBlockID(id);
     return offset - metadata_block_->sub_blocks.at(subBlock_id).begin_offset;
@@ -163,13 +167,13 @@ class MutableBlockCSRGraph {
   }
 
   // TODO: Use lock?
-  void DeleteEdge(VertexID id, EdgeIndexS idx) {
+  void DeleteEdge(VertexID id, EdgeIndex idx) {
     auto subBlock_id = GetSubBlockID(id);
     edge_delete_bitmaps_.at(subBlock_id).SetBit(idx);
     num_edges_.at(subBlock_id) = num_edges_.at(subBlock_id) - 1;
   }
 
-  bool IsEdgeDelete(VertexID id, EdgeIndexS idx) {
+  bool IsEdgeDelete(VertexID id, EdgeIndex idx) {
     auto sub_block_id = GetSubBlockID(id);
     auto offset = GetInitOffset(id);
     return edge_delete_bitmaps_.at(sub_block_id).GetBit(offset + idx);
@@ -262,7 +266,7 @@ class MutableBlockCSRGraph {
  public:
   Block* metadata_block_ = nullptr;
 
-  EdgeIndexS* out_offset_reduce_ = nullptr;
+  EdgeIndex* out_offset_reduce_ = nullptr;
   VertexDegree* out_degree_ = nullptr;
 
   // Edges sub_block. init in constructor.
