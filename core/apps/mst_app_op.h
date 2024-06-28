@@ -21,22 +21,23 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
 
  public:
   MstAppOp() : apis::PlanarAppBaseOp<uint32_t>() {}
-  ~MstAppOp() {
-//    delete[] min_out_edge_id_;
+  ~MstAppOp(){
+      //    delete[] min_out_edge_id_;
   };
 
   void AppInit(
       common::TaskRunner* runner, data_structures::TwoDMetadata* meta,
       scheduler::EdgeBuffer2* buffer,
       std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs,
-      scheduler::MessageHub* hub) override {
-    apis::PlanarAppBaseOp<uint32_t>::AppInit(runner, meta, buffer, graphs, hub);
+      scheduler::MessageHub* hub, scheduler::GraphState* state) override {
+    apis::PlanarAppBaseOp<uint32_t>::AppInit(runner, meta, buffer, graphs, hub,
+                                             state);
 
     min_out_edge_id_.resize(meta->num_vertices, MST_INVALID_ID);
-//    min_out_edge_id_ = new uint32_t[meta->num_vertices];
-//    for (uint32_t i = 0; i < meta->num_vertices; i++) {
-//      min_out_edge_id_[i] = MST_INVALID_ID;
-//    }
+    //    min_out_edge_id_ = new uint32_t[meta->num_vertices];
+    //    for (uint32_t i = 0; i < meta->num_vertices; i++) {
+    //      min_out_edge_id_[i] = MST_INVALID_ID;
+    //    }
   }
 
   void PEval() final {
@@ -105,7 +106,8 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       for (VertexDegree i = 0; i < degree; i++) {
         if (IsEdgeDelete(id, i)) continue;
         auto dst = edges[i];
-//        auto flag = util::atomic::WriteMin(&min_out_edge_id_[dst], id);
+        //        auto flag = util::atomic::WriteMin(&min_out_edge_id_[dst],
+        //        id);
         auto flag = WriteMinSelf(dst, id);
         min_id = dst < min_id ? dst : min_id;
         {
@@ -113,7 +115,8 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
           num_++;
         }
         if (num3 < 10) {
-          LOGF_INFO("src {} -> dst {}, min {} success: {}", id, dst, min_out_edge_id_[dst], flag);
+          LOGF_INFO("src {} -> dst {}, min {} success: {}", id, dst,
+                    min_out_edge_id_[dst], flag);
         }
       }
       min_out_edge_id_[id] = min_id;
@@ -191,7 +194,7 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
 
  private:
   std::vector<uint32_t> min_out_edge_id_;
-//  uint32_t* min_out_edge_id_ = nullptr;
+  //  uint32_t* min_out_edge_id_ = nullptr;
   bool mst_active_ = false;
   std::mutex mtx;
   size_t num_ = 0;
