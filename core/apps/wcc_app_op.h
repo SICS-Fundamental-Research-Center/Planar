@@ -13,6 +13,7 @@ class WCCAppOp : public apis::PlanarAppBaseOp<uint32_t> {
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
   using VertexID = common::VertexID;
+  using VertexDegree = common::VertexDegree;
 
  public:
   WCCAppOp() : apis::PlanarAppBaseOp<uint32_t>() {}
@@ -35,6 +36,7 @@ class WCCAppOp : public apis::PlanarAppBaseOp<uint32_t> {
     auto contract = [this](VertexID src_id, VertexID dst_id, EdgeIndex idx) {
       Contract(src_id, dst_id, idx);
     };
+    auto contract_vertex = [this](VertexID id) { ContractVertex(id); };
 
     ParallelVertexInitDo(init);
     //    LogVertexState();
@@ -48,7 +50,8 @@ class WCCAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       ParallelAllVertexDo(pointer_jump);
       LOG_INFO("Pointer jump finishes");
       //      LogVertexState();
-      ParallelEdgeMutateDo(contract);
+//      ParallelEdgeMutateDo(contract);
+      ParallelVertexDoWithEdges(contract_vertex);
       size = GetSubGraphNumEdges();
       LOGF_INFO("Contract finishes! left edges: {}", size);
       //      LogCurrentGraphVertexState();
@@ -95,6 +98,21 @@ class WCCAppOp : public apis::PlanarAppBaseOp<uint32_t> {
   void Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
     if (Read(src_id) == Read(dst_id)) {
       DeleteEdge(src_id, idx);
+    }
+  }
+
+  void ContractVertex(VertexID id) {
+    auto degree = GetOutDegree(id);
+    if (degree != 0) {
+      auto edges = GetOutEdges(id);
+      auto src_parent = Read(id);
+      for (VertexDegree i = 0; i < degree; i++) {
+        if (IsEdgeDelete(id, i)) continue;
+        auto dst = edges[i];
+        if (src_parent == Read(dst)) {
+          DeleteEdgeByVertex(id, i);
+        }
+      }
     }
   }
 
