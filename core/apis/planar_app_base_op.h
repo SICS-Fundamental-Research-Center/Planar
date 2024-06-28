@@ -566,6 +566,11 @@ class PlanarAppBaseOp : public PIE {
     graphs_->at(block_id).DeleteEdge(id, idx);
   }
 
+  void DeleteEdgeByVertex(VertexID id, EdgeIndex idx) {
+    auto block_id = GetBlockID(id);
+    graphs_->at(block_id).DeleteEdgeByVertex(id, idx);
+  }
+
   bool IsEdgeDelete(VertexID id, EdgeIndex idx) {
     auto block_id = GetBlockID(id);
     return graphs_->at(block_id).IsEdgeDelete(id, idx);

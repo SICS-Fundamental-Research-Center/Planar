@@ -166,10 +166,18 @@ class MutableBlockCSRGraph {
     return &edge_delete_bitmaps_.at(bid);
   }
 
-  // TODO: Use lock?
+  // One thread works for one sub_block, so no need for lock.
+  // TODO: attention for Static mode, which maybe conflict above.
   void DeleteEdge(VertexID id, EdgeIndex idx) {
     auto subBlock_id = GetSubBlockID(id);
     edge_delete_bitmaps_.at(subBlock_id).SetBit(idx);
+    num_edges_.at(subBlock_id) = num_edges_.at(subBlock_id) - 1;
+  }
+
+  void DeleteEdgeByVertex(VertexID id, EdgeIndex idx) {
+    auto subBlock_id = GetSubBlockID(id);
+    auto offset = GetInitOffset(id);
+    edge_delete_bitmaps_.at(subBlock_id).SetBit(offset + idx);
     num_edges_.at(subBlock_id) = num_edges_.at(subBlock_id) - 1;
   }
 
