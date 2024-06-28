@@ -64,6 +64,11 @@ class Scheduler2 {
     app_ = app;
     graphs_ = graphs;
     buffer_ = buffer;
+    mode_ = common::Configurations::Get()->mode;
+    if (mode_ == common::Static) {
+      // Static means only one subgraph with all sub_blocks.
+      static_state_.Init(meta->blocks.at(0).num_sub_blocks);
+    }
   }
 
   int GetCurrentRound() const { return current_round_; }
@@ -115,9 +120,7 @@ class Scheduler2 {
   // If current and next round both have no graph to read, system stop.
   bool IsSystemStop() const;
 
-  void ReleaseAllGraph(common::GraphID gid) {
-    buffer_->ReleaseBuffer(gid);
-  }
+  void ReleaseAllGraph(common::GraphID gid) { buffer_->ReleaseBuffer(gid); }
 
   void SetAppRuntimeGraph(common::GraphID gid);
 
@@ -143,6 +146,7 @@ class Scheduler2 {
   int current_round_ = 0;
 
   GraphState graph_state_;
+  GraphState static_state_;
 
   // message hub
   MessageHub message_hub_;
@@ -180,6 +184,8 @@ class Scheduler2 {
   bool memory_enough_ = false;
 
   // Buffer managements.
+
+  common::ModeType mode_ = common::Normal;
 
   int test = 0;
 };

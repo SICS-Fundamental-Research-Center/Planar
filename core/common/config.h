@@ -44,6 +44,12 @@ enum ApplicationType {
   Khop,
 };
 
+enum ModeType {
+  Normal = 1,
+  Static,
+  Random
+};
+
 class Configurations {
  public:
   static const Configurations* Get() {
@@ -106,6 +112,8 @@ class Configurations {
   bool use_two_hop = false;
 
   bool radical = false;
+
+  ModeType mode = Normal;
 
   // for nvme
   uint32_t task_size = 500000;

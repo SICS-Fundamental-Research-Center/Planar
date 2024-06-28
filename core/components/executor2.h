@@ -26,6 +26,7 @@ class Executor2 : public Component {
   void Init(scheduler::MessageHub* hub) {
     execute_q_ = hub->get_executor_queue();
     response_q_ = hub->get_response_queue();
+    mode_ = common::Configurations::Get()->mode;
   }
   ~Executor2() final = default;
 
@@ -53,13 +54,21 @@ class Executor2 : public Component {
           case scheduler::ExecuteType::kPEval:
             LOGF_INFO("Executor: PEval graph {}", message.graph_id);
             if (in_memory_time_) start_time_ = std::chrono::system_clock::now();
-            message.app->SetCurrentGid(message.graph_id);
+            if (mode_ == common::Static) {
+              message.app->SetCurrentGid(0);
+            } else {
+              message.app->SetCurrentGid(message.graph_id);
+            }
             message.app->PEval();
             if (in_memory_time_) end_time_ = std::chrono::system_clock::now();
             break;
           case scheduler::ExecuteType::kIncEval:
             LOGF_INFO("Executor: kIncEval graph {}", message.graph_id);
-            message.app->SetCurrentGid(message.graph_id);
+            if (mode_ == common::Static) {
+              message.app->SetCurrentGid(0);
+            } else {
+              message.app->SetCurrentGid(message.graph_id);
+            }
             message.app->IncEval();
             break;
           case scheduler::ExecuteType::kSerialize:
@@ -95,6 +104,8 @@ class Executor2 : public Component {
 
   std::unique_ptr<std::thread> thread_;
   common::ThreadPool task_runner_;
+
+  common::ModeType mode_;
 
   bool in_memory_time_ = false;
   std::chrono::time_point<std::chrono::system_clock> start_time_;

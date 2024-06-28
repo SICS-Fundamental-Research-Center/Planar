@@ -82,6 +82,8 @@ class PlanarAppBaseOp : public PIE {
         next_actives_.emplace_back(block_meta.num_vertices);
       }
     }
+
+    mode_ = common::Configurations::Get()->mode;
   }
 
  protected:
@@ -640,6 +642,8 @@ class PlanarAppBaseOp : public PIE {
 
   GraphID current_gid_;
   std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs_;
+
+  common::ModeType mode_;
 
   std::mutex mtx_;
   std::condition_variable cv_;

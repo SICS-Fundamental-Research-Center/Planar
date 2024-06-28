@@ -25,9 +25,11 @@ struct GraphState {
   } StorageStateType;
 
   GraphState() : memory_size_(64 * 1024){};
-  GraphState(size_t num_subgraphs)
-      : num_subgraphs_(num_subgraphs),
-        memory_size_(common::Configurations::Get()->memory_size) {
+  GraphState(size_t num_subgraphs) { Init(num_subgraphs); }
+
+  void Init(size_t num_subgraphs) {
+    num_subgraphs_ = num_subgraphs;
+    memory_size_ = common::Configurations::Get()->memory_size;
     subgraph_round_.resize(num_subgraphs, 0);
     subgraph_storage_state_.resize(num_subgraphs, OnDisk);
     serialized_.resize(num_subgraphs);
@@ -35,6 +37,20 @@ struct GraphState {
     current_round_pending_.resize(num_subgraphs, true);
     next_round_pending_.resize(num_subgraphs, false);
     is_block_mode_ = common::Configurations::Get()->is_block_mode;
+
+    auto mode = core::common::Configurations::Get()->mode;
+    if (mode == common::Static) {
+      bids_.resize(num_subgraphs);
+      for (int i = 0; i < bids_.size(); i++) {
+        bids_.at(i).push_back(i);
+      }
+    } else if (mode == common::Random) {
+      bids_.resize(4);
+      auto size = (num_subgraphs + 3) / 4;
+      for (int i = 0; i < num_subgraphs; i++) {
+        bids_.at(i / 4).push_back(i);
+      }
+    }
   }
 
   StorageStateType GetSubgraphState(common::GraphID gid) const {
@@ -152,9 +168,12 @@ struct GraphState {
   // memory size and graph size
   // TODO: memory size should be set by gflags
   std::vector<size_t> subgraph_size_;
-  const size_t memory_size_;
+  size_t memory_size_;
   size_t subgraph_limits_ = 1;
   bool is_block_mode_ = false;
+
+  // Used for Static and Random mode
+  std::vector<std::vector<common::BlockID>> bids_;
 
  private:
   std::vector<std::unique_ptr<data_structures::Serialized>> serialized_;

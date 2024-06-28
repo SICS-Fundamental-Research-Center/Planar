@@ -11,31 +11,6 @@ void Scheduler2::Start() {
     bool running = true;
     // init round 0 loaded graph
 
-    //      ReadMessage first_read_message;
-    //      first_read_message.graph_id = GetNextReadGraphInCurrentRound();
-    //      first_read_message.round = 0;
-
-    //      if (use_limits_) {
-    //        limits_--;
-    //        if (limits_ < 0) {
-    //          LOG_FATAL("no limits left, error!");
-    //        }
-    //      } else {
-    //        graph_state_.subgraph_limits_--;
-    //        auto read_size =
-    //            graph_metadata_info_.GetSubgraphSize(first_read_message.graph_id);
-    //        if (memory_left_size_ < read_size) {
-    //          LOG_FATAL("read size is too large, memory is not enough!");
-    //        }
-    //        LOGF_INFO(
-    //            "read graph {} size: {}. *** Memory size now: {}, after: {}
-    //            ***", first_read_message.graph_id, read_size,
-    //            memory_left_size_, memory_left_size_ - read_size);
-    //        memory_left_size_ -= read_size;
-    //      }
-    //      graph_state_.SetOnDiskToReading(first_read_message.graph_id);
-    //      buffer_.SetBlockReading(first_read_message.graph_id);
-    //      message_hub_.get_reader_queue()->Push(first_read_message);
     auto id = GetNextExecuteGraph();
     ExecuteMessage exe_messgae;
     exe_messgae.graph_id = id;
@@ -97,10 +72,17 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
   switch (execute_resp.execute_type) {
     case ExecuteType::kPEval:
     case ExecuteType::kIncEval: {
-      graph_state_.SetGraphState(execute_resp.graph_id,
-                                 GraphState::StorageStateType::Computed);
-      graph_state_.SetGraphCurrentRoundFinish(execute_resp.graph_id);
-      graph_state_.AddGraphRound(execute_resp.graph_id);
+      if (mode_ == common::Static) {
+        static_state_.SetGraphState(execute_resp.graph_id,
+                                    GraphState::StorageStateType::Computed);
+        static_state_.SetGraphCurrentRoundFinish(execute_resp.graph_id);
+        static_state_.AddGraphRound(execute_resp.graph_id);
+      } else {
+        graph_state_.SetGraphState(execute_resp.graph_id,
+                                   GraphState::StorageStateType::Computed);
+        graph_state_.SetGraphCurrentRoundFinish(execute_resp.graph_id);
+        graph_state_.AddGraphRound(execute_resp.graph_id);
+      }
       if (IsCurrentRoundFinish()) {
         if (IsSystemStop()) {
           // Release All edge blocks.
@@ -115,7 +97,11 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
         } else {
           // TODO: sync after all sub_graphs are written back.
           // This sync maybe replaced by borderVertex check.
-          graph_state_.SyncCurrentRoundPending();
+          if (mode_ == common::Static) {
+            static_state_.SyncCurrentRoundPending();
+          } else {
+            graph_state_.SyncCurrentRoundPending();
+          }
           current_round_++;
           app_->SetInActive();
           LOGF_INFO(" ============ Current Round: {} Finish ============ ",
@@ -312,71 +298,88 @@ void Scheduler2::InitGroupSerializableGraph() {}
 
 void Scheduler2::SetAppRuntimeGraph(common::GraphID gid) {}
 
-// TODO: Add logic to decide which graph is read first.
-common::GraphID Scheduler2::GetNextReadGraphInCurrentRound() const {
-  for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
-    if (graph_state_.current_round_pending_.at(gid) &&
-        graph_state_.subgraph_storage_state_.at(gid) == GraphState::OnDisk) {
-      return gid;
-    }
-  }
-  return INVALID_GRAPH_ID;
-}
-
 // TODO: Add logic to decide which graph is executed first.
 common::GraphID Scheduler2::GetNextExecuteGraph() const {
-  for (GraphID gid = 0; gid < metadata_->num_blocks; gid++) {
-    if (graph_state_.current_round_pending_.at(gid) &&
-        graph_state_.subgraph_round_.at(gid) == current_round_) {
-      return gid;
+  if (mode_ == common::Static) {
+    for (GraphID gid = 0; gid < static_state_.num_subgraphs_; gid++) {
+      if (static_state_.current_round_pending_.at(gid) &&
+          static_state_.subgraph_round_.at(gid) == current_round_) {
+        return gid;
+      }
     }
-  }
-  return INVALID_GRAPH_ID;
-}
-
-void Scheduler2::GetNextExecuteGroupGraphs() {
-  size_t count = 0;
-  for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
-    if (graph_state_.current_round_pending_.at(gid) &&
-        graph_state_.subgraph_storage_state_.at(gid) ==
-            GraphState::StorageStateType::Serialized &&
-        graph_state_.subgraph_round_.at(gid) == current_round_) {
-      group_graphs_.push_back(gid);
-      count++;
-      // check if "group num" graphs have been added.
-      if (count == group_num_) {
-        break;
+  } else {
+    for (GraphID gid = 0; gid < metadata_->num_blocks; gid++) {
+      if (graph_state_.current_round_pending_.at(gid) &&
+          graph_state_.subgraph_round_.at(gid) == current_round_) {
+        return gid;
       }
     }
   }
-  LOGF_INFO("group graphs num: {}", group_num_);
-}
-
-common::GraphID Scheduler2::GetNextReadGraphInNextRound() const {
-  for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
-    if (graph_state_.next_round_pending_.at(gid) &&
-        graph_state_.subgraph_storage_state_.at(gid) ==
-            GraphState::StorageStateType::OnDisk) {
-      return gid;
-    }
-  }
   return INVALID_GRAPH_ID;
 }
 
+// void Scheduler2::GetNextExecuteGroupGraphs() {
+//   size_t count = 0;
+//   for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs();
+//   gid++) {
+//     if (graph_state_.current_round_pending_.at(gid) &&
+//         graph_state_.subgraph_storage_state_.at(gid) ==
+//             GraphState::StorageStateType::Serialized &&
+//         graph_state_.subgraph_round_.at(gid) == current_round_) {
+//       group_graphs_.push_back(gid);
+//       count++;
+//       // check if "group num" graphs have been added.
+//       if (count == group_num_) {
+//         break;
+//       }
+//     }
+//   }
+//   LOGF_INFO("group graphs num: {}", group_num_);
+// }
+
+// common::GraphID Scheduler2::GetNextReadGraphInNextRound() const {
+//   for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs();
+//   gid++) {
+//     if (graph_state_.next_round_pending_.at(gid) &&
+//         graph_state_.subgraph_storage_state_.at(gid) ==
+//             GraphState::StorageStateType::OnDisk) {
+//       return gid;
+//     }
+//   }
+//   return INVALID_GRAPH_ID;
+// }
+
 size_t Scheduler2::GetLeftPendingGraphNums() const {
   size_t res = 0;
-  for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs(); gid++) {
-    if (graph_state_.current_round_pending_.at(gid)) {
-      res++;
+  if (mode_ == common::Static) {
+    for (GraphID gid = 0; gid < static_state_.num_subgraphs_; gid++) {
+      if (static_state_.current_round_pending_.at(gid)) {
+        res++;
+      }
+    }
+  } else {
+    for (GraphID gid = 0; gid < graph_metadata_info_.get_num_subgraphs();
+         gid++) {
+      if (graph_state_.current_round_pending_.at(gid)) {
+        res++;
+      }
     }
   }
   return res;
 }
 
 bool Scheduler2::IsCurrentRoundFinish() const {
-  for (GraphID i = 0; i < graph_metadata_info_.get_num_subgraphs(); i++) {
-    if (graph_state_.current_round_pending_.at(i)) {
-      return false;
+  if (mode_ == common::Static) {
+    for (GraphID i = 0; i < static_state_.num_subgraphs_; i++) {
+      if (static_state_.current_round_pending_.at(i)) {
+        return false;
+      }
+    }
+  } else {
+    for (GraphID i = 0; i < graph_metadata_info_.get_num_subgraphs(); i++) {
+      if (graph_state_.current_round_pending_.at(i)) {
+        return false;
+      }
     }
   }
   return true;
