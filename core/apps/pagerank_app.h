@@ -28,8 +28,9 @@ class PageRankApp : public apis::PlanarAppBaseOp<float> {
       common::TaskRunner* runner, data_structures::TwoDMetadata* meta,
       scheduler::EdgeBuffer2* buffer,
       std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs,
-      scheduler::MessageHub* hub) override {
-    apis::PlanarAppBaseOp<float>::AppInit(runner, meta, buffer, graphs, hub);
+      scheduler::MessageHub* hub, scheduler::GraphState* state) override {
+    apis::PlanarAppBaseOp<float>::AppInit(runner, meta, buffer, graphs, hub,
+                                          state);
     iter = core::common::Configurations::Get()->pr_iter;
     vertexNum_ = meta_->num_vertices;
   }

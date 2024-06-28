@@ -13,6 +13,7 @@
 #include "io/mutable_csr_reader.h"
 #include "io/reader_writer.h"
 #include "scheduler/edge_buffer2.h"
+#include "scheduler/graph_state.h"
 #include "scheduler/message_hub.h"
 #include "util/logging.h"
 
@@ -90,7 +91,12 @@ class LoaderOp2 {
         //        scheduler::ReadMessage read_finish;
         //        read_finish.graph_id = current_gid_;
         //        response_q_->Push(scheduler::Message(read_finish));
-        graphs_->at(current_gid_).SetEdgeLoaded(true);
+        if (common::Configurations::Get()->mode == common::Static) {
+          state_->SetEdgeLoaded(current_gid_);
+        } else {
+          graphs_->at(current_gid_).SetEdgeLoaded(true);
+        }
+
         LOGF_INFO("Loading subgraph {} finish", current_gid_);
 
         receive_ = 0;
@@ -135,11 +141,20 @@ class LoaderOp2 {
 
   void GetReadSubBlocksIds(common::GraphID gid) {
     to_read_blocks_id_.clear();
-    auto num_sub_blocks = meta_->blocks.at(gid).num_sub_blocks;
-    for (common::BlockID i = 0; i < num_sub_blocks; i++) {
-      to_read_blocks_id_.push_back(i);
+    if (common::Configurations::Get()->mode == common::Static) {
+      auto ids = state_->GetSubBlockIDs(gid);
+      for (auto id : ids) {
+        to_read_blocks_id_.push_back(id);
+      }
+    } else {
+      auto num_sub_blocks = meta_->blocks.at(gid).num_sub_blocks;
+      for (common::BlockID i = 0; i < num_sub_blocks; i++) {
+        to_read_blocks_id_.push_back(i);
+      }
     }
   }
+
+  void SetStatePtr(scheduler::GraphState* state) { state_ = state; }
 
  private:
   io::CSREdgeBlockReader2 reader_;
@@ -160,6 +175,7 @@ class LoaderOp2 {
 
   std::unique_ptr<std::thread> thread_;
 
+  scheduler::GraphState* state_;
   scheduler::EdgeBuffer2* buffer_;
   std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs_;
 };

@@ -26,8 +26,9 @@ class ColoringAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       common::TaskRunner* runner, data_structures::TwoDMetadata* meta,
       scheduler::EdgeBuffer2* buffer,
       std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs,
-      scheduler::MessageHub* hub) override {
-    apis::PlanarAppBaseOp<uint32_t>::AppInit(runner, meta, buffer, graphs, hub);
+      scheduler::MessageHub* hub, scheduler::GraphState* state) override {
+    apis::PlanarAppBaseOp<uint32_t>::AppInit(runner, meta, buffer, graphs, hub,
+                                             state);
     srand(0);
     max_round_ = common::Configurations::Get()->rand_max;
     LOGF_INFO("random: {}", max_round_);
@@ -92,7 +93,6 @@ class ColoringAppOp : public apis::PlanarAppBaseOp<uint32_t> {
         auto dst_id = edges[i];
         auto dst_color = Read(dst_id);
         if (id < dst_id && Read(id) == dst_color) {
-
         }
         if (id < dst_id) {
           auto src_color = Read(id);

@@ -54,21 +54,13 @@ class Executor2 : public Component {
           case scheduler::ExecuteType::kPEval:
             LOGF_INFO("Executor: PEval graph {}", message.graph_id);
             if (in_memory_time_) start_time_ = std::chrono::system_clock::now();
-            if (mode_ == common::Static) {
-              message.app->SetCurrentGid(0);
-            } else {
-              message.app->SetCurrentGid(message.graph_id);
-            }
+            message.app->SetCurrentGid(message.graph_id);
             message.app->PEval();
             if (in_memory_time_) end_time_ = std::chrono::system_clock::now();
             break;
           case scheduler::ExecuteType::kIncEval:
             LOGF_INFO("Executor: kIncEval graph {}", message.graph_id);
-            if (mode_ == common::Static) {
-              message.app->SetCurrentGid(0);
-            } else {
-              message.app->SetCurrentGid(message.graph_id);
-            }
+            message.app->SetCurrentGid(message.graph_id);
             message.app->IncEval();
             break;
           case scheduler::ExecuteType::kSerialize:

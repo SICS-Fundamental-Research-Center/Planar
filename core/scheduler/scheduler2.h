@@ -65,10 +65,6 @@ class Scheduler2 {
     graphs_ = graphs;
     buffer_ = buffer;
     mode_ = common::Configurations::Get()->mode;
-    if (mode_ == common::Static) {
-      // Static means only one subgraph with all sub_blocks.
-      static_state_.Init(meta->blocks.at(0).num_sub_blocks);
-    }
   }
 
   int GetCurrentRound() const { return current_round_; }
@@ -83,6 +79,8 @@ class Scheduler2 {
   size_t GetVertexNumber() const {
     return graph_metadata_info_.get_num_vertices();
   }
+
+  void SetStatePtr(GraphState* state) { static_state_ = state; }
 
  protected:
   virtual bool ReadMessageResponseAndExecute(const ReadMessage& read_resp);
@@ -105,7 +103,7 @@ class Scheduler2 {
 
   void InitGroupSerializableGraph();
 
-  common::GraphID GetNextReadGraphInCurrentRound() const;
+  common::GraphID GetNextReadGraphInCurrentRound() const { return 0; }
 
   common::GraphID GetNextExecuteGraph() const;
 
@@ -146,7 +144,7 @@ class Scheduler2 {
   int current_round_ = 0;
 
   GraphState graph_state_;
-  GraphState static_state_;
+  GraphState* static_state_;
 
   // message hub
   MessageHub message_hub_;

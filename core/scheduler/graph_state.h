@@ -29,15 +29,6 @@ struct GraphState {
 
   void Init(size_t num_subgraphs) {
     num_subgraphs_ = num_subgraphs;
-    memory_size_ = common::Configurations::Get()->memory_size;
-    subgraph_round_.resize(num_subgraphs, 0);
-    subgraph_storage_state_.resize(num_subgraphs, OnDisk);
-    serialized_.resize(num_subgraphs);
-    graphs_.resize(num_subgraphs);
-    current_round_pending_.resize(num_subgraphs, true);
-    next_round_pending_.resize(num_subgraphs, false);
-    is_block_mode_ = common::Configurations::Get()->is_block_mode;
-
     auto mode = core::common::Configurations::Get()->mode;
     if (mode == common::Static) {
       bids_.resize(num_subgraphs);
@@ -48,9 +39,19 @@ struct GraphState {
       bids_.resize(4);
       auto size = (num_subgraphs + 3) / 4;
       for (int i = 0; i < num_subgraphs; i++) {
-        bids_.at(i / 4).push_back(i);
+        bids_.at(i / size).push_back(i);
       }
+      num_subgraphs_ = 4;
     }
+    is_loaded_.resize(num_subgraphs, false);
+    memory_size_ = common::Configurations::Get()->memory_size;
+    subgraph_round_.resize(num_subgraphs_, 0);
+    subgraph_storage_state_.resize(num_subgraphs_, OnDisk);
+    serialized_.resize(num_subgraphs_);
+    graphs_.resize(num_subgraphs_);
+    current_round_pending_.resize(num_subgraphs_, true);
+    next_round_pending_.resize(num_subgraphs_, false);
+    is_block_mode_ = common::Configurations::Get()->is_block_mode;
   }
 
   StorageStateType GetSubgraphState(common::GraphID gid) const {
@@ -155,6 +156,18 @@ struct GraphState {
   // release unique_ptr of serializable graph
   void ReleaseSubgraph(common::GraphID gid) { graphs_.at(gid).reset(); }
 
+  bool IsEdgesLoaded(common::GraphID gid) { return is_loaded_.at(gid); }
+
+  void SetEdgeLoaded(common::GraphID gid) { is_loaded_.at(gid) = true; }
+
+  void ReleaseEdges(common::GraphID gid) { is_loaded_.at(gid) = false; }
+
+  size_t GetSubBlockNum(common::GraphID gid) { return bids_.at(gid).size(); }
+
+  const std::vector<common::BlockID>& GetSubBlockIDs(common::GraphID gid) {
+    return bids_.at(gid);
+  }
+
  public:
   size_t num_subgraphs_;
   std::vector<int> subgraph_round_;
@@ -174,6 +187,7 @@ struct GraphState {
 
   // Used for Static and Random mode
   std::vector<std::vector<common::BlockID>> bids_;
+  std::vector<bool> is_loaded_;
 
  private:
   std::vector<std::unique_ptr<data_structures::Serialized>> serialized_;

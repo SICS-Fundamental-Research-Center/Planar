@@ -19,8 +19,9 @@ class RandomWalkAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       common::TaskRunner* runner, data_structures::TwoDMetadata* meta,
       scheduler::EdgeBuffer2* buffer,
       std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs,
-      scheduler::MessageHub* hub) override {
-    apis::PlanarAppBaseOp<uint32_t>::AppInit(runner, meta, buffer, graphs, hub);
+      scheduler::MessageHub* hub, scheduler::GraphState* state) override {
+    apis::PlanarAppBaseOp<uint32_t>::AppInit(runner, meta, buffer, graphs, hub,
+                                             state);
     walk_length_ = core::common::Configurations::Get()->walk;
     num_vertices_ = meta->num_vertices;
     uint64_t size = (uint64_t)(num_vertices_) * (uint64_t)(walk_length_);

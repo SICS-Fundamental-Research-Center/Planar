@@ -14,6 +14,7 @@
 #include "data_structures/graph/mutable_block_csr_graph.h"
 #include "data_structures/serializable.h"
 #include "scheduler/edge_buffer2.h"
+#include "scheduler/graph_state.h"
 #include "scheduler/message_hub.h"
 #include "update_stores/bsp_update_store.h"
 #include "util/logging.h"
@@ -60,12 +61,13 @@ class PlanarAppBaseOp : public PIE {
       common::TaskRunner* runner, data_structures::TwoDMetadata* meta,
       scheduler::EdgeBuffer2* buffer,
       std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs,
-      scheduler::MessageHub* hub) {
+      scheduler::MessageHub* hub, scheduler::GraphState* state) {
     meta_ = meta;
     runner_ = runner;
     graphs_ = graphs;
     hub_ = hub;
     buffer_ = buffer;
+    state_ = state;
     app_type_ = common::Configurations::Get()->application;
     use_data_ = app_type_ != common::RandomWalk;
     //    active_.Init(update_store->GetMessageCount());
@@ -90,6 +92,7 @@ class PlanarAppBaseOp : public PIE {
   // Parallel execute vertex_func in task_size chunks.
   void ParallelVertexDo(const std::function<void(VertexID)>& vertex_func) {
     LOG_INFO("ParallelVertexDo is begin");
+    // No need for edges, so operating on all vertex in current subgraph.
     auto block_meta = meta_->blocks.at(current_gid_);
     uint32_t task_size = GetTaskSize(block_meta.num_vertices);
     common::TaskPackage tasks;
@@ -202,6 +205,58 @@ class PlanarAppBaseOp : public PIE {
   void ParallelVertexDoWithEdges(
       const std::function<void(VertexID)>& vertex_func) {
     LOG_DEBUG("ParallelVertexDoWithEdges is begin");
+    if (mode_ == common::Static) {
+      auto load = state_->IsEdgesLoaded(static_gid_);
+      auto block_meta = meta_->blocks.at(0);
+      if (!load) {
+        int size_num = state_->GetSubBlockNum(static_gid_);
+        scheduler::ReadMessage read;
+        read.graph_id = current_gid_;
+        hub_->get_reader_queue()->Push(read);
+        auto queue = buffer_->GetQueue();
+        while (true) {
+          auto bid = queue->PopOrWait();
+          if (bid == MAX_VERTEX_ID) break;
+          auto sub_block_meta = block_meta.sub_blocks.at(bid);
+          auto task = [&vertex_func, &size_num, this, sub_block_meta]() {
+            auto begin_id = sub_block_meta.begin_id;
+            auto end_id = sub_block_meta.end_id;
+            for (VertexID id = begin_id; id < end_id; id++) {
+              vertex_func(id);
+            }
+            std::lock_guard<std::mutex> lock(mtx_);
+            size_num -= 1;
+            cv_.notify_all();
+          };
+          runner_->SubmitAsync(task);
+          //        LOGF_INFO("Submit task {}", bid);
+        }
+        std::unique_lock<std::mutex> lock(mtx_);
+        if (size_num != 0) {
+          cv_.wait(lock, [&size_num]() { return size_num == 0; });
+        }
+      } else {
+        common::TaskPackage tasks;
+        auto sub_ids = state_->GetSubBlockIDs(static_gid_);
+        for (int i = 0; i < sub_ids.size(); i++) {
+          auto id = sub_ids.at(i);
+          auto sub_block_meta = block_meta.sub_blocks.at(id);
+          auto task = [&vertex_func, sub_block_meta]() {
+            auto begin_id = sub_block_meta.begin_id;
+            auto end_id = sub_block_meta.end_id;
+            for (VertexID id = begin_id; id < end_id; id++) {
+              vertex_func(id);
+            }
+          };
+          tasks.emplace_back(task);
+        }
+        runner_->SubmitSync(tasks);
+      }
+      LOG_INFO("task finished");
+      Sync(use_readdata_only_);
+      LOG_INFO("ParallelVertexDoWithEdges is done");
+      return;
+    }
     auto load = graphs_->at(current_gid_).IsEdgesLoaded();
     auto block_meta = meta_->blocks.at(current_gid_);
     if (!load) {
@@ -296,6 +351,94 @@ class PlanarAppBaseOp : public PIE {
   void ParallelEdgeMutateDo(
       const std::function<void(VertexID, VertexID)>& edge_func) {
     LOG_DEBUG("ParallelEdgeMutateDo begins");
+    if (mode_ == common::Static) {
+      auto load = state_->IsEdgesLoaded(static_gid_);
+      auto block_meta = meta_->blocks.at(0);
+      if (!load) {
+        int size_num = state_->GetSubBlockNum(static_gid_);
+        scheduler::ReadMessage read;
+        read.graph_id = current_gid_;
+        hub_->get_reader_queue()->Push(read);
+        auto queue = buffer_->GetQueue();
+        while (true) {
+          auto bid = queue->PopOrWait();
+          if (bid == MAX_VERTEX_ID) break;
+          auto sub_block_meta = block_meta.sub_blocks.at(bid);
+          auto task = [&edge_func, &size_num, this, sub_block_meta]() {
+            auto id = sub_block_meta.begin_id;
+            auto& block = graphs_->at(current_gid_);
+            auto num_edges = sub_block_meta.num_edges;
+            auto edges = block.GetAllEdges(sub_block_meta.id);
+            auto bitmap = block.GetDelBitmap(sub_block_meta.id);
+            uint32_t degree = block.GetOutDegree(id);
+            while (degree == 0 && id < sub_block_meta.end_id) {
+              id++;
+              degree = block.GetOutDegree(id);
+            }
+            for (EdgeIndex i = 0; i < num_edges; i++) {
+              if (!bitmap->GetBit(i)) {
+                edge_func(id, edges[i]);
+              }
+              degree--;
+              while (degree == 0 && id < sub_block_meta.end_id) {
+                id++;
+                degree = block.GetOutDegree(id);
+              }
+            }
+            if (id != sub_block_meta.end_id) {
+              LOGF_FATAL("Error executing edge parallel do! {} != {}", id,
+                         sub_block_meta.id);
+            }
+            std::lock_guard<std::mutex> lock(mtx_);
+            size_num -= 1;
+            cv_.notify_all();
+          };
+          runner_->SubmitAsync(task);
+          //        LOGF_INFO("submit task {}", bid);
+        }
+        std::unique_lock<std::mutex> lock(mtx_);
+        if (size_num != 0) {
+          cv_.wait(lock, [&size_num]() { return size_num == 0; });
+        }
+      } else {
+        common::TaskPackage tasks;
+        auto sub_ids = state_->GetSubBlockIDs(static_gid_);
+        for (int i = 0; i < sub_ids.size(); i++) {
+          auto id = sub_ids.at(i);
+          auto sub_block_meta = block_meta.sub_blocks.at(id);
+          auto task = [&edge_func, this, sub_block_meta]() {
+            auto id = sub_block_meta.begin_id;
+            auto& block = graphs_->at(current_gid_);
+            auto num_edges = sub_block_meta.num_edges;
+            auto edges = block.GetAllEdges(sub_block_meta.id);
+            auto bitmap = block.GetDelBitmap(sub_block_meta.id);
+            auto degree = block.GetOutDegree(id);
+            while (degree == 0 && id < sub_block_meta.end_id) {
+              id++;
+              degree = block.GetOutDegree(id);
+            }
+            for (EdgeIndex i = 0; i < num_edges; i++) {
+              if (!bitmap->GetBit(i)) {
+                edge_func(id, edges[i]);
+              }
+              degree--;
+              while (degree == 0 && id < sub_block_meta.end_id) {
+                id++;
+                degree = block.GetOutDegree(id);
+              }
+            }
+            if (id != sub_block_meta.end_id) {
+              LOG_FATAL("Error executing edge parallel do!");
+            }
+          };
+          tasks.push_back(task);
+        }
+        runner_->SubmitSync(tasks);
+      }
+      Sync(use_readdata_only_);
+      LOG_DEBUG("ParallelEdgeMutateDo is done");
+      return;
+    }
     auto load = graphs_->at(current_gid_).IsEdgesLoaded();
     auto block_meta = meta_->blocks.at(current_gid_);
     if (!load) {
@@ -384,6 +527,93 @@ class PlanarAppBaseOp : public PIE {
   void ParallelEdgeMutateDo(
       const std::function<void(VertexID, VertexID, EdgeIndex)>& edge_del_func) {
     LOG_DEBUG("ParallelEdgeDeleteDo begins");
+    if (mode_ == common::Static) {
+      auto load = state_->IsEdgesLoaded(static_gid_);
+      auto block_meta = meta_->blocks.at(0);
+      if (!load) {
+        int size_num = state_->GetSubBlockNum(static_gid_);
+        scheduler::ReadMessage read;
+        read.graph_id = current_gid_;
+        hub_->get_reader_queue()->Push(read);
+        auto queue = buffer_->GetQueue();
+        while (true) {
+          auto bid = queue->PopOrWait();
+          if (bid == MAX_VERTEX_ID) break;
+          auto sub_block_meta = block_meta.sub_blocks.at(bid);
+          auto task = [&edge_del_func, &size_num, this, sub_block_meta]() {
+            auto id = sub_block_meta.begin_id;
+            auto& block = graphs_->at(current_gid_);
+            auto num_edges = sub_block_meta.num_edges;
+            auto edges = block.GetAllEdges(sub_block_meta.id);
+            auto bitmap = block.GetDelBitmap(sub_block_meta.id);
+            uint32_t degree = block.GetOutDegree(id);
+            while (degree == 0 && id < sub_block_meta.end_id) {
+              id++;
+              degree = block.GetOutDegree(id);
+            }
+            for (EdgeIndex i = 0; i < num_edges; i++) {
+              if (!bitmap->GetBit(i)) {
+                edge_del_func(id, edges[i], i);
+              }
+              degree--;
+              while (degree == 0 && id < sub_block_meta.end_id) {
+                id++;
+                degree = block.GetOutDegree(id);
+              }
+            }
+            if (id != sub_block_meta.end_id) {
+              LOG_FATAL("Error executing edge parallel do!");
+            }
+            std::lock_guard<std::mutex> lock(mtx_);
+            size_num -= 1;
+            cv_.notify_all();
+          };
+          runner_->SubmitAsync(task);
+          //        LOGF_INFO("submit task {}", bid);
+        }
+        std::unique_lock<std::mutex> lock(mtx_);
+        if (size_num != 0) {
+          cv_.wait(lock, [&size_num]() { return size_num == 0; });
+        }
+      } else {
+        common::TaskPackage tasks;
+        auto sub_ids = state_->GetSubBlockIDs(static_gid_);
+        for (int i = 0; i < sub_ids.size(); i++) {
+          auto id = sub_ids.at(i);
+          auto sub_block_meta = block_meta.sub_blocks.at(id);
+          auto task = [&edge_del_func, this, sub_block_meta]() {
+            auto id = sub_block_meta.begin_id;
+            auto& block = graphs_->at(current_gid_);
+            auto num_edges = sub_block_meta.num_edges;
+            auto edges = block.GetAllEdges(sub_block_meta.id);
+            auto bitmap = block.GetDelBitmap(sub_block_meta.id);
+            auto degree = block.GetOutDegree(id);
+            while (degree == 0 && id < sub_block_meta.end_id) {
+              id++;
+              degree = block.GetOutDegree(id);
+            }
+            for (EdgeIndex i = 0; i < num_edges; i++) {
+              if (!bitmap->GetBit(i)) {
+                edge_del_func(id, edges[i], i);
+              }
+              degree--;
+              while (degree == 0 && id < sub_block_meta.end_id) {
+                id++;
+                degree = block.GetOutDegree(id);
+              }
+            }
+            if (id != sub_block_meta.end_id) {
+              LOG_FATAL("Error executing edge parallel do!");
+            }
+          };
+          tasks.push_back(task);
+        }
+        runner_->SubmitSync(tasks);
+      }
+      Sync(use_readdata_only_);
+      LOG_DEBUG("ParallelEdgeDeleteDo is done");
+      return;
+    }
     auto load = graphs_->at(current_gid_).IsEdgesLoaded();
     auto block_meta = meta_->blocks.at(current_gid_);
     if (!load) {
@@ -580,7 +810,14 @@ class PlanarAppBaseOp : public PIE {
 
   void SetRound(int round) override { round_ = round; }
 
-  void SetCurrentGid(GraphID gid) override { current_gid_ = gid; }
+  void SetCurrentGid(GraphID gid) override {
+    if (mode_ == common::Static) {
+      static_gid_ = gid;
+      current_gid_ = 0;
+    } else {
+      current_gid_ = gid;
+    }
+  }
 
   void SetActive() { active = 1; }
 
@@ -622,6 +859,7 @@ class PlanarAppBaseOp : public PIE {
 
  protected:
   data_structures::TwoDMetadata* meta_;
+  scheduler::GraphState* state_ = nullptr;
 
   common::TaskRunner* runner_;
 
@@ -646,6 +884,7 @@ class PlanarAppBaseOp : public PIE {
   VertexData* write_ = nullptr;
 
   GraphID current_gid_;
+  GraphID static_gid_;
   std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs_;
 
   common::ModeType mode_;

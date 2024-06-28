@@ -15,6 +15,7 @@
 #include "io/mutable_csr_reader.h"
 #include "io/mutable_csr_writer.h"
 #include "scheduler/edge_buffer2.h"
+#include "scheduler/graph_state.h"
 #include "scheduler/scheduler2.h"
 #include "update_stores/bsp_update_store.h"
 
@@ -43,9 +44,17 @@ class Planar {
         std::make_unique<components::Executor2>(scheduler_->GetMessageHub());
 
     // set scheduler info
-    scheduler_->Init(executer_->GetTaskRunner(), &app_, &meta_, &graphs_, &edge_buffer_);
+    scheduler_->Init(executer_->GetTaskRunner(), &app_, &meta_, &graphs_,
+                     &edge_buffer_);
 
-    app_.AppInit(executer_->GetTaskRunner(), &meta_, &edge_buffer_, &graphs_, scheduler_->GetMessageHub());
+    app_.AppInit(executer_->GetTaskRunner(), &meta_, &edge_buffer_, &graphs_,
+                 scheduler_->GetMessageHub(), &state_);
+
+    if (common::Configurations::Get()->mode == common::Static) {
+      state_.Init(meta_.blocks.at(0).num_sub_blocks);
+      loader2_.SetStatePtr(&state_);
+      scheduler_->SetStatePtr(&state_);
+    }
   }
 
   ~Planar() = default;
@@ -71,6 +80,8 @@ class Planar {
 
  private:
   data_structures::TwoDMetadata meta_;
+
+  scheduler::GraphState state_;
 
   std::unique_ptr<scheduler::Scheduler2> scheduler_;
 

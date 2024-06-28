@@ -73,10 +73,10 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
     case ExecuteType::kPEval:
     case ExecuteType::kIncEval: {
       if (mode_ == common::Static) {
-        static_state_.SetGraphState(execute_resp.graph_id,
-                                    GraphState::StorageStateType::Computed);
-        static_state_.SetGraphCurrentRoundFinish(execute_resp.graph_id);
-        static_state_.AddGraphRound(execute_resp.graph_id);
+        static_state_->SetGraphState(execute_resp.graph_id,
+                                     GraphState::StorageStateType::Computed);
+        static_state_->SetGraphCurrentRoundFinish(execute_resp.graph_id);
+        static_state_->AddGraphRound(execute_resp.graph_id);
       } else {
         graph_state_.SetGraphState(execute_resp.graph_id,
                                    GraphState::StorageStateType::Computed);
@@ -98,7 +98,7 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
           // TODO: sync after all sub_graphs are written back.
           // This sync maybe replaced by borderVertex check.
           if (mode_ == common::Static) {
-            static_state_.SyncCurrentRoundPending();
+            static_state_->SyncCurrentRoundPending();
           } else {
             graph_state_.SyncCurrentRoundPending();
           }
@@ -126,6 +126,7 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
           } else {
             // First, release last subgraph edge blocks.
             ReleaseAllGraph(execute_resp.graph_id);
+            static_state_->ReleaseEdges(execute_resp.graph_id);
             auto next_id = GetNextExecuteGraph();
             ExecuteMessage exe_next;
             exe_next.graph_id = next_id;
@@ -183,7 +184,7 @@ bool Scheduler2::WriteMessageResponseAndCheckTerminate(
   // update subgraph size in memory
   graph_metadata_info_.UpdateSubgraphSize(write_resp.graph_id);
   // Read next subgraph if permitted
-  TryReadNextGraph();
+  //  TryReadNextGraph();
   return true;
 }
 
@@ -301,9 +302,9 @@ void Scheduler2::SetAppRuntimeGraph(common::GraphID gid) {}
 // TODO: Add logic to decide which graph is executed first.
 common::GraphID Scheduler2::GetNextExecuteGraph() const {
   if (mode_ == common::Static) {
-    for (GraphID gid = 0; gid < static_state_.num_subgraphs_; gid++) {
-      if (static_state_.current_round_pending_.at(gid) &&
-          static_state_.subgraph_round_.at(gid) == current_round_) {
+    for (GraphID gid = 0; gid < static_state_->num_subgraphs_; gid++) {
+      if (static_state_->current_round_pending_.at(gid) &&
+          static_state_->subgraph_round_.at(gid) == current_round_) {
         return gid;
       }
     }
@@ -352,8 +353,8 @@ common::GraphID Scheduler2::GetNextExecuteGraph() const {
 size_t Scheduler2::GetLeftPendingGraphNums() const {
   size_t res = 0;
   if (mode_ == common::Static) {
-    for (GraphID gid = 0; gid < static_state_.num_subgraphs_; gid++) {
-      if (static_state_.current_round_pending_.at(gid)) {
+    for (GraphID gid = 0; gid < static_state_->num_subgraphs_; gid++) {
+      if (static_state_->current_round_pending_.at(gid)) {
         res++;
       }
     }
@@ -370,8 +371,8 @@ size_t Scheduler2::GetLeftPendingGraphNums() const {
 
 bool Scheduler2::IsCurrentRoundFinish() const {
   if (mode_ == common::Static) {
-    for (GraphID i = 0; i < static_state_.num_subgraphs_; i++) {
-      if (static_state_.current_round_pending_.at(i)) {
+    for (GraphID i = 0; i < static_state_->num_subgraphs_; i++) {
+      if (static_state_->current_round_pending_.at(i)) {
         return false;
       }
     }
