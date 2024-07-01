@@ -125,17 +125,19 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
             //            message_hub_.get_executor_queue()->Push(execute_message);
           } else {
             // First, release last subgraph edge blocks.
-            if (mode_ != common::Normal) {
-              static_state_->ReleaseEdges(execute_resp.graph_id);
-              auto ids = static_state_->GetSubBlockIDs(execute_resp.graph_id);
-              std::string res = "";
-              for (auto id : ids) {
-                graphs_->at(0).Release(id);
-                res = res + std::to_string(id) + " ";
+            if (!in_memory_) {
+              if (mode_ != common::Normal) {
+                static_state_->ReleaseEdges(execute_resp.graph_id);
+                auto ids = static_state_->GetSubBlockIDs(execute_resp.graph_id);
+                std::string res = "";
+                for (auto id : ids) {
+                  graphs_->at(0).Release(id);
+                  res = res + std::to_string(id) + " ";
+                }
+                LOGF_INFO("Release ids: {}", res);
+              } else {
+                ReleaseAllGraph(execute_resp.graph_id);
               }
-              LOGF_INFO("Release ids: {}", res);
-            } else {
-              ReleaseAllGraph(execute_resp.graph_id);
             }
             auto next_id = GetNextExecuteGraph();
             ExecuteMessage exe_next;
@@ -148,17 +150,19 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
         }
       } else {
         // Release first
-        if (mode_ != common::Normal) {
-          static_state_->ReleaseEdges(execute_resp.graph_id);
-          auto ids = static_state_->GetSubBlockIDs(execute_resp.graph_id);
-          std::string res = "";
-          for (auto id : ids) {
-            graphs_->at(0).Release(id);
-            res = res + std::to_string(id) + " ";
+        if (!in_memory_) {
+          if (mode_ != common::Normal) {
+            static_state_->ReleaseEdges(execute_resp.graph_id);
+            auto ids = static_state_->GetSubBlockIDs(execute_resp.graph_id);
+            std::string res = "";
+            for (auto id : ids) {
+              graphs_->at(0).Release(id);
+              res = res + std::to_string(id) + " ";
+            }
+            LOGF_INFO("Release ids: {}", res);
+          } else {
+            ReleaseAllGraph(execute_resp.graph_id);
           }
-          LOGF_INFO("Release ids: {}", res);
-        } else {
-          ReleaseAllGraph(execute_resp.graph_id);
         }
         auto next_execute_gid = GetNextExecuteGraph();
         if (next_execute_gid == INVALID_GRAPH_ID)

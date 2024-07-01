@@ -65,6 +65,7 @@ class Scheduler2 {
     graphs_ = graphs;
     buffer_ = buffer;
     mode_ = common::Configurations::Get()->mode;
+    in_memory_ = common::Configurations::Get()->in_memory;
   }
 
   int GetCurrentRound() const { return current_round_; }
@@ -190,6 +191,7 @@ class Scheduler2 {
   // Buffer managements.
 
   common::ModeType mode_ = common::Normal;
+  bool in_memory_ = false;
 
   int test = 0;
 };
