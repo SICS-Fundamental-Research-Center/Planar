@@ -90,16 +90,19 @@ class MutableBlockCSRGraph {
     file.close();
     // Init vector size;
     sub_blocks_.resize(block_meta->num_sub_blocks);
-    num_edges_.resize(block_meta->num_sub_blocks);
+    //    num_edges_.resize(block_meta->num_sub_blocks);
+    num_edges_ = new EdgeIndex[block_meta->num_sub_blocks];
     for (int i = 0; i < block_meta->num_sub_blocks; i++) {
       edge_delete_bitmaps_.emplace_back(block_meta->sub_blocks.at(i).num_edges);
-      num_edges_.at(i) = block_meta->sub_blocks.at(i).num_edges;
+      num_edges_[i] = block_meta->sub_blocks.at(i).num_edges;
     }
+    mode_ = common::Configurations::Get()->mode;
   }
 
   ~MutableBlockCSRGraph() {
     delete[] out_offset_reduce_;
     delete[] out_degree_;
+    delete[] num_edges_;
   };
 
   // Set the read sub_block pointer for using.
@@ -171,14 +174,26 @@ class MutableBlockCSRGraph {
   void DeleteEdge(VertexID id, EdgeIndex idx) {
     auto subBlock_id = GetSubBlockID(id);
     edge_delete_bitmaps_.at(subBlock_id).SetBit(idx);
-    num_edges_.at(subBlock_id) = num_edges_.at(subBlock_id) - 1;
+    if (mode_ == common::Static) {
+      //      std::lock_guard<std::mutex> lock(mtx_);
+      //      num_edges_.at(subBlock_id) = num_edges_.at(subBlock_id) - 1;
+      util::atomic::WriteSub(num_edges_ + subBlock_id, EdgeIndex(1));
+      return;
+    }
+    num_edges_[subBlock_id] = num_edges_[subBlock_id] - 1;
   }
 
   void DeleteEdgeByVertex(VertexID id, EdgeIndex idx) {
     auto subBlock_id = GetSubBlockID(id);
     auto offset = GetInitOffset(id);
     edge_delete_bitmaps_.at(subBlock_id).SetBit(offset + idx);
-    num_edges_.at(subBlock_id) = num_edges_.at(subBlock_id) - 1;
+    if (mode_ == common::Static) {
+      //      std::lock_guard<std::mutex> lock(mtx_);
+      //      num_edges_[subBlock_id] = num_edges_[subBlock_id] - 1;
+      util::atomic::WriteSub(num_edges_ + subBlock_id, EdgeIndex(1));
+      return;
+    }
+    num_edges_[subBlock_id] = num_edges_[subBlock_id] - 1;
   }
 
   bool IsEdgeDelete(VertexID id, EdgeIndex idx) {
@@ -221,13 +236,30 @@ class MutableBlockCSRGraph {
   size_t GetNumEdges() {
     if (mutate) {
       size_t res = 0;
-      for (auto num : num_edges_) {
-        res += num;
+      //      for (auto num : num_edges_) {
+      //        res += num;
+      //      }
+      for (int i = 0; i < metadata_block_->num_sub_blocks; i++) {
+        res += num_edges_[i];
       }
       return res;
     } else {
       return metadata_block_->num_edges;
     }
+  }
+
+  size_t GetNumEdges(std::vector<common::BlockID>& ids) {
+    size_t res = 0;
+    if (mutate) {
+      for (auto id : ids) {
+        res += num_edges_[id];
+      }
+    } else {
+      for (auto id : ids) {
+        res += metadata_block_->sub_blocks.at(id).num_edges;
+      }
+    }
+    return res;
   }
 
   void LogGraphInfo() {
@@ -280,8 +312,8 @@ class MutableBlockCSRGraph {
   // Edges sub_block. init in constructor.
   std::vector<SubBlockImpl> sub_blocks_;
   std::vector<common::Bitmap> edge_delete_bitmaps_;
-  std::vector<EdgeIndex> num_edges_;
-
+  //  std::vector<EdgeIndex> num_edges_;
+  EdgeIndex* num_edges_ = nullptr;
   // bitmap read from disk, have no ownership of data
   //  common::BitmapNoOwnerShip vertex_src_or_dst_bitmap_;
   //  common::BitmapNoOwnerShip is_in_graph_bitmap_;
@@ -297,7 +329,8 @@ class MutableBlockCSRGraph {
   uint32_t parallelism_;  // Use change variable for test.
   uint32_t task_package_factor_;
 
-  std::mutex mtx;
+  std::mutex mtx_;
+  common::ModeType mode_ = common::Static;
 };
 
 }  // namespace sics::graph::core::data_structures::graph

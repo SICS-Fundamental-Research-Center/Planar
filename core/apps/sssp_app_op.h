@@ -44,7 +44,10 @@ class SsspAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       LOGF_INFO("relax begins, active: {}", GetActiveNum());
       ParallelVertexDoWithEdges(relax);
       SyncSubGraphActive();
+      //      LOGF_INFO("relax finished, active: {} edges: {}", GetActiveNum(),
+      //      edge_count_);
       LOGF_INFO("relax finished, active: {}", GetActiveNum());
+      edge_count_ = 0;
     }
   }
 
@@ -86,6 +89,7 @@ class SsspAppOp : public apis::PlanarAppBaseOp<uint32_t> {
         if (current_dis < dst_dis) {
           WriteMin(dst_id, current_dis);
           SetVertexActive(dst_id);
+          //          util::atomic::WriteAdd(&edge_count_, size_t(1));
         }
       }
     }
@@ -101,6 +105,7 @@ class SsspAppOp : public apis::PlanarAppBaseOp<uint32_t> {
   bool flag = false;
   bool in_memory_ = false;
   bool radical_ = false;
+  size_t edge_count_ = 0;
 };
 
 }  // namespace sics::graph::core::apps

@@ -72,7 +72,7 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
   switch (execute_resp.execute_type) {
     case ExecuteType::kPEval:
     case ExecuteType::kIncEval: {
-      if (mode_ == common::Static) {
+      if (mode_ != common::Normal) {
         static_state_->SetGraphState(execute_resp.graph_id,
                                      GraphState::StorageStateType::Computed);
         static_state_->SetGraphCurrentRoundFinish(execute_resp.graph_id);
@@ -97,7 +97,7 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
         } else {
           // TODO: sync after all sub_graphs are written back.
           // This sync maybe replaced by borderVertex check.
-          if (mode_ == common::Static) {
+          if (mode_ != common::Normal) {
             static_state_->SyncCurrentRoundPending();
           } else {
             graph_state_.SyncCurrentRoundPending();
@@ -125,8 +125,18 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
             //            message_hub_.get_executor_queue()->Push(execute_message);
           } else {
             // First, release last subgraph edge blocks.
-            ReleaseAllGraph(execute_resp.graph_id);
-            static_state_->ReleaseEdges(execute_resp.graph_id);
+            if (mode_ != common::Normal) {
+              static_state_->ReleaseEdges(execute_resp.graph_id);
+              auto ids = static_state_->GetSubBlockIDs(execute_resp.graph_id);
+              std::string res = "";
+              for (auto id : ids) {
+                graphs_->at(0).Release(id);
+                res = res + std::to_string(id) + " ";
+              }
+              LOGF_INFO("Release ids: {}", res);
+            } else {
+              ReleaseAllGraph(execute_resp.graph_id);
+            }
             auto next_id = GetNextExecuteGraph();
             ExecuteMessage exe_next;
             exe_next.graph_id = next_id;
@@ -138,7 +148,18 @@ bool Scheduler2::ExecuteMessageResponseAndWrite(
         }
       } else {
         // Release first
-        ReleaseAllGraph(execute_resp.graph_id);
+        if (mode_ != common::Normal) {
+          static_state_->ReleaseEdges(execute_resp.graph_id);
+          auto ids = static_state_->GetSubBlockIDs(execute_resp.graph_id);
+          std::string res = "";
+          for (auto id : ids) {
+            graphs_->at(0).Release(id);
+            res = res + std::to_string(id) + " ";
+          }
+          LOGF_INFO("Release ids: {}", res);
+        } else {
+          ReleaseAllGraph(execute_resp.graph_id);
+        }
         auto next_execute_gid = GetNextExecuteGraph();
         if (next_execute_gid == INVALID_GRAPH_ID)
           LOG_FATAL("Error at Get gid for executing!");
@@ -301,7 +322,7 @@ void Scheduler2::SetAppRuntimeGraph(common::GraphID gid) {}
 
 // TODO: Add logic to decide which graph is executed first.
 common::GraphID Scheduler2::GetNextExecuteGraph() const {
-  if (mode_ == common::Static) {
+  if (mode_ != common::Normal) {
     for (GraphID gid = 0; gid < static_state_->num_subgraphs_; gid++) {
       if (static_state_->current_round_pending_.at(gid) &&
           static_state_->subgraph_round_.at(gid) == current_round_) {
@@ -352,7 +373,7 @@ common::GraphID Scheduler2::GetNextExecuteGraph() const {
 
 size_t Scheduler2::GetLeftPendingGraphNums() const {
   size_t res = 0;
-  if (mode_ == common::Static) {
+  if (mode_ != common::Normal) {
     for (GraphID gid = 0; gid < static_state_->num_subgraphs_; gid++) {
       if (static_state_->current_round_pending_.at(gid)) {
         res++;
@@ -370,7 +391,7 @@ size_t Scheduler2::GetLeftPendingGraphNums() const {
 }
 
 bool Scheduler2::IsCurrentRoundFinish() const {
-  if (mode_ == common::Static) {
+  if (mode_ != common::Normal) {
     for (GraphID i = 0; i < static_state_->num_subgraphs_; i++) {
       if (static_state_->current_round_pending_.at(i)) {
         return false;

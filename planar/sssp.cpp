@@ -10,6 +10,7 @@ DEFINE_bool(in_memory, false, "in memory mode");
 DEFINE_uint32(memory_size, 64, "memory size (GB)");
 DEFINE_uint32(source, 0, "source vertex id");
 DEFINE_string(buffer_size, "32G", "buffer size for edge blocks");
+DEFINE_string(mode, "normal", "mode");
 
 using namespace sics::graph;
 
@@ -27,6 +28,10 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->source = FLAGS_source;
   core::common::Configurations::GetMutable()->edge_buffer_size =
       core::common::GetBufferSize(FLAGS_buffer_size);
+  core::common::Configurations::GetMutable()->mode =
+      FLAGS_mode == "normal"   ? core::common::Normal
+      : FLAGS_mode == "static" ? core::common::Static
+                               : core::common::Random;
 
   LOG_INFO("System begin");
   core::planar_system::Planar<core::apps::SsspAppOp> system(

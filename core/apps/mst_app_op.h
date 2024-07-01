@@ -12,7 +12,7 @@
 
 namespace sics::graph::core::apps {
 
-#define MST_INVALID_ID 10000000
+#define MST_INVALID_ID 0xffffffff
 
 class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
   using VertexID = common::VertexID;
@@ -49,6 +49,7 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
     auto contract = [this](VertexID src_id, VertexID dst_id, EdgeIndex idx) {
       Contract(src_id, dst_id, idx);
     };
+    auto contrac_vertex = [this](VertexID id) { ContractVertex(id); };
 
     ParallelVertexInitDo(init);
     //    LogVertexState();
@@ -60,15 +61,15 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       LOGF_INFO("find min edge finished! edges: {}", num_);
       num3 = num_;
 
-      if (num3 < 10) {
-        LOGF_INFO("id {}, min {}", 76198, min_out_edge_id_[76198]);
-        LOGF_INFO("id {}, min {}", 76208, min_out_edge_id_[76208]);
-        LOGF_INFO("id {}, min {}", 76237, min_out_edge_id_[76237]);
-        LOGF_INFO("id {}, min {}", 76243, min_out_edge_id_[76243]);
-        LOGF_INFO("id {}, min {}", 76244, min_out_edge_id_[76244]);
-        LOGF_INFO("id {}, min {}", 76255, min_out_edge_id_[76255]);
-        LOGF_INFO("id {}, min {}", 76297, min_out_edge_id_[76297]);
-      }
+      //      if (num3 < 10) {
+      //        LOGF_INFO("id {}, min {}", 76198, min_out_edge_id_[76198]);
+      //        LOGF_INFO("id {}, min {}", 76208, min_out_edge_id_[76208]);
+      //        LOGF_INFO("id {}, min {}", 76237, min_out_edge_id_[76237]);
+      //        LOGF_INFO("id {}, min {}", 76243, min_out_edge_id_[76243]);
+      //        LOGF_INFO("id {}, min {}", 76244, min_out_edge_id_[76244]);
+      //        LOGF_INFO("id {}, min {}", 76255, min_out_edge_id_[76255]);
+      //        LOGF_INFO("id {}, min {}", 76297, min_out_edge_id_[76297]);
+      //      }
 
       num2 = 0;
       ParallelAllVertexDo(graft);
@@ -77,7 +78,8 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       ParallelAllVertexDo(pointer_jump);
       LOG_INFO("pointer jump finished!");
 
-      ParallelEdgeMutateDo(contract);
+      //      ParallelEdgeMutateDo(contract);
+      ParallelVertexDoWithEdges(contrac_vertex);
       LOGF_INFO("contract finished! left edges: {}", GetSubGraphNumEdges());
     }
   }
@@ -103,58 +105,63 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
     if (degree != 0) {
       auto edges = GetOutEdges(id);
       VertexID min_id = MST_INVALID_ID;
+      size_t idx = 0;
       for (VertexDegree i = 0; i < degree; i++) {
         if (IsEdgeDelete(id, i)) continue;
         auto dst = edges[i];
         //        auto flag = util::atomic::WriteMin(&min_out_edge_id_[dst],
-        //        id);
-        auto flag = WriteMinSelf(dst, id);
+        //        id); auto flag = WriteMinSelf(dst, id);
+        auto flag = util::atomic::WriteMin(&min_out_edge_id_[dst], id);
         min_id = dst < min_id ? dst : min_id;
-        {
-          std::lock_guard<std::mutex> lock(mtx);
-          num_++;
-        }
-        if (num3 < 10) {
-          LOGF_INFO("src {} -> dst {}, min {} success: {}", id, dst,
-                    min_out_edge_id_[dst], flag);
-        }
+        //        {
+        //          std::lock_guard<std::mutex> lock(mtx);
+        //          num_++;
+        //        }
+        //        if (num3 < 10) {
+        //          LOGF_INFO("src {} -> dst {}, min {} success: {}", id, dst,
+        //                    min_out_edge_id_[dst], flag);
+        //        }
+        idx++;
       }
-      min_out_edge_id_[id] = min_id;
+      if (idx) {
+        min_out_edge_id_[id] = min_id;
+      }
     }
-    if (num3 < 10 && id == 76297) {
-      LOGF_INFO(" Id {} min {}", id, min_out_edge_id_[id]);
-    }
+    //    if (num3 < 10 && id == 76297) {
+    //      LOGF_INFO(" Id {} min {}", id, min_out_edge_id_[id]);
+    //    }
   }
 
   void Graft(VertexID src_id) {
     auto dst_id = min_out_edge_id_[src_id];
-    if (num3 < 10 && src_id == 76198) {
-      LOGF_INFO("id {}, min {}", src_id, dst_id);
-    }
-    if (num3 < 10 && src_id == 76208) {
-      LOGF_INFO("id {}, min {}", src_id, dst_id);
-    }
-    if (num3 < 10 && src_id == 76237) {
-      LOGF_INFO("id {}, min {}", src_id, dst_id);
-    }
-    if (num3 < 10 && src_id == 76243) {
-      LOGF_INFO("id {}, min {}", src_id, dst_id);
-    }
+    //    if (num3 < 10 && src_id == 7619
+    //      LOGF_INFO("id {}, min {}", src_id, dst_id);
+    //    }
+    //    if (num3 < 10 && src_id == 76208) {
+    //      LOGF_INFO("id {}, min {}", src_id, dst_id);
+    //    }
+    //    if (num3 < 10 && src_id == 76237) {
+    //      LOGF_INFO("id {}, min {}", src_id, dst_id);
+    //    }
+    //    if (num3 < 10 && src_id == 76243) {
+    //      LOGF_INFO("id {}, min {}", src_id, dst_id);
+    //    }
 
     if (dst_id != MST_INVALID_ID) {
       auto src_parent_id = Read(src_id);
       auto dst_parent_id = Read(dst_id);
-      if (num3 < 10) {
-        LOGF_INFO("graft: {}({}) -> {}({})", src_id, src_parent_id, dst_id,
-                  dst_parent_id);
-      }
+      //      if (num3 < 10) {
+      //        LOGF_INFO("graft: {}({}) -> {}({})", src_id, src_parent_id,
+      //        dst_id,
+      //                  dst_parent_id);
+      //      }
       if (src_parent_id < dst_parent_id) {
         WriteMin(dst_parent_id, src_parent_id);
       } else if (src_parent_id > dst_parent_id) {
         WriteMin(src_parent_id, dst_parent_id);
       } else {
-        std::lock_guard<std::mutex> lock(mtx);
-        num2++;
+        //        std::lock_guard<std::mutex> lock(mtx);
+        //        num2++;
       }
       min_out_edge_id_[src_id] = MST_INVALID_ID;
     }
@@ -173,7 +180,26 @@ class MstAppOp : public apis::PlanarAppBaseOp<uint32_t> {
 
   void Contract(VertexID src_id, VertexID dst_id, EdgeIndex idx) {
     if (Read(src_id) == Read(dst_id)) {
+      //      if (num3 < 10) {
+      //        LOGF_INFO("Del edge {} -> {}", src_id, dst_id);
+      //      }
       DeleteEdge(src_id, idx);
+    }
+  }
+
+  void ContractVertex(VertexID id) {
+    auto degree = GetOutDegree(id);
+    if (degree != 0) {
+      auto edges = GetOutEdges(id);
+      auto src_parent = Read(id);
+      for (VertexDegree i = 0; i < degree; i++) {
+        if (IsEdgeDelete(id, i)) continue;
+        auto dst = edges[i];
+        if (src_parent == Read(dst)) {
+          DeleteEdgeByVertex(id, i);
+          //          LOGF_INFO("del src {}->dst {} idx {}", id, dst, i);
+        }
+      }
     }
   }
 

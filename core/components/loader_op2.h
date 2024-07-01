@@ -78,7 +78,12 @@ class LoaderOp2 {
         scheduler::ReadMessage message = reader_q_->PopOrWait();
         if (message.terminated) break;
         GetReadSubBlocksIds(message.graph_id);
-        current_gid_ = message.graph_id;
+        if (common::Configurations::Get()->mode != common::Normal) {
+          current_gid_ = 0;
+          static_gid_ = message.graph_id;
+        } else {
+          current_gid_ = message.graph_id;
+        }
         int begin = 0;
         while (receive_ < to_read_blocks_id_.size()) {
           // Send QD requests per Read operation.
@@ -91,13 +96,13 @@ class LoaderOp2 {
         //        scheduler::ReadMessage read_finish;
         //        read_finish.graph_id = current_gid_;
         //        response_q_->Push(scheduler::Message(read_finish));
-        if (common::Configurations::Get()->mode == common::Static) {
-          state_->SetEdgeLoaded(current_gid_);
+        if (common::Configurations::Get()->mode != common::Normal) {
+          state_->SetEdgeLoaded(static_gid_);
+          LOGF_INFO("Loading subgraph {} finish", static_gid_);
         } else {
           graphs_->at(current_gid_).SetEdgeLoaded(true);
+          LOGF_INFO("Loading subgraph {} finish", current_gid_);
         }
-
-        LOGF_INFO("Loading subgraph {} finish", current_gid_);
 
         receive_ = 0;
         queue_ = 0;
@@ -141,7 +146,7 @@ class LoaderOp2 {
 
   void GetReadSubBlocksIds(common::GraphID gid) {
     to_read_blocks_id_.clear();
-    if (common::Configurations::Get()->mode == common::Static) {
+    if (common::Configurations::Get()->mode != common::Normal) {
       auto ids = state_->GetSubBlockIDs(gid);
       for (auto id : ids) {
         to_read_blocks_id_.push_back(id);
@@ -162,6 +167,7 @@ class LoaderOp2 {
   data_structures::TwoDMetadata* meta_;
 
   common::GraphID current_gid_;
+  common::GraphID static_gid_;
   std::vector<common::VertexID> to_read_blocks_id_;
 
   bool block_ = false;

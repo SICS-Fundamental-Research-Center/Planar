@@ -50,7 +50,8 @@ class Planar {
     app_.AppInit(executer_->GetTaskRunner(), &meta_, &edge_buffer_, &graphs_,
                  scheduler_->GetMessageHub(), &state_);
 
-    if (common::Configurations::Get()->mode == common::Static) {
+    if (common::Configurations::Get()->mode == common::Static ||
+        common::Configurations::Get()->mode == common::Random) {
       state_.Init(meta_.blocks.at(0).num_sub_blocks);
       loader2_.SetStatePtr(&state_);
       scheduler_->SetStatePtr(&state_);

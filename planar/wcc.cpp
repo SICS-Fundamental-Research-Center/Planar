@@ -14,6 +14,7 @@ DEFINE_uint32(partition, 1,
 DEFINE_uint32(limits, 0, "subgrah limits for pre read");
 DEFINE_bool(short_cut, false, "no short cut");
 DEFINE_string(buffer_size, "32G", "buffer size for edge blocks");
+DEFINE_string(mode, "normal", "mode");
 
 using namespace sics::graph;
 
@@ -35,6 +36,10 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->short_cut = FLAGS_short_cut;
   core::common::Configurations::GetMutable()->edge_buffer_size =
       core::common::GetBufferSize(FLAGS_buffer_size);
+  core::common::Configurations::GetMutable()->mode =
+      FLAGS_mode == "normal"   ? core::common::Normal
+      : FLAGS_mode == "static" ? core::common::Static
+                               : core::common::Random;
 
   LOG_INFO("System begin");
   core::planar_system::Planar<core::apps::WCCAppOp> system(

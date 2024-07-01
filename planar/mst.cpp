@@ -12,6 +12,8 @@ DEFINE_uint32(memory_size, 64, "memory size (GB)");
 DEFINE_bool(fast, false, "fast mode (no output)");
 DEFINE_string(buffer_size, "32G", "buffer size for edge blocks");
 DEFINE_bool(short_cut, false, "no short cut");
+DEFINE_bool(skip, false, "skip first sub_block");
+
 
 using namespace sics::graph;
 

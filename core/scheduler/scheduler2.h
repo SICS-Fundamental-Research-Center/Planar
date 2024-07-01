@@ -125,9 +125,15 @@ class Scheduler2 {
   void SetAppRound(int round);
 
   scheduler::ExecuteType GetExecuteType(GraphID gid) {
-    auto round = graph_state_.GetSubgraphRound(gid);
-    return round == 0 ? scheduler::ExecuteType::kPEval
-                      : scheduler::ExecuteType::kIncEval;
+    if (mode_ != common::Normal) {
+      auto round = static_state_->GetSubgraphRound(gid);
+      return round == 0 ? scheduler::ExecuteType::kPEval
+                        : scheduler::ExecuteType::kIncEval;
+    } else {
+      auto round = graph_state_.GetSubgraphRound(gid);
+      return round == 0 ? scheduler::ExecuteType::kPEval
+                        : scheduler::ExecuteType::kIncEval;
+    }
   }
 
   void ReleaseAllSubEdgeBlocks() {

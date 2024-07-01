@@ -124,6 +124,103 @@ int main(int argc, char** argv) {
       delete[] offset;
       delete[] edges;
     }
+  } else if (mode == "block_del") {
+    auto block_num = graph_metadata.get_num_blocks();
+    auto block_metadata = graph_metadata.GetBlockMetadata(0);
+    auto bid = block_metadata.begin_id;
+    auto eid = block_metadata.end_id;
+    auto num_vertex = block_metadata.num_vertices;
+    auto num_edge = block_metadata.num_outgoing_edges;
+
+    std::ifstream block_file(root_path + "graphs/" + std::to_string(0) + ".bin",
+                             std::ios::binary);
+    if (!block_file) {
+      LOG_FATAL("Error opening bin file: ",
+                root_path + "graphs/" + std::to_string(0) + ".bin");
+    }
+    auto degree = new core::common::VertexDegree[num_vertex];
+    auto offset = new core::common::EdgeIndex[num_vertex];
+    auto edges = new core::common::VertexID[num_edge];
+    block_file.read((char*)degree,
+                    num_vertex * sizeof(core::common::VertexDegree));
+    block_file.read((char*)offset,
+                    num_vertex * sizeof(core::common::EdgeIndex));
+    block_file.read((char*)edges, num_edge * sizeof(core::common::VertexID));
+
+    LOG_INFO("BlockID: ", 0, ", VertexNum: ", num_vertex,
+             ", EdgeNum: ", num_edge);
+
+    auto degree_new = new core::common::VertexDegree[num_vertex];
+    auto offset_new = new core::common::EdgeIndex[num_vertex];
+    memcpy(degree_new, degree, sizeof(core::common::VertexDegree) * num_vertex);
+
+    size_t num = 0;
+    VertexID max_id = 0;
+    for (VertexID id = bid; id < eid; id++) {
+      auto d = degree[id - bid];
+      auto off = offset[id - bid];
+      for (EdgeIndex j = 0; j < d; j++) {
+        auto dst = edges[off + j];
+        if (dst == id) {
+          degree_new[id]--;
+          num++;
+          max_id = max_id < id ? id : max_id;
+        }
+      }
+    }
+    LOGF_INFO("edge {}, maxId: {}", num, max_id);
+
+    size_t num_edges_new = 0;
+    for (VertexID id = bid; id < eid; id++) {
+      auto idx = id - bid;
+      num_edges_new += degree_new[idx];
+    }
+    assert(num_edges_new == block_metadata.num_outgoing_edges - num);
+    LOG_INFO("edges left: ", num_edges_new);
+    auto edges_new = new core::common::VertexID[num_edges_new];
+    core::common::EdgeIndex idx = 0;
+    for (VertexID id = bid; id < eid; id++) {
+      auto d = degree[id - bid];
+      auto off = offset[id - bid];
+      for (EdgeIndex j = 0; j < d; j++) {
+        auto dst = edges[off + j];
+        if (dst != id) {
+          edges_new[idx] = dst;
+          idx++;
+        }
+      }
+    }
+    assert(idx == num_edges_new);
+    offset_new[0] = 0;
+    for (VertexID id = bid + 1; id < eid; id++) {
+      auto i = id - bid;
+      offset_new[i] = offset_new[i - 1] + degree_new[i - 1];
+    }
+
+    std::ofstream file_new(root_path + "graphs/0.bin.new", std::ios::binary);
+    file_new.write((char*)degree_new,
+                   num_vertex * sizeof(core::common::VertexDegree));
+    if (!file_new) {
+      LOG_FATAL("Error writing degree data file");
+    }
+    file_new.write((char*)offset_new,
+                   num_vertex * sizeof(core::common::EdgeIndex));
+    if (!file_new) {
+      LOG_FATAL("Error writing offset data file");
+    }
+    file_new.write((char*)edges_new,
+                   num_edges_new * sizeof(core::common::VertexID));
+    if (!file_new) {
+      LOG_FATAL("Error writing edges data file");
+    }
+    LOG_INFO("Write new file finished!");
+    file_new.close();
+    delete[] degree;
+    delete[] offset;
+    delete[] edges;
+    delete[] degree_new;
+    delete[] offset_new;
+    delete[] edges_new;
   } else if (mode == "subBlock") {
     core::data_structures::TwoDMetadata metadata(root_path);
     auto block_num = metadata.num_blocks;
@@ -157,7 +254,7 @@ int main(int argc, char** argv) {
       index_file.close();
 
       for (VertexID i = 0; i < block_meta.num_vertices; i++) {
-        LOGF_INFO("ID: {}, Offset: {}, Degree: {}", i,
+        LOGF_INFO("ID: {}, Offset: {}, Degree: {}", i + block_meta.begin_id,
                   GetOffset(offset, degree, i, block_meta.offset_ratio),
                   degree[i]);
       }
@@ -188,10 +285,90 @@ int main(int argc, char** argv) {
       delete[] offset;
       delete[] degree;
     }
+  } else if (mode == "first") {
+    core::data_structures::TwoDMetadata metadata(root_path);
+    std::vector<core::data_structures::graph::MutableBlockCSRGraph> blocks(
+        metadata.num_blocks);
+    blocks.at(0).Init(root_path, &metadata.blocks.at(0));
+    auto meta = metadata.blocks.at(0);
+    auto sub_meta = meta.sub_blocks.at(0);
+    auto path = root_path + "graphs/" + std::to_string(0) + "_blocks/0.bin";
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+      LOG_FATAL("Error opening bin file: ", path);
+    }
+    auto num_edges = meta.sub_blocks.at(0).num_edges;
+    auto edges = new VertexID[num_edges];
+    file.read((char*)edges, num_edges * sizeof(VertexID));
+    blocks.at(0).SetSubBlock(0, edges);
+
+    size_t num = 0;
+    size_t num_v = 0;
+    VertexID b = sub_meta.begin_id, e = sub_meta.end_id;
+    auto& block = blocks.at(0);
+    for (VertexID i = b; i < e; i++) {
+      auto degree = block.GetOutDegree(i);
+      bool flag = false;
+      if (degree != 0) {
+        auto edges = block.GetOutEdges(i);
+        for (VertexID j = 0; j < degree; j++) {
+          auto dst = edges[j];
+          if (dst == i) {
+            num++;
+            flag = true;
+          }
+        }
+      }
+      if (flag) {
+        num_v++;
+      }
+    }
+    LOGF_INFO("redundant edges: num: {}, block edges: {}, vertex {}", num,
+              sub_meta.num_edges, num_v);
+  } else if (mode == "delete") {
+    core::data_structures::TwoDMetadata metadata(root_path);
+    std::vector<core::data_structures::graph::MutableBlockCSRGraph> blocks(
+        metadata.num_blocks);
+    blocks.at(0).Init(root_path, &metadata.blocks.at(0));
+    auto meta = metadata.blocks.at(0);
+    auto sub_meta = meta.sub_blocks.at(0);
+    auto path = root_path + "graphs/" + std::to_string(0) + "_blocks/0.bin";
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+      LOG_FATAL("Error opening bin file: ", path);
+    }
+    auto num_edges = meta.sub_blocks.at(0).num_edges;
+    auto edges = new VertexID[num_edges];
+    file.read((char*)edges, num_edges * sizeof(VertexID));
+    blocks.at(0).SetSubBlock(0, edges);
+
+    size_t num = 0;
+    size_t num_v = 0;
+    VertexID b = sub_meta.begin_id, e = sub_meta.end_id;
+    auto& block = blocks.at(0);
+    for (VertexID i = b; i < e; i++) {
+      auto degree = block.GetOutDegree(i);
+      bool flag = false;
+      if (degree != 0) {
+        auto edges = block.GetOutEdges(i);
+        for (VertexID j = 0; j < degree; j++) {
+          auto dst = edges[j];
+          if (dst == i) {
+            num++;
+            flag = true;
+          }
+        }
+      }
+      if (flag) {
+        num_v++;
+      }
+    }
+    LOGF_INFO("redundant edges: num: {}, block edges: {}, vertex {}", num,
+              sub_meta.num_edges, num_v);
   } else {
     core::data_structures::TwoDMetadata metadata(root_path);
-    std::vector<core::data_structures::graph::MutableBlockCSRGraph>
-        blocks(metadata.num_blocks);
+    std::vector<core::data_structures::graph::MutableBlockCSRGraph> blocks(
+        metadata.num_blocks);
     for (int i = 0; i < metadata.num_blocks; i++) {
       blocks.at(i).Init(root_path, &metadata.blocks.at(i));
       auto meta = metadata.blocks.at(i);

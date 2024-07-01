@@ -57,6 +57,15 @@ inline void WriteAdd(ET* a, ET b) {
   } while (!CAS(a, oldV, newV));
 }
 
+template <class ET>
+inline void WriteSub(ET* a, ET b) {
+  volatile ET newV, oldV;
+  do {
+    oldV = *a;
+    newV = oldV - b;
+  } while (!CAS(a, oldV, newV));
+}
+
 }  // namespace atomic
 }  // namespace sics::graph::core::util
 

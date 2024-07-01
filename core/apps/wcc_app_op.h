@@ -45,9 +45,11 @@ class WCCAppOp : public apis::PlanarAppBaseOp<uint32_t> {
     LOG_INFO("PEval begins");
     auto size = GetSubGraphNumEdges();
     while (size != 0) {
+      LOGF_INFO("Edges num: {}", size);
       ParallelEdgeMutateDo(graft);
       LOG_INFO("Graft finishes");
-      //      LogVertexState();
+      //      LogCurrentGraphInfo();
+      // LogVertexState();
       ParallelAllVertexDo(pointer_jump);
       LOG_INFO("Pointer jump finishes");
       //      LogVertexState();
@@ -112,6 +114,7 @@ class WCCAppOp : public apis::PlanarAppBaseOp<uint32_t> {
         auto dst = edges[i];
         if (src_parent == Read(dst)) {
           DeleteEdgeByVertex(id, i);
+          //          LOGF_INFO("del src {}->dst {} idx {}", id, dst, i);
         }
       }
     }
