@@ -20,38 +20,6 @@ using core::common::GraphID;
 using core::common::VertexDegree;
 using core::common::VertexID;
 
-uint32_t b_search(uint32_t b, uint32_t e, uint64_t* arr, uint64_t target) {
-  while (b < e) {
-    std::uint32_t m = (b + e) / 2;
-    if (arr[m] == target) {
-      return m;
-    } else if (arr[m] < target) {
-      b = m + 1;
-    } else {
-      e = m;
-    }
-  }
-  if (arr[b] > target && b >= 1) {
-    return b - 1;
-  } else {
-    return b;
-  }
-}
-
-uint32_t near_mid(uint64_t* arr, uint64_t target, uint32_t pos, uint32_t len) {
-  if (pos == 0 || pos == len - 1) {
-    return pos;
-  } else {
-    auto left = arr[pos];
-    auto right = arr[pos + 1];
-    if (target - left < right - target) {
-      return pos;
-    } else {
-      return pos + 1;
-    }
-  }
-}
-
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   std::string root_path = FLAGS_i;
