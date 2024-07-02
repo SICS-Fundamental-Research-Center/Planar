@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_SCHEDULER_H
-#define GRAPH_SYSTEMS_SCHEDULER_H
+#ifndef GRAPH_SYSTEMS_SCHEDULER2_H
+#define GRAPH_SYSTEMS_SCHEDULER2_H
 
 #include <cstdlib>
 #include <random>
@@ -21,7 +21,7 @@
 
 namespace sics::graph::core::scheduler {
 
-class Scheduler {
+class Scheduler2 {
   using MutableCSRGraphUInt32 = data_structures::graph::MutableCSRGraphUInt32;
   using MutableCSRGraphUInt16 = data_structures::graph::MutableCSRGraphUInt16;
   using MutableCSRGraphFloat = data_structures::graph::MutableCSRGraphFloat;
@@ -32,7 +32,7 @@ class Scheduler {
   using GraphID = common::GraphID;
 
  public:
-  Scheduler(const std::string& root_path)
+  Scheduler2(const std::string& root_path)
       : graph_metadata_info_(root_path),
         current_round_(0),
         graph_state_(graph_metadata_info_.get_num_subgraphs()) {
@@ -53,24 +53,19 @@ class Scheduler {
     srand(0);
   }
 
-  virtual ~Scheduler() = default;
+  virtual ~Scheduler2() = default;
 
-  void Init(update_stores::UpdateStoreBase* update_store,
-            common::TaskRunner* task_runner, apis::PIE* app,
-            data_structures::TwoDMetadata* meta) {
+  void Init(common::TaskRunner* task_runner, apis::PIE* app,
+            data_structures::TwoDMetadata* meta,
+            std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs,
+            EdgeBuffer2* buffer) {
     metadata_ = meta;
-    update_store_ = update_store;
     executor_task_runner_ = task_runner;
     app_ = app;
-
-    auto global_size = update_store_->GetMemorySize();
-    auto graphs_size = graph_metadata_info_.GetGraphsSize();
-    auto size = global_size + graphs_size;
-    LOGF_INFO("size of memory use: {}, graphs: {}, global: {}", size,
-              graphs_size, global_size);
-    if (size < memory_left_size_) {
-      memory_enough_ = true;
-    }
+    graphs_ = graphs;
+    buffer_ = buffer;
+    mode_ = common::Configurations::Get()->mode;
+    in_memory_ = common::Configurations::Get()->in_memory;
   }
 
   int GetCurrentRound() const { return current_round_; }
@@ -85,6 +80,8 @@ class Scheduler {
   size_t GetVertexNumber() const {
     return graph_metadata_info_.get_num_vertices();
   }
+
+  void SetStatePtr(GraphState* state) { static_state_ = state; }
 
  protected:
   virtual bool ReadMessageResponseAndExecute(const ReadMessage& read_resp);
@@ -107,7 +104,7 @@ class Scheduler {
 
   void InitGroupSerializableGraph();
 
-  common::GraphID GetNextReadGraphInCurrentRound() const;
+  common::GraphID GetNextReadGraphInCurrentRound() const { return 0; }
 
   common::GraphID GetNextExecuteGraph() const;
 
@@ -122,11 +119,29 @@ class Scheduler {
   // If current and next round both have no graph to read, system stop.
   bool IsSystemStop() const;
 
-  void ReleaseAllGraph();
+  void ReleaseAllGraph(common::GraphID gid) { buffer_->ReleaseBuffer(gid); }
 
   void SetAppRuntimeGraph(common::GraphID gid);
 
   void SetAppRound(int round);
+
+  scheduler::ExecuteType GetExecuteType(GraphID gid) {
+    if (mode_ != common::Normal) {
+      auto round = static_state_->GetSubgraphRound(gid);
+      return round == 0 ? scheduler::ExecuteType::kPEval
+                        : scheduler::ExecuteType::kIncEval;
+    } else {
+      auto round = graph_state_.GetSubgraphRound(gid);
+      return round == 0 ? scheduler::ExecuteType::kPEval
+                        : scheduler::ExecuteType::kIncEval;
+    }
+  }
+
+  void ReleaseAllSubEdgeBlocks() {
+    for (int i = 0; i < metadata_->num_blocks; i++) {
+      graphs_->at(i).ReleaseAllSubBlocks();
+    }
+  }
 
  private:
   // graph metadata: graph info, dependency matrix, subgraph metadata, etc.
@@ -136,6 +151,7 @@ class Scheduler {
   int current_round_ = 0;
 
   GraphState graph_state_;
+  GraphState* static_state_;
 
   // message hub
   MessageHub message_hub_;
@@ -163,6 +179,9 @@ class Scheduler {
   std::vector<common::GraphID> group_graphs_;
   std::unique_ptr<data_structures::Serializable> group_serializable_graph_;
 
+  std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs_;
+  EdgeBuffer2* buffer_;
+
   size_t to_read_graphs_ = 0;
   size_t have_read_graphs_ = 0;
   size_t need_read_graphs_ = 0;
@@ -170,11 +189,13 @@ class Scheduler {
   bool memory_enough_ = false;
 
   // Buffer managements.
-  EdgeBuffer2 buffer_;
+
+  common::ModeType mode_ = common::Normal;
+  bool in_memory_ = false;
 
   int test = 0;
 };
 
 }  // namespace sics::graph::core::scheduler
 
-#endif  // GRAPH_SYSTEMS_SCHEDULER_H
+#endif  // GRAPH_SYSTEMS_SCHEDULER2_H

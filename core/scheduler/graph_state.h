@@ -13,25 +13,44 @@ namespace sics::graph::core::scheduler {
 
 struct GraphState {
   using GraphID = common::GraphID;
+
  public:
   typedef enum {
     OnDisk = 1,
     Reading,
     Serialized,
     Deserialized,
+    InMemory,
     Computed,
   } StorageStateType;
 
   GraphState() : memory_size_(64 * 1024){};
-  GraphState(size_t num_subgraphs)
-      : num_subgraphs_(num_subgraphs),
-        memory_size_(common::Configurations::Get()->memory_size) {
-    subgraph_round_.resize(num_subgraphs, 0);
-    subgraph_storage_state_.resize(num_subgraphs, OnDisk);
-    serialized_.resize(num_subgraphs);
-    graphs_.resize(num_subgraphs);
-    current_round_pending_.resize(num_subgraphs, true);
-    next_round_pending_.resize(num_subgraphs, false);
+  GraphState(size_t num_subgraphs) { Init(num_subgraphs); }
+
+  void Init(size_t num_subgraphs) {
+    num_subgraphs_ = num_subgraphs;
+    auto mode = core::common::Configurations::Get()->mode;
+    if (mode == common::Static) {
+      bids_.resize(num_subgraphs);
+      for (int i = 0; i < bids_.size(); i++) {
+        bids_.at(i).push_back(i);
+      }
+    } else if (mode == common::Random) {
+      bids_.resize(4);
+      auto size = (num_subgraphs + 3) / 4;
+      for (int i = 0; i < num_subgraphs; i++) {
+        bids_.at(i / size).push_back(i);
+      }
+      num_subgraphs_ = 4;
+    }
+    is_loaded_.resize(num_subgraphs, false);
+    memory_size_ = common::Configurations::Get()->memory_size;
+    subgraph_round_.resize(num_subgraphs_, 0);
+    subgraph_storage_state_.resize(num_subgraphs_, OnDisk);
+    serialized_.resize(num_subgraphs_);
+    graphs_.resize(num_subgraphs_);
+    current_round_pending_.resize(num_subgraphs_, true);
+    next_round_pending_.resize(num_subgraphs_, false);
     is_block_mode_ = common::Configurations::Get()->is_block_mode;
   }
 
@@ -80,6 +99,10 @@ struct GraphState {
     current_round_pending_.at(gid) = false;
   }
 
+  void SetGraphCurrentRoundFinish(common::GraphID gid) {
+    current_round_pending_.at(gid) = false;
+  }
+
   void SetGraphState(common::GraphID gid, StorageStateType type) {
     subgraph_storage_state_.at(gid) = type;
   }
@@ -88,7 +111,7 @@ struct GraphState {
     return subgraph_round_.at(gid);
   }
 
-  void SetSubgraphRound(common::GraphID gid) {
+  void AddGraphRound(common::GraphID gid) {
     subgraph_round_.at(gid) = subgraph_round_.at(gid) + 1;
   }
 
@@ -133,6 +156,18 @@ struct GraphState {
   // release unique_ptr of serializable graph
   void ReleaseSubgraph(common::GraphID gid) { graphs_.at(gid).reset(); }
 
+  bool IsEdgesLoaded(common::GraphID gid) { return is_loaded_.at(gid); }
+
+  void SetEdgeLoaded(common::GraphID gid) { is_loaded_.at(gid) = true; }
+
+  void ReleaseEdges(common::GraphID gid) { is_loaded_.at(gid) = false; }
+
+  size_t GetSubBlockNum(common::GraphID gid) { return bids_.at(gid).size(); }
+
+  const std::vector<common::BlockID>& GetSubBlockIDs(common::GraphID gid) {
+    return bids_.at(gid);
+  }
+
  public:
   size_t num_subgraphs_;
   std::vector<int> subgraph_round_;
@@ -146,9 +181,13 @@ struct GraphState {
   // memory size and graph size
   // TODO: memory size should be set by gflags
   std::vector<size_t> subgraph_size_;
-  const size_t memory_size_;
+  size_t memory_size_;
   size_t subgraph_limits_ = 1;
   bool is_block_mode_ = false;
+
+  // Used for Static and Random mode
+  std::vector<std::vector<common::BlockID>> bids_;
+  std::vector<bool> is_loaded_;
 
  private:
   std::vector<std::unique_ptr<data_structures::Serialized>> serialized_;

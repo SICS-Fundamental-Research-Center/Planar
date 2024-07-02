@@ -1,5 +1,5 @@
-#ifndef GRAPH_SYSTEMS_CORE_SCHEDULER_EDGE_BUFFER_H
-#define GRAPH_SYSTEMS_CORE_SCHEDULER_EDGE_BUFFER_H
+#ifndef GRAPH_SYSTEMS_CORE_SCHEDULER_EDGE_BUFFER2_H
+#define GRAPH_SYSTEMS_CORE_SCHEDULER_EDGE_BUFFER2_H
 
 #include <condition_variable>
 #include <mutex>
@@ -14,14 +14,14 @@
 
 namespace sics::graph::core::scheduler {
 
-class EdgeBuffer {
+class EdgeBuffer2 {
   using GraphID = common::GraphID;
   using BlockID = common::BlockID;
   using VertexID = common::VertexID;
 
  public:
-  EdgeBuffer() = default;
-  explicit EdgeBuffer(
+  EdgeBuffer2() = default;
+  explicit EdgeBuffer2(
       data_structures::TwoDMetadata* meta,
       std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs) {
     Init(meta, graphs);
@@ -29,6 +29,7 @@ class EdgeBuffer {
 
   void Init(data_structures::TwoDMetadata* meta,
             std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs) {
+    meta_ = meta;
     buffer_size_ = common::Configurations::Get()->edge_buffer_size;
     graphs_ = graphs;
     edge_block_size_.resize(meta->num_blocks);
@@ -91,6 +92,16 @@ class EdgeBuffer {
     ReleaseBuffer(entry.first, entry.second);
   }
 
+  void ReleaseBuffer(GraphID gid) {
+    std::lock_guard<std::mutex> lock(mtx_);
+    for (int i = 0; i < meta_->blocks.at(gid).num_sub_blocks; i++) {
+      graphs_->at(gid).Release(i);
+      is_in_memory_.at(gid).at(i) = false;
+      buffer_size_ += edge_block_size_.at(gid).at(i);
+    }
+    graphs_->at(gid).SetSubBlocksRelease();
+  }
+
   void ReleaseBuffer(GraphID gid, BlockID bid) {
     std::lock_guard<std::mutex> lock(mtx_);
     graphs_->at(gid).Release(bid);
@@ -99,20 +110,21 @@ class EdgeBuffer {
   }
 
   // TODO: useful??
-  void SetBlockReading(GraphID gid, BlockID bid) {
-    is_reading_.at(gid).at(bid) = true;
+  void SetBlockReading(GraphID gid) {
+    auto& block_meta = meta_->blocks.at(gid);
+    for (BlockID i = 0; i < block_meta.num_sub_blocks; i++) {
+      is_reading_.at(gid).at(i) = true;
+    }
   }
 
+  void Push(BlockID bid) { queue_.Push(bid); }
+
   void PushOneEdgeBlock(GraphID gid, BlockID bid) {
-    loaded_blocks_.emplace(gid, bid);
+    queue_.Push(bid);
     is_in_memory_.at(gid).at(bid) = true;
   }
 
-  std::pair<GraphID, BlockID> PopOneEdgeBlock() {
-    auto res = loaded_blocks_.front();
-    loaded_blocks_.pop();
-    return res;
-  }
+  common::BlockingQueue<common::BlockID>* GetQueue() { return &queue_; }
 
   // Check state for blocks.
 
@@ -160,11 +172,25 @@ class EdgeBuffer {
     buffer_block_ = true;
   }
 
+  size_t GetBufferSize() { return buffer_size_ / 1024 / 1024; }
+
+  void AccumulateRead(size_t size) {
+    size_read_ += size;
+  }
+
+  size_t GetAccumulateSize() {
+    return size_read_;
+  }
+
  private:
   std::mutex mtx_;
   std::condition_variable cv_;
 
+  data_structures::TwoDMetadata* meta_;
+
   bool buffer_block_ = false;
+
+  size_t size_read_ = 0;
 
   size_t max_block_size_ = 0;
   size_t buffer_size_;
@@ -176,10 +202,11 @@ class EdgeBuffer {
   std::vector<std::vector<bool>> is_finished_;
 
   common::BlockingQueue<std::pair<GraphID, BlockID>> used_edge_blocks_;
-  std::queue<std::pair<GraphID, BlockID>> loaded_blocks_;
+
+  common::BlockingQueue<common::BlockID> queue_;
   std::vector<data_structures::graph::MutableBlockCSRGraph>* graphs_;
 };
 
 }  // namespace sics::graph::core::scheduler
 
-#endif  // GRAPH_SYSTEMS_CORE_SCHEDULER_EDGE_BUFFER_H
+#endif  // GRAPH_SYSTEMS_CORE_SCHEDULER_EDGE_BUFFER2_H

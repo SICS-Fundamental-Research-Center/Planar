@@ -5,6 +5,21 @@
 
 namespace sics::graph::core::common {
 
+static size_t GetBufferSize(std::string size) {
+  size_t res = 0;
+  auto num = size.substr(0, size.size() - 1);
+  auto unit = size.substr(size.size() - 1);
+  if (unit == "G" || unit == "g") {
+    res = atoi(num.c_str());
+    return res * 1024 * 1024 * 1024;
+  } else if (unit == "M" || unit == "m") {
+    res = atoi(num.c_str());
+    return res * 1024 * 1024;
+  } else {
+    return 32 * 1024 * 1024 * 1024;
+  }
+}
+
 enum VertexDataType {
   kVertexDataTypeUInt32 = 1,
   kVertexDataTypeUInt16,
@@ -27,6 +42,12 @@ enum ApplicationType {
   PageRank,
   GNN,
   Khop,
+};
+
+enum ModeType {
+  Normal = 1,
+  Static,
+  Random
 };
 
 class Configurations {
@@ -55,10 +76,10 @@ class Configurations {
   bool edge_mutate = false;
   bool in_memory = false;
   int limits = 0;
-  bool short_cut = true;
+  bool short_cut = false;
   uint32_t vertex_data_size = 4;
   size_t memory_size = 64 * 1024;
-  size_t edge_buffer_size = 32 * 1024;
+  size_t edge_buffer_size = 32 * 1024 * 1024 * 1024;
   ApplicationType application = WCC;
   // for wcc
   bool use_graft_vertex = false;
@@ -91,6 +112,8 @@ class Configurations {
   bool use_two_hop = false;
 
   bool radical = false;
+
+  ModeType mode = Normal;
 
   // for nvme
   uint32_t task_size = 500000;

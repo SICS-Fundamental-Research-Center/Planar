@@ -1,6 +1,7 @@
 #ifndef GRAPH_SYSTEMS_CORE_DATA_STRUCTURES_GRAPH_MUTABLE_BLOCK_CSR_GRAPH_H_
 #define GRAPH_SYSTEMS_CORE_DATA_STRUCTURES_GRAPH_MUTABLE_BLOCK_CSR_GRAPH_H_
 
+#include <fstream>
 #include <memory>
 
 #include "common/bitmap.h"
@@ -29,9 +30,7 @@ struct SubBlockImpl {
   void Init(common::VertexID* out_edges_base) {
     out_edges_base_ = out_edges_base;
   }
-  common::VertexID* GetBlockAddr() {
-    return out_edges_base_;
-  }
+  common::VertexID* GetBlockAddr() { return out_edges_base_; }
   ~SubBlockImpl() {
     //    free(out_edges_base_);
     delete[] out_edges_base_;
@@ -65,6 +64,7 @@ class MutableBlockCSRGraph {
 
   void Init(const std::string& root_path, Block* block_meta) {
     metadata_block_ = block_meta;
+    mutate = common::Configurations::Get()->edge_mutate;
     parallelism_ = common::Configurations::Get()->parallelism;
     task_package_factor_ = common::Configurations::Get()->task_package_factor;
 
@@ -75,22 +75,34 @@ class MutableBlockCSRGraph {
     if (!file) {
       LOG_FATAL("Error opening bin file: ", path);
     }
+    file.seekg(0, std::ios::end);
+    size_t size = file.tellg();
+    LOGF_INFO("SubGraph {} index file size: {} GB", block_meta->id,
+              (double)size / 1024 / 1024 / 1024);
+    file.seekg(0, std::ios::beg);
     auto num_offsets =
         ((block_meta->num_vertices - 1) / block_meta->offset_ratio) + 1;
-    out_offset_reduce_ = new EdgeIndexS[num_offsets];
+    out_offset_reduce_ = new EdgeIndex[num_offsets];
     out_degree_ = new VertexDegree[block_meta->num_vertices];
-    file.read((char*)(out_offset_reduce_), num_offsets * sizeof(EdgeIndexS));
+    file.read((char*)(out_offset_reduce_), num_offsets * sizeof(EdgeIndex));
     file.read((char*)(out_degree_),
               block_meta->num_vertices * sizeof(VertexDegree));
     file.close();
     // Init vector size;
     sub_blocks_.resize(block_meta->num_sub_blocks);
-    is_in_memory_.resize(block_meta->num_sub_blocks, false);
+    //    num_edges_.resize(block_meta->num_sub_blocks);
+    num_edges_ = new EdgeIndex[block_meta->num_sub_blocks];
+    for (int i = 0; i < block_meta->num_sub_blocks; i++) {
+      edge_delete_bitmaps_.emplace_back(block_meta->sub_blocks.at(i).num_edges);
+      num_edges_[i] = block_meta->sub_blocks.at(i).num_edges;
+    }
+    mode_ = common::Configurations::Get()->mode;
   }
 
   ~MutableBlockCSRGraph() {
     delete[] out_offset_reduce_;
     delete[] out_degree_;
+    delete[] num_edges_;
   };
 
   // Set the read sub_block pointer for using.
@@ -98,7 +110,16 @@ class MutableBlockCSRGraph {
     sub_blocks_.at(sub_block_id).Init(block_edge_base);
   }
 
+  void SetSubBlocksRelease() { edge_loaded = false; }
+
   void Release(BlockID block_id) { sub_blocks_.at(block_id).Release(); }
+
+  void ReleaseAllSubBlocks() {
+    for (int i = 0; i < metadata_block_->num_sub_blocks; i++) {
+      sub_blocks_.at(i).Release();
+    }
+    edge_loaded = false;
+  }
 
   std::vector<SubBlockImpl>* GetSubBlocks() { return &sub_blocks_; }
 
@@ -122,6 +143,12 @@ class MutableBlockCSRGraph {
     return idx / metadata_block_->vertex_offset;
   }
 
+  EdgeIndex GetInitOffset(VertexID id) {
+    auto offset = GetOutOffset(id);
+    auto subBlock_id = GetSubBlockID(id);
+    return offset - metadata_block_->sub_blocks.at(subBlock_id).begin_offset;
+  }
+
   VertexID* GetOutEdges(VertexID id) {
     auto offset = GetOutOffset(id);
     auto subBlock_id = GetSubBlockID(id);
@@ -129,9 +156,110 @@ class MutableBlockCSRGraph {
            (offset - metadata_block_->sub_blocks.at(subBlock_id).begin_offset);
   }
 
+  VertexID* GetAllEdges(BlockID bid) {
+    return sub_blocks_.at(bid).out_edges_base_;
+  }
+
   VertexID* ApplySubBlockBuffer(BlockID bid) {
     sub_blocks_.at(bid).Init(metadata_block_->sub_blocks.at(bid).num_edges);
     return sub_blocks_.at(bid).out_edges_base_;
+  }
+
+  common::Bitmap* GetDelBitmap(BlockID bid) {
+    return &edge_delete_bitmaps_.at(bid);
+  }
+
+  // One thread works for one sub_block, so no need for lock.
+  // TODO: attention for Static mode, which maybe conflict above.
+  void DeleteEdge(VertexID id, EdgeIndex idx) {
+    auto subBlock_id = GetSubBlockID(id);
+    edge_delete_bitmaps_.at(subBlock_id).SetBit(idx);
+    if (mode_ == common::Static) {
+      //      std::lock_guard<std::mutex> lock(mtx_);
+      //      num_edges_.at(subBlock_id) = num_edges_.at(subBlock_id) - 1;
+      util::atomic::WriteSub(num_edges_ + subBlock_id, EdgeIndex(1));
+      return;
+    }
+    num_edges_[subBlock_id] = num_edges_[subBlock_id] - 1;
+  }
+
+  void DeleteEdgeByVertex(VertexID id, EdgeIndex idx) {
+    auto subBlock_id = GetSubBlockID(id);
+    auto offset = GetInitOffset(id);
+    edge_delete_bitmaps_.at(subBlock_id).SetBit(offset + idx);
+    if (mode_ == common::Static) {
+      //      std::lock_guard<std::mutex> lock(mtx_);
+      //      num_edges_[subBlock_id] = num_edges_[subBlock_id] - 1;
+      util::atomic::WriteSub(num_edges_ + subBlock_id, EdgeIndex(1));
+      return;
+    }
+    num_edges_[subBlock_id] = num_edges_[subBlock_id] - 1;
+  }
+
+  bool IsEdgeDelete(VertexID id, EdgeIndex idx) {
+    auto sub_block_id = GetSubBlockID(id);
+    auto offset = GetInitOffset(id);
+    return edge_delete_bitmaps_.at(sub_block_id).GetBit(offset + idx);
+  }
+
+  bool IsEdgesLoaded() { return edge_loaded; }
+
+  void SetEdgeLoaded(bool load) { edge_loaded = load; }
+
+  VertexIndex GetVertexIDIndex(VertexID id) {
+    return id - metadata_block_->begin_id;
+  }
+
+  VertexID GetNeiMinId(VertexID id) {
+    auto degree = GetOutDegree(id);
+    auto edges = GetOutEdges(id);
+    if (degree != 0) {
+      VertexID res = edges[0];
+      if (mutate) {
+        auto offset = GetInitOffset(id);
+        auto sub_block_id = GetSubBlockID(id);
+        auto& bitmap = edge_delete_bitmaps_.at(sub_block_id);
+        for (int i = 0; i < degree; i++) {
+          if (bitmap.GetBit(offset + i)) continue;
+          res = edges[i] < res ? edges[i] : res;
+        }
+      } else {
+        for (int i = 0; i < degree; i++) {
+          res = edges[i] < res ? edges[i] : res;
+        }
+      }
+      return res;
+    }
+    return MAX_VERTEX_ID;
+  }
+
+  size_t GetNumEdges() {
+    if (mutate) {
+      size_t res = 0;
+      //      for (auto num : num_edges_) {
+      //        res += num;
+      //      }
+      for (int i = 0; i < metadata_block_->num_sub_blocks; i++) {
+        res += num_edges_[i];
+      }
+      return res;
+    } else {
+      return metadata_block_->num_edges;
+    }
+  }
+
+  size_t GetNumEdges(std::vector<common::BlockID>& ids) {
+    size_t res = 0;
+    if (mutate) {
+      for (auto id : ids) {
+        res += num_edges_[id];
+      }
+    } else {
+      for (auto id : ids) {
+        res += metadata_block_->sub_blocks.at(id).num_edges;
+      }
+    }
+    return res;
   }
 
   void LogGraphInfo() {
@@ -150,18 +278,42 @@ class MutableBlockCSRGraph {
     }
   }
 
+  void LogDelGraphInfo() {
+    for (int i = 0; i < metadata_block_->num_sub_blocks; i++) {
+      auto sub_block = metadata_block_->sub_blocks.at(i);
+      auto bitmap = edge_delete_bitmaps_.at(i);
+      EdgeIndex idx = 0;
+      for (VertexID id = sub_block.begin_id; id < sub_block.end_id; id++) {
+        auto degree = GetOutDegree(id);
+        auto offset = GetOutOffset(id);
+        auto edges = GetOutEdges(id);
+        std::string tmp = "Vertex: " + std::to_string(id) +
+                          ", Degree: " + std::to_string(degree) +
+                          ", Offset: " + std::to_string(offset) + ", Edges: ";
+        for (int i = 0; i < degree; i++) {
+          if (!bitmap.GetBit(idx)) {
+            tmp += std::to_string(edges[i]) + " ";
+          }
+          idx++;
+        }
+        LOGF_INFO("{}", tmp);
+      }
+    }
+  }
+
   void LogEdgeBlockInfo(BlockID bid) { LOG_INFO("Edge Block {} Info: ", bid); }
 
  public:
   Block* metadata_block_ = nullptr;
 
-  EdgeIndexS* out_offset_reduce_ = nullptr;
+  EdgeIndex* out_offset_reduce_ = nullptr;
   VertexDegree* out_degree_ = nullptr;
 
   // Edges sub_block. init in constructor.
   std::vector<SubBlockImpl> sub_blocks_;
-  std::vector<bool> is_in_memory_;  // Indicate if the sub_block is in memory.
-
+  std::vector<common::Bitmap> edge_delete_bitmaps_;
+  //  std::vector<EdgeIndex> num_edges_;
+  EdgeIndex* num_edges_ = nullptr;
   // bitmap read from disk, have no ownership of data
   //  common::BitmapNoOwnerShip vertex_src_or_dst_bitmap_;
   //  common::BitmapNoOwnerShip is_in_graph_bitmap_;
@@ -170,13 +322,15 @@ class MutableBlockCSRGraph {
   //  VertexDegree* out_degree_base_new_;
   //  EdgeIndex* out_offset_base_new_;
   //  VertexID* out_edges_base_new_;
-  common::Bitmap edge_delete_bitmap_;  // Init when need this.
 
+  bool edge_loaded = false;
   // Configurations.
+  bool mutate = false;
   uint32_t parallelism_;  // Use change variable for test.
   uint32_t task_package_factor_;
 
-  std::mutex mtx;
+  std::mutex mtx_;
+  common::ModeType mode_ = common::Static;
 };
 
 }  // namespace sics::graph::core::data_structures::graph

@@ -36,32 +36,28 @@ void Scheduler::Start() {
       }
       ReadMessage first_read_message;
       first_read_message.graph_id = GetNextReadGraphInCurrentRound();
-      first_read_message.num_vertices =
-          graph_metadata_info_.GetSubgraphNumVertices(
-              first_read_message.graph_id);
-      first_read_message.response_serialized =
-          CreateSerialized(first_read_message.graph_id);
       first_read_message.round = 0;
 
-      if (use_limits_) {
-        limits_--;
-        if (limits_ < 0) {
-          LOG_FATAL("no limits left, error!");
-        }
-      } else {
-        graph_state_.subgraph_limits_--;
-        auto read_size =
-            graph_metadata_info_.GetSubgraphSize(first_read_message.graph_id);
-        if (memory_left_size_ < read_size) {
-          LOG_FATAL("read size is too large, memory is not enough!");
-        }
-        LOGF_INFO(
-            "read graph {} size: {}. *** Memory size now: {}, after: {} ***",
-            first_read_message.graph_id, read_size, memory_left_size_,
-            memory_left_size_ - read_size);
-        memory_left_size_ -= read_size;
-      }
-      graph_state_.SetOnDiskToReading(first_read_message.graph_id);
+//      if (use_limits_) {
+//        limits_--;
+//        if (limits_ < 0) {
+//          LOG_FATAL("no limits left, error!");
+//        }
+//      } else {
+//        graph_state_.subgraph_limits_--;
+//        auto read_size =
+//            graph_metadata_info_.GetSubgraphSize(first_read_message.graph_id);
+//        if (memory_left_size_ < read_size) {
+//          LOG_FATAL("read size is too large, memory is not enough!");
+//        }
+//        LOGF_INFO(
+//            "read graph {} size: {}. *** Memory size now: {}, after: {} ***",
+//            first_read_message.graph_id, read_size, memory_left_size_,
+//            memory_left_size_ - read_size);
+//        memory_left_size_ -= read_size;
+//      }
+      //      graph_state_.SetOnDiskToReading(first_read_message.graph_id);
+      buffer_.SetBlockReading(first_read_message.graph_id);
       message_hub_.get_reader_queue()->Push(first_read_message);
     }
     while (running) {
@@ -296,7 +292,6 @@ bool Scheduler::ExecuteMessageResponseAndWrite(
               " ============ Current Round: {}, Active vertex left: {} "
               "============ ",
               current_round_, active);
-          LOGF_INFO(" current read input size: {}", loader_->SizeOfReadNow());
 
           if (short_cut_) {
             // Keep the last graph in memory and execute first in next round.
@@ -664,21 +659,6 @@ void Scheduler::SetAppRound(int round) {
 
 // TODO: Add logic to decide which graph is read first.
 common::GraphID Scheduler::GetNextReadGraphInCurrentRound() const {
-  //  if (test == 0) {
-  //    if (graph_state_.current_round_pending_.at(4) &&
-  //        graph_state_.subgraph_storage_state_.at(4) ==
-  //        GraphState::OnDisk) {
-  //      test++;
-  //      return 4;
-  //    }
-  //  } else if (test == 1) {
-  //    if (graph_state_.current_round_pending_.at(5) &&
-  //        graph_state_.subgraph_storage_state_.at(5) ==
-  //        GraphState::OnDisk) {
-  //      test++;
-  //      return 5;
-  //    }
-  //  }
   if (is_block_mode_) {
     for (GraphID bid = 0; bid < graph_metadata_info_.get_num_subgraphs();
          bid++) {
