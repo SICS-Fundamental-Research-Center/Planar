@@ -28,6 +28,12 @@ endif ()
 message(STATUS "[Graph Systems] will build in type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Using compiler: ${CMAKE_CXX_COMPILER} ${CMAKE_CXX_COMPILER_VERSION} ${CMAKE_CXX_FLAGS}")
 
+###### variables ######
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    add_definitions(-DMACOS)
+    message(STATUS "Detected MacOS")
+endif()
+
 ###### Directories shortcuts ######
 set(PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(THIRD_PARTY_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
