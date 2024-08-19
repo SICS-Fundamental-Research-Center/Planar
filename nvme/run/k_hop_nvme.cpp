@@ -6,14 +6,13 @@
 
 DEFINE_string(i, "/testfile", "graph files root path");
 DEFINE_uint32(p, 1, "parallelism");
+DEFINE_uint32(lambda, 1, "default 2-hop risk neighbors for user A to be risky");
 DEFINE_uint32(task_package_factor, 50, "task package factor");
 DEFINE_bool(in_memory, false, "in memory mode");
 DEFINE_uint32(memory_size, 64, "memory size (GB)");
 DEFINE_uint32(limits, 0, "subgrah limits for pre read");
 DEFINE_bool(short_cut, false, "no short cut");
 DEFINE_uint32(task_size, 500000, "task size");
-DEFINE_uint32(iter, 10, "pagerank iteration");
-DEFINE_bool(pram, false, "pagerank async mode");
 
 using namespace sics::graph;
 
@@ -29,13 +28,11 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->short_cut = FLAGS_short_cut;
 
   // pagerank nvme specific configurations
-  core::common::Configurations::GetMutable()->application =
-      core::common::PageRank;
+  core::common::Configurations::GetMutable()->application = core::common::Khop;
   core::common::Configurations::GetMutable()->is_block_mode = true;
   core::common::Configurations::GetMutable()->task_size = FLAGS_task_size;
   core::common::Configurations::GetMutable()->vertex_data_type =
-      core::common::VertexDataType::kVertexDataTypeFloat;
-  core::common::Configurations::GetMutable()->pr_iter = FLAGS_iter;
+      core::common::VertexDataType::kVertexDataTypeUInt32;
 
   LOG_INFO("System begin");
 

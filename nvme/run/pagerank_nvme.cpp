@@ -14,7 +14,6 @@ DEFINE_uint32(limits, 0, "subgrah limits for pre read");
 DEFINE_bool(short_cut, false, "no short cut");
 DEFINE_uint32(task_size, 500000, "task size");
 DEFINE_uint32(iter, 10, "pagerank iteration");
-DEFINE_bool(pram, false, "pagerank async mode");
 
 using namespace sics::graph;
 
@@ -39,13 +38,8 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->pr_iter = FLAGS_iter;
 
   LOG_INFO("System begin");
-  if (!FLAGS_pram) {
-    nvme::apps::PageRankVCApp app(FLAGS_i);
-    app.Run();
-  } else {
-    core::common::Configurations::GetMutable()->sync = false;
-    nvme::apps::PageRankPullApp app(FLAGS_i);
-    app.Run();
-  }
+  nvme::apps::PageRankVCApp app(FLAGS_i);
+  app.Run();
+
   return 0;
 }

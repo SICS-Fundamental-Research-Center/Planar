@@ -109,6 +109,7 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
   }
 
   bool WriteMin(VertexID id, VertexData new_data) {
+    active_count_++;
     return core::util::atomic::WriteMin(write_data_ + id, new_data);
   }
 
@@ -140,6 +141,7 @@ class PramNvmeUpdateStore : public core::update_stores::UpdateStoreBase {
         memcpy(read_data_, write_data_, vertex_count_ * sizeof(VertexData));
       }
     }
+    active_count_ = 0;
   }
 
   void ResetWriteBuffer() {

@@ -54,7 +54,7 @@ class PageRankVCApp
   }
 
   void Compute() override {
-    LOG_INFO("PageRank Compute() begin!");
+    LOG_INFO("PageRank VC Compute() begin!");
     FuncVertex init = [&](VertexID id) { Init(id); };
     FuncVertex pull = [&](VertexID src_id) { PullByVertex(src_id); };
 
@@ -67,7 +67,7 @@ class PageRankVCApp
       LOGF_INFO(" ============== PageRank step {} =============", step);
     }
 
-    LOG_INFO("PageRank Compute() end!");
+    LOG_INFO("PageRank VC Compute() end!");
   }
 
  private:

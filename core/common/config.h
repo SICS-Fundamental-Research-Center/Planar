@@ -100,6 +100,9 @@ class Configurations {
 
   uint32_t iter = 3;
 
+  // for kHop
+  uint32_t lambda = 1;
+
   bool sync = true;
   bool no_data_need = false;
 
