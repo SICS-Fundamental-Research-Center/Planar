@@ -3,6 +3,7 @@
 
 #include "core/apis/planar_app_base.h"
 #include "core/common/types.h"
+#include "nvme/apis/array.h"
 #include "nvme/apis/block_api.h"
 #include "nvme/data_structures/graph/pram_block.h"
 
@@ -14,8 +15,7 @@ struct PrData {
   PrData(uint32_t pr) : pr(pr), sum(0) {}
 };
 
-class PageRankPullApp
-    : public apis::BlockModel<core::common::FloatVertexDataType> {
+class PageRankPullApp : public apis::BlockModel {
   using VertexIndex = core::common::VertexIndex;
   using EdgeIndex = core::common::EdgeIndex;
   using VertexID = core::common::VertexID;
@@ -28,66 +28,56 @@ class PageRankPullApp
   PageRankPullApp() = default;
   PageRankPullApp(const std::string& root_path)
       : BlockModel(root_path),
-        iter(core::common::Configurations::Get()->pr_iter) {}
+        iter(core::common::Configurations::Get()->pr_iter) {
+    pr.InitMemory(meta_.num_vertices);
+    sum.InitMemory(meta_.num_vertices);
+  }
   ~PageRankPullApp() override = default;
 
   void Init(VertexID id) {
-    float init_value = 1.0 / this->GetOutDegree(id);
-    this->Write(id, init_value);
-  }
-
-  void PullByEdge(VertexID src_id, VertexID dst_id) {
-    auto dst_value = Read(dst_id);
-    this->WriteAddDirect(src_id, dst_value);
-  }
-
-  // TODO: float atomic should be considered carefully
-  void PushByEdge(VertexID src_id, VertexID dst_id) {
-    if (step == 0) {
-      auto src_value = Read(src_id);
-      auto dst_value = Read(dst_id);
-      this->Write(dst_id, kLambda * dst_value + kDampingFactor * src_value);
+    auto degree = graph_.GetOutDegree(id);
+    if (degree != 0) {
+      pr[id] = 1.0 / degree;
     } else {
-      auto src_value = Read(src_id);
-      this->WriteAdd(dst_id, kDampingFactor * src_value);
+      pr[id] = 1.0 / graph_.GetVerticesNum();
     }
   }
 
-  void DivideDegree(VertexID id) {
-    if (step == iter - 1) {
-      auto value = Read(id);
-      auto pr_new = value * kDampingFactor + kLambda;
-      this->Write(id, pr_new);
-    } else {
-      auto value = Read(id);
-      auto degree = this->GetOutDegree(id);
-      auto pr_new = (value * kDampingFactor + kLambda) / degree;
-      this->Write(id, pr_new);
+  void Pull(VertexID id) {
+    auto degree = graph_.GetOutDegree(id);
+    if (degree != 0) {
+      auto edges = graph_.GetOutEdges(id);
+      sum[id] = 0;
+      for (VertexID i = 0; i < degree; i++) {
+        sum[id] = sum[id] + pr[i];
+      }
+    }
+  }
+
+  void Update(VertexID id) {
+    auto degree = graph_.GetOutDegree(id);
+    if (degree != 0) {
+      if (round_ == iter) {
+        pr[id] = kDampingFactor * sum[id];
+      } else {
+        pr[id] = (kDampingFactor * sum[id]) / degree;
+      }
     }
   }
 
   void Compute() override {
     LOG_INFO("PageRank Compute() begin!");
     FuncVertex init = [&](VertexID id) { Init(id); };
-    FuncEdge pull = [&](VertexID src_id, VertexID dst_id) {
-      PullByEdge(src_id, dst_id);
-    };
-    FuncVertex divide = [&](VertexID id) { DivideDegree(id); };
+    FuncVertex pull = [&](VertexID id) { Pull(id); };
+    FuncVertex update = [&](VertexID id) { Update(id); };
 
-    MapVertex(&init);
-    update_store_.Sync(true);
-    update_store_.ResetWriteBuffer();
-    //    update_store_.LogVertexData();
+    MapVertexInit(init);
+    pr.Log();
     for (; step < iter; step++) {
-      MapEdge(&pull);
-      //      update_store_.LogVertexData();
-      update_store_.Sync(true);
-
-      //      update_store_.LogVertexData();
-      MapVertex(&divide);
-      update_store_.Sync(true);
-      update_store_.ResetWriteBuffer();
-      //      update_store_.LogVertexData();
+      MapVertexWithEdges(pull);
+      sum.Log();
+      MapVertex(update);
+      pr.Log();
       LOGF_INFO(" ============== PageRank step {} =============", step);
     }
 
@@ -100,6 +90,9 @@ class PageRankPullApp
   const float kEpsilon = 1e-6;
   int step = 0;
   const int iter = 10;
+
+  apis::Array<float> pr;
+  apis::Array<float> sum;
 };
 
 }  // namespace sics::graph::nvme::apps

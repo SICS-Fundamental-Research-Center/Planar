@@ -9,6 +9,7 @@
 
 #include "core/common/multithreading/task_runner.h"
 #include "core/common/types.h"
+#include "core/data_structures/graph_metadata.h"
 #include "core/data_structures/serializable.h"
 #include "core/util/logging.h"
 #include "nvme/apis/block_api_base.h"
@@ -16,24 +17,21 @@
 #include "nvme/components/discharge.h"
 #include "nvme/components/executor.h"
 #include "nvme/components/loader.h"
+#include "nvme/data_structures/graph/block_csr_graph.h"
 #include "nvme/data_structures/graph/pram_block.h"
+#include "nvme/data_structures/memory_buffer.h"
 #include "nvme/data_structures/neighbor_hop.h"
-#include "nvme/io/pram_block_reader.h"
-#include "nvme/io/pram_block_writer.h"
+#include "nvme/io/io_uring_reader.h"
 #include "nvme/scheduler/message_hub.h"
-#include "nvme/scheduler/scheduler.h"
-#include "nvme/update_stores/nvme_update_store.h"
 
 namespace sics::graph::nvme::apis {
 
 using core::data_structures::Serializable;
-using Block32 = data_structures::graph::BlockCSRGraphUInt32;
 
-template <typename TV>
 class BlockModel : public BlockModelBase {
-  using VertexData = TV;
   using EdgeData = core::common::DefaultEdgeDataType;
 
+  using BlockID = core::common::BlockID;
   using GraphID = core::common::GraphID;
   using VertexID = core::common::VertexID;
   using VertexIndex = core::common::VertexIndex;
@@ -49,23 +47,24 @@ class BlockModel : public BlockModelBase {
   using ExecuteType = sics::graph::nvme::scheduler::ExecuteType;
   using MapType = sics::graph::nvme::scheduler::MapType;
 
+  using Block = sics::graph::nvme::data_structures::graph::BlockCSRGraph;
+
  public:
   BlockModel() = default;
   BlockModel(const std::string& root_path)
       : root_path_(root_path),
-        scheduler_(root_path),
-        update_store_(scheduler_.GetGraphMetadata()) {
+        parallelism_(core::common::Configurations::Get()->parallelism),
+        task_runner_(parallelism_) {
     task_package_factor_ =
         core::common::Configurations::Get()->task_package_factor;
-    loader_ = std::make_unique<components::Loader<io::PramBlockReader>>(
-        root_path, scheduler_.GetMessageHub());
-    discharge_ = std::make_unique<components::Discharger<io::PramBlockWriter>>(
-        root_path, scheduler_.GetMessageHub());
-    executor_ = std::make_unique<components::Executor<VertexData, EdgeData>>(
-        scheduler_.GetMessageHub());
+    graph_.Init(root_path, &meta_);
+    buffer_.Init(&meta_, &graph_);
+    loader_.Init(root_path, &message_hub_, &buffer_);
+    //    discharge_ =
+    //    std::make_unique<components::Discharger<io::PramBlockWriter>>(
+    //        root_path, scheduler_.GetMessageHub());
 
-    scheduler_.Init(&update_store_, executor_->GetTaskRunner(),
-                    loader_->GetReader());
+    //    scheduler_.Init(loader_->GetReader());
   }
 
   ~BlockModel() override {
@@ -96,50 +95,120 @@ class BlockModel : public BlockModelBase {
     // for different blocks, init different data
   }
 
-  void MapVertex(std::function<void(VertexID)>* func_vertex) {
-    // all blocks should be executor the vertex function
-    ExecuteMessage message;
-    message.map_type = MapType::kMapVertex;
-    message.func_vertex = func_vertex;
-    scheduler_.RunMapExecute(message);
-    LockAndWaitResult();
+  void EvenAllocateBlocksInMemory(std::vector<BlockID>& blocks) {
+    auto num = blocks.size();
+    uint32_t index = 0;
+    for (int i = 0; i < num; i++) {
+      queues_.at(index++).Push(blocks.at(i));
+      index = index % parallelism_;
+    }
+  }
+
+  void InitAllBlocksInMemory() {
+    auto num = meta_.num_subBlocks;
+    auto index = 0;
+    for (BlockID i = 0; i < num; i++) {
+      queues_.at(index++).Push(i);
+      index = index % parallelism_;
+    }
+  }
+
+  void StopRunningThreads() {
+    for (uint32_t tid; tid < parallelism_; tid++) {
+      queues_.at(tid).Push(INVALID_BID);
+    }
+  }
+
+  void CheckStop() {
+    std::lock_guard<std::mutex> lck(mtx_);
+    num_active_subBlock_--;
+    if (num_active_subBlock_ == 0) {
+      for (uint32_t tid; tid < parallelism_; tid++) {
+        queues_.at(tid).Push(INVALID_BID);
+      }
+    }
+  }
+
+  void MapVertexInit(FuncVertex& func_vertex) {
+    auto task_num = meta_.num_subBlocks;
+    core::common::TaskPackage tasks;
+    for (BlockID bid = 0; bid < task_num; bid++) {
+      auto task = [&func_vertex, this, bid]() {
+        auto sub_meta = meta_.subBlocks.at(bid);
+        for (VertexID id = sub_meta.begin_id; id < sub_meta.end_id; id++) {
+          func_vertex(id);
+        }
+      };
+      tasks.push_back(task);
+    }
+    task_runner_.SubmitSync(tasks);
+  }
+
+  void MapVertex(FuncVertex& func_vertex) {
+    InitAllBlocksInMemory();
+    core::common::TaskPackage tasks;
+    for (auto i = 0; i < parallelism_; i++) {
+      auto task = [&func_vertex, i, this]() {
+        auto& queue = this->queues_.at(i);
+        while (true) {
+          auto bid = queue.PopOrWait();
+          if (bid == INVALID_BID) break;  // Quit when receive invalid bid.
+          auto sub_meta = meta_.subBlocks.at(bid);
+          for (VertexID j = sub_meta.begin_id; j < sub_meta.begin_id; j++) {
+            func_vertex(j);
+          }
+        }
+      };
+      tasks.push_back(task);
+    }
+    task_runner_.SubmitSync(tasks);
+  }
+
+  void MapVertexWithEdges(FuncVertex& func_vertex) {
+    // Decide load and execute in memory.
+    auto blocks_in_memory = buffer_.GetBlocksInMemory();
+    auto blocks_to_read = buffer_.GetBlocksToRead();
+    EvenAllocateBlocksInMemory(blocks_in_memory);
+    buffer_.LoadBlocksNotInMemory();
+    num_active_subBlock_ = meta_.num_subBlocks;
+    core::common::TaskPackage tasks;
+    for (auto i = 0; i < parallelism_; i++) {
+      auto task = [&func_vertex, i, this]() {
+        auto& queue = this->queues_.at(i);
+        while (true) {
+          auto bid = queue.PopOrWait();
+          if (bid == INVALID_BID) break;  // Quit when receive invalid bid.
+          auto sub_meta = meta_.subBlocks.at(bid);
+          for (VertexID j = sub_meta.begin_id; j < sub_meta.begin_id; j++) {
+            func_vertex(j);
+          }
+          CheckStop();
+        }
+      };
+      tasks.push_back(task);
+    }
+    task_runner_.SubmitSync(tasks);
     LOG_INFO("MapVertex finished");
   }
 
-  void MapVertexWithPrecomputing(FuncVertex* func_vertex) {
-    ParallelVertexDo(*func_vertex);
-    update_store_.Sync();
+  void MapVertexWithPrecomputing(FuncVertex& func_vertex) {
+    ParallelVertexDo(func_vertex);
     LOG_INFO("MapVertexWithPrecomputing finishes");
   }
 
-  void MapEdge(std::function<void(VertexID, VertexID)>* func_edge) {
+  void MapEdge(std::function<void(VertexID, VertexID)>& func_edge) {
     // all blocks should be executor the edge function
-    ExecuteMessage message;
-    message.map_type = MapType::kMapEdge;
-    message.func_edge = func_edge;
-    scheduler_.RunMapExecute(message);
-    LockAndWaitResult();
     LOG_INFO("MapEdge finishes");
   }
 
   void MapAndMutateEdge(
-      std::function<void(VertexID, VertexID, EdgeIndex)>* func_edge_del) {
+      std::function<void(VertexID, VertexID, EdgeIndex)>& func_edge_del) {
     // all blocks should be executor the edge function
-    ExecuteMessage message;
-    message.map_type = MapType::kMapEdgeAndMutate;
-    message.func_edge_mutate = func_edge_del;
-    scheduler_.RunMapExecute(message);
-    LockAndWaitResult();
     LOG_INFO("MapEdgeAndMutate finishes");
   }
 
   void MapAndMutateEdgeBool(
-      std::function<bool(VertexID, VertexID)>* func_edge_del) {
-    ExecuteMessage message;
-    message.map_type = MapType::kMapEdgeAndMutate;
-    message.func_edge_mutate_bool = func_edge_del;
-    scheduler_.RunMapExecute(message);
-    LockAndWaitResult();
+      std::function<bool(VertexID, VertexID)>& func_edge_del) {
     LOG_INFO("MapEdgeAndMutate finishes");
   }
 
@@ -150,85 +219,49 @@ class BlockModel : public BlockModelBase {
   void Run() {
     LOG_INFO("Start running");
     begin_time_ = std::chrono::system_clock::now();
-    loader_->Start();
-    discharge_->Start();
-    executor_->Start();
-    scheduler_.Start();
+    loader_.Start();
 
     LOG_INFO(" ================ Start Algorithm executing! ================= ");
-    if (core::common::Configurations::Get()->use_two_hop) {
-      neighbor_hop_info_.Init(root_path_, scheduler_.GetGraphMetadata());
-    }
     Compute();
     common::end_time_in_memory = std::chrono::system_clock::now();
     compute_end_time_ = std::chrono::system_clock::now();
-    if (scheduler_.ReleaseResources()) {
-      LockAndWaitResult();
-    }
     LOG_INFO("Running finished!");
   }
 
-  void Stop() {
-    scheduler_.Stop();
-    loader_->StopAndJoin();
-    discharge_->StopAndJoin();
-    executor_->StopAndJoin();
-  }
+  void Stop() { loader_.StopAndJoin(); }
 
   void LockAndWaitResult() {
     //    std::unique_lock<std::mutex> lock(pram_mtx_);
     //    pram_cv_.wait(lock, [] { return true; });
-    std::unique_lock<std::mutex> lock(*scheduler_.GetPramMtx());
-    auto pram_ready = scheduler_.GetPramReady();
-    *pram_ready = false;
-    scheduler_.GetPramCv()->wait(lock, [pram_ready] { return *pram_ready; });
   }
 
   // Used for block api.
 
-  VertexData Read(VertexID id) { return update_store_.Read(id); }
+  void DeleteEdge(VertexID src, VertexID dst, EdgeIndex idx) {}
 
-  VertexData* WritePtr(VertexID id) { return update_store_.WritePtr(id); }
+  VertexDegree GetOutDegree(VertexID id) { return 1; }
 
-  void Write(VertexID id, VertexData vdata) { update_store_.Write(id, vdata); }
+  const VertexID* GetEdges(VertexID id) { return nullptr; }
 
-  void WriteMin(VertexID id, VertexData vdata) {
-    update_store_.WriteMin(id, vdata);
+  VertexID GetNumVertices() { return 1; }
+
+  // Precomputing info apis
+
+  VertexID GetOneHopMinId(VertexID id) {
+    return neighbor_hop_info_.GetOneHopMinId(id);
   }
-
-  void WriteAdd(VertexID id, VertexData vdata) {
-    update_store_.WriteAdd(id, vdata);
+  VertexID GetOneHopMaxId(VertexID id) {
+    return neighbor_hop_info_.GetOneHopMaxId(id);
   }
-
-  void WriteAddDirect(VertexID id, VertexData vdata) {
-    update_store_.WriteAddDirect(id, vdata);
+  VertexID GetTwoHopMinId(VertexID id) {
+    return neighbor_hop_info_.GetTwoHopMinId(id);
   }
-
-  void DeleteEdge(VertexID src, VertexID dst, EdgeIndex idx) {
-    update_store_.DeleteEdge(idx);
-  }
-
-  VertexDegree GetOutDegree(VertexID id) { return scheduler_.GetOutDegree(id); }
-
-  const VertexID* GetEdges(VertexID id) { return scheduler_.GetEdges(id); }
-
-  VertexID GetNumVertices() { return scheduler_.GetVertexNumber(); }
-
-  VertexID GetMinOneHop(VertexID id) {
-    return neighbor_hop_info_.GetMinOneHop(id);
-  }
-  VertexID GetMaxOneHop(VertexID id) {
-    return neighbor_hop_info_.GetMaxOneHop(id);
-  }
-  VertexID GetMinTwoHop(VertexID id) {
-    return neighbor_hop_info_.GetMinTwoHop(id);
-  }
-  VertexID GetMaxTwoHop(VertexID id) {
-    return neighbor_hop_info_.GetMaxTwoHop(id);
+  VertexID GetTwoHopMaxId(VertexID id) {
+    return neighbor_hop_info_.GetTwoHopMaxId(id);
   }
 
   void ParallelVertexDo(FuncVertex& vertex_func) {
-    auto num_vertices = scheduler_.GetVertexNumber();
+    auto num_vertices = meta_.num_vertices;
     auto task_num = parallelism_ * task_package_factor_;
     uint32_t task_size = (num_vertices + task_num - 1) / task_num;
     core::common::TaskPackage tasks;
@@ -248,29 +281,207 @@ class BlockModel : public BlockModelBase {
       begin_id = end_id;
     }
     LOGF_INFO("Precomputing task num: {}", tasks.size());
-    executor_->GetTaskRunner()->SubmitSync(tasks);
+    task_runner_.SubmitSync(tasks);
+  }
+
+  // ===========================================
+  // parallel functions for vertexes and edges
+  // ===========================================
+
+  //  void ParallelVertexDo(const FuncVertex& vertex_func) {
+  //    //    LOG_DEBUG("ParallelVertexDo begins!");
+  //    auto block = static_cast<Block*>(graph);
+  //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+  //    //    uint32_t task_size = task_size_;
+  //    core::common::TaskPackage tasks;
+  //    //    tasks.reserve(ceil((double)block->GetVertexNums() / task_size));
+  //    VertexIndex begin_index = 0, end_index = 0;
+  //    for (; begin_index < block->GetVertexNums();) {
+  //      end_index += task_size;
+  //      if (end_index > block->GetVertexNums()) {
+  //        end_index = block->GetVertexNums();
+  //      }
+  //      auto task = [&vertex_func, block, begin_index, end_index]() {
+  //        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
+  //          vertex_func(block->GetVertexID(idx));
+  //        }
+  //      };
+  //      tasks.push_back(task);
+  //      begin_index = end_index;
+  //    }
+  //    //    LOGF_INFO("ParallelVertexDo task_size: {}, num tasks: {}",
+  //    task_size,
+  //    //              tasks.size());
+  //    //    block->LogBlockVertices();
+  //    //    block->LogBlockEdges();
+  //    //    LOGF_INFO("task num: {}", tasks.size());
+  //    task_runner_.SubmitSync(tasks);
+  //    // TODO: sync of update_store and graph_ vertex data
+  //    //    graph->SyncVertexData();
+  //    //    LOG_DEBUG("ParallelVertexDo ends!");
+  //  }
+
+  //  void ParallelEdgeDo(core::data_structures::Serializable* graph,
+  //                      const FuncEdge& edge_func) {
+  //    //    LOG_DEBUG("ParallelEdgeDo begins!");
+  //    //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+  //    auto block = static_cast<BLockCSR*>(graph);
+  //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+  //    //    uint32_t task_size = task_size_;
+  //    core::common::TaskPackage tasks;
+  //    VertexIndex begin_index = 0, end_index = 0;
+  //    for (; begin_index < block->GetVertexNums();) {
+  //      end_index += task_size;
+  //      if (end_index > block->GetVertexNums()) {
+  //        end_index = block->GetVertexNums();
+  //      }
+  //      auto task = [&edge_func, block, begin_index, end_index]() {
+  //        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
+  //          auto degree = block->GetOutDegreeByIndex(idx);
+  //          if (degree != 0) {
+  //            auto src_id = block->GetVertexID(idx);
+  //            VertexID* outEdges = block->GetOutEdgesBaseByIndex(idx);
+  //            for (VertexIndex j = 0; j < degree; j++) {
+  //              edge_func(src_id, outEdges[j]);
+  //            }
+  //          }
+  //        }
+  //      };
+  //      tasks.push_back(task);
+  //      begin_index = end_index;
+  //    }
+  //    //    LOGF_INFO("task num: {}", tasks.size());
+  //    task_runner_.SubmitSync(tasks);
+  //    //    LOG_DEBUG("ParallelEdgeDo ends!");
+  //  }
+  //
+  //  void ParallelEdgeDoWithMutate(core::data_structures::Serializable* graph,
+  //                                const FuncEdge& edge_func) {
+  //    //    LOG_DEBUG("ParallelEdgeDelDo begins!");
+  //    //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+  //    auto block = static_cast<BLockCSR*>(graph);
+  //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+  //    //    uint32_t task_size = task_size_;
+  //    core::common::TaskPackage tasks;
+  //    VertexIndex begin_index = 0, end_index = 0;
+  //    //    auto del_bitmap = block->GetEdgeDeleteBitmap();
+  //    auto del_bitmap = new core::common::Bitmap();
+  //    core::common::EdgeIndex edge_offset = block->GetBlockEdgeOffset();
+  //
+  //    for (; begin_index < block->GetVertexNums();) {
+  //      end_index += task_size;
+  //      if (end_index > block->GetVertexNums()) {
+  //        end_index = block->GetVertexNums();
+  //      }
+  //      auto task = [&edge_func, block, begin_index, end_index, del_bitmap,
+  //                   edge_offset]() {
+  //        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
+  //          auto degree = block->GetOutDegreeByIndex(idx);
+  //          if (degree != 0) {
+  //            auto src_id = block->GetVertexID(idx);
+  //            EdgeIndex outOffset_base = block->GetOutOffsetByIndex(idx);
+  //            VertexID* outEdges = block->GetOutEdgesBaseByIndex(idx);
+  //            for (VertexIndex j = 0; j < degree; j++) {
+  //              EdgeIndex edge_index = outOffset_base + j + edge_offset;
+  //              if (!del_bitmap->GetBit(edge_index)) {
+  //                edge_func(src_id, outEdges[j]);
+  //              }
+  //            }
+  //          }
+  //        }
+  //      };
+  //      tasks.push_back(task);
+  //      begin_index = end_index;
+  //    }
+  //    //    LOGF_INFO("task num: {}", tasks.size());
+  //    task_runner_.SubmitSync(tasks);
+  //    //    LOG_DEBUG("ParallelEdgedelDo ends!");
+  //  }
+  //
+  //  void ParallelEdgeAndMutateDo(core::data_structures::Serializable* graph,
+  //                               const FuncEdgeMutate& edge_del_func) {
+  //    //    LOG_INFO("ParallelEdgeAndMutateDo begins!");
+  //    auto block = static_cast<BLockCSR*>(graph);
+  //    uint32_t task_size = GetTaskSize(block->GetVertexNums());
+  //    //    uint32_t task_size = task_size_;
+  //    core::common::TaskPackage tasks;
+  //    VertexIndex begin_index = 0, end_index = 0;
+  //    //    auto del_bitmap = block->GetEdgeDeleteBitmap();
+  //    //    core::common::EdgeIndex edge_offset = block->GetBlockEdgeOffset();
+  //
+  //    for (; begin_index < block->GetVertexNums();) {
+  //      end_index += task_size;
+  //      if (end_index > block->GetVertexNums()) {
+  //        end_index = block->GetVertexNums();
+  //      }
+  //
+  //      auto task = [&edge_del_func, block, begin_index, end_index]() {
+  //        for (VertexIndex idx = begin_index; idx < end_index; idx++) {
+  //          auto degree = block->GetOutDegreeByIndex(idx);
+  //          if (degree != 0) {
+  //            auto src_id = block->GetVertexID(idx);
+  //            EdgeIndex outOffset_base = block->GetOutOffsetByIndex(idx);
+  //            VertexID* outEdges = block->GetOutEdgesBaseByIndex(idx);
+  //            for (VertexIndex j = 0; j < degree; j++) {
+  //              EdgeIndex edge_index = outOffset_base + j;
+  //              if (edge_del_func(src_id, outEdges[j])) {
+  //                block->DeleteEdge(idx, edge_index);
+  //              }
+  //            }
+  //          }
+  //        }
+  //      };
+  //      tasks.push_back(task);
+  //      begin_index = end_index;
+  //    }
+  //    //    LOGF_INFO("task num: {}", tasks.size());
+  //    task_runner_.SubmitSync(tasks);
+  //
+  //    block->MutateGraphEdge(&task_runner_);
+  //    //    LOG_INFO("ParallelEdgeAndMutateDo ends!");
+  //  }
+
+  size_t GetTaskSize(VertexID max_vid) const {
+    auto task_num = parallelism_ * task_package_factor_;
+    size_t task_size = ceil((double)max_vid / task_num);
+    return task_size < 2 ? 2 : task_size;
   }
 
   // methods for graph
-  size_t GetGraphEdges() const { return scheduler_.GetGraphEdges(); }
+  //  size_t GetGraphEdges() const { return scheduler_.GetGraphEdges(); }
 
   // two hop info
   VertexDegree GetTwoHopOutDegree(VertexID id) { return 0; }
 
  protected:
   std::string root_path_ = "";
-  core::common::TaskRunner* exe_runner_ = nullptr;
+  // configs
+  uint32_t parallelism_ = 10;
+  uint32_t task_package_factor_ = 50;
+
+  core::data_structures::BlockMetadata meta_;
 
   // all blocks are stored in the GraphState of scheduler
-  scheduler::PramScheduler<VertexData> scheduler_;
-  std::unique_ptr<components::Loader<io::PramBlockReader>> loader_;
-  std::unique_ptr<components::Discharger<io::PramBlockWriter>> discharge_;
-  std::unique_ptr<components::Executor<VertexData, EdgeData>> executor_;
-  update_stores::PramNvmeUpdateStore<VertexData, EdgeData> update_store_;
+
+  scheduler::MessageHub message_hub_;
+  //  scheduler::PramScheduler scheduler_;
+  components::Loader loader_;
+  //  std::unique_ptr<components::Discharger<io::PramBlockWriter>> discharge_;
 
   data_structures::NeighborHopInfo neighbor_hop_info_;
 
+  data_structures::graph::BlockCSRGraph graph_;
+
+  core::common::ThreadPool task_runner_;
+
+  data_structures::EdgeBuffer buffer_;
+  std::vector<core::common::BlockingQueue<BlockID>> queues_;
+
   int round_ = 0;
+
+  std::mutex mtx_;
+  std::condition_variable cv_;
+  uint32_t num_active_subBlock_;
 
   //  std::mutex pram_mtx_;
   //  std::condition_variable pram_cv_;
@@ -278,11 +489,6 @@ class BlockModel : public BlockModelBase {
   std::chrono::time_point<std::chrono::system_clock> begin_time_;
   std::chrono::time_point<std::chrono::system_clock> compute_end_time_;
   std::chrono::time_point<std::chrono::system_clock> whole_end_time_;
-
-
-  // configs
-  uint32_t parallelism_ = 10;
-  uint32_t task_package_factor_ = 50;
 };
 
 }  // namespace sics::graph::nvme::apis

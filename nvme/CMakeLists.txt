@@ -10,6 +10,7 @@ include_directories(
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_ROOT_DIR}/bin/tests/nvme/)
+set(LIBURING_PATH "/usr/lib")
 
 #########################
 # Artifacts
@@ -58,6 +59,7 @@ foreach (APP_SOURCE ${APP_SOURCES})
             yaml-cpp
             gflags
             ${FOLLY_LIBRARIES}
+            ${LIBURING_PATH}/liburing.a
             )
 endforeach ()
 

@@ -42,6 +42,8 @@ typedef std::function<bool(VertexID, VertexID)> FuncEdgeMutate;
 
 #define SSSP_INFINITY 0xffffffff
 
+#define INVALID_BID 4294967295
+
 }  // namespace sics::graph::core::common
 
 #endif  // CORE_COMMON_TYPES_H_

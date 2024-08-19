@@ -20,7 +20,6 @@
 
 namespace sics::graph::nvme::scheduler {
 
-template <typename TV>
 class PramScheduler {
   using MessageHub = sics::graph::nvme::scheduler::MessageHub;
   using Message = sics::graph::nvme::scheduler::Message;
@@ -39,7 +38,6 @@ class PramScheduler {
   using EdgeIndex = core::common::EdgeIndex;
   using VertexDegree = core::common::VertexDegree;
 
-  using VertexData = TV;
   using EdgeData = core::common::DefaultEdgeDataType;
 
   using BlockCSRGraph = data_structures::graph::PramBlock<TV, EdgeData>;
@@ -75,10 +73,7 @@ class PramScheduler {
 
   virtual ~PramScheduler() = default;
 
-  void Init(
-      update_stores::PramNvmeUpdateStore<VertexData, EdgeData>* update_store,
-      core::common::TaskRunner* task_runner, io::PramBlockReader* reader) {
-    update_store_ = update_store;
+  void Init(core::common::TaskRunner* task_runner, io::PramBlockReader* reader) {
     executor_task_runner_ = task_runner;
     //    app_ = app;
     loader_ = reader;
@@ -230,7 +225,7 @@ class PramScheduler {
       }
       if (IsCurrentRoundFinish()) {
         graph_state_.ResetCurrentRoundPending();
-        update_store_->Sync();
+//        update_store_->Sync();
         step_++;
         ResetMapFunction();
         // Return current map function scheduling.
@@ -484,7 +479,6 @@ class PramScheduler {
   MessageHub message_hub_;
 
   // ExecuteMessage info, used for setting APP context
-  update_stores::PramNvmeUpdateStore<VertexData, EdgeData>* update_store_;
   core::common::TaskRunner* executor_task_runner_;
 
   std::mutex pram_mtx_;

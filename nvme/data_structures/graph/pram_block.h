@@ -16,7 +16,7 @@
 
 namespace sics::graph::nvme::data_structures::graph {
 
-using BlockMetadata = core::data_structures::BlockMetadata;
+using BlockMetadata = core::data_structures::Block;
 using Serialized = core::data_structures::Serialized;
 using Serializable = core::data_structures::Serializable;
 
@@ -58,7 +58,7 @@ class PramBlock : public core::data_structures::Serializable {
     out_edges_base_ = nullptr;
 
     if (core::common::Configurations::Get()->edge_mutate &&
-        block_metadata_->num_outgoing_edges != 0) {
+        block_metadata_->num_edges != 0) {
       if (out_degree_base_new_) {
         delete[] out_degree_base_new_;
         out_degree_base_new_ = nullptr;
@@ -94,14 +94,14 @@ class PramBlock : public core::data_structures::Serializable {
         (VertexID*)(graph_serialized_->GetCSRBuffer()->at(1).Get());
     // mutate
     if (core::common::Configurations::Get()->edge_mutate &&
-        block_metadata_->num_outgoing_edges != 0) {
+        block_metadata_->num_edges != 0) {
       // edges_new buffer is malloc when used. and release in the call function.
       out_edges_base_new_ = nullptr;
       out_degree_base_new_ = new VertexDegree[block_metadata_->num_vertices];
       memcpy(out_degree_base_new_, out_degree_base_,
              sizeof(VertexDegree) * block_metadata_->num_vertices);
       out_offset_base_new_ = new EdgeIndex[block_metadata_->num_vertices];
-      edge_delete_bitmap_.Init(block_metadata_->num_outgoing_edges);
+      edge_delete_bitmap_.Init(block_metadata_->num_edges);
     } else {
       out_edges_base_new_ = nullptr;
       out_degree_base_new_ = nullptr;
@@ -174,13 +174,13 @@ class PramBlock : public core::data_structures::Serializable {
   }
 
   void MutateGraphEdge(core::common::TaskRunner* runner) {
-    if (block_metadata_->num_outgoing_edges == 0) {
+    if (block_metadata_->num_edges == 0) {
       return;
     }
     auto del_edges = edge_delete_bitmap_.Count();
     size_t num_outgoing_edges_new =
-        block_metadata_->num_outgoing_edges - del_edges;
-    if (block_metadata_->num_outgoing_edges < del_edges) {
+        block_metadata_->num_edges - del_edges;
+    if (block_metadata_->num_edges < del_edges) {
       //      num_outgoing_edges_new = 0;
       LOG_FATAL("delete edges number is more than left, stop!");
     }
@@ -238,7 +238,7 @@ class PramBlock : public core::data_structures::Serializable {
       delete[] out_offset_base_new_;
       out_offset_base_new_ = nullptr;
     }
-    block_metadata_->num_outgoing_edges = num_outgoing_edges_new;
+    block_metadata_->num_edges = num_outgoing_edges_new;
   }
 
   void DeleteEdge(VertexID idx, EdgeIndex eid) {
@@ -252,7 +252,7 @@ class PramBlock : public core::data_structures::Serializable {
   // TODO: add block methods like sub-graph
   size_t GetVertexNums() const { return block_metadata_->num_vertices; }
 
-  size_t GetOutEdgeNums() const { return block_metadata_->num_outgoing_edges; }
+  size_t GetOutEdgeNums() const { return block_metadata_->num_edges; }
 
   VertexID GetVertexID(VertexIndex index) {
     return block_metadata_->begin_id + index;
@@ -280,7 +280,7 @@ class PramBlock : public core::data_structures::Serializable {
 
   // log functions for lookup block info
   void LogBlockVertices() const {
-    LOGF_INFO("block {} begin {} end {}: ==== ", block_metadata_->bid,
+    LOGF_INFO("block {} begin {} end {}: ==== ", block_metadata_->id,
               block_metadata_->begin_id, block_metadata_->end_id);
     for (size_t i = block_metadata_->begin_id; i < block_metadata_->end_id;
          ++i) {
@@ -302,10 +302,6 @@ class PramBlock : public core::data_structures::Serializable {
       }
       LOGF_INFO("edge: {} ", edges.str());
     }
-  }
-
-  core::common::EdgeIndex GetBlockEdgeOffset() const {
-    return block_metadata_->edge_offset;
   }
 
  private:

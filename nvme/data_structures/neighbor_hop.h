@@ -17,32 +17,31 @@ using VertexIndex = core::common::VertexIndex;
 using EdgeIndex = core::common::EdgeIndex;
 using VertexDegree = core::common::VertexDegree;
 
+enum HopType { OneHopMinId = 1, OneHopMaxId, TwoHopMinId, TwoHopMaxId };
+
+// Now the neighbors include vertex itself.
 struct NeighborHopInfo {
  public:
   NeighborHopInfo() = default;
+  NeighborHopInfo(std::string& root_path,
+                  core::data_structures::BlockMetadata* meta)
+      : root_path_(root_path), meta_(meta) {}
+
   ~NeighborHopInfo() {
-    delete[] min_one_hop_neighbor;
-    delete[] max_one_hop_neighbor;
-    delete[] min_two_hop_neighbor;
-    delete[] max_two_hop_neighbor;
+    delete[] one_hop_min_id_;
+    delete[] one_hop_max_id_;
+    delete[] two_hop_min_id_;
+    delete[] two_hop_max_id_;
   }
 
-  void Init(const std::string& root_path,
-            const core::data_structures::GraphMetadata& metadata) {
-    min_one_hop_neighbor = new VertexID[metadata.get_num_vertices()];
-    min_two_hop_neighbor = new VertexID[metadata.get_num_vertices()];
-    for (GraphID i = 0; i < metadata.get_num_blocks(); i++) {
-      auto& block = metadata.GetBlockMetadata(i);
-      Read(root_path + "precomputing/" + std::to_string(block.bid) +
-               "_min_one_hop.bin",
-           1, block.begin_id);
-      Read(root_path + "precomputing/" + std::to_string(block.bid) +
-               "_min_two_hop.bin",
-           3, block.begin_id);
-    }
+  void LoadHopMinIdInfo(std::string& root_path) {
+    one_hop_min_id_ = new VertexID[meta_->num_vertices];
+    two_hop_max_id_ = new VertexID[meta_->num_vertices];
+    Read(root_path + "precomputing/one_hop_min_id.bin", OneHopMinId);
+    Read(root_path + "precomputing/two_hop_min_id.bin", TwoHopMinId);
   }
 
-  void Read(const std::string& path, int mode, VertexID block_begin_id) {
+  void Read(const std::string& path, int mode) {
     std::ifstream file(path, std::ios::binary);
     if (!file.is_open()) {
       LOGF_FATAL("Cannot open binary file {}", path);
@@ -51,32 +50,84 @@ struct NeighborHopInfo {
     size_t size = file.tellg();
     file.seekg(0, std::ios::beg);
     // auto num_vertices = size / sizeof(VertexID);
-    if (mode == 1) {
-      file.read(reinterpret_cast<char*>(min_one_hop_neighbor + block_begin_id),
-                size);
-    } else if (mode == 2) {
-      file.read(reinterpret_cast<char*>(max_one_hop_neighbor + block_begin_id),
-                size);
-    } else if (mode == 3) {
-      file.read(reinterpret_cast<char*>(min_two_hop_neighbor + block_begin_id),
-                size);
-    } else if (mode == 4) {
-      file.read(reinterpret_cast<char*>(max_two_hop_neighbor + block_begin_id),
-                size);
+    if (mode == OneHopMinId) {
+      file.read((char*)one_hop_min_id_, size);
+    } else if (mode == OneHopMaxId) {
+      file.read((char*)one_hop_max_id_, size);
+    } else if (mode == TwoHopMinId) {
+      file.read((char*)two_hop_min_id_, size);
+    } else if (mode == TwoHopMaxId) {
+      file.read((char*)two_hop_max_id_, size);
     }
     file.close();
   }
 
-  VertexID GetMinOneHop(VertexID id) { return min_one_hop_neighbor[id]; }
-  VertexID GetMaxOneHop(VertexID id) { return max_one_hop_neighbor[id]; }
-  VertexID GetMinTwoHop(VertexID id) { return min_two_hop_neighbor[id]; }
-  VertexID GetMaxTwoHop(VertexID id) { return max_two_hop_neighbor[id]; }
+  VertexID GetOneHopMinId(VertexID id) { return one_hop_min_id_[id]; }
+  VertexID GetOneHopMaxId(VertexID id) { return one_hop_max_id_[id]; }
+  VertexID GetTwoHopMinId(VertexID id) { return two_hop_min_id_[id]; }
+  VertexID GetTwoHopMaxId(VertexID id) { return two_hop_max_id_[id]; }
+
+  // Function used by precomputing.
+
+  void InitBuffer() {
+    auto num_vertices = meta_->num_vertices;
+    one_hop_min_id_ = new VertexID[num_vertices];
+    one_hop_max_id_ = new VertexID[num_vertices];
+    two_hop_min_id_ = new VertexID[num_vertices];
+    two_hop_max_id_ = new VertexID[num_vertices];
+    for (VertexIndex i = 0; i < num_vertices; i++) {
+      one_hop_min_id_[i] = MAX_VERTEX_ID;
+      one_hop_max_id_[i] = i;
+      two_hop_min_id_[i] = MAX_VERTEX_ID;
+      two_hop_max_id_[i] = i;
+    }
+  }
+
+  void SerializeToDisk() {
+    auto num_vertices = meta_->num_vertices;
+    std::ofstream min_one_hop_file(
+        root_path_ + "precomputing/one_hop_min_id.bin", std::ios::binary);
+    min_one_hop_file
+        .write((char*)one_hop_min_id_, num_vertices * sizeof(VertexID))
+        .flush();
+    min_one_hop_file.close();
+    std::ofstream max_one_hop_file(
+        root_path_ + "precomputing/one_hop_max_id.bin", std::ios::binary);
+    max_one_hop_file
+        .write((char*)one_hop_max_id_, num_vertices * sizeof(VertexID))
+        .flush();
+    max_one_hop_file.close();
+    std::ofstream min_two_hop_file(
+        root_path_ + "precomputing/two_hop_min_id.bin", std::ios::binary);
+    min_two_hop_file
+        .write((char*)two_hop_min_id_, num_vertices * sizeof(VertexID))
+        .flush();
+    min_two_hop_file.close();
+    std::ofstream max_two_hop_file(
+        root_path_ + "precomputing/two_hop_max_id.bin", std::ios::binary);
+    max_two_hop_file
+        .write((char*)two_hop_max_id_, num_vertices * sizeof(VertexID))
+        .flush();
+    max_two_hop_file.close();
+  }
+
+  void UpdateOneHopInfo(VertexID id, VertexID one_hop_neighbor_id) {
+    one_hop_min_id_[id] = std::min(one_hop_min_id_[id], one_hop_neighbor_id);
+    one_hop_max_id_[id] = std::max(one_hop_max_id_[id], one_hop_neighbor_id);
+  }
+
+  void UpdateTwoHopInfo(VertexID id, VertexID two_hop_nerighbor_id) {
+    two_hop_min_id_[id] = std::min(two_hop_min_id_[id], two_hop_nerighbor_id);
+    two_hop_max_id_[id] = std::max(two_hop_max_id_[id], two_hop_nerighbor_id);
+  }
 
  public:
-  VertexID* min_one_hop_neighbor = nullptr;
-  VertexID* max_one_hop_neighbor = nullptr;
-  VertexID* min_two_hop_neighbor = nullptr;
-  VertexID* max_two_hop_neighbor = nullptr;
+  std::string root_path_;
+  core::data_structures::BlockMetadata* meta_;
+  VertexID* one_hop_min_id_ = nullptr;
+  VertexID* one_hop_max_id_ = nullptr;
+  VertexID* two_hop_min_id_ = nullptr;
+  VertexID* two_hop_max_id_ = nullptr;
 };
 
 }  // namespace sics::graph::nvme::data_structures

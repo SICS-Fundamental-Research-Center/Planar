@@ -90,7 +90,7 @@ include_directories(
 )
 add_subdirectory(core)
 add_subdirectory(tools)
-add_subdirectory(planar)
+# add_subdirectory(planar)
 add_subdirectory(nvme)
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/core

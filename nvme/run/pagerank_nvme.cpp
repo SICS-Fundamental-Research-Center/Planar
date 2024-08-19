@@ -3,7 +3,6 @@
 #include "core/common/config.h"
 #include "core/planar_system.h"
 #include "nvme/apps/pagerank_nvme_app.h"
-#include "nvme/apps/pagerank_vc_nvme_app.h"
 
 DEFINE_string(i, "/testfile", "graph files root path");
 DEFINE_uint32(p, 1, "parallelism");
@@ -34,18 +33,11 @@ int main(int argc, char** argv) {
       core::common::PageRank;
   core::common::Configurations::GetMutable()->is_block_mode = true;
   core::common::Configurations::GetMutable()->task_size = FLAGS_task_size;
-  core::common::Configurations::GetMutable()->vertex_data_type =
-      core::common::VertexDataType::kVertexDataTypeFloat;
   core::common::Configurations::GetMutable()->pr_iter = FLAGS_iter;
 
   LOG_INFO("System begin");
-  if (!FLAGS_pram) {
-    nvme::apps::PageRankVCApp app(FLAGS_i);
-    app.Run();
-  } else {
-    core::common::Configurations::GetMutable()->sync = false;
-    nvme::apps::PageRankPullApp app(FLAGS_i);
-    app.Run();
-  }
+  nvme::apps::PageRankPullApp app(FLAGS_i);
+  app.Run();
+
   return 0;
 }

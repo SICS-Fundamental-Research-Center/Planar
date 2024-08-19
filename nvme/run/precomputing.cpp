@@ -1,6 +1,6 @@
 #include <gflags/gflags.h>
 
-#include "nvme/precomputing/neighbor_info.h"
+#include "nvme/precomputing/neighbor_hop_info.h"
 #include "nvme/precomputing/two_hop_neighbor.h"
 
 DEFINE_string(i, "/testfile", "graph files root path");

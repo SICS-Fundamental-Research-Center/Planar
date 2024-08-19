@@ -18,16 +18,6 @@ using GraphID = common::GraphID;
 using BlockID = common::BlockID;
 using EdgeIndex = common::EdgeIndex;
 
-struct BlockMetadata {
-  // Block Metadata
-  BlockID bid;
-  VertexID begin_id;  // included
-  VertexID end_id;    // excluded
-  VertexID num_vertices;
-  EdgeIndex num_outgoing_edges;
-  EdgeIndex edge_offset;
-};
-
 struct SubgraphMetadata {
   // Subgraph Metadata
   GraphID gid;
@@ -81,6 +71,27 @@ struct TwoDMetadata {
   EdgeIndex num_edges;
   uint32_t num_blocks;
   std::vector<Block> blocks;
+};
+
+struct BlockMetadata {
+  BlockMetadata() = default;
+  BlockMetadata(const std::string& root_path) {
+    YAML::Node blocks_info;
+    try {
+      blocks_info = YAML::LoadFile(root_path + "/subBlocks/blocks_meta.yaml");
+      *this = blocks_info["BlockMetadata"].as<BlockMetadata>();
+    } catch (YAML::BadFile& e) {
+      LOGF_ERROR("Error reading blocks info: {}", e.what());
+    }
+  }
+  std::string mode = "vertex";
+  VertexID num_vertices;
+  EdgeIndex num_edges;
+  uint32_t offset_ratio = 64;
+  uint32_t vertex_size;
+  uint32_t edge_size;
+  uint32_t num_subBlocks;
+  std::vector<SubBlock> subBlocks;
 };
 
 // TODO: change class to struct
@@ -175,33 +186,6 @@ class GraphMetadata {
   void set_type(const std::string& type) { type_ = type; }
   const std::string& get_type() const { return type_; }
   GraphID get_num_blocks() const { return num_subgraphs_; }
-  void set_block_metadata_vec(
-      const std::vector<BlockMetadata>& block_metadata_vec) {
-    block_metadata_vec_ = block_metadata_vec;
-  }
-  const BlockMetadata& GetBlockMetadata(BlockID bid) const {
-    return block_metadata_vec_.at(bid);
-  }
-
-  BlockMetadata* GetBlockMetadataPtr(BlockID bid) {
-    return &block_metadata_vec_.at(bid);
-  }
-
-  common::VertexCount GetBlockNumVertices(common::GraphID gid) const {
-    return block_metadata_vec_.at(gid).num_vertices;
-  }
-
-  common::EdgeIndex GetBlockNumEdges(common::GraphID gid) const {
-    return block_metadata_vec_.at(gid).num_outgoing_edges;
-  }
-
-  common::EdgeIndex GetBlockEdgeOffset(common::GraphID bid) const {
-    return block_offset_.at(bid);
-  }
-
-  size_t GetBlockSize(common::GraphID gid) const {
-    return subgraph_size_.at(gid);
-  }
 
   size_t GetGraphsSize() const {
     auto size = 0;
@@ -209,42 +193,6 @@ class GraphMetadata {
       size += subgraph_size_.at(i);
     }
     return size;
-  }
-
-  void UpdateBlockSize(common::GraphID bid) {
-    auto& block = block_metadata_vec_.at(bid);
-
-    auto size_out_degree = (block.num_vertices * sizeof(VertexDegree)) >> 20;
-    auto size_out_offset = (block.num_vertices * sizeof(EdgeIndex)) >> 20;
-    auto size_out_edges = (block.num_outgoing_edges * sizeof(VertexID)) >> 20;
-
-    auto size_total = size_out_degree + size_out_offset + size_out_edges;
-
-    if (common::Configurations::Get()->edge_mutate &&
-        block.num_outgoing_edges != 0) {
-      auto size_out_degree_new =
-          (block.num_vertices * sizeof(VertexDegree)) >> 20;
-      auto size_out_offset_new = (block.num_vertices * sizeof(EdgeIndex)) >> 20;
-      auto size_out_edges_new =
-          (block.num_outgoing_edges * sizeof(VertexID)) >> 20;
-      auto size_egdes_delete_bitmap = block.num_outgoing_edges >> 23;
-
-      size_total += size_out_degree_new + size_out_offset_new +
-                    size_out_edges_new + size_egdes_delete_bitmap;
-    }
-    if ((size_total + 1) == subgraph_size_.at(bid)) return;
-    LOGF_INFO("memory size changed for block {}, from {}MB to {}MB", bid,
-              subgraph_size_.at(bid), size_total + 1);
-    subgraph_size_.at(bid) = size_total + 1;
-  }
-
-  void UpdateOutEdgeNumInBLockMode() {
-    // update whole graph metadata
-    EdgeIndex num_edges_new = 0;
-    for (uint32_t i = 0; i < num_subgraphs_; i++) {
-      num_edges_new += block_metadata_vec_.at(i).num_outgoing_edges;
-    }
-    num_edges_ = num_edges_new;
   }
 
  private:
@@ -285,44 +233,6 @@ class GraphMetadata {
     }
   }
 
-  void InitBlockSize() {
-    for (uint32_t gid = 0; gid < num_subgraphs_; ++gid) {
-      auto& subgraph = block_metadata_vec_.at(gid);
-      auto size_out_degree =
-          (subgraph.num_vertices * sizeof(VertexDegree)) >> 20;
-      auto size_out_offset = (subgraph.num_vertices * sizeof(EdgeIndex)) >> 20;
-      auto size_out_edges =
-          (subgraph.num_outgoing_edges * sizeof(VertexID)) >> 20;
-
-      auto size_total = size_out_degree + size_out_offset + size_out_edges;
-
-      if (common::Configurations::Get()->edge_mutate) {
-        auto size_out_degree_new =
-            (subgraph.num_vertices * sizeof(VertexDegree)) >> 20;
-        auto size_out_offset_new =
-            (subgraph.num_vertices * sizeof(EdgeIndex)) >> 20;
-        auto size_out_edges_new =
-            (subgraph.num_outgoing_edges * sizeof(VertexID)) >> 20;
-        auto size_egdes_delete_bitmap = subgraph.num_outgoing_edges >> 23;
-        size_total += size_out_degree_new + size_out_offset_new +
-                      size_out_edges_new + size_egdes_delete_bitmap;
-      }
-      subgraph_size_.push_back(size_total + 1);
-    }
-    for (uint32_t gid = 0; gid < num_subgraphs_; ++gid) {
-      LOGF_INFO("Block {} size: {} MB", gid, subgraph_size_.at(gid));
-    }
-    // init block_offset_
-    block_offset_.resize(num_subgraphs_);
-    block_offset_[0] = 0;
-    block_metadata_vec_.at(0).edge_offset = 0;
-    for (uint32_t i = 1; i < num_subgraphs_; ++i) {
-      block_offset_[i] = block_offset_[i - 1] +
-                         block_metadata_vec_.at(i - 1).num_outgoing_edges;
-      block_metadata_vec_.at(i).edge_offset = block_offset_[i];
-    }
-  }
-
  private:
   VertexID num_vertices_;
   EdgeIndex num_edges_;
@@ -338,8 +248,6 @@ class GraphMetadata {
 
   // type: subgraph or block
   std::string type_ = "subgraph";
-  std::vector<BlockMetadata> block_metadata_vec_;
-  std::vector<EdgeIndex> block_offset_;
   // configs
   uint32_t vertex_data_size_ = 4;
 };
@@ -435,31 +343,34 @@ struct convert<sics::graph::core::data_structures::TwoDMetadata> {
   }
 };
 
-// template is needed for this function
 template <>
 struct convert<sics::graph::core::data_structures::BlockMetadata> {
   static Node encode(
-      const sics::graph::core::data_structures::BlockMetadata& block_metadata) {
+      const sics::graph::core::data_structures::BlockMetadata& metadata) {
     Node node;
-    node["bid"] = block_metadata.bid;
-    node["begin_id"] = block_metadata.begin_id;
-    node["end_id"] = block_metadata.end_id;
-    node["num_vertices"] = block_metadata.num_vertices;
-    node["num_outgoing_edges"] = block_metadata.num_outgoing_edges;
+    node["mode"] = metadata.mode;
+    node["num_vertices"] = metadata.num_vertices;
+    node["num_edges"] = metadata.num_edges;
+    node["offset_ratio"] = metadata.offset_ratio;
+    node["vertex_size"] = metadata.vertex_size;
+    node["edge_size"] = metadata.edge_size;
+    node["num_subBlocks"] = metadata.num_subBlocks;
+    node["subBlocks"] = metadata.subBlocks;
     return node;
   }
   static bool decode(
       const Node& node,
-      sics::graph::core::data_structures::BlockMetadata& block_metadata) {
-    if (node.size() != 5) {
-      return false;
-    }
-    block_metadata.bid = node["bid"].as<BlockID>();
-    block_metadata.begin_id = node["begin_id"].as<VertexID>();
-    block_metadata.end_id = node["end_id"].as<VertexID>();
-    block_metadata.num_vertices = node["num_vertices"].as<VertexID>();
-    block_metadata.num_outgoing_edges =
-        node["num_outgoing_edges"].as<EdgeIndex>();
+      sics::graph::core::data_structures::BlockMetadata& metadata) {
+    metadata.mode = node["mode"].as<std::string>();
+    metadata.num_vertices = node["num_vertices"].as<VertexID>();
+    metadata.num_edges = node["num_edges"].as<EdgeIndex>();
+    metadata.offset_ratio = node["offset_ratio"].as<uint32_t>();
+    metadata.vertex_size = node["vertex_size"].as<uint32_t>();
+    metadata.edge_size = node["edge_size"].as<uint32_t>();
+    metadata.num_subBlocks = node["num_subBlocks"].as<uint32_t>();
+    metadata.subBlocks =
+        node["subBlocks"]
+            .as<std::vector<sics::graph::core::data_structures::SubBlock>>();
     return true;
   }
 };
@@ -516,17 +427,6 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
       }
       node["subgraphs"] = tmp;
     } else {
-      node["type"] = metadata.get_type();
-      node["num_vertices"] = metadata.get_num_vertices();
-      node["num_edges"] = metadata.get_num_edges();
-      node["max_vid"] = metadata.get_max_vid();
-      node["min_vid"] = metadata.get_min_vid();
-      node["num_blocks"] = metadata.get_num_subgraphs();
-      std::vector<sics::graph::core::data_structures::BlockMetadata> tmp;
-      for (size_t i = 0; i < metadata.get_num_subgraphs(); i++) {
-        tmp.push_back(metadata.GetBlockMetadata(i));
-      }
-      node["blocks"] = tmp;
     };
     return node;
   }
@@ -535,19 +435,7 @@ struct convert<sics::graph::core::data_structures::GraphMetadata> {
       const Node& node,
       sics::graph::core::data_structures::GraphMetadata& metadata) {
     auto type = node["type"];
-    auto aa = node["22"];
     if (node["type"]) {
-      metadata.set_type(node["type"].as<std::string>());
-      metadata.set_num_vertices(node["num_vertices"].as<size_t>());
-      metadata.set_num_edges(node["num_edges"].as<size_t>());
-      metadata.set_max_vid(node["max_vid"].as<VertexID>());
-      metadata.set_min_vid(node["min_vid"].as<VertexID>());
-      metadata.set_num_subgraphs(node["num_blocks"].as<size_t>());
-      auto block_metadata_vec =
-          node["blocks"]
-              .as<std::vector<
-                  sics::graph::core::data_structures::BlockMetadata>>();
-      metadata.set_block_metadata_vec(block_metadata_vec);
     } else {
       if (node.size() != 7) return false;
       metadata.set_num_vertices(node["num_vertices"].as<size_t>());

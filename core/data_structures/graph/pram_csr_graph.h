@@ -29,7 +29,6 @@ class PramCSRGraph : public Serializable {
   using EdgeData = TE;
 
   PramCSRGraph() = default;
-  explicit PramCSRGraph(BlockMetadata* blockmetadata) {}
 };
 
 }  // namespace sics::graph::core::data_structures::graph

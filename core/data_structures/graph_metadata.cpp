@@ -15,7 +15,6 @@ GraphMetadata::GraphMetadata(const std::string& graph_metadata_path)
   if (this->type_ != "block") {
     InitSubgraphSize();
   } else {
-    InitBlockSize();
   }
 }
 

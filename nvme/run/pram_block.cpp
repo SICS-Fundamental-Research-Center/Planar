@@ -133,22 +133,22 @@ int main(int argc, char** argv) {
   thread_pool.SubmitSync(tasks);
 
   // write meta file
-  YAML::Node meta;
-  graph_metadata.set_type("block");
-  graph_metadata.set_num_subgraphs(file_id + 1);
-  std::vector<sics::graph::core::data_structures::BlockMetadata> tmp;
-  for (size_t i = 0; i < block_ids.size(); i++) {
-    sics::graph::core::data_structures::BlockMetadata block_metadata;
-    block_metadata.bid = block_ids[i];
-    block_metadata.begin_id = block_bids[i];
-    block_metadata.end_id = block_eids[i];
-    block_metadata.num_outgoing_edges = block_num_edges[i];
-    block_metadata.num_vertices = block_num_vertexes[i];
-    tmp.push_back(block_metadata);
-  }
-  graph_metadata.set_block_metadata_vec(tmp);
-  meta["GraphMetadata"] = graph_metadata;
-  std::ofstream meta_file_out(out_dir + "meta.yaml");
-  meta_file_out << meta;
-  meta_file_out.close();
+  //  YAML::Node meta;
+  //  graph_metadata.set_type("block");
+  //  graph_metadata.set_num_subgraphs(file_id + 1);
+  //  std::vector<sics::graph::core::data_structures::BlockMetadata> tmp;
+  //  for (size_t i = 0; i < block_ids.size(); i++) {
+  //    sics::graph::core::data_structures::BlockMetadata block_metadata;
+  //    block_metadata.bid = block_ids[i];
+  //    block_metadata.begin_id = block_bids[i];
+  //    block_metadata.end_id = block_eids[i];
+  //    block_metadata.num_outgoing_edges = block_num_edges[i];
+  //    block_metadata.num_vertices = block_num_vertexes[i];
+  //    tmp.push_back(block_metadata);
+  //  }
+  //  graph_metadata.set_block_metadata_vec(tmp);
+  //  meta["GraphMetadata"] = graph_metadata;
+  //  std::ofstream meta_file_out(out_dir + "meta.yaml");
+  //  meta_file_out << meta;
+  //  meta_file_out.close();
 }
