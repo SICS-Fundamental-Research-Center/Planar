@@ -18,6 +18,7 @@ DEFINE_uint32(limits, 0, "subgrah limits for pre read");
 DEFINE_bool(no_short_cut, true, "no short cut");
 DEFINE_uint32(iter, 10, "iteration");
 DEFINE_bool(radical, false, "radical");
+DEFINE_bool(no_cache, false, "write to disk");
 
 using namespace sics::graph;
 
@@ -41,6 +42,7 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->radical = FLAGS_radical;
   core::common::Configurations::GetMutable()->edge_buffer_size =
       core::common::GetBufferSize(FLAGS_buffer_size);
+  core::common::Configurations::GetMutable()->cache = !FLAGS_no_cache;
 
   LOG_INFO("System begin");
   core::planar_system::Planar<core::apps::PageRankApp> system(

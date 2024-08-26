@@ -202,6 +202,44 @@ class MutableBlockCSRGraph {
     return edge_delete_bitmaps_.at(sub_block_id).GetBit(offset + idx);
   }
 
+  bool IsNeighbor(VertexID src, VertexID dst) {
+    auto degree = GetOutDegree(src);
+    if (degree == 0) return false;
+    auto edges = GetOutEdges(src);
+    for (VertexDegree i = 0; i < degree; i++) {
+      if (edges[i] == dst) return true;
+    }
+    return false;
+  }
+
+  bool IsNeighbor(VertexID src, data_structures::Pair& pair) {
+    auto degree = GetOutDegree(src);
+    if (degree == 0) return false;
+    bool flag1 = false;
+    bool flag2 = false;
+    auto edges = GetOutEdges(src);
+    for (VertexDegree i = 0; i < degree; i++) {
+      if (edges[i] == pair.one) flag1 = true;
+      if (edges[i] == pair.two) flag2 = true;
+    }
+    return flag1 && flag2;
+  }
+
+  bool IsNeighbor(VertexID src, data_structures::Tri& tri) {
+    auto degree = GetOutDegree(src);
+    if (degree == 0) return false;
+    bool flag1 = false;
+    bool flag2 = false;
+    bool flag3 = false;
+    auto edges = GetOutEdges(src);
+    for (VertexDegree i = 0; i < degree; i++) {
+      if (edges[i] == tri.one) flag1 = true;
+      if (edges[i] == tri.two) flag2 = true;
+      if (edges[i] == tri.three) flag3 = true;
+    }
+    return flag1 && flag2 && flag3;
+  }
+
   bool IsEdgesLoaded() { return edge_loaded; }
 
   void SetEdgeLoaded(bool load) { edge_loaded = load; }

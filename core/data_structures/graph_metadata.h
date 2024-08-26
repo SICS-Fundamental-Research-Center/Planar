@@ -18,6 +18,16 @@ using GraphID = common::GraphID;
 using BlockID = common::BlockID;
 using EdgeIndex = common::EdgeIndex;
 
+struct Pair {
+  core::common::VertexID one;
+  core::common::VertexID two;
+};
+struct Tri {
+  core::common::VertexID one;
+  core::common::VertexID two;
+  core::common::VertexID three;
+};
+
 struct BlockMetadata {
   // Block Metadata
   BlockID bid;

@@ -30,7 +30,7 @@ class KHopNvmeApp : public apis::BlockModel<BlockGraph::VertexData> {
     uint32_t num_risk = num_vertices / 0.00001;
     srand(0);
     risk_.Init(num_vertices);
-    for (auto int i = 0; i < num_risk; i++) {
+    for (auto i = 0; i < num_risk; i++) {
       auto id = rand() % num_vertices + 1;
       risk_.SetBit(id);
     }

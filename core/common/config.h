@@ -42,6 +42,7 @@ enum ApplicationType {
   PageRank,
   GNN,
   Khop,
+  Query,
 };
 
 enum ModeType {
@@ -120,6 +121,12 @@ class Configurations {
 
   // for nvme
   uint32_t task_size = 500000;
+
+  // for path count
+  uint32_t path_length;
+
+  bool cache = true;
+  bool seq = false;
 
  private:
   Configurations() = default;

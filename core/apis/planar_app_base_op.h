@@ -839,6 +839,18 @@ class PlanarAppBaseOp : public PIE {
     if (use_data_) {
       if (!read_only) {
         memcpy(read_, write_, sizeof(VertexData) * meta_->num_vertices);
+        // Serialize to disk.
+        if (!core::common::Configurations::Get()->cache) {
+          auto path =
+              core::common::Configurations::Get()->root_path + "label.bin";
+          std::ofstream file(path, std::ios::binary);
+          file.write((char*)write_, sizeof(VertexData) * meta_->num_vertices);
+          if (!file) {
+            LOG_FATAL("Error writing meta data file: ", path.c_str());
+          }
+          file.close();
+          LOG_INFO("Serialize VertexData to Disk");
+        }
       }
     }
   }
@@ -911,6 +923,28 @@ class PlanarAppBaseOp : public PIE {
     auto block_id = GetBlockID(id);
     return graphs_->at(block_id).IsEdgeDelete(id, idx);
   }
+
+  bool IsNeighbor(VertexID src, VertexID dst) {
+    // All data should be in memory.
+    auto block_id = GetBlockID(src);
+    return graphs_->at(block_id).IsNeighbor(src, dst);
+  }
+
+  bool IsNeighbor(VertexID src, data_structures::Pair& pair) {
+    auto block_id = GetBlockID(src);
+    return graphs_->at(block_id).IsNeighbor(src, pair);
+  }
+
+  bool IsNeighbor(VertexID src, data_structures::Tri& pair) {
+    auto block_id = GetBlockID(src);
+    return graphs_->at(block_id).IsNeighbor(src, pair);
+  }
+
+  // TODO: optimization for neighbor check
+  std::vector<VertexID> CheckNeighborConnect(VertexID src) {
+
+  }
+
 
   void SetRound(int round) override { round_ = round; }
 
