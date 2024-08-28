@@ -43,8 +43,8 @@ class Discharger : public Component {
         message.serialized = message.graph->Serialize(occupied_pool_).release();
         // Then write to disk.
         writer_.Write(&message);
-        LOGF_INFO("Discharger completes writing block {}, size {} MB",
-                  message.graph_id, message.bytes_written >> 20);
+        // LOGF_INFO("Discharger completes writing block {}, size {} MB",
+                  // message.graph_id, message.bytes_written >> 20);
         response_q_->Push(scheduler::Message(message));
       }
     });
