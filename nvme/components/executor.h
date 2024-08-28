@@ -78,8 +78,8 @@ class Executor : public Component {
             } else {
               LOG_FATAL("Executor: Invalid map type");
             }
-            LOGF_INFO("Executor: Compute block {}, MapType: {} finished!",
-                      message.graph_id, message.map_type);
+            // LOGF_INFO("Executor: Compute block {}, MapType: {} finished!",
+                      // message.graph_id, message.map_type);
             break;
           default:
             LOG_FATAL("Executor: Invalid execute type");
