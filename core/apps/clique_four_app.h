@@ -9,15 +9,15 @@
 
 namespace sics::graph::core::apps {
 
-class CliqueFourAppOp : public apis::PlanarAppBaseOp<uint32_t> {
+class StarAppOp : public apis::PlanarAppBaseOp<uint32_t> {
   using VertexIndex = common::VertexIndex;
   using EdgeIndex = common::EdgeIndex;
   using VertexID = common::VertexID;
   using VertexDegree = common::VertexDegree;
 
  public:
-  CliqueFourAppOp() : apis::PlanarAppBaseOp<uint32_t>() {}
-  ~CliqueFourAppOp() override = default;
+  StarAppOp() : apis::PlanarAppBaseOp<uint32_t>() {}
+  ~StarAppOp() override = default;
 
   void AppInit(
       common::TaskRunner* runner, data_structures::TwoDMetadata* meta,
@@ -26,20 +26,24 @@ class CliqueFourAppOp : public apis::PlanarAppBaseOp<uint32_t> {
       scheduler::MessageHub* hub, scheduler::GraphState* state) override {
     apis::PlanarAppBaseOp<uint32_t>::AppInit(runner, meta, buffer, graphs, hub,
                                              state);
-    clique3.resize(meta_->num_vertices);
+    star_num = core::common::Configurations::Get()->path_length;
+    label = new uint32_t[meta->num_vertices];
+    std::fill(label, label + 25000000, 0);
+    std::fill(label + 25000000, label + 40000000, 1);
+    std::fill(label + 40000000, label + 45000000, 2);
+    std::fill(label + 45000000, label + 50000000, 3);
+    std::fill(label + 50000000, label + 50000100, 4);
+    LOG_INFO("label mark finish");
   }
 
   void PEval() final {
     auto init = [this](VertexID id) { Init(id); };
-    auto triangle_count = [this](VertexID id) { TriangleCount(id); };
-    auto Clique_count = [this](VertexID id) { CliqueFourCount(id); };
+    auto star_three = [this](VertexID id) { StarThree(id); };
 
     LOG_INFO("PEval begins");
     ParallelVertexDoWithEdges(init);
     //    LogVertexState();
-    ParallelVertexDoWithEdges(triangle_count);
-    ParallelVertexDoWithEdges(Clique_count);
-
+    ParallelVertexDoWithEdges(star_three);
     UnsetActive();
     LOG_INFO("PEval finishes");
   }
@@ -54,46 +58,27 @@ class CliqueFourAppOp : public apis::PlanarAppBaseOp<uint32_t> {
  private:
   void Init(VertexID id) { Write(id, 0); }
 
-  void TriangleCount(VertexID src) {
+  void StarThree(VertexID src) {
+    if (label[src] != 0) return;
     auto degree = GetOutDegree(src);
-    if (degree < 2) return;
+    if (degree < star_num) return;
     auto edges = GetOutEdges(src);
+    uint32_t sum = 0;
     for (VertexDegree i = 0; i < degree; i++) {
-      auto one = edges[i];
-      for (VertexDegree j = 0; j < degree; j++) {
-        if (j == i) continue;
-        auto two = edges[j];
-        if (IsNeighbor(one, two)) {
-          clique3[src].push_back(data_structures::Pair{one, two});
+      auto dst = edges[i];
+      if (label[dst] == 0) {
+        sum++;
+        if (sum == star_num) {
+          Write(src, 1);
+          break;
         }
       }
-    }
-  }
-
-  void CliqueFourCount(VertexID src) {
-    auto degree = GetOutDegree(src);
-    if (degree == 0) return;
-    auto edges = GetOutEdges(src);
-    if (clique3.at(src).size() != 0) {
-      auto size = clique3[src].size();
-      if (size == 0) return;
-      auto& pairs = clique3[src];
-      uint32_t sum = 0;
-      for (int i = 0; i < size; i++) {
-        auto pair = pairs.at(i);
-        for (VertexDegree j = 0; j < degree; j++) {
-          auto dst = edges[j];
-          if (IsNeighbor(dst, pair)) {
-            sum++;
-          }
-        }
-      }
-      Write(src, sum);
     }
   }
 
  private:
-  std::vector<std::vector<data_structures::Pair>> clique3;
+  uint32_t star_num = 3;
+  uint32_t* label = nullptr;
 };
 
 }  // namespace sics::graph::core::apps

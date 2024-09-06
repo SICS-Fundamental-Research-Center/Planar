@@ -43,16 +43,8 @@ int main(int argc, char** argv) {
     core::planar_system::Planar<core::apps::PathCountAppOp> system(
         core::common::Configurations::Get()->root_path);
     system.Start();
-  } else if (FLAGS_query == "triangle") {
-    core::planar_system::Planar<core::apps::TriangleAppOp> system(
-        core::common::Configurations::Get()->root_path);
-    system.Start();
-  } else if (FLAGS_query == "clique-4") {
-    core::planar_system::Planar<core::apps::CliqueFourAppOp> system(
-        core::common::Configurations::Get()->root_path);
-    system.Start();
-  } else if (FLAGS_query == "clique-5") {
-    core::planar_system::Planar<core::apps::CliqueFiveAppOp> system(
+  } else if (FLAGS_query == "star") {
+    core::planar_system::Planar<core::apps::StarAppOp> system(
         core::common::Configurations::Get()->root_path);
     system.Start();
   }

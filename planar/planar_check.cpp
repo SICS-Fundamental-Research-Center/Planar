@@ -85,6 +85,13 @@ int main(int argc, char** argv) {
     }
   } else if (mode == "block") {
     auto block_num = graph_metadata.get_num_blocks();
+    // check label if has
+    std::ifstream label_f(root_path + "label.bin", std::ios::binary);
+    auto label = new uint32_t[graph_metadata.get_num_vertices()];
+    label_f.read((char*)label, 4 * graph_metadata.get_num_vertices());
+    for (int i = 0; i < graph_metadata.get_num_vertices(); i++) {
+      LOG_INFO(i, " label: ", label[i]);
+    }
     for (BlockID i = 0; i < block_num; i++) {
       auto block_metadata = graph_metadata.GetBlockMetadata(i);
       auto bid = block_metadata.begin_id;
