@@ -22,6 +22,8 @@ using TwoDimensionalVertexCutPartitioner =
     sics::graph::tools::partitioner::TwoDimensionalVertexCutPartitioner;
 using BFSBasedEdgeCutPartitioner =
     sics::graph::tools::partitioner::BFSBasedEdgeCutPartitioner;
+using OneDimensionalVertexCutPartitioner =
+    sics::graph::tools::partitioner::OneDimensionalVertexCutPartitioner;
 
 enum Partitioner {
   kHashEdgeCut,  // default
@@ -29,6 +31,7 @@ enum Partitioner {
   kHybridCut,
   kPlanarVertexCut,
   k2DVertexCut,
+  k1DVertexCut,
   kBFSEdgeCut,
   kUndefinedPartitioner,
 };
@@ -44,6 +47,8 @@ Partitioner Partitioner2Enum(const std::string& s) {
     return kPlanarVertexCut;
   else if (s == "2dvertexcut")
     return k2DVertexCut;
+  else if (s == "1dvertexcut")
+    return k1DVertexCut;
   else if (s == "bfsedgecut")
     return kBFSEdgeCut;
   else
@@ -110,6 +115,13 @@ int main(int argc, char** argv) {
     }
     case k2DVertexCut: {
       TwoDimensionalVertexCutPartitioner vertexcut_partitioner(
+          FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
+          FLAGS_n_partitions);
+      vertexcut_partitioner.RunPartitioner();
+      break;
+    }
+    case k1DVertexCut: {
+      OneDimensionalVertexCutPartitioner vertexcut_partitioner(
           FLAGS_i, FLAGS_o, StoreStrategy2Enum(FLAGS_store_strategy),
           FLAGS_n_partitions);
       vertexcut_partitioner.RunPartitioner();
