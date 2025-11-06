@@ -19,8 +19,8 @@
 #include "nvme/components/loader.h"
 #include "nvme/data_structures/graph/block_csr_graph.h"
 #include "nvme/data_structures/graph/pram_block.h"
+#include "nvme/data_structures/index.h"
 #include "nvme/data_structures/memory_buffer.h"
-#include "nvme/data_structures/neighbor_hop.h"
 #include "nvme/io/io_uring_reader.h"
 #include "nvme/scheduler/message_hub.h"
 
@@ -53,6 +53,7 @@ class BlockModel : public BlockModelBase {
   BlockModel() = default;
   BlockModel(const std::string& root_path)
       : root_path_(root_path),
+        meta_(root_path),
         parallelism_(core::common::Configurations::Get()->parallelism),
         task_runner_(parallelism_) {
     task_package_factor_ =
@@ -106,7 +107,7 @@ class BlockModel : public BlockModelBase {
 
   void InitAllBlocksInMemory() {
     auto num = meta_.num_subBlocks;
-    auto index = 0;
+    uint32_t index = 0;
     for (BlockID i = 0; i < num; i++) {
       queues_.at(index++).Push(i);
       index = index % parallelism_;

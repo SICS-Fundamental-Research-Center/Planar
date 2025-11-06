@@ -2,8 +2,8 @@
 
 #include "core/common/config.h"
 #include "core/planar_system.h"
-#include "nvme/apps/wcc_nvme_app.h"
-#include "nvme/apps/wcc_nvme_precomputing_app.h"
+//#include "nvme/apps/wcc_nvme_app.h"
+//#include "nvme/apps/wcc_nvme_precomputing_app.h"
 
 DEFINE_string(i, "/testfile", "graph files root path");
 DEFINE_uint32(p, 1, "parallelism");
@@ -37,15 +37,15 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->use_graft_vertex =
       FLAGS_use_graft_vertex;
 
-  if (!FLAGS_use_two_hop) {
-    LOG_INFO("System begin");
-    nvme::apps::WCCNvmeApp app(FLAGS_i);
-    app.Run();
-  } else {
-    LOG_INFO("System begin with two hop info");
-    core::common::Configurations::GetMutable()->use_two_hop = true;
-    nvme::apps::WCCNvmePreComputingApp app(FLAGS_i);
-    app.Run();
-  }
+  //  if (!FLAGS_use_two_hop) {
+  //    LOG_INFO("System begin");
+  //    nvme::apps::WCCNvmeApp app(FLAGS_i);
+  //    app.Run();
+  //  } else {
+  //    LOG_INFO("System begin with two hop info");
+  //    core::common::Configurations::GetMutable()->use_two_hop = true;
+  //    nvme::apps::WCCNvmePreComputingApp app(FLAGS_i);
+  //    app.Run();
+  //  }
   return 0;
 }

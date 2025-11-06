@@ -36,7 +36,7 @@ struct SubBlockImpl {
   }
 
  public:
-  VertexID* out_edges_base_;
+  VertexID* out_edges_base_ = nullptr;
 };
 
 // TV : type of vertexData; TE : type of EdgeData

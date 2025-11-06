@@ -4,6 +4,7 @@
 #include "core/common/bitmap.h"
 #include "core/common/multithreading/thread_pool.h"
 #include "nvme/precomputing/basic.h"
+#include "core/data_structures/graph_metadata.h"
 
 namespace sics::graph::nvme::precomputing {
 

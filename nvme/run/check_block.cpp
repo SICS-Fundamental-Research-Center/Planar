@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
   } else {
     auto bid = one_bid;
     graph.ReadSubBlock(bid);
-
+    graph.LogSubBlock(bid);
   }
 
   // Show two hop neighbors infos

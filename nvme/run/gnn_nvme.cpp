@@ -2,8 +2,8 @@
 
 #include "core/common/config.h"
 #include "core/planar_system.h"
-#include "nvme/apps/gnn_nvme_app.h"
-#include "nvme/apps/gnn_nvme_int_app.h"
+// #include "nvme/apps/gnn_nvme_app.h"
+// #include "nvme/apps/gnn_nvme_int_app.h"
 
 DEFINE_string(i, "/testfile", "graph files root path");
 DEFINE_uint32(p, 1, "parallelism");
@@ -42,14 +42,14 @@ int main(int argc, char** argv) {
   core::common::Configurations::GetMutable()->gnn_k = FLAGS_k;
   core::common::Configurations::GetMutable()->sync = false;
 
-  if (FLAGS_mode == "float") {
-    LOG_INFO("System begin GNN float");
-    nvme::apps::GNNApp app(FLAGS_i);
-    app.Run();
-  } else if (FLAGS_mode == "int") {
-    LOG_INFO("System begin GNN int");
-    nvme::apps::GNNIntApp app(FLAGS_i);
-    app.Run();
-  }
+  //  if (FLAGS_mode == "float") {
+  //    LOG_INFO("System begin GNN float");
+  //    nvme::apps::GNNApp app(FLAGS_i);
+  //    app.Run();
+  //  } else if (FLAGS_mode == "int") {
+  //    LOG_INFO("System begin GNN int");
+  //    nvme::apps::GNNIntApp app(FLAGS_i);
+  //    app.Run();
+  //  }
   return 0;
 }

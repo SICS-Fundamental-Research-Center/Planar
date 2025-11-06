@@ -2,7 +2,7 @@
 
 #include "core/common/config.h"
 #include "core/planar_system.h"
-#include "nvme/apps/sssp_app.h"
+// #include "nvme/apps/sssp_app.h"
 
 DEFINE_string(i, "/testfile", "graph files root path");
 DEFINE_uint32(p, 1, "parallelism");
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
   LOG_INFO("System begin");
 
-  nvme::apps::SSSPNvmeApp app(FLAGS_i);
-  app.Run();
+  //  nvme::apps::SSSPNvmeApp app(FLAGS_i);
+  //  app.Run();
   return 0;
 }

@@ -11,6 +11,7 @@
 
 #include "core/data_structures/graph_metadata.h"
 #include "nvme/data_structures/graph/block_csr_graph.h"
+#include "nvme/data_structures/index.h"
 
 namespace sics::graph::nvme::precomputing {
 
@@ -20,6 +21,9 @@ using sics::graph::core::common::GraphID;
 using sics::graph::core::common::VertexDegree;
 using sics::graph::core::common::VertexID;
 using sics::graph::core::common::VertexIndex;
+using sics::graph::nvme::data_structures::Path;
+using sics::graph::nvme::data_structures::Star4;
+using sics::graph::nvme::data_structures::Triangle;
 
 namespace fs = std::filesystem;
 
@@ -139,6 +143,21 @@ struct BlockWithHopInfo {
   VertexID* min_two_hop_neighbor_ = nullptr;
   VertexID* max_two_hop_neighbor_ = nullptr;
   std::vector<bool> has_two_hop_neighbor_;
+};
+
+// Used for index create.
+struct BlockIndexInfo {
+  BlockIndexInfo(std::string root_path,
+                 core::data_structures::BlockMetadata* meta) {
+    graph.Init(root_path, meta);
+  }
+
+ public:
+  data_structures::graph::BlockCSRGraph graph;
+
+  std::vector<Triangle> triangles;
+  std::vector<Star4> stars;
+  std::vector<Path> paths;
 };
 
 }  // namespace sics::graph::nvme::precomputing
